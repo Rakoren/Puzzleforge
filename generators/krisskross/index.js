@@ -9,7 +9,7 @@
  *   words       string[]  required (or supplied via theme by the book pipeline)
  *   difficulty  1|2|3      1 reveals a starter letter, 3 reveals none
  */
-const { interlock } = require('../shared/interlock');
+const { interlock, separationForDifficulty } = require('../shared/interlock');
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
@@ -24,7 +24,11 @@ function generate(config = {}, rand = Math.random) {
     throw new Error('krisskross.generate: need at least 4 words of length >= 3');
   }
 
-  const { grid, width, height, placements, dropped } = interlock(words, rand);
+  const { grid, width, height, placements, dropped } = interlock(
+    words,
+    rand,
+    separationForDifficulty(difficulty)
+  );
   if (placements.length < 4) {
     const err = new Error('krisskross.generate: too few words could be interlocked');
     err.retryable = true;

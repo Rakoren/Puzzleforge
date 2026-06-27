@@ -21,28 +21,43 @@ function shuffle(arr, rand) {
 }
 
 const KEY = (r, c) => `${r},${c}`;
+const DIAG = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+// Is a newly-filled cell at (r,c) involved in a *pure* corner-touch — diagonally
+// adjacent to an existing cell with no shared orthogonal corner between them? At
+// a real crossing the shared corner (the crossing cell) is filled, so that case
+// is allowed; only free-floating corner contacts between separate words count.
+function hasPureCornerTouch(cellMap, r, c) {
+  for (const [ddr, ddc] of DIAG) {
+    if (!cellMap.has(KEY(r + ddr, c + ddc))) continue;
+    const cornerA = cellMap.has(KEY(r, c + ddc));
+    const cornerB = cellMap.has(KEY(r + ddr, c));
+    if (!cornerA && !cornerB) return true;
+  }
+  return false;
+}
 
 // Check whether `word` fits at (row,col) in direction dir ('A' across / 'D'
 // down) given the current cell map. Returns crossing count, or -1 if invalid.
-function fitScore(cellMap, word, row, col, dir) {
+//
+// `strict` enforces clean separation for easy puzzles: words touch only at
+// crossings, never at a free corner. Without it (loose mode, hard puzzles) only
+// orthogonal parallel adjacency is forbidden, allowing a denser look.
+function fitScore(cellMap, word, row, col, dir, strict) {
   const dr = dir === 'D' ? 1 : 0;
   const dc = dir === 'A' ? 1 : 0;
   let crossings = 0;
 
   // Cell before start and after end must be empty.
-  const beforeR = row - dr;
-  const beforeC = col - dc;
-  const afterR = row + dr * word.length;
-  const afterC = col + dc * word.length;
-  if (cellMap.has(KEY(beforeR, beforeC))) return -1;
-  if (cellMap.has(KEY(afterR, afterC))) return -1;
+  if (cellMap.has(KEY(row - dr, col - dc))) return -1;
+  if (cellMap.has(KEY(row + dr * word.length, col + dc * word.length))) return -1;
 
   for (let k = 0; k < word.length; k++) {
     const r = row + dr * k;
     const c = col + dc * k;
     const existing = cellMap.get(KEY(r, c));
     if (existing != null) {
-      if (existing !== word[k]) return -1; // conflict
+      if (existing !== word[k]) return -1; // conflict at this cell
       crossings++;
     } else {
       // Empty cell to be filled — its perpendicular neighbors must be empty so
@@ -52,6 +67,9 @@ function fitScore(cellMap, word, row, col, dir) {
       } else {
         if (cellMap.has(KEY(r, c - 1)) || cellMap.has(KEY(r, c + 1))) return -1;
       }
+      // Strict: no free corner-touches with other words. Crossing geometry is
+      // exempt because the shared corner cell is filled.
+      if (strict && hasPureCornerTouch(cellMap, r, c)) return -1;
     }
   }
   return crossings;
@@ -73,13 +91,23 @@ function placeOnMap(cellMap, word, row, col, dir) {
 /**
  * @param {string[]} words upper-cased words (length >= 2)
  * @param {function} [rand=Math.random]
+ * @param {object} [opts]
+ * @param {'strict'|'loose'} [opts.separation='loose']  strict = words only meet
+ *        at single crossings with empty space (incl. diagonals) around them
+ * @param {'min'|'max'} [opts.preferCrossings='max']  bias toward sparse (min) or
+ *        dense (max) interlocking
  * @returns {{ grid, width, height, placements, dropped }}
  *   grid        2D array of letters or null
  *   placements  [{ word, dir:'A'|'D', row, col, number, cells:[[r,c]] }]  (normalized coords)
  *   dropped     words that could not be interlocked
  */
-function interlock(words, rand = Math.random) {
-  const ordered = words.slice().sort((a, b) => b.length - a.length);
+function interlock(words, rand = Math.random, opts = {}) {
+  const strict = opts.separation === 'strict';
+  const preferMin = opts.preferCrossings === 'min';
+  // Shuffle first, then stable-sort by length descending: longest words still
+  // go down first (best for placement success) but ties are randomized, so
+  // repeated generations with the same word list produce different layouts.
+  const ordered = shuffle(words.slice(), rand).sort((a, b) => b.length - a.length);
   const cellMap = new Map();
   const placements = [];
   const dropped = [];
@@ -88,33 +116,71 @@ function interlock(words, rand = Math.random) {
     return { grid: [[]], width: 0, height: 0, placements: [], dropped: [] };
   }
 
+  // Running centroid of placed cells, used as a compactness tiebreaker.
+  let sumR = 0;
+  let sumC = 0;
+  let nCells = 0;
+  const addCentroid = (cells) => {
+    for (const [r, c] of cells) {
+      sumR += r;
+      sumC += c;
+      nCells++;
+    }
+  };
+
+  // Better-placement test. Primary: crossing preference (min or max). Secondary:
+  // keep the layout compact by minimizing distance from the new word's midpoint
+  // to the current centroid.
+  function midDist(word, row, col, dir) {
+    if (nCells === 0) return 0;
+    const dr = dir === 'D' ? 1 : 0;
+    const dc = dir === 'A' ? 1 : 0;
+    const mr = row + dr * ((word.length - 1) / 2);
+    const mc = col + dc * ((word.length - 1) / 2);
+    const cr = sumR / nCells;
+    const cc = sumC / nCells;
+    return Math.abs(mr - cr) + Math.abs(mc - cc);
+  }
+  function isBetter(cand, best) {
+    if (!best) return true;
+    if (cand.score !== best.score) {
+      return preferMin ? cand.score < best.score : cand.score > best.score;
+    }
+    return cand.dist < best.dist;
+  }
+
   // First (longest) word placed across at the origin.
-  placements.push(placeOnMap(cellMap, ordered[0], 0, 0, 'A'));
+  const first = placeOnMap(cellMap, ordered[0], 0, 0, 'A');
+  placements.push(first);
+  addCentroid(first.cells);
 
   for (let w = 1; w < ordered.length; w++) {
     const word = ordered[w];
-    let best = null; // { score, row, col, dir }
 
-    // Try crossing each existing filled cell.
+    // Collect every valid placement, then shuffle so ties are broken randomly.
+    const candidates = [];
     for (const [k, letter] of cellMap.entries()) {
       const [r, c] = k.split(',').map(Number);
       for (let i = 0; i < word.length; i++) {
         if (word[i] !== letter) continue;
-        // Across placement crossing at (r,c): start col = c - i.
-        const aScore = fitScore(cellMap, word, r, c - i, 'A');
-        if (aScore > 0 && (!best || aScore > best.score)) {
-          best = { score: aScore, row: r, col: c - i, dir: 'A' };
+        const aScore = fitScore(cellMap, word, r, c - i, 'A', strict);
+        if (aScore > 0) {
+          candidates.push({ score: aScore, dist: midDist(word, r, c - i, 'A'), row: r, col: c - i, dir: 'A' });
         }
-        // Down placement crossing at (r,c): start row = r - i.
-        const dScore = fitScore(cellMap, word, r - i, c, 'D');
-        if (dScore > 0 && (!best || dScore > best.score)) {
-          best = { score: dScore, row: r - i, col: c, dir: 'D' };
+        const dScore = fitScore(cellMap, word, r - i, c, 'D', strict);
+        if (dScore > 0) {
+          candidates.push({ score: dScore, dist: midDist(word, r - i, c, 'D'), row: r - i, col: c, dir: 'D' });
         }
       }
     }
+    shuffle(candidates, rand);
+    let best = null;
+    for (const cand of candidates) if (isBetter(cand, best)) best = cand;
 
     if (best) {
-      placements.push(placeOnMap(cellMap, word, best.row, best.col, best.dir));
+      const placed = placeOnMap(cellMap, word, best.row, best.col, best.dir);
+      placements.push(placed);
+      addCentroid(placed.cells);
     } else {
       dropped.push(word);
     }
@@ -208,4 +274,71 @@ function countComponents(grid) {
   return components;
 }
 
-module.exports = { interlock, numberGrid, countComponents };
+/**
+ * Count orthogonal adjacencies between filled cells that are NOT consecutive
+ * letters of a single placed word — i.e. two different words running alongside
+ * each other. A clean interlock has zero of these. If `diagonal` is true,
+ * diagonal corner-touches between different words are counted too.
+ */
+function touchViolations(grid, placements, diagonal = false) {
+  const height = grid.length;
+  const width = grid[0] ? grid[0].length : 0;
+
+  // Allowed adjacency pairs: consecutive cells within each placed word.
+  const allowed = new Set();
+  for (const p of placements) {
+    for (let i = 0; i + 1 < p.cells.length; i++) {
+      const [r1, c1] = p.cells[i];
+      const [r2, c2] = p.cells[i + 1];
+      allowed.add(`${r1},${c1}|${r2},${c2}`);
+      allowed.add(`${r2},${c2}|${r1},${c1}`);
+    }
+  }
+  const ok = (r1, c1, r2, c2) => allowed.has(`${r1},${c1}|${r2},${c2}`);
+
+  const filled = (r, c) =>
+    r >= 0 && c >= 0 && r < height && c < width && grid[r][c] != null;
+
+  let violations = 0;
+  const dirs = diagonal ? [[0, 1], [1, 0], [1, 1], [1, -1]] : [[0, 1], [1, 0]];
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) {
+      if (grid[r][c] == null) continue;
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (!filled(nr, nc)) continue;
+        if (dr !== 0 && dc !== 0) {
+          // Diagonal contact is only a violation if it is a *pure* corner-touch:
+          // neither shared orthogonal corner is filled. At a real crossing one
+          // corner (the crossing cell) is filled, so that geometry is exempt.
+          if (!filled(r, nc) && !filled(nr, c)) violations++;
+        } else if (!ok(r, c, nr, nc)) {
+          violations++;
+        }
+      }
+    }
+  }
+  return violations;
+}
+
+/**
+ * Map a difficulty (1|2|3) to interlock separation options.
+ *   1 (easy)   — strict separation, sparse: words meet only at single
+ *                crossings with clear space (incl. diagonals) around them
+ *   2 (medium) — strict separation, denser interlocking
+ *   3 (hard)   — loose: dense, words may corner-touch
+ */
+function separationForDifficulty(difficulty) {
+  if (difficulty >= 3) return { separation: 'loose', preferCrossings: 'max' };
+  if (difficulty === 2) return { separation: 'strict', preferCrossings: 'max' };
+  return { separation: 'strict', preferCrossings: 'min' };
+}
+
+module.exports = {
+  interlock,
+  numberGrid,
+  countComponents,
+  touchViolations,
+  separationForDifficulty,
+};

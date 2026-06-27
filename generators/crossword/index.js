@@ -14,7 +14,7 @@
  *   clues   object    map of WORD -> clue text (themes provide these)
  *   difficulty 1|2|3
  */
-const { interlock } = require('../shared/interlock');
+const { interlock, separationForDifficulty } = require('../shared/interlock');
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
@@ -30,7 +30,11 @@ function generate(config = {}, rand = Math.random) {
   }
   const clues = config.clues || {};
 
-  const { grid, width, height, placements, dropped } = interlock(words, rand);
+  const { grid, width, height, placements, dropped } = interlock(
+    words,
+    rand,
+    separationForDifficulty(difficulty)
+  );
 
   if (placements.length < 3) {
     const err = new Error('crossword.generate: too few words could be interlocked');
@@ -73,6 +77,7 @@ function generate(config = {}, rand = Math.random) {
       across: across.map(({ number, answer }) => ({ number, answer })),
       down: down.map(({ number, answer }) => ({ number, answer })),
       words: placements.map((p) => p.word),
+      placements,
     },
   };
 }

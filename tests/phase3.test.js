@@ -97,6 +97,31 @@ test('interlock rejects words that conflict and keeps separation', () => {
   }
 });
 
+test('easy crossword/kriss-kross have no corner-touches; words never run alongside', () => {
+  const { touchViolations } = require('../generators/shared/interlock');
+  for (const type of ['crossword', 'krisskross']) {
+    const cfg =
+      type === 'crossword'
+        ? { type, words: WORDS, clues: CLUES, theme: 'space', difficulty: 1 }
+        : { type, words: WORDS, theme: 'space', difficulty: 1 };
+    const p = generate(cfg);
+    const ortho = touchViolations(p.solution.grid, p.solution.placements, false);
+    const corner = touchViolations(p.solution.grid, p.solution.placements, true) - ortho;
+    assert.equal(ortho, 0, `${type} easy: no parallel-adjacent words`);
+    assert.equal(corner, 0, `${type} easy: no corner-touches`);
+  }
+});
+
+test('interlock produces varied layouts across runs', () => {
+  const { interlock } = require('../generators/shared/interlock');
+  const opts = { separation: 'strict', preferCrossings: 'min' };
+  const grids = new Set();
+  for (let i = 0; i < 4; i++) {
+    grids.add(JSON.stringify(interlock(WORDS.map((w) => w.toUpperCase()), Math.random, opts).grid));
+  }
+  assert.ok(grids.size > 1, 'repeated generations differ');
+});
+
 test('each new type renders print HTML sized to the trim', () => {
   for (const cfg of [
     { type: 'maze', difficulty: 1 },

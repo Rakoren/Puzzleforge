@@ -9,7 +9,7 @@
  *   - (soft) words that could not be interlocked are dropped from the bank
  */
 const { solve } = require('./solver');
-const { countComponents } = require('../shared/interlock');
+const { countComponents, touchViolations } = require('../shared/interlock');
 
 function validate(puzzle) {
   const errors = [];
@@ -46,6 +46,22 @@ function validate(puzzle) {
 
   const { mismatches } = solve(puzzle);
   if (mismatches.length) errors.push(`Grid does not match words: ${mismatches.join(', ')}.`);
+
+  // Separation: never allow words to run alongside each other; on easy/medium
+  // (strict layouts) forbid diagonal corner-touches too.
+  const placements = puzzle.solution.placements;
+  if (placements) {
+    const orthoTouches = touchViolations(grid, placements, false);
+    if (orthoTouches > 0) {
+      errors.push(`${orthoTouches} place(s) where words run alongside each other.`);
+    }
+    if ((puzzle.difficulty || 1) <= 2) {
+      const diagTouches = touchViolations(grid, placements, true) - orthoTouches;
+      if (diagTouches > 0) {
+        errors.push(`${diagTouches} corner-touch(es) between words (not allowed at this difficulty).`);
+      }
+    }
+  }
 
   if (droppedCount > 0) {
     warnings.push(`${droppedCount} word(s) could not be interlocked.`);

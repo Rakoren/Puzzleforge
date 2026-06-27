@@ -16,7 +16,7 @@
  *   - words that could not be interlocked (dropped)
  */
 const { solve } = require('./solver');
-const { countComponents } = require('../shared/interlock');
+const { countComponents, touchViolations } = require('../shared/interlock');
 
 function validate(puzzle) {
   const errors = [];
@@ -71,6 +71,23 @@ function validate(puzzle) {
   const { mismatches } = solve(puzzle);
   if (mismatches.length) {
     errors.push(`Solution grid does not match answers: ${mismatches.join(', ')}.`);
+  }
+
+  // Separation: words must never run parallel-adjacent (always a hard error).
+  // On easy/medium (strict layouts) words must not corner-touch on the diagonal
+  // either — that is the visual "separated" standard the easier puzzles target.
+  const placements = puzzle.solution.placements;
+  if (placements) {
+    const orthoTouches = touchViolations(grid, placements, false);
+    if (orthoTouches > 0) {
+      errors.push(`${orthoTouches} place(s) where words run alongside each other.`);
+    }
+    if ((puzzle.difficulty || 1) <= 2) {
+      const diagTouches = touchViolations(grid, placements, true) - orthoTouches;
+      if (diagTouches > 0) {
+        errors.push(`${diagTouches} corner-touch(es) between words (not allowed at this difficulty).`);
+      }
+    }
   }
 
   // --- soft metrics ---
