@@ -1,0 +1,18 @@
+{
+  "title": "The Everything Puzzle Sampler",
+  "subtitle": "Seven Kinds of Puzzles in One Book",
+  "author": "PuzzleForge",
+  "audience": "adult",
+  "trimSize": "8.5x11",
+  "theme": "space",
+  "answerKey": true,
+  "puzzles": [
+    { "type": "wordsearch", "count": 1, "difficulty": 2 },
+    { "type": "crossword", "count": 1, "difficulty": 1 },
+    { "type": "krisskross", "count": 1, "difficulty": 1 },
+    { "type": "wordscramble", "count": 1, "difficulty": 1 },
+    { "type": "cryptogram", "count": 1, "difficulty": 2 },
+    { "type": "sudoku", "count": 1, "difficulty": 2 },
+    { "type": "maze", "count": 1, "difficulty": 2 }
+  ]
+}

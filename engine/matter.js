@@ -89,21 +89,83 @@ function miniSudoku(puzzle, cellPx) {
   return html + '</table>';
 }
 
+function miniMaze(puzzle, blockWidth) {
+  const { width, height, cells, start, end } = puzzle.data;
+  const cell = Math.max(5, Math.floor(blockWidth / width));
+  const N = 1;
+  const E = 2;
+  const S = 4;
+  const W = 8;
+  const w = width * cell;
+  const h = height * cell;
+  const lines = [];
+  const line = (x1, y1, x2, y2) => lines.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const px = x * cell;
+      const py = y * cell;
+      const m = cells[y][x];
+      if ((m & N) === 0) line(px, py, px + cell, py);
+      if ((m & W) === 0) line(px, py, px, py + cell);
+      if ((m & S) === 0) line(px, py + cell, px + cell, py + cell);
+      if ((m & E) === 0) line(px + cell, py, px + cell, py + cell);
+    }
+  }
+  const pts = (puzzle.solution.path || [])
+    .map((p) => `${p.x * cell + cell / 2},${p.y * cell + cell / 2}`)
+    .join(' ');
+  return `<svg width="${w + 2}" height="${h + 2}" viewBox="-1 -1 ${w + 2} ${h + 2}">
+    <polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="${Math.max(1.5, cell * 0.25)}"/>
+    <g stroke="#000" stroke-width="1">${lines.join('')}</g>
+  </svg>`;
+}
+
 function miniAnswer(puzzle, blockWidth) {
   switch (puzzle.type) {
     case 'wordsearch':
       return miniWordsearch(puzzle, Math.floor(blockWidth / puzzle.data.size));
     case 'sudoku':
       return miniSudoku(puzzle, Math.floor(blockWidth / puzzle.data.size));
+    case 'maze':
+      return miniMaze(puzzle, blockWidth);
+    case 'cryptogram':
+      return `<div class="crypt-ans" style="font-size:${Math.max(9, Math.round(blockWidth / 22))}px">${esc(puzzle.solution.plaintext)}</div>`;
+    case 'wordscramble':
+    case 'krisskross':
+      return `<div class="word-ans">${(puzzle.solution.words || []).map(esc).join(', ')}</div>`;
+    case 'crossword':
+      return miniCrossword(puzzle, blockWidth);
     default:
       return `<div class="generic">(no compact answer view for ${esc(puzzle.type)})</div>`;
   }
 }
 
+function miniCrossword(puzzle, blockWidth) {
+  const { width, height } = puzzle.data;
+  const grid = puzzle.solution.grid;
+  const cell = Math.max(8, Math.floor(blockWidth / width));
+  const font = Math.max(6, Math.round(cell * 0.6));
+  let html = '<table style="border-collapse:collapse">';
+  for (let r = 0; r < height; r++) {
+    html += '<tr>';
+    for (let c = 0; c < width; c++) {
+      const ch = grid[r][c];
+      if (ch == null) {
+        html += `<td style="width:${cell}px;height:${cell}px;background:#000"></td>`;
+      } else {
+        html += `<td style="width:${cell}px;height:${cell}px;border:0.5px solid #999;text-align:center;font-size:${font}px;font-weight:600">${esc(ch)}</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  return html + '</table>';
+}
+
 // How many answer blocks fit per row, by type, balancing legibility.
 function blocksPerRow(type) {
   if (type === 'sudoku') return 3;
-  return 2; // wordsearch and default
+  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross') return 1;
+  return 2; // wordsearch, maze, crossword
 }
 
 /** Back-of-book answer-key section. Overflow paginates naturally in print. */

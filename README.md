@@ -9,21 +9,29 @@ See [`PRD.md`](./PRD.md) for the full product spec.
 
 ## Status
 
-**Phases 1–2 complete.** Implemented so far:
+**Phases 1–3 complete.** Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Word Search** module with Golden Standards validation and an independent solver
-- **Sudoku** module with unique-solution guarantee and difficulty calibration
+- **Seven puzzle types**, each with Golden Standards validation and an
+  independent solver/verifier:
+  - **Word Search** — direction mix by difficulty, accidental-word checks
+  - **Sudoku** — unique-solution guarantee, difficulty-calibrated givens
+  - **Maze** — perfect maze (single solution), SVG render with solution path
+  - **Cryptogram** — derangement cipher (no fixed points), decoder strip
+  - **Word Scramble** — verified anagrams, optional hints
+  - **Crossword** — themed interlock, numbered Across/Down clues
+  - **Kriss-Kross** — fill-in grid with a length-grouped word bank
 - Non-bypassable offensive-language filter (applied to words, fill, and clues)
 - Engine orchestration with a retry loop and solution verification
 - Book assembly (`engine/book.js`): multi-puzzle ordering, page assignment,
-  front matter, and a back-of-book answer key
+  front matter, and a back-of-book answer key (per-page CSS scoped so mixed
+  puzzle types never collide in the combined PDF)
 - Puppeteer-based PDF export for both single puzzles and full books
 - CLI for single-puzzle and full-book generation/export
 
-Not yet built (later phases): more puzzle types (Maze, Crossword, Cryptogram, …)
-and the `puzzleforge-web` UI.
+Not yet built (later phases): remaining Tier 2/3 types (Logic Grid, Nonogram,
+Dot-to-Dot, …) and the `puzzleforge-web` UI.
 
 ## Architecture
 
@@ -80,15 +88,19 @@ node cli/index.js --type wordsearch --theme space --difficulty 2 --html space.ht
 node cli/index.js --type wordsearch --words cat,dog,fox,bear --size 12 \
   --trim 8x10 --answers --out puzzle.pdf
 
-# Generate a Sudoku
-node cli/index.js --type sudoku --difficulty 2 --trim 8.5x11 --answers --out sudoku.pdf
+# Other single puzzles
+node cli/index.js --type sudoku --difficulty 2 --answers --out sudoku.pdf
+node cli/index.js --type maze --difficulty 3 --answers --out maze.pdf
+node cli/index.js --type crossword --theme space --answers --out crossword.pdf
+node cli/index.js --type cryptogram --difficulty 2 --out cryptogram.pdf
 
 # Assemble and export a full book from a config file
 node cli/index.js --book examples/animals-activity-book.json --out book.pdf
+node cli/index.js --book examples/puzzle-sampler.json --out sampler.pdf
 ```
 
-Run `node cli/index.js --help` for all options. See `examples/` for a sample
-book config.
+Run `node cli/index.js --help` for all options. See `examples/` for sample
+book configs (a themed activity book and a seven-type sampler).
 
 ## Library
 

@@ -21,6 +21,11 @@ const ACCEPT_THRESHOLD_DEFAULT = 0.8;
 const ACCEPT_THRESHOLDS = {
   wordsearch: 0.85,
   sudoku: 0.85,
+  maze: 0.85,
+  cryptogram: 0.9,
+  wordscramble: 0.9,
+  crossword: 0.8,
+  krisskross: 0.8,
 };
 
 // Per-type difficulty presets. Each generator interprets these.
@@ -36,6 +41,13 @@ const DIFFICULTY = {
     1: { label: 'easy', target: 36, minGivens: 34 },
     2: { label: 'medium', target: 30, minGivens: 27 },
     3: { label: 'hard', target: 24, minGivens: 22 },
+  },
+  // Maze grid dimensions (cells) per difficulty. `braid` removes a fraction of
+  // dead ends (0 = perfect maze, single solution).
+  maze: {
+    1: { label: 'easy', width: 10, height: 10 },
+    2: { label: 'medium', width: 15, height: 15 },
+    3: { label: 'hard', width: 20, height: 25 },
   },
 };
 

@@ -127,22 +127,65 @@ function extractParts(doc) {
   return { style: styles.join('\n'), body };
 }
 
+// Extract the first @page rule (book pages all share one trim size).
+function extractPageRule(css) {
+  const m = css.match(/@page[^{]*\{[^}]*\}/i);
+  return m ? m[0] : '';
+}
+
+// Scope a page's CSS to a wrapper class so rules from one page cannot affect
+// another. @page blocks are stripped (handled globally); html/body selectors
+// map to the wrapper itself; everything else is prefixed.
+function scopeCss(css, scope) {
+  const withoutPage = css.replace(/@page[^{]*\{[^}]*\}/gi, '');
+  let out = '';
+  const ruleRe = /([^{}]+)\{([^}]*)\}/g;
+  let m;
+  while ((m = ruleRe.exec(withoutPage)) !== null) {
+    const decls = m[2].trim();
+    if (!decls) continue;
+    const selectors = m[1]
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((sel) => {
+        if (sel === '*') return `${scope} *`;
+        if (sel === 'html' || sel === 'body') return scope;
+        if (/^(html|body)\b/.test(sel)) return sel.replace(/^(html|body)\b/, scope);
+        return `${scope} ${sel}`;
+      });
+    out += `${selectors.join(', ')} { ${decls} }\n`;
+  }
+  return out;
+}
+
 /**
- * Combine several full HTML page documents into one document, preserving every
- * page's styles and forcing a page break before each page after the first.
- * The first page's @page rule governs the sheet size (a book is one trim).
+ * Combine several full HTML page documents into one document. Each page's CSS
+ * is scoped to its own wrapper so styles cannot leak between pages, and a page
+ * break is forced before each page after the first. The first page's @page
+ * rule governs the sheet size (a book is one trim).
  */
 function combinePages(htmlDocs) {
   const parts = htmlDocs.map(extractParts);
-  const styleBlock = parts.map((p) => p.style).join('\n');
+  const pageRule = parts.map((p) => extractPageRule(p.style)).find(Boolean) || '';
+  const breakStyle = 'break-before: page; page-break-before: always;';
+
+  const scopedStyles = parts
+    .map((p, i) => scopeCss(p.style, `.pf-page-${i}`))
+    .join('\n');
   const bodyBlock = parts
-    .map((p, i) =>
-      `<div class="pf-page"${i > 0 ? ' style="break-before: page;"' : ''}>${p.body}</div>`
+    .map(
+      (p, i) =>
+        `<div class="pf-page pf-page-${i}"${i > 0 ? ` style="${breakStyle}"` : ''}>${p.body}</div>`
     )
     .join('');
+
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
-  .pf-page { break-inside: avoid-page; }
-  ${styleBlock}
+  ${pageRule}
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  .pf-page { break-inside: avoid-page; page-break-inside: avoid; }
+  ${scopedStyles}
   </style></head><body>${bodyBlock}</body></html>`;
 }
 

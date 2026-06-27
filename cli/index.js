@@ -130,8 +130,11 @@ async function main() {
   const difficulty = args.difficulty ? Number(args.difficulty) : 1;
 
   // Resolve the word list: explicit --words wins, otherwise pull from a theme.
+  // Word/clue types (crossword, etc.) also need a clue map.
   let words;
+  let clues = {};
   let themeId = args.theme || null;
+  const WORD_TYPES = new Set(['wordsearch', 'wordscramble', 'crossword', 'krisskross']);
   if (args.words) {
     words = String(args.words)
       .split(',')
@@ -147,7 +150,8 @@ async function main() {
       // Difficulty filter excluded everything — fall back to the full list.
       words = themes.selectWords(theme, { count: args.count ? Number(args.count) : undefined });
     }
-  } else {
+    clues = themes.clueMap(theme);
+  } else if (WORD_TYPES.has(type)) {
     fail('Provide either --theme <id> or --words a,b,c (see --help).');
   }
 
@@ -156,6 +160,7 @@ async function main() {
     difficulty,
     theme: themeId,
     words,
+    clues,
     size: args.size ? Number(args.size) : undefined,
     title: typeof args.title === 'string' ? args.title : undefined,
   };

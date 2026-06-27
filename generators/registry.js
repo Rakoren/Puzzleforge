@@ -21,7 +21,55 @@ const sudoku = {
   render: require('./sudoku/renderer').render,
 };
 
-const MODULES = { wordsearch, sudoku };
+const maze = {
+  type: 'maze',
+  generate: require('./maze').generate,
+  validate: require('./maze/validator').validate,
+  solve: require('./maze/solver').solve,
+  render: require('./maze/renderer').render,
+};
+
+const cryptogram = {
+  type: 'cryptogram',
+  generate: require('./cryptogram').generate,
+  validate: require('./cryptogram/validator').validate,
+  solve: require('./cryptogram/solver').solve,
+  render: require('./cryptogram/renderer').render,
+};
+
+const wordscramble = {
+  type: 'wordscramble',
+  generate: require('./wordscramble').generate,
+  validate: require('./wordscramble/validator').validate,
+  solve: require('./wordscramble/solver').solve,
+  render: require('./wordscramble/renderer').render,
+};
+
+const crossword = {
+  type: 'crossword',
+  generate: require('./crossword').generate,
+  validate: require('./crossword/validator').validate,
+  solve: require('./crossword/solver').solve,
+  render: require('./crossword/renderer').render,
+};
+
+const krisskross = {
+  type: 'krisskross',
+  generate: require('./krisskross').generate,
+  validate: require('./krisskross/validator').validate,
+  solve: require('./krisskross/solver').solve,
+  render: require('./krisskross/renderer').render,
+};
+
+const MODULES = {
+  wordsearch,
+  sudoku,
+  maze,
+  cryptogram,
+  wordscramble,
+  crossword,
+  krisskross,
+};
 
 function listTypes() {
   return Object.keys(MODULES);

@@ -33,9 +33,10 @@ function pickDifficulty(spec, rand) {
   return d ? Number(d) : 1;
 }
 
-// Resolve the word list for a word-type puzzle from its (or the book's) theme.
+// Resolve the word list (and clue map) for a word-type puzzle from its (or the
+// book's) theme.
 function wordsForSpec(spec, bookTheme, difficulty) {
-  if (spec.words) return spec.words;
+  if (spec.words) return { words: spec.words, clues: spec.clues || {} };
   const themeRef = spec.theme || bookTheme;
   if (!themeRef) {
     throw new Error(
@@ -47,10 +48,11 @@ function wordsForSpec(spec, bookTheme, difficulty) {
     : themes.loadTheme(themeRef);
   let words = themes.selectWords(theme, { maxDifficulty: difficulty, count: spec.count_words });
   if (words.length === 0) words = themes.selectWords(theme);
-  return words;
+  return { words, clues: themes.clueMap(theme) };
 }
 
-const WORD_TYPES = new Set(['wordsearch']);
+// Puzzle types that consume a themed word list.
+const WORD_TYPES = new Set(['wordsearch', 'wordscramble', 'crossword', 'krisskross']);
 
 /**
  * @param {object} config book config (see above)
@@ -83,7 +85,9 @@ function assembleBook(config, opts = {}) {
         theme: spec.theme || (WORD_TYPES.has(spec.type) ? config.theme : undefined),
       };
       if (WORD_TYPES.has(spec.type)) {
-        puzzleConfig.words = wordsForSpec(spec, config.theme, difficulty);
+        const { words, clues } = wordsForSpec(spec, config.theme, difficulty);
+        puzzleConfig.words = words;
+        puzzleConfig.clues = clues;
       }
       const puzzle = generate(puzzleConfig);
       puzzles.push(puzzle);

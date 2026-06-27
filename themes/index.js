@@ -77,10 +77,23 @@ function selectWords(theme, opts = {}) {
   return pool;
 }
 
+/**
+ * Build a { WORD: clue } map for a theme (or merged pool). Words without a
+ * clue are omitted.
+ */
+function clueMap(theme) {
+  const map = {};
+  for (const entry of theme.words) {
+    if (entry.clue) map[entry.word.toUpperCase()] = entry.clue;
+  }
+  return map;
+}
+
 module.exports = {
   listThemes,
   loadTheme,
   mergeThemes,
   selectWords,
+  clueMap,
   THEME_DIR,
 };
