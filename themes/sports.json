@@ -1,0 +1,24 @@
+{
+  "id": "sports",
+  "label": "Sports",
+  "words": [
+    { "word": "RUN", "clue": "Move fast on your feet", "difficulty": 1 },
+    { "word": "BAT", "clue": "You swing it to hit a ball", "difficulty": 1 },
+    { "word": "GOAL", "clue": "Where you score in soccer", "difficulty": 1 },
+    { "word": "TEAM", "clue": "A group that plays together", "difficulty": 1 },
+    { "word": "JUMP", "clue": "Leap up off the ground", "difficulty": 1 },
+    { "word": "SKATE", "clue": "Glide on ice or wheels", "difficulty": 2 },
+    { "word": "COACH", "clue": "The person who trains the team", "difficulty": 2 },
+    { "word": "MEDAL", "clue": "A prize for winning", "difficulty": 2 },
+    { "word": "TENNIS", "clue": "A racket sport over a net", "difficulty": 2 },
+    { "word": "HOCKEY", "clue": "Played with sticks and a puck", "difficulty": 2 },
+    { "word": "SOCCER", "clue": "A game of kicking a round ball", "difficulty": 2 },
+    { "word": "REFEREE", "clue": "The official who enforces the rules", "difficulty": 3 },
+    { "word": "STADIUM", "clue": "A big arena where games are played", "difficulty": 3 },
+    { "word": "GYMNAST", "clue": "An athlete who tumbles and balances", "difficulty": 3 },
+    { "word": "MARATHON", "clue": "A very long running race", "difficulty": 3 },
+    { "word": "TROPHY", "clue": "A cup awarded to champions", "difficulty": 3 },
+    { "word": "CAPTAIN", "clue": "The leader of a team", "difficulty": 3 },
+    { "word": "RACKET", "clue": "Used to hit a tennis ball", "difficulty": 2 }
+  ]
+}

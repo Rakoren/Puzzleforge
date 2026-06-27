@@ -61,6 +61,14 @@ const krisskross = {
   render: require('./krisskross/renderer').render,
 };
 
+const nonogram = {
+  type: 'nonogram',
+  generate: require('./nonogram').generate,
+  validate: require('./nonogram/validator').validate,
+  solve: require('./nonogram/solver').solve,
+  render: require('./nonogram/renderer').render,
+};
+
 const MODULES = {
   wordsearch,
   sudoku,
@@ -69,6 +77,7 @@ const MODULES = {
   wordscramble,
   crossword,
   krisskross,
+  nonogram,
 };
 
 function listTypes() {

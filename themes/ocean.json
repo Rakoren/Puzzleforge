@@ -1,0 +1,24 @@
+{
+  "id": "ocean",
+  "label": "Ocean",
+  "words": [
+    { "word": "FISH", "clue": "It swims and has gills", "difficulty": 1 },
+    { "word": "CRAB", "clue": "It walks sideways with claws", "difficulty": 1 },
+    { "word": "WAVE", "clue": "Water rolling onto the shore", "difficulty": 1 },
+    { "word": "SHELL", "clue": "A snail or clam's hard home", "difficulty": 1 },
+    { "word": "SHARK", "clue": "A fish with many sharp teeth", "difficulty": 1 },
+    { "word": "WHALE", "clue": "The largest animal in the sea", "difficulty": 2 },
+    { "word": "CORAL", "clue": "Colorful reef built by tiny animals", "difficulty": 2 },
+    { "word": "SQUID", "clue": "A sea creature with ten arms", "difficulty": 2 },
+    { "word": "TIDE", "clue": "The daily rise and fall of the sea", "difficulty": 2 },
+    { "word": "ANCHOR", "clue": "It keeps a boat from drifting", "difficulty": 2 },
+    { "word": "OCTOPUS", "clue": "A sea animal with eight arms", "difficulty": 3 },
+    { "word": "DOLPHIN", "clue": "A clever sea mammal that leaps", "difficulty": 3 },
+    { "word": "SEAWEED", "clue": "Green plants that grow in the sea", "difficulty": 3 },
+    { "word": "JELLYFISH", "clue": "A see-through sea animal that stings", "difficulty": 3 },
+    { "word": "STARFISH", "clue": "A five-armed creature on the seabed", "difficulty": 3 },
+    { "word": "SEAHORSE", "clue": "A tiny fish shaped like a horse's head", "difficulty": 3 },
+    { "word": "LAGOON", "clue": "A shallow pool near the sea", "difficulty": 3 },
+    { "word": "HARBOR", "clue": "A safe place where boats rest", "difficulty": 2 }
+  ]
+}

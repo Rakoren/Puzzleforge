@@ -268,6 +268,7 @@
       wordscramble: 'Word Scramble',
       crossword: 'Crossword',
       krisskross: 'Kriss-Kross',
+      nonogram: 'Nonogram',
     };
     return names[t] || t;
   }

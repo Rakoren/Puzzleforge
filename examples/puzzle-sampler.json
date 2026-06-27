@@ -13,6 +13,7 @@
     { "type": "wordscramble", "count": 1, "difficulty": 1 },
     { "type": "cryptogram", "count": 1, "difficulty": 2 },
     { "type": "sudoku", "count": 1, "difficulty": 2 },
-    { "type": "maze", "count": 1, "difficulty": 2 }
+    { "type": "maze", "count": 1, "difficulty": 2 },
+    { "type": "nonogram", "count": 1, "difficulty": 2 }
   ]
 }

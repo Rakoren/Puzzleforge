@@ -10,11 +10,11 @@ See [`PRD.md`](./PRD.md) for the full product spec.
 
 ## Status
 
-**Phases 1–3 complete.** Implemented so far:
+**Phases 1–4 complete; Phase 5 in progress.** Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Seven puzzle types**, each with Golden Standards validation and an
+- **Eight puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
   - **Word Search** — direction mix and word separation by difficulty
     (easy: words fully isolated; medium: no crossings; hard: dense crossings)
@@ -24,6 +24,7 @@ See [`PRD.md`](./PRD.md) for the full product spec.
   - **Word Scramble** — verified anagrams, optional hints
   - **Crossword** — themed interlock, numbered Across/Down clues
   - **Kriss-Kross** — fill-in grid with a length-grouped word bank
+  - **Nonogram** (Picross) — picture-logic grid with a unique-solution guarantee
 - Non-bypassable offensive-language filter (applied to words, fill, and clues)
 - Engine orchestration with a retry loop and solution verification
 - Book assembly (`engine/book.js`): multi-puzzle ordering, page assignment,

@@ -1,0 +1,24 @@
+{
+  "id": "food",
+  "label": "Food",
+  "words": [
+    { "word": "EGG", "clue": "A breakfast food from a hen", "difficulty": 1 },
+    { "word": "JAM", "clue": "Sweet fruit spread for toast", "difficulty": 1 },
+    { "word": "RICE", "clue": "Small white grains you boil", "difficulty": 1 },
+    { "word": "SOUP", "clue": "A warm bowl you eat with a spoon", "difficulty": 1 },
+    { "word": "BREAD", "clue": "Baked food made from flour", "difficulty": 1 },
+    { "word": "CHEESE", "clue": "A dairy food made from milk", "difficulty": 2 },
+    { "word": "PASTA", "clue": "Spaghetti is a kind of this", "difficulty": 2 },
+    { "word": "HONEY", "clue": "A sweet syrup made by bees", "difficulty": 2 },
+    { "word": "SALAD", "clue": "A mix of fresh raw vegetables", "difficulty": 2 },
+    { "word": "BUTTER", "clue": "You spread it on bread", "difficulty": 2 },
+    { "word": "NOODLE", "clue": "A long strip of pasta", "difficulty": 2 },
+    { "word": "PANCAKE", "clue": "A flat breakfast cake from a pan", "difficulty": 3 },
+    { "word": "SANDWICH", "clue": "A filling between two slices of bread", "difficulty": 3 },
+    { "word": "PORRIDGE", "clue": "Warm oats for breakfast", "difficulty": 3 },
+    { "word": "BISCUIT", "clue": "A small crunchy baked treat", "difficulty": 3 },
+    { "word": "PUMPKIN", "clue": "A big orange squash", "difficulty": 3 },
+    { "word": "YOGURT", "clue": "A creamy food made from milk cultures", "difficulty": 3 },
+    { "word": "MUFFIN", "clue": "A small cake baked in a cup", "difficulty": 2 }
+  ]
+}

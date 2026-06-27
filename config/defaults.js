@@ -26,6 +26,7 @@ const ACCEPT_THRESHOLDS = {
   wordscramble: 0.9,
   crossword: 0.8,
   krisskross: 0.8,
+  nonogram: 0.85,
 };
 
 // Per-type difficulty presets. Each generator interprets these.
@@ -52,6 +53,13 @@ const DIFFICULTY = {
     1: { label: 'easy', width: 10, height: 10 },
     2: { label: 'medium', width: 15, height: 15 },
     3: { label: 'hard', width: 20, height: 25 },
+  },
+  // Nonogram (picross) grid size per difficulty. `fill` is the target share of
+  // filled cells in the hidden picture.
+  nonogram: {
+    1: { label: 'easy', size: 5, fill: 0.55 },
+    2: { label: 'medium', size: 10, fill: 0.55 },
+    3: { label: 'hard', size: 15, fill: 0.52 },
   },
 };
 

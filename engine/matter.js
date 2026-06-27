@@ -120,6 +120,22 @@ function miniMaze(puzzle, blockWidth) {
   </svg>`;
 }
 
+function miniNonogram(puzzle, blockWidth) {
+  const { width, height } = puzzle.data;
+  const grid = puzzle.solution.grid;
+  const cell = Math.max(4, Math.floor(blockWidth / width));
+  let html = '<table style="border-collapse:collapse">';
+  for (let r = 0; r < height; r++) {
+    html += '<tr>';
+    for (let c = 0; c < width; c++) {
+      const on = grid[r][c];
+      html += `<td style="width:${cell}px;height:${cell}px;border:0.5px solid #ccc;background:${on ? '#222' : '#fff'}"></td>`;
+    }
+    html += '</tr>';
+  }
+  return html + '</table>';
+}
+
 function miniAnswer(puzzle, blockWidth) {
   switch (puzzle.type) {
     case 'wordsearch':
@@ -135,6 +151,8 @@ function miniAnswer(puzzle, blockWidth) {
       return `<div class="word-ans">${(puzzle.solution.words || []).map(esc).join(', ')}</div>`;
     case 'crossword':
       return miniCrossword(puzzle, blockWidth);
+    case 'nonogram':
+      return miniNonogram(puzzle, blockWidth);
     default:
       return `<div class="generic">(no compact answer view for ${esc(puzzle.type)})</div>`;
   }
