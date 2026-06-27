@@ -15,8 +15,9 @@ const {
   renderPuzzleHtml,
   renderBookHtml,
 } = require('./engine/export');
-const { getLayout } = require('./layouts');
-const { loadTheme, listThemes } = require('./themes');
+const { getLayout, listTrimSizes } = require('./layouts');
+const { loadTheme, listThemes, selectWords, clueMap } = require('./themes');
+const { listTypes } = require('./generators/registry');
 
 module.exports = {
   generate,
@@ -26,6 +27,10 @@ module.exports = {
   renderHtml: renderPuzzleHtml,
   renderBookHtml,
   getLayout,
+  listTrimSizes,
+  listTypes,
   loadTheme,
   listThemes,
+  selectWords,
+  clueMap,
 };

@@ -1,0 +1,16 @@
+{
+  "name": "puzzleforge-web",
+  "version": "0.1.0",
+  "description": "Teacher-facing web app for PuzzleForge — generate, preview, and download single puzzles.",
+  "private": true,
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "puzzleforge-engine": "file:.."
+  }
+}

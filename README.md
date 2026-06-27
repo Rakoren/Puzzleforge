@@ -2,8 +2,9 @@
 
 The core puzzle generation engine and print-ready PDF export pipeline behind
 PuzzleForge. Pure Node.js library + CLI — no UI dependencies. The teacher-facing
-web app (`puzzleforge-web`) will live in a separate repository and import this
-package.
+web app lives in [`puzzleforge-web/`](./puzzleforge-web) and imports this package
+as a local dependency (co-located for now; can be split into its own repository
+later).
 
 See [`PRD.md`](./PRD.md) for the full product spec.
 
@@ -31,8 +32,13 @@ See [`PRD.md`](./PRD.md) for the full product spec.
 - Puppeteer-based PDF export for both single puzzles and full books
 - CLI for single-puzzle and full-book generation/export
 
+- **Teacher web app** (`puzzleforge-web/`): pick a puzzle, choose a theme or
+  custom word list, live preview, and download a print-ready PDF or a reusable
+  recipe file — accountless, runs the engine server-side
+
 Not yet built (later phases): remaining Tier 2/3 types (Logic Grid, Nonogram,
-Dot-to-Dot, …) and the `puzzleforge-web` UI.
+Dot-to-Dot, …) and the teacher-tool extras (worksheet builder, class sets,
+differentiation mode).
 
 ## Architecture
 
