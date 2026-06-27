@@ -15,7 +15,8 @@ See [`PRD.md`](./PRD.md) for the full product spec.
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
 - **Seven puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
-  - **Word Search** — direction mix by difficulty, accidental-word checks
+  - **Word Search** — direction mix and word separation by difficulty
+    (easy: words fully isolated; medium: no crossings; hard: dense crossings)
   - **Sudoku** — unique-solution guarantee, difficulty-calibrated givens
   - **Maze** — perfect maze (single solution), SVG render with solution path
   - **Cryptogram** — derangement cipher (no fixed points), decoder strip

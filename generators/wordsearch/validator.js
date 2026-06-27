@@ -122,6 +122,18 @@ function validate(puzzle) {
     }
   }
 
+  // --- separation rule for the difficulty ---
+  const separation = puzzle.data.separation || 'dense';
+  if (separation !== 'dense') {
+    const sep = checkSeparation(puzzle.solution.placements || [], separation);
+    if (sep.shared > 0) {
+      errors.push(`${sep.shared} word(s) share letters, not allowed at this difficulty.`);
+    }
+    if (separation === 'isolated' && sep.touching > 0) {
+      errors.push(`${sep.touching} pair(s) of words touch; words must be fully separated.`);
+    }
+  }
+
   // --- offensive content (hard fail) ---
   for (const w of words) {
     if (offensive.isOffensiveWord(w)) errors.push(`Offensive target word "${w}".`);
@@ -165,4 +177,41 @@ function validate(puzzle) {
   return { valid, errors, warnings, score };
 }
 
-module.exports = { validate, gridLines };
+// Inspect planted placements for separation violations.
+//   shared   — distinct cells occupied by more than one word (a crossing)
+//   touching — pairs of different words whose cells are 8-adjacent
+function checkSeparation(placements, separation) {
+  const owner = new Map(); // "r,c" -> word index
+  let shared = 0;
+  placements.forEach((p, idx) => {
+    for (const [r, c] of p.cells) {
+      const k = `${r},${c}`;
+      if (owner.has(k) && owner.get(k) !== idx) shared++;
+      else owner.set(k, idx);
+    }
+  });
+
+  let touching = 0;
+  if (separation === 'isolated') {
+    const pairs = new Set();
+    placements.forEach((p, idx) => {
+      for (const [r, c] of p.cells) {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const k = `${r + dr},${c + dc}`;
+            if (owner.has(k) && owner.get(k) !== idx) {
+              const a = Math.min(idx, owner.get(k));
+              const b = Math.max(idx, owner.get(k));
+              pairs.add(`${a}|${b}`);
+            }
+          }
+        }
+      }
+    });
+    touching = pairs.size;
+  }
+  return { shared, touching };
+}
+
+module.exports = { validate, gridLines, checkSeparation };

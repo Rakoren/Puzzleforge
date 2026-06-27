@@ -30,10 +30,14 @@ const ACCEPT_THRESHOLDS = {
 
 // Per-type difficulty presets. Each generator interprets these.
 const DIFFICULTY = {
+  // `separation` controls how hidden words may relate to each other:
+  //   isolated — no shared letters and a 1-cell buffer (words never touch)
+  //   noCross  — no shared letters, but words may sit next to each other
+  //   dense    — words may cross on shared letters (hardest to scan)
   wordsearch: {
-    1: { directions: 'orthogonal', allowBackwards: false, minWordLen: 3 },
-    2: { directions: 'diagonal', allowBackwards: false, minWordLen: 3 },
-    3: { directions: 'diagonal', allowBackwards: true, minWordLen: 3 },
+    1: { directions: 'orthogonal', allowBackwards: false, minWordLen: 3, separation: 'isolated' },
+    2: { directions: 'diagonal', allowBackwards: false, minWordLen: 3, separation: 'noCross' },
+    3: { directions: 'diagonal', allowBackwards: true, minWordLen: 3, separation: 'dense' },
   },
   // Sudoku givens targets per difficulty. `target` is what generation aims for;
   // `minGivens` is the validation floor (a puzzle must keep at least this many).

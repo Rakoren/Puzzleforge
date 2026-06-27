@@ -51,6 +51,21 @@ test('difficulty 1 uses only orthogonal directions', () => {
   }
 });
 
+test('easy word search keeps words isolated; harder allows touching', () => {
+  const { checkSeparation } = require('../generators/wordsearch/validator');
+  const words = ['BEAR', 'LION', 'TIGER', 'ZEBRA', 'HORSE', 'EAGLE', 'SHARK'];
+
+  const easy = generate({ type: 'wordsearch', words, difficulty: 1 });
+  assert.equal(easy.data.separation, 'isolated');
+  const e = checkSeparation(easy.solution.placements, 'isolated');
+  assert.equal(e.shared, 0, 'no shared letters on easy');
+  assert.equal(e.touching, 0, 'no touching words on easy');
+
+  const medium = generate({ type: 'wordsearch', words, difficulty: 2 });
+  assert.equal(medium.data.separation, 'noCross');
+  assert.equal(checkSeparation(medium.solution.placements, 'noCross').shared, 0, 'no crossings on medium');
+});
+
 test('validator rejects an unfilled grid', () => {
   const puzzle = generate({ type: 'wordsearch', words: ['CAT', 'DOG', 'FOX'], difficulty: 1 });
   puzzle.data.grid[0][0] = null;

@@ -54,23 +54,48 @@ function makeGrid(n) {
   return Array.from({ length: n }, () => Array.from({ length: n }, () => null));
 }
 
-// Can `word` be laid from (r,c) along (dr,dc)? Overlap permitted only where
-// the existing letter matches (standard word-search crossing).
-function canPlace(grid, word, r, c, dr, dc) {
+const NEIGHBORS = [
+  [-1, -1], [-1, 0], [-1, 1],
+  [0, -1], [0, 1],
+  [1, -1], [1, 0], [1, 1],
+];
+
+// Can `word` be laid from (r,c) along (dr,dc)?
+//   dense    — overlap permitted where the existing letter matches (crossing)
+//   noCross  — no overlap with any existing letter (words never share cells)
+//   isolated — no overlap AND a one-cell buffer around the word (no occupied
+//              8-neighbour), so words never touch
+function canPlace(grid, word, r, c, dr, dc, separation = 'dense') {
   const n = grid.length;
   let overlaps = 0;
+  const cells = [];
   for (let i = 0; i < word.length; i++) {
     const rr = r + dr * i;
     const cc = c + dc * i;
     if (rr < 0 || cc < 0 || rr >= n || cc >= n) return false;
     const cell = grid[rr][cc];
     if (cell !== null) {
+      if (separation !== 'dense') return false; // no sharing in noCross/isolated
       if (cell !== word[i]) return false;
       overlaps++;
     }
+    cells.push([rr, cc]);
   }
   // Reject a placement that lands entirely on top of existing letters.
   if (overlaps === word.length) return false;
+
+  if (separation === 'isolated') {
+    // Every cell of the word must be clear of other words on all 8 sides. The
+    // word's own (not-yet-placed) cells are not in the grid, so any occupied
+    // neighbour belongs to a different word.
+    for (const [rr, cc] of cells) {
+      for (const [nr, nc] of NEIGHBORS) {
+        const ar = rr + nr;
+        const ac = cc + nc;
+        if (ar >= 0 && ac >= 0 && ar < n && ac < n && grid[ar][ac] !== null) return false;
+      }
+    }
+  }
   return true;
 }
 
@@ -87,13 +112,16 @@ function place(grid, word, r, c, dr, dc) {
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-function autoSize(words) {
+function autoSize(words, separation = 'dense') {
   const longest = words.reduce((m, w) => Math.max(m, w.length), 0);
   const totalLetters = words.reduce((s, w) => s + w.length, 0);
-  // Enough room for the longest word plus margin, and roughly 2x the letters
-  // worth of cells so fill isn't overcrowded.
-  const byArea = Math.ceil(Math.sqrt(totalLetters * 2.2));
-  return Math.max(longest + 1, byArea, 10);
+  // Buffered layouts need more room: isolated words consume a ring of empty
+  // cells, so scale the area estimate up as separation gets stricter.
+  const areaFactor = separation === 'isolated' ? 3.6 : separation === 'noCross' ? 2.8 : 2.2;
+  const byArea = Math.ceil(Math.sqrt(totalLetters * areaFactor));
+  // Leave a margin around the longest word when buffering.
+  const longestFloor = separation === 'isolated' ? longest + 2 : longest + 1;
+  return Math.max(longestFloor, byArea, 10);
 }
 
 /**
@@ -119,6 +147,7 @@ function generate(config = {}, rand = Math.random) {
   const allowBackwards =
     config.allowBackwards != null ? config.allowBackwards : preset.allowBackwards;
   const minWordLen = preset.minWordLen || 3;
+  const separation = config.separation || preset.separation || 'dense';
 
   const tooShort = words.find((w) => w.length < minWordLen);
   if (tooShort) {
@@ -127,7 +156,7 @@ function generate(config = {}, rand = Math.random) {
     );
   }
 
-  const size = config.size || autoSize(words);
+  const size = config.size || autoSize(words, separation);
   const longest = words.reduce((m, w) => Math.max(m, w.length), 0);
   if (longest > size) {
     throw new Error(
@@ -155,7 +184,7 @@ function generate(config = {}, rand = Math.random) {
     outer: for (const [r, c] of positions) {
       const dirs = shuffle(directions.map((d) => d.slice()), rand);
       for (const [dr, dc] of dirs) {
-        if (canPlace(grid, word, r, c, dr, dc)) {
+        if (canPlace(grid, word, r, c, dr, dc, separation)) {
           const p = place(grid, word, r, c, dr, dc);
           placements.push(p);
           directionsUsed.add(`${dr},${dc}`);
@@ -200,6 +229,7 @@ function generate(config = {}, rand = Math.random) {
       words: [...words].sort(),
       mode,
       allowBackwards,
+      separation,
     },
     solution: {
       placements: placements.map((p) => ({
