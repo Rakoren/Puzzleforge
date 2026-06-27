@@ -1,60 +1,99 @@
-# Maze Books - Puzzle Generators
+# PuzzleForge Engine
 
-Simple Node.js CLI and web interface to create themed wordsearch and crossword puzzles for children.
+The core puzzle generation engine and print-ready PDF export pipeline behind
+PuzzleForge. Pure Node.js library + CLI — no UI dependencies. The teacher-facing
+web app (`puzzleforge-web`) will live in a separate repository and import this
+package.
 
-## Features
+See [`PRD.md`](./PRD.md) for the full product spec.
 
-### Word Search
-- Themed puzzles (Animals, Fruits, Space, Ocean, Transport, Sports, School)
-- Level-based difficulty (1-3)
-- Buffer zones to prevent accidental word formations
-- Unintentional word filter (offensive word detection)
-- Teacher mode (no backwards words)
-- Print-friendly HTML output
+## Status
 
-### Crossword (NEW!)
-- Comprehensive crossword generator with Golden Standards compliance
-- Personal Space Protocol (no unintended adjacencies)
-- Single Island Constraint (one connected component)
-- Compactness Score (minimized bounding box)
-- Intersection Density limits (1-2 intersections per word for kids)
-- Minimum word length (3+ letters)
-- Backtracking algorithm for smart placement
-- Automatic clue attachment from theme database
-- HTML rendering with interactive grid and clue lists
+**Phase 1 — Foundation (in progress).** Implemented so far:
 
-## CLI Usage
+- Standard module interface (`generate / validate / solve / render`)
+- Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
+- Word Search module with Golden Standards validation and an independent solver
+- Non-bypassable offensive-language filter (applied to words, fill, and clues)
+- Engine orchestration with a retry loop and solution verification
+- Puppeteer-based single-puzzle PDF export
+- CLI for single-puzzle generation and export
 
-### Word Search Examples
+Not yet built (later phases): book assembly (`engine/book.js`), additional
+puzzle types (Sudoku, Maze, Crossword, …), and the web UI.
 
-Generate a word search from the animals theme and print to console:
-\\\
-node index.js --theme=animals --size=12
-\\\
+## Architecture
 
-Generate from a custom list and save an HTML file:
-\\\
-node index.js --words= cat,dog,fox --size=10 --html=out.html
-\\\
+Every puzzle follows the same lifecycle, orchestrated by the engine:
 
-Generate a printer-friendly HTML:
-\\\
-node index.js --theme=animals --size=12 --html=out_print.html --print
-\\\
+```
+generate(config) → validate(puzzle) → solve(puzzle) → render(puzzle, layout)
+```
 
-### Crossword Examples
+A puzzle type is a folder under `generators/<type>/` exporting four functions.
+Adding a type does not change the engine — register it in
+`generators/registry.js`.
 
-Generate a crossword from the animals theme:
-\\\
-node index.js --theme=animals --crossword --size=25 --html=out_crossword.html
-\\\
+```
+generators/<type>/
+  index.js      generate()  → puzzle data + solution
+  validator.js  validate()  → { valid, errors, warnings, score }
+  solver.js     solve()     → independently verified answer key
+  renderer.js   render()    → print-ready HTML for a given layout
 
-## Web UI
+engine/
+  generate.js   retry loop; produces the Standard Puzzle Object
+  export.js     Puppeteer PDF pipeline
 
-- Word Search: Visit web/index.html
-- Crossword: Visit web/crossword.html (NEW!)
+layouts/        four KDP trim sizes + resolver
+themes/         word lists (word + clue + difficulty) and loader
+filters/        offensive.js (gate) + common-words.js
+config/         engine defaults (retry policy, thresholds, difficulty presets)
+cli/            single-puzzle CLI entry point
+tests/          node:test suites
+```
 
-## Requirements
+## Install
 
-- Node.js 12+
-- Modern web browser for UI
+```bash
+npm install
+```
+
+This installs `puppeteer-core` (PDF export drives an existing Chromium binary —
+no browser download). Set `PUPPETEER_EXECUTABLE_PATH` if Chromium is not in a
+standard location.
+
+## CLI
+
+```bash
+# List built-in themes / registered puzzle types
+node cli/index.js --list-themes
+node cli/index.js --list-types
+
+# Generate a themed word search and write print HTML (no Chromium needed)
+node cli/index.js --type wordsearch --theme space --difficulty 2 --html space.html
+
+# Generate from a custom word list and export a PDF with an answer-key page
+node cli/index.js --type wordsearch --words cat,dog,fox,bear --size 12 \
+  --trim 8x10 --answers --out puzzle.pdf
+```
+
+Run `node cli/index.js --help` for all options.
+
+## Library
+
+```js
+const pf = require('puzzleforge-engine');
+
+const theme = pf.loadTheme('animals');
+const words = require('./themes').selectWords(theme, { maxDifficulty: 2 });
+
+const puzzle = pf.generate({ type: 'wordsearch', theme: 'animals', words, difficulty: 1 });
+await pf.exportPdf(puzzle, { outPath: 'animals.pdf', trimSize: '8x10', answerKey: true });
+```
+
+## Tests
+
+```bash
+npm test
+```

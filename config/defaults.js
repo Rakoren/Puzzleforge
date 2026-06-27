@@ -1,0 +1,47 @@
+/**
+ * Engine-wide defaults: generation retry policy, difficulty presets,
+ * audience presets, and per-type validation thresholds.
+ *
+ * Generators read their difficulty defaults from here so that "level 1"
+ * means the same thing everywhere unless a caller overrides it.
+ */
+
+// Max generation attempts before engine/generate.js throws.
+const MAX_ATTEMPTS = 10;
+
+// Audience presets influence layout font scaling and generator defaults.
+const AUDIENCE = {
+  kids: { label: 'kids', fontScale: 1.25, defaultDifficulty: 1 },
+  adult: { label: 'adult', fontScale: 1.0, defaultDifficulty: 2 },
+};
+
+// Minimum validation score a puzzle must reach to be accepted, per type.
+// A type not listed here defaults to ACCEPT_THRESHOLD_DEFAULT.
+const ACCEPT_THRESHOLD_DEFAULT = 0.8;
+const ACCEPT_THRESHOLDS = {
+  wordsearch: 0.85,
+};
+
+// Per-type difficulty presets. Each generator interprets these.
+const DIFFICULTY = {
+  wordsearch: {
+    1: { directions: 'orthogonal', allowBackwards: false, minWordLen: 3 },
+    2: { directions: 'diagonal', allowBackwards: false, minWordLen: 3 },
+    3: { directions: 'diagonal', allowBackwards: true, minWordLen: 3 },
+  },
+};
+
+function acceptThreshold(type) {
+  return ACCEPT_THRESHOLDS[type] != null
+    ? ACCEPT_THRESHOLDS[type]
+    : ACCEPT_THRESHOLD_DEFAULT;
+}
+
+module.exports = {
+  MAX_ATTEMPTS,
+  AUDIENCE,
+  ACCEPT_THRESHOLD_DEFAULT,
+  ACCEPT_THRESHOLDS,
+  DIFFICULTY,
+  acceptThreshold,
+};

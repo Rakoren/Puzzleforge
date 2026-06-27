@@ -1,0 +1,24 @@
+{
+  "id": "animals",
+  "label": "Animals",
+  "words": [
+    { "word": "CAT", "clue": "A small furry pet that says meow", "difficulty": 1 },
+    { "word": "DOG", "clue": "A loyal pet that barks", "difficulty": 1 },
+    { "word": "FOX", "clue": "A clever orange wild animal", "difficulty": 1 },
+    { "word": "COW", "clue": "A farm animal that gives milk", "difficulty": 1 },
+    { "word": "PIG", "clue": "A pink farm animal that oinks", "difficulty": 1 },
+    { "word": "BEAR", "clue": "A big animal that loves honey", "difficulty": 1 },
+    { "word": "LION", "clue": "The king of the jungle", "difficulty": 1 },
+    { "word": "WOLF", "clue": "A wild relative of the dog", "difficulty": 2 },
+    { "word": "TIGER", "clue": "A big striped cat", "difficulty": 2 },
+    { "word": "HORSE", "clue": "An animal you can ride", "difficulty": 2 },
+    { "word": "ZEBRA", "clue": "A striped relative of the horse", "difficulty": 2 },
+    { "word": "MONKEY", "clue": "A playful animal that climbs trees", "difficulty": 2 },
+    { "word": "RABBIT", "clue": "A hopping animal with long ears", "difficulty": 2 },
+    { "word": "GIRAFFE", "clue": "The tallest animal with a long neck", "difficulty": 3 },
+    { "word": "ELEPHANT", "clue": "A huge grey animal with a trunk", "difficulty": 3 },
+    { "word": "DOLPHIN", "clue": "A clever sea animal that leaps", "difficulty": 3 },
+    { "word": "PENGUIN", "clue": "A black-and-white bird that cannot fly", "difficulty": 3 },
+    { "word": "KANGAROO", "clue": "A hopping animal with a pouch", "difficulty": 3 }
+  ]
+}
