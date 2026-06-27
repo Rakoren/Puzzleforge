@@ -13,7 +13,15 @@ const wordsearch = {
   render: require('./wordsearch/renderer').render,
 };
 
-const MODULES = { wordsearch };
+const sudoku = {
+  type: 'sudoku',
+  generate: require('./sudoku').generate,
+  validate: require('./sudoku/validator').validate,
+  solve: require('./sudoku/solver').solve,
+  render: require('./sudoku/renderer').render,
+};
+
+const MODULES = { wordsearch, sudoku };
 
 function listTypes() {
   return Object.keys(MODULES);

@@ -9,18 +9,21 @@ See [`PRD.md`](./PRD.md) for the full product spec.
 
 ## Status
 
-**Phase 1 — Foundation (in progress).** Implemented so far:
+**Phases 1–2 complete.** Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- Word Search module with Golden Standards validation and an independent solver
+- **Word Search** module with Golden Standards validation and an independent solver
+- **Sudoku** module with unique-solution guarantee and difficulty calibration
 - Non-bypassable offensive-language filter (applied to words, fill, and clues)
 - Engine orchestration with a retry loop and solution verification
-- Puppeteer-based single-puzzle PDF export
-- CLI for single-puzzle generation and export
+- Book assembly (`engine/book.js`): multi-puzzle ordering, page assignment,
+  front matter, and a back-of-book answer key
+- Puppeteer-based PDF export for both single puzzles and full books
+- CLI for single-puzzle and full-book generation/export
 
-Not yet built (later phases): book assembly (`engine/book.js`), additional
-puzzle types (Sudoku, Maze, Crossword, …), and the web UI.
+Not yet built (later phases): more puzzle types (Maze, Crossword, Cryptogram, …)
+and the `puzzleforge-web` UI.
 
 ## Architecture
 
@@ -76,9 +79,16 @@ node cli/index.js --type wordsearch --theme space --difficulty 2 --html space.ht
 # Generate from a custom word list and export a PDF with an answer-key page
 node cli/index.js --type wordsearch --words cat,dog,fox,bear --size 12 \
   --trim 8x10 --answers --out puzzle.pdf
+
+# Generate a Sudoku
+node cli/index.js --type sudoku --difficulty 2 --trim 8.5x11 --answers --out sudoku.pdf
+
+# Assemble and export a full book from a config file
+node cli/index.js --book examples/animals-activity-book.json --out book.pdf
 ```
 
-Run `node cli/index.js --help` for all options.
+Run `node cli/index.js --help` for all options. See `examples/` for a sample
+book config.
 
 ## Library
 

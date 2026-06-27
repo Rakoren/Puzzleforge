@@ -1,0 +1,13 @@
+{
+  "title": "Animal Adventures",
+  "subtitle": "A Mixed Puzzle Activity Book",
+  "author": "PuzzleForge",
+  "audience": "kids",
+  "trimSize": "8x10",
+  "theme": "animals",
+  "answerKey": true,
+  "puzzles": [
+    { "type": "wordsearch", "count": 3, "difficulty": 1 },
+    { "type": "sudoku", "count": 3, "difficulty": "1-2" }
+  ]
+}

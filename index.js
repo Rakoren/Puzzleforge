@@ -8,14 +8,23 @@
  *   await pf.exportPdf(puzzle, { trimSize: '8x10', outPath: 'out.pdf' });
  */
 const { generate } = require('./engine/generate');
-const { exportPuzzlePdf, renderPuzzleHtml } = require('./engine/export');
+const { assembleBook } = require('./engine/book');
+const {
+  exportPuzzlePdf,
+  exportBookPdf,
+  renderPuzzleHtml,
+  renderBookHtml,
+} = require('./engine/export');
 const { getLayout } = require('./layouts');
 const { loadTheme, listThemes } = require('./themes');
 
 module.exports = {
   generate,
+  assembleBook,
   exportPdf: exportPuzzlePdf,
+  exportBookPdf,
   renderHtml: renderPuzzleHtml,
+  renderBookHtml,
   getLayout,
   loadTheme,
   listThemes,

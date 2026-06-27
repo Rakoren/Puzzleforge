@@ -13,7 +13,13 @@
 const fs = require('fs');
 const path = require('path');
 const { generate } = require('../engine/generate');
-const { exportPuzzlePdf, renderPuzzleHtml } = require('../engine/export');
+const { assembleBook } = require('../engine/book');
+const {
+  exportPuzzlePdf,
+  exportBookPdf,
+  renderPuzzleHtml,
+  renderBookHtml,
+} = require('../engine/export');
 const { listTypes } = require('../generators/registry');
 const themes = require('../themes');
 
@@ -38,7 +44,10 @@ function usage() {
   return `PuzzleForge CLI
 
 Usage:
-  puzzleforge --type <type> [--theme <id> | --words a,b,c] [options]
+  Single puzzle:
+    puzzleforge --type <type> [--theme <id> | --words a,b,c] [options]
+  Full book:
+    puzzleforge --book <config.json> --out book.pdf [--html book.html]
 
 Options:
   --type <type>          puzzle type (${listTypes().join(', ')})
@@ -50,6 +59,7 @@ Options:
   --trim <size>          trim size: 8x10 | 8.5x11 | 8.5x8.5 | 6x9 (default 8.5x11)
   --audience kids|adult  font scaling preset
   --title "..."          override the puzzle title
+  --book <config.json>   assemble and export a full book from a config file
   --out <file.pdf>       export a print-ready PDF
   --html <file.html>     write the print HTML (no Chromium needed)
   --answers              include an answer-key page / highlight answers
@@ -72,6 +82,47 @@ async function main() {
   }
   if (args['list-types']) {
     process.stdout.write(listTypes().join('\n') + '\n');
+    return;
+  }
+
+  // --- full-book mode ---
+  if (args.book) {
+    let config;
+    try {
+      config = JSON.parse(fs.readFileSync(args.book, 'utf8'));
+    } catch (err) {
+      fail(`Could not read book config "${args.book}": ${err.message}`);
+      return;
+    }
+    let book;
+    try {
+      book = assembleBook(config);
+    } catch (err) {
+      fail(err.message);
+      return;
+    }
+    process.stdout.write(
+      `Assembled "${book.title}" — ${book.meta.puzzleCount} puzzles ` +
+        `(${Object.entries(book.meta.byType).map(([t, n]) => `${n} ${t}`).join(', ')}), ` +
+        `trim ${book.trimSize}.\n`
+    );
+    if (args.html) {
+      fs.writeFileSync(args.html, renderBookHtml(book));
+      process.stdout.write(`Wrote book HTML → ${path.resolve(args.html)}\n`);
+    }
+    if (args.out) {
+      try {
+        const res = await exportBookPdf(book, { outPath: args.out });
+        process.stdout.write(
+          `Wrote book PDF (${res.trimSize}, ~${res.pages} pages) → ${path.resolve(res.outPath)}\n`
+        );
+      } catch (err) {
+        fail(err.message);
+      }
+    }
+    if (!args.html && !args.out) {
+      process.stdout.write('(No --out or --html given; nothing exported.)\n');
+    }
     return;
   }
 

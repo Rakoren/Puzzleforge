@@ -20,6 +20,7 @@ const AUDIENCE = {
 const ACCEPT_THRESHOLD_DEFAULT = 0.8;
 const ACCEPT_THRESHOLDS = {
   wordsearch: 0.85,
+  sudoku: 0.85,
 };
 
 // Per-type difficulty presets. Each generator interprets these.
@@ -28,6 +29,13 @@ const DIFFICULTY = {
     1: { directions: 'orthogonal', allowBackwards: false, minWordLen: 3 },
     2: { directions: 'diagonal', allowBackwards: false, minWordLen: 3 },
     3: { directions: 'diagonal', allowBackwards: true, minWordLen: 3 },
+  },
+  // Sudoku givens targets per difficulty. `target` is what generation aims for;
+  // `minGivens` is the validation floor (a puzzle must keep at least this many).
+  sudoku: {
+    1: { label: 'easy', target: 36, minGivens: 34 },
+    2: { label: 'medium', target: 30, minGivens: 27 },
+    3: { label: 'hard', target: 24, minGivens: 22 },
   },
 };
 
