@@ -1,0 +1,306 @@
+/* PuzzleForge Web — Book Builder (vanilla JS). */
+(function () {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    title: $('title'),
+    subtitle: $('subtitle'),
+    author: $('author'),
+    audience: $('audience'),
+    trimSize: $('trimSize'),
+    theme: $('theme'),
+    answerKey: $('answerKey'),
+    rows: $('rows'),
+    addRow: $('addRow'),
+    summary: $('summary'),
+    preview: $('preview'),
+    buildPdf: $('buildPdf'),
+    saveRecipe: $('saveRecipe'),
+    loadRecipe: $('loadRecipe'),
+    status: $('status'),
+    previewFrame: $('previewFrame'),
+    emptyState: $('emptyState'),
+    pageInfo: $('pageInfo'),
+  };
+
+  const TYPE_NAMES = {
+    wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku',
+    maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble',
+    crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz',
+  };
+  const DIFFICULTIES = [
+    ['1', 'Easy'], ['2', 'Medium'], ['3', 'Hard'],
+    ['1-2', 'Easy–Med'], ['2-3', 'Med–Hard'], ['1-3', 'Mixed'],
+  ];
+
+  let meta = null;
+  let rows = []; // [{ type, count, difficulty }]
+  let lastBookId = null;
+
+  function setStatus(text, kind) {
+    el.status.textContent = text || '';
+    el.status.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  function addRow(row) {
+    rows.push(row || { type: meta.types[0], count: 4, difficulty: '1' });
+    renderRows();
+    invalidate();
+  }
+
+  function renderRows() {
+    el.rows.innerHTML = '';
+    rows.forEach((row, i) => {
+      const div = document.createElement('div');
+      div.className = 'prow';
+
+      const type = document.createElement('select');
+      for (const t of meta.types) {
+        const o = document.createElement('option');
+        o.value = t;
+        o.textContent = TYPE_NAMES[t] || t;
+        if (t === row.type) o.selected = true;
+        type.appendChild(o);
+      }
+      type.addEventListener('change', () => { row.type = type.value; invalidate(); });
+
+      const count = document.createElement('input');
+      count.type = 'number';
+      count.min = '1';
+      count.max = '40';
+      count.value = row.count;
+      count.title = 'How many';
+      count.addEventListener('input', () => { row.count = Number(count.value) || 1; invalidate(); updateSummary(); });
+
+      const diff = document.createElement('select');
+      for (const [v, label] of DIFFICULTIES) {
+        const o = document.createElement('option');
+        o.value = v;
+        o.textContent = label;
+        if (v === String(row.difficulty)) o.selected = true;
+        diff.appendChild(o);
+      }
+      diff.addEventListener('change', () => { row.difficulty = diff.value; invalidate(); });
+
+      const move = document.createElement('div');
+      move.className = 'move';
+      const up = iconBtn('▲', 'Move up', () => reorder(i, i - 1));
+      const down = iconBtn('▼', 'Move down', () => reorder(i, i + 1));
+      move.appendChild(up);
+      move.appendChild(down);
+
+      const del = iconBtn('✕', 'Remove', () => { rows.splice(i, 1); renderRows(); invalidate(); updateSummary(); });
+      del.classList.add('del');
+
+      const controls = document.createElement('div');
+      controls.style.display = 'flex';
+      controls.style.gap = '4px';
+      controls.appendChild(move);
+      controls.appendChild(del);
+
+      div.appendChild(type);
+      div.appendChild(count);
+      div.appendChild(diff);
+      div.appendChild(controls);
+      el.rows.appendChild(div);
+    });
+    updateSummary();
+  }
+
+  function iconBtn(text, title, onClick) {
+    const b = document.createElement('button');
+    b.className = 'iconbtn';
+    b.type = 'button';
+    b.textContent = text;
+    b.title = title;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function reorder(from, to) {
+    if (to < 0 || to >= rows.length) return;
+    const [r] = rows.splice(from, 1);
+    rows.splice(to, 0, r);
+    renderRows();
+    invalidate();
+  }
+
+  function totalPuzzles() {
+    return rows.reduce((n, r) => n + (Number(r.count) || 0), 0);
+  }
+
+  function updateSummary() {
+    const total = totalPuzzles();
+    el.summary.textContent = total
+      ? `${total} puzzles · ~${1 + total + (el.answerKey.checked ? 1 : 0)} pages (title + puzzles + answer key)`
+      : 'No puzzles yet.';
+  }
+
+  // Invalidate the cached/built book when settings change.
+  function invalidate() {
+    lastBookId = null;
+    el.buildPdf.disabled = true;
+  }
+
+  function config() {
+    return {
+      title: el.title.value.trim() || 'My Activity Book',
+      subtitle: el.subtitle.value.trim() || null,
+      author: el.author.value.trim() || null,
+      audience: el.audience.value,
+      trimSize: el.trimSize.value,
+      theme: el.theme.value,
+      answerKey: el.answerKey.checked,
+      puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
+    };
+  }
+
+  async function preview() {
+    if (!rows.length) { setStatus('Add at least one puzzle first.', 'err'); return; }
+    setStatus('Building book… (this can take a few seconds)', 'busy');
+    el.preview.disabled = true;
+    try {
+      const res = await fetch('/api/book/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: config() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not build book');
+      lastBookId = data.bookId;
+      el.previewFrame.srcdoc = data.html;
+      el.emptyState.classList.add('hidden');
+      const m = data.meta;
+      const types = Object.entries(m.byType).map(([t, n]) => `${n} ${TYPE_NAMES[t] || t}`).join(', ');
+      setStatus(`Built “${m.title}” — ${m.puzzleCount} puzzles (${types}).`, 'ok');
+      el.pageInfo.textContent = `~${m.pages} pages · ${m.trimSize}"`;
+      el.buildPdf.disabled = false;
+    } catch (err) {
+      setStatus(err.message, 'err');
+    } finally {
+      el.preview.disabled = false;
+    }
+  }
+
+  async function buildPdf() {
+    setStatus('Rendering PDF…', 'busy');
+    el.buildPdf.disabled = true;
+    try {
+      const res = await fetch('/api/book/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastBookId ? { bookId: lastBookId } : { config: config() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'PDF export failed');
+      }
+      const blob = await res.blob();
+      download(blob, fileBase() + '.pdf');
+      setStatus('PDF downloaded.', 'ok');
+    } catch (err) {
+      setStatus(err.message, 'err');
+    } finally {
+      el.buildPdf.disabled = false;
+    }
+  }
+
+  function fileBase() {
+    return (el.title.value.trim() || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
+  }
+
+  function download(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function saveRecipe() {
+    const blob = new Blob([JSON.stringify(config(), null, 2)], { type: 'application/json' });
+    download(blob, fileBase() + '-book.json');
+    setStatus('Book recipe saved.', 'ok');
+  }
+
+  function onLoad(ev) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const cfg = JSON.parse(reader.result);
+        applyConfig(cfg);
+        setStatus('Recipe loaded — press Preview book.', 'ok');
+      } catch (_) {
+        setStatus('That file is not a valid book recipe.', 'err');
+      }
+      ev.target.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  function applyConfig(cfg) {
+    el.title.value = cfg.title || '';
+    el.subtitle.value = cfg.subtitle || '';
+    el.author.value = cfg.author || '';
+    if (cfg.audience) el.audience.value = cfg.audience;
+    if (cfg.trimSize) el.trimSize.value = cfg.trimSize;
+    if (cfg.theme) el.theme.value = cfg.theme;
+    el.answerKey.checked = cfg.answerKey !== false;
+    rows = (cfg.puzzles || []).map((p) => ({
+      type: p.type,
+      count: p.count || 1,
+      difficulty: String(p.difficulty || '1'),
+    }));
+    renderRows();
+    invalidate();
+  }
+
+  async function init() {
+    try {
+      meta = await (await fetch('/api/meta')).json();
+    } catch (_) {
+      setStatus('Could not reach the server.', 'err');
+      return;
+    }
+    for (const th of meta.themes) {
+      const o = document.createElement('option');
+      o.value = th.id;
+      o.textContent = `${th.label} (${th.wordCount} words)`;
+      el.theme.appendChild(o);
+    }
+    for (const ts of meta.trimSizes) {
+      const o = document.createElement('option');
+      o.value = ts;
+      o.textContent = ts.replace('x', '" × ') + '"';
+      el.trimSize.appendChild(o);
+    }
+    el.trimSize.value = meta.trimSizes.includes('8x10') ? '8x10' : meta.trimSizes[0];
+
+    // Seed with a sensible starter book.
+    rows = [
+      { type: 'wordsearch', count: 4, difficulty: '1' },
+      { type: 'maze', count: 3, difficulty: '1-2' },
+      { type: 'sudoku', count: 3, difficulty: '2' },
+    ];
+    el.title.value = 'My Activity Book';
+    renderRows();
+
+    el.addRow.addEventListener('click', () => addRow());
+    el.preview.addEventListener('click', preview);
+    el.buildPdf.addEventListener('click', buildPdf);
+    el.saveRecipe.addEventListener('click', saveRecipe);
+    el.loadRecipe.addEventListener('change', onLoad);
+    el.answerKey.addEventListener('change', () => { invalidate(); updateSummary(); });
+    [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.theme].forEach((node) =>
+      node.addEventListener('change', invalidate)
+    );
+  }
+
+  init();
+})();

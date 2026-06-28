@@ -235,6 +235,55 @@ app.post('/api/set', async (req, res) => {
   }
 });
 
+// --- Book builder ---
+
+const bookCache = new Map();
+function cacheBook(book) {
+  const id = crypto.randomUUID();
+  bookCache.set(id, book);
+  if (bookCache.size > 50) bookCache.delete(bookCache.keys().next().value);
+  return id;
+}
+
+app.post('/api/book/preview', (req, res) => {
+  const config = (req.body && req.body.config) || {};
+  try {
+    const book = pf.assembleBook(config);
+    const bookId = cacheBook(book);
+    res.json({
+      bookId,
+      html: pf.renderBookHtml(book),
+      meta: {
+        title: book.title,
+        trimSize: book.trimSize,
+        puzzleCount: book.meta.puzzleCount,
+        byType: book.meta.byType,
+        pages: 1 + book.pages.length + (book.answerKey ? 1 : 0),
+      },
+    });
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+app.post('/api/book/pdf', async (req, res) => {
+  const body = req.body || {};
+  try {
+    let book = body.bookId && bookCache.get(body.bookId);
+    if (!book) book = pf.assembleBook(body.config || {});
+    const outPath = path.join(os.tmpdir(), `pf-book-${crypto.randomUUID()}.pdf`);
+    await pf.exportBookPdf(book, { outPath });
+    const pdf = fs.readFileSync(outPath);
+    fs.unlink(outPath, () => {});
+    const base = (book.title || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 4000;
 if (require.main === module) {
   app.listen(PORT, () => {

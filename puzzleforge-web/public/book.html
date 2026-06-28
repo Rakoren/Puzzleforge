@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PuzzleForge — Book Builder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <div>
+        <h1>PuzzleForge</h1>
+        <p class="tagline">Book Builder — assemble a whole puzzle book</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Puzzle Maker</a>
+      <a href="book.html" class="active">Book Builder</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="panel config" aria-label="Book settings">
+      <h2>1 · Book details</h2>
+      <label class="field">
+        <span>Title</span>
+        <input id="title" type="text" placeholder="My Activity Book">
+      </label>
+      <label class="field">
+        <span>Subtitle (optional)</span>
+        <input id="subtitle" type="text" placeholder="Word Searches &amp; More">
+      </label>
+      <label class="field">
+        <span>Author (optional)</span>
+        <input id="author" type="text" placeholder="Your name">
+      </label>
+      <div class="row">
+        <label class="field">
+          <span>Audience</span>
+          <select id="audience">
+            <option value="kids">Kids</option>
+            <option value="adult">Adult</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Page size</span>
+          <select id="trimSize"></select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="field">
+          <span>Default theme</span>
+          <select id="theme"></select>
+        </label>
+        <label class="field checkbox-field">
+          <span>&nbsp;</span>
+          <label class="checkbox"><input type="checkbox" id="answerKey" checked> Answer key</label>
+        </label>
+      </div>
+
+      <h2>2 · Puzzles in the book</h2>
+      <div id="rows" class="rows"></div>
+      <button id="addRow" class="ghost">+ Add puzzle</button>
+      <p class="hint" id="summary">No puzzles yet.</p>
+
+      <h2>3 · Build</h2>
+      <div class="actions">
+        <button id="preview" class="primary">Preview book</button>
+        <button id="buildPdf" class="primary" disabled>Download PDF</button>
+      </div>
+      <div class="actions">
+        <button id="saveRecipe" class="ghost">Save book recipe</button>
+        <label class="upload ghost">Load book recipe
+          <input id="loadRecipe" type="file" accept="application/json" hidden>
+        </label>
+      </div>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section class="panel preview" aria-label="Preview">
+      <div class="preview-head">
+        <h2>Preview</h2>
+        <span class="hint" id="pageInfo"></span>
+      </div>
+      <div class="preview-frame">
+        <iframe id="previewFrame" title="Book preview"></iframe>
+        <div class="empty" id="emptyState">
+          <p>Add some puzzles and press <strong>Preview book</strong>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="book.js"></script>
+</body>
+</html>

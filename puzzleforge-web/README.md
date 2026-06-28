@@ -47,6 +47,19 @@ PDF export needs a Chromium binary (same as the engine). Set
 No accounts, no database — recipes live on the teacher's own machine
 (Option A in the PRD).
 
+### Book Builder
+
+A second page (**Book Builder**, linked in the header) assembles a whole book
+visually — no JSON by hand:
+
+- Set the title, subtitle, author, audience, page (trim) size, default theme,
+  and answer-key toggle
+- Add puzzle rows (type · count · difficulty, including mixed ranges), reorder
+  or remove them
+- Preview the assembled book, then download the print-ready PDF
+- Save / load the book recipe (`.json`) — the same format the CLI's `--book`
+  flag accepts
+
 ## API
 
 | Method | Path | Purpose |
@@ -56,6 +69,8 @@ No accounts, no database — recipes live on the teacher's own machine
 | POST | `/api/pdf` | export a print-ready PDF (reuses the previewed puzzle by `puzzleId`) |
 | POST | `/api/words` | resolve a recipe's words + clues (for the clue editor) |
 | POST | `/api/set` | teacher sets → one PDF: `mode: "differentiation" \| "classset"`, `count`, `answers: "none" \| "end" \| "each"` |
+| POST | `/api/book/preview` | assemble a book → `{ bookId, html, meta }` |
+| POST | `/api/book/pdf` | export the book PDF (reuses the assembled book by `bookId`) |
 
 ### Recipe format
 
