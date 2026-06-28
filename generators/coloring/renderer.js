@@ -34,34 +34,88 @@ function ringOf(motif, count, c) {
   return s;
 }
 
+// One instance of a band motif at "12 o'clock", to be repeated by ringOf.
+// Each spans the radius band [r0, r1]; `w` is its half-width in px.
+function bandMotif(kind, c, r0, r1, w) {
+  const mid = (r0 + r1) / 2;
+  const f = (n) => n.toFixed(1);
+  switch (kind) {
+    case 'petal':
+      return `<path d="M ${c} ${f(c - r0)} C ${f(c - w)} ${f(c - mid)}, ${f(c - w)} ${f(c - mid)}, ${c} ${f(c - r1)} C ${f(c + w)} ${f(c - mid)}, ${f(c + w)} ${f(c - mid)}, ${c} ${f(c - r0)} Z"/>`;
+    case 'teardrop':
+      return `<path d="M ${c} ${f(c - r1)} Q ${f(c + w)} ${f(c - mid)}, ${c} ${f(c - r0)} Q ${f(c - w)} ${f(c - mid)}, ${c} ${f(c - r1)} Z"/>`;
+    case 'diamond':
+      return `<polygon points="${c},${f(c - r1)} ${f(c + w)},${f(c - mid)} ${c},${f(c - r0)} ${f(c - w)},${f(c - mid)}"/>`;
+    case 'triangle':
+      return `<polygon points="${c},${f(c - r1)} ${f(c + w)},${f(c - r0)} ${f(c - w)},${f(c - r0)}"/>`;
+    case 'circle':
+      return `<circle cx="${c}" cy="${f(c - mid)}" r="${f(Math.min(w, (r1 - r0) / 2))}"/>`;
+    case 'twin': {
+      const rr = Math.min(w * 0.55, (r1 - r0) / 4);
+      return `<circle cx="${c}" cy="${f(c - r0 - (r1 - r0) * 0.32)}" r="${f(rr)}"/><circle cx="${c}" cy="${f(c - r0 - (r1 - r0) * 0.72)}" r="${f(rr * 0.8)}"/>`;
+    }
+    default:
+      return `<circle cx="${c}" cy="${f(c - mid)}" r="${f(w * 0.6)}"/>`;
+  }
+}
+
+// Seed-driven mandala: random ring count, fold symmetry, per-ring motifs,
+// center and border treatments — so every page is visibly different.
 function mandala(S, rng) {
   const c = S / 2;
   const R = S * 0.46;
+  const ring = (r) => `<circle cx="${c}" cy="${c}" r="${r.toFixed(1)}"/>`;
+  const choose = (arr) => arr[Math.floor(rng() * arr.length)];
   const parts = [];
 
-  // Concentric circles.
-  for (const f of [1, 0.8, 0.6, 0.4, 0.2]) parts.push(`<circle cx="${c}" cy="${c}" r="${(R * f).toFixed(1)}"/>`);
+  const N = choose([8, 10, 12, 16]); // base fold symmetry (kept consistent)
+  const ringCount = choose([3, 4, 5]);
+  const rInner = R * choose([0.14, 0.18, 0.22]);
 
-  // Outer scallop dots.
-  const dots = 20 + 2 * Math.floor(rng() * 5);
-  parts.push(ringOf(`<circle cx="${c}" cy="${(c - R * 0.91).toFixed(1)}" r="${(S * 0.018).toFixed(1)}"/>`, dots, c));
+  const edges = [];
+  for (let i = 0; i <= ringCount; i++) edges.push(rInner + ((R - rInner) * i) / ringCount);
 
-  // Petal helper (leaf between inner radius r0 and outer r1).
-  const petal = (r0, r1, w) =>
-    `<path d="M ${c} ${(c - r0).toFixed(1)} C ${(c - w).toFixed(1)} ${(c - (r0 + r1) / 2).toFixed(1)}, ${(c - w).toFixed(1)} ${(c - (r0 + r1) / 2).toFixed(1)}, ${c} ${(c - r1).toFixed(1)} C ${(c + w).toFixed(1)} ${(c - (r0 + r1) / 2).toFixed(1)}, ${(c + w).toFixed(1)} ${(c - (r0 + r1) / 2).toFixed(1)}, ${c} ${(c - r0).toFixed(1)} Z"/>`;
+  // Outer boundary (sometimes doubled) and the inner circle.
+  parts.push(ring(R));
+  if (rng() < 0.6) parts.push(ring(R * 0.965));
+  parts.push(ring(rInner));
 
-  const n1 = [10, 12, 14, 16][Math.floor(rng() * 4)];
-  parts.push(ringOf(petal(R * 0.6, R * 0.82, S * 0.03), n1, c));
+  const motifs = ['petal', 'teardrop', 'diamond', 'triangle', 'circle', 'twin'];
+  for (let i = 0; i < ringCount; i++) {
+    const r0 = edges[i];
+    const r1 = edges[i + 1];
+    if (rng() < 0.5 && i > 0) parts.push(ring(r0)); // optional separating circle
+    const count = rng() < 0.5 ? N : 2 * N;
+    const arc = (2 * Math.PI * ((r0 + r1) / 2)) / count;
+    const w = Math.min(arc * 0.45, (r1 - r0) * 0.5);
+    const pad = (r1 - r0) * 0.08;
+    parts.push(ringOf(bandMotif(choose(motifs), c, r0 + pad, r1 - pad, w), count, c));
+  }
 
-  const n2 = [12, 16, 20][Math.floor(rng() * 3)];
-  parts.push(ringOf(`<circle cx="${c}" cy="${(c - R * 0.5).toFixed(1)}" r="${(S * 0.02).toFixed(1)}"/>`, n2, c));
+  // Center motif.
+  switch (choose(['flower', 'burst', 'rings', 'dot'])) {
+    case 'flower':
+      parts.push(ring(rInner * 0.38));
+      parts.push(ringOf(bandMotif('petal', c, rInner * 0.38, rInner * 0.95, rInner * 0.5), choose([6, 8]), c));
+      break;
+    case 'burst':
+      parts.push(ring(rInner * 0.28));
+      parts.push(ringOf(bandMotif('triangle', c, rInner * 0.28, rInner * 0.95, rInner * 0.4), choose([8, 12]), c));
+      break;
+    case 'rings':
+      parts.push(ring(rInner * 0.66));
+      parts.push(ring(rInner * 0.38));
+      parts.push(ring(rInner * 0.16));
+      break;
+    default:
+      parts.push(ring(rInner * 0.45));
+  }
 
-  const n3 = [6, 8, 10][Math.floor(rng() * 3)];
-  parts.push(ringOf(petal(R * 0.2, R * 0.4, S * 0.035), n3, c));
-
-  // Center flower.
-  parts.push(`<circle cx="${c}" cy="${c}" r="${(R * 0.08).toFixed(1)}"/>`);
-  parts.push(ringOf(petal(R * 0.08, R * 0.2, S * 0.03), 8, c));
+  // Optional outer scallop-dot border.
+  if (rng() < 0.65) {
+    const dotCount = choose([2 * N, 2.5 * N, 3 * N]) | 0;
+    parts.push(ringOf(`<circle cx="${c}" cy="${(c - R * 0.93).toFixed(1)}" r="${(S * 0.013).toFixed(1)}"/>`, dotCount, c));
+  }
 
   return parts.join('');
 }

@@ -249,10 +249,9 @@ function interleavePuzzles(puzzles, config) {
     }
   }
 
-  // Words a filler should draw its "Draw a …" / bubble subject from: the words
-  // of the puzzle it follows (already difficulty-appropriate), falling back to
-  // theme words at that puzzle's difficulty so an easy puzzle never yields a
-  // hard drawing subject.
+  // Candidate subject words for a filler: the words of the puzzle it follows
+  // (already difficulty-appropriate), falling back to theme words at that
+  // puzzle's difficulty so an easy puzzle never yields a hard subject.
   const subjectWords = (precedingPuzzle) => {
     const own = puzzleWords(precedingPuzzle);
     if (own.length) return own;
@@ -260,11 +259,26 @@ function interleavePuzzles(puzzles, config) {
     return [];
   };
 
+  // Pick one subject per gap, avoiding recently-used words so the same "Draw a
+  // …" / bubble word doesn't keep repeating across the book.
+  const usedSubjects = [];
+  const chooseSubject = (words) => {
+    if (!words.length) return null;
+    const recent = new Set(usedSubjects.slice(-Math.min(8, words.length - 1)));
+    const fresh = words.filter((w) => !recent.has(w));
+    const pool = fresh.length ? fresh : words;
+    const w = pool[Math.floor(Math.random() * pool.length)];
+    usedSubjects.push(w);
+    return w;
+  };
+
   let rotateIdx = 0;
-  const makeFiller = (kind, words) => {
-    if (kind === 'drawing') return generate({ type: 'drawing', words, theme: fillerLabel });
+  const makeFiller = (kind, subject) => {
+    if (kind === 'drawing') {
+      return generate({ type: 'drawing', words: subject ? [subject] : [], theme: fillerLabel });
+    }
     if (kind === 'blank') return generate({ type: 'bleedguard', label: '' });
-    const cfg = { type: 'coloring', words, theme: fillerLabel };
+    const cfg = { type: 'coloring', word: subject || undefined, words: subject ? [subject] : [], theme: fillerLabel };
     if (coloringStyle === 'rotate') cfg.style = COLORING_STYLES[rotateIdx++ % COLORING_STYLES.length];
     else if (coloringStyle !== 'random') cfg.style = coloringStyle;
     return generate(cfg);
@@ -275,8 +289,8 @@ function interleavePuzzles(puzzles, config) {
     out.push(p);
     const isLast = i === puzzles.length - 1;
     if (!isLast || afterLast) {
-      const words = subjectWords(p); // tie the filler to the puzzle it follows
-      for (const kind of kinds) out.push(makeFiller(kind, words));
+      const subject = chooseSubject(subjectWords(p)); // one subject, tied to this puzzle
+      for (const kind of kinds) out.push(makeFiller(kind, subject));
     }
   });
   return out;
