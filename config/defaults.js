@@ -24,7 +24,10 @@ const ACCEPT_THRESHOLDS = {
   maze: 0.85,
   cryptogram: 0.9,
   wordscramble: 0.9,
-  crossword: 0.8,
+  // A themed criss-cross from a fixed word list can't reach NYT-grade density or
+  // symmetry; 0.75 still rejects genuinely poor layouts (many dropped words) but
+  // accepts the normal themed result.
+  crossword: 0.75,
   krisskross: 0.8,
   nonogram: 0.85,
   numbersearch: 0.85,

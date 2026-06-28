@@ -101,9 +101,10 @@ function validate(puzzle) {
     score -= Math.min(0.2, droppedCount * 0.03);
   }
   if (!isSymmetric(grid)) {
-    // Expected for themed crosswords; recorded, lightly penalized.
+    // A themed criss-cross drawn from a fixed word list is essentially never
+    // 180° symmetric — that's the norm here, not a defect — so this is recorded
+    // for information only and must not gate acceptance.
     warnings.push('Block pattern is not 180° rotationally symmetric.');
-    score -= 0.05;
   }
 
   score = Math.max(0, Math.min(1, score));

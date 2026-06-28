@@ -16,9 +16,19 @@
  *   instructions string     optional
  */
 const { DIFFICULTY } = require('../../config/defaults');
-const { resolveDirections, autoSize, placeTokens, fillGrid } = require('../shared/gridsearch');
+const {
+  resolveDirections,
+  autoSize,
+  placeTokens,
+  fillGridSafe,
+  protectedMask,
+} = require('../shared/gridsearch');
+const offensive = require('../../filters/offensive');
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+// Banned substrings to keep out of the random fill (same list the validator
+// scans for). Length-3+ only, matching findOffensiveSubstrings.
+const BANNED_TERMS = [...offensive.BLOCKLIST].filter((t) => t.length >= 3);
 
 /**
  * @param {object} config
@@ -62,7 +72,11 @@ function generate(config = {}, rand = Math.random) {
 
   const directions = resolveDirections(mode, allowBackwards);
   const { grid, placements } = placeTokens(words, { size, directions, separation, rand });
-  fillGrid(grid, ALPHABET, rand);
+  fillGridSafe(grid, ALPHABET, {
+    terms: BANNED_TERMS,
+    protectedMask: protectedMask(size, placements),
+    rand,
+  });
 
   return {
     type: 'wordsearch',

@@ -19,7 +19,7 @@
  */
 const { solve } = require('./solver');
 const { resolveDirections } = require('./index');
-const { gridLines, checkSeparation } = require('../shared/gridsearch');
+const { gridLines, checkSeparation, scanGridOffensive } = require('../shared/gridsearch');
 const { DIFFICULTY } = require('../../config/defaults');
 const offensive = require('../../filters/offensive');
 const { isCommonWord } = require('../../filters/common-words');
@@ -113,16 +113,17 @@ function validate(puzzle) {
     const hits = offensive.scanText(text || '');
     if (hits.length) errors.push(`Offensive text in clue/title: ${hits.join(', ')}.`);
   }
+  // Scan grid lines for banned substrings formed by the fill, ignoring any that
+  // sit wholly inside a curated target word (RACCOON → "coon", PEACOCK → "cock").
+  const offensiveInGrid = scanGridOffensive(grid, {
+    terms: [...offensive.BLOCKLIST],
+    placements: (puzzle.solution && puzzle.solution.placements) || [],
+  });
+  if (offensiveInGrid.length) {
+    errors.push(`Offensive words formed by grid letters: ${offensiveInGrid.join(', ')}.`);
+  }
+
   const lines = gridLines(grid);
-  const offensiveInGrid = new Set();
-  for (const line of lines) {
-    for (const term of offensive.findOffensiveSubstrings(line)) offensiveInGrid.add(term);
-  }
-  if (offensiveInGrid.size) {
-    errors.push(
-      `Offensive words formed by grid letters: ${[...offensiveInGrid].join(', ')}.`
-    );
-  }
 
   // --- accidental common words in fill (soft) ---
   const targetSet = new Set(words);

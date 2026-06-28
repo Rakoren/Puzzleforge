@@ -158,6 +158,152 @@ function fillGrid(grid, alphabet, rand = Math.random) {
   return grid;
 }
 
+// Every maximal straight line of the grid as a list of [r,c] cell coordinates
+// (rows, columns, and both diagonal families) — the geometry the offensive
+// scan and the safe-fill repair both walk.
+function lineCells(n) {
+  const lines = [];
+  for (let r = 0; r < n; r++) {
+    const row = [];
+    for (let c = 0; c < n; c++) row.push([r, c]);
+    lines.push(row);
+  }
+  for (let c = 0; c < n; c++) {
+    const col = [];
+    for (let r = 0; r < n; r++) col.push([r, c]);
+    lines.push(col);
+  }
+  for (let k = 0; k < 2 * n - 1; k++) {
+    const d1 = [];
+    const d2 = [];
+    for (let r = 0; r < n; r++) {
+      const c1 = k - r;
+      if (c1 >= 0 && c1 < n) d1.push([r, c1]);
+      const c2 = r - (k - (n - 1));
+      if (c2 >= 0 && c2 < n) d2.push([r, c2]);
+    }
+    if (d1.length > 1) lines.push(d1);
+    if (d2.length > 1) lines.push(d2);
+  }
+  return lines;
+}
+
+/**
+ * Fill empty cells, then repair any banned substring a random fill happened to
+ * spell — in any direction, forwards or backwards — by re-rolling a fill cell
+ * inside the offending span. Word cells are never touched, so the puzzle's
+ * answers are preserved. This makes a clean grid the norm instead of relying on
+ * the validator to reject unlucky ones (random letters spell short slurs like
+ * "ass"/"sex" surprisingly often).
+ *
+ * @param {string[][]} grid          grid with words already placed (nulls empty)
+ * @param {string} alphabet          fill alphabet
+ * @param {object} opts
+ * @param {string[]} opts.terms      lowercase banned terms to avoid
+ * @param {boolean[][]} [opts.protectedMask] true where a word letter sits
+ * @param {function} [opts.rand]
+ * @param {number} [opts.maxPasses=20]
+ */
+function fillGridSafe(grid, alphabet, opts = {}) {
+  const n = grid.length;
+  const rand = opts.rand || Math.random;
+  const terms = (opts.terms || []).filter((t) => t && t.length >= 3).map((t) => t.toLowerCase());
+  const mask = opts.protectedMask;
+  const maxPasses = opts.maxPasses || 20;
+
+  fillGrid(grid, alphabet, rand);
+  if (!terms.length) return grid;
+
+  const lines = lineCells(n);
+  const isProtected = (r, c) => Boolean(mask && mask[r] && mask[r][c]);
+
+  for (let pass = 0; pass < maxPasses; pass++) {
+    let dirty = false;
+    for (const cells of lines) {
+      // Check the line in both reading directions.
+      for (const seq of [cells, cells.slice().reverse()]) {
+        let str = '';
+        for (const [r, c] of seq) str += String(grid[r][c]).toLowerCase();
+        for (const term of terms) {
+          let idx = str.indexOf(term);
+          while (idx !== -1) {
+            // Re-roll a non-word cell inside the matched span to break it.
+            const span = seq.slice(idx, idx + term.length);
+            const editable = span.filter(([r, c]) => !isProtected(r, c));
+            if (editable.length) {
+              const [r, c] = editable[Math.floor(rand() * editable.length)];
+              const cur = grid[r][c];
+              let next = cur;
+              for (let tries = 0; tries < 8 && next === cur; tries++) {
+                next = alphabet[Math.floor(rand() * alphabet.length)];
+              }
+              grid[r][c] = next;
+              dirty = true;
+            }
+            // Recompute this line's string after a possible edit before scanning on.
+            str = '';
+            for (const [r2, c2] of seq) str += String(grid[r2][c2]).toLowerCase();
+            idx = str.indexOf(term, idx);
+            if (idx !== -1 && span.every(([r, c]) => isProtected(r, c))) idx = str.indexOf(term, idx + 1);
+          }
+        }
+      }
+    }
+    if (!dirty) break;
+  }
+  return grid;
+}
+
+// True if every cell of `span` belongs to one and the same placement — i.e. the
+// substring is part of a single legitimately-placed word (e.g. "coon" inside
+// RACCOON), not an accidental formation in the fill.
+function spanWithinOnePlacement(span, placements) {
+  for (const p of placements || []) {
+    const set = new Set((p.cells || []).map(([r, c]) => `${r},${c}`));
+    if (span.every(([r, c]) => set.has(`${r},${c}`))) return true;
+  }
+  return false;
+}
+
+/**
+ * Coordinate-aware offensive scan. Walks every line in both directions and
+ * reports banned terms — but ignores any occurrence that lies wholly inside a
+ * single placed word, since curated target words (RACCOON, PEACOCK, BASS …) are
+ * legitimate even when they embed a short banned substring.
+ * @returns {string[]} offending terms (deduplicated)
+ */
+function scanGridOffensive(grid, { terms, placements = [] } = {}) {
+  const n = grid.length;
+  const tl = (terms || []).filter((t) => t && t.length >= 3).map((t) => t.toLowerCase());
+  const hits = new Set();
+  for (const cells of lineCells(n)) {
+    for (const seq of [cells, cells.slice().reverse()]) {
+      let str = '';
+      for (const [r, c] of seq) str += String(grid[r][c]).toLowerCase();
+      for (const term of tl) {
+        let idx = str.indexOf(term);
+        while (idx !== -1) {
+          const span = seq.slice(idx, idx + term.length);
+          if (!spanWithinOnePlacement(span, placements)) hits.add(term);
+          idx = str.indexOf(term, idx + 1);
+        }
+      }
+    }
+  }
+  return [...hits];
+}
+
+// Build a protected-cell mask (true where a placed token sits) from placements.
+function protectedMask(n, placements) {
+  const mask = Array.from({ length: n }, () => Array.from({ length: n }, () => false));
+  for (const p of placements || []) {
+    for (const [r, c] of p.cells || []) {
+      if (r >= 0 && c >= 0 && r < n && c < n) mask[r][c] = true;
+    }
+  }
+  return mask;
+}
+
 // All occurrences of `token` in the grid (8 directions).
 function findToken(grid, token) {
   const n = grid.length;
@@ -275,6 +421,10 @@ module.exports = {
   autoSize,
   placeTokens,
   fillGrid,
+  fillGridSafe,
+  protectedMask,
+  lineCells,
+  scanGridOffensive,
   findToken,
   solveTokens,
   gridLines,
