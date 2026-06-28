@@ -166,6 +166,13 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 /* Theme search/filter box above a theme picker */
 .theme-filter { margin-bottom: 6px; font-size: 13px; padding: 7px 9px; }
 
+/* "Between puzzles, insert" control */
+.interleave {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+  border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; margin-top: 8px;
+}
+.interleave-label { font-size: 13px; color: var(--muted); }
+
 /* AI theme generator */
 .banner {
   background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;

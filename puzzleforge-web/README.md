@@ -74,6 +74,8 @@ visually — no JSON by hand:
   mandala / shape-pattern / bubble-letter art), **Drawing Page** (framed blank
   with a prompt), and **Blank (bleed guard)** pages to place after coloring
   pages so marker ink doesn't bleed through
+- **Between puzzles, insert** — automatically drop a drawing and/or blank page
+  into every gap between puzzles (20 puzzles → 19 of each)
 
 ## API
 

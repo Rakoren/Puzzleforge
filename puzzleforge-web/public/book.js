@@ -13,6 +13,8 @@
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
     uniqueWords: $('uniqueWords'),
+    betweenDrawing: $('betweenDrawing'),
+    betweenBlank: $('betweenBlank'),
     rows: $('rows'),
     addRow: $('addRow'),
     summary: $('summary'),
@@ -135,9 +137,11 @@
 
   function updateSummary() {
     const total = totalPuzzles();
-    el.summary.textContent = total
-      ? `${total} puzzles · ~${1 + total + (el.answerKey.checked ? 1 : 0)} pages (title + puzzles + answer key)`
-      : 'No puzzles yet.';
+    if (!total) { el.summary.textContent = 'No puzzles yet.'; return; }
+    const fillers = Math.max(0, total - 1) * interleaveKinds().length;
+    const pages = 1 + total + fillers + (el.answerKey.checked ? 1 : 0);
+    const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
+    el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (title + puzzles + answer key)`;
   }
 
   // Invalidate the cached/built book when settings change.
@@ -156,8 +160,16 @@
       theme: el.theme.value,
       answerKey: el.answerKey.checked,
       uniqueWords: el.uniqueWords.checked,
+      interleave: interleaveKinds(),
       puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
     };
+  }
+
+  function interleaveKinds() {
+    const kinds = [];
+    if (el.betweenDrawing.checked) kinds.push('drawing');
+    if (el.betweenBlank.checked) kinds.push('blank');
+    return kinds;
   }
 
   async function preview() {
@@ -257,6 +269,9 @@
     if (cfg.theme) el.theme.value = cfg.theme;
     el.answerKey.checked = cfg.answerKey !== false;
     el.uniqueWords.checked = cfg.uniqueWords === true;
+    const inter = Array.isArray(cfg.interleave) ? cfg.interleave : [];
+    el.betweenDrawing.checked = inter.includes('drawing');
+    el.betweenBlank.checked = inter.includes('blank');
     rows = (cfg.puzzles || []).map((p) => ({
       type: p.type,
       count: p.count || 1,
@@ -352,6 +367,8 @@
     el.loadRecipe.addEventListener('change', onLoad);
     el.answerKey.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.uniqueWords.addEventListener('change', invalidate);
+    el.betweenDrawing.addEventListener('change', () => { invalidate(); updateSummary(); });
+    el.betweenBlank.addEventListener('change', () => { invalidate(); updateSummary(); });
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );

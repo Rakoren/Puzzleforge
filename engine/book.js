@@ -114,7 +114,6 @@ function assembleBook(config, opts = {}) {
   const usedWords = uniqueWords ? new Set() : null;
 
   const puzzles = [];
-  const byType = {};
 
   for (const spec of config.puzzles) {
     const count = spec.count || 1;
@@ -153,18 +152,24 @@ function assembleBook(config, opts = {}) {
       const puzzle = generate(puzzleConfig);
       if (usedWords) for (const w of puzzleWords(puzzle)) usedWords.add(w);
       puzzles.push(puzzle);
-      byType[spec.type] = (byType[spec.type] || 0) + 1;
     }
   }
+
+  // Optional filler pages inserted in every gap between puzzles (20 puzzles →
+  // 19 gaps). `interleave` is an ordered list of 'drawing' and/or 'blank'.
+  const ordered = interleavePuzzles(puzzles, config);
 
   // Page assignment: 1 title page, then one page per puzzle, then the answer
   // key pages (computed by the matter template at render time; here we record
   // the puzzle page numbers for cross-referencing in the key).
   let page = 1; // title page
-  const pages = puzzles.map((puzzle) => {
+  const pages = ordered.map((puzzle) => {
     page += 1;
     return { puzzle, pageNumber: page };
   });
+
+  const byType = {};
+  for (const p of ordered) byType[p.type] = (byType[p.type] || 0) + 1;
 
   return {
     title: config.title,
@@ -174,16 +179,49 @@ function assembleBook(config, opts = {}) {
     audience,
     answerKey,
     pages, // [{ puzzle, pageNumber }]
-    puzzles, // convenience: ordered puzzle objects
+    puzzles: ordered, // convenience: ordered puzzle objects (incl. fillers)
     meta: {
       generatedAt: Date.now(),
-      puzzleCount: puzzles.filter((p) => !isActivityType(p.type)).length,
-      pageCount: puzzles.length,
+      puzzleCount: ordered.filter((p) => !isActivityType(p.type)).length,
+      pageCount: ordered.length,
       byType,
       uniqueWords,
       ...(usedWords ? { distinctWords: usedWords.size } : {}),
     },
   };
+}
+
+// Insert filler pages between consecutive puzzles. Returns a new ordered list.
+function interleavePuzzles(puzzles, config) {
+  const kinds = (Array.isArray(config.interleave) ? config.interleave : [])
+    .map((k) => String(k).toLowerCase())
+    .filter((k) => k === 'drawing' || k === 'blank');
+  if (kinds.length === 0 || puzzles.length < 2) return puzzles;
+
+  // Theme words for drawing prompts (sampled fresh; not the unique pool).
+  let fillerWords = [];
+  let fillerLabel;
+  if (config.theme) {
+    try {
+      const theme = themes.resolveTheme(config.theme);
+      fillerWords = themes.selectWords(theme, { count: 12 });
+      fillerLabel = theme.label;
+    } catch (_) {
+      /* theme optional */
+    }
+  }
+
+  const makeFiller = (kind) =>
+    kind === 'drawing'
+      ? generate({ type: 'drawing', words: fillerWords, theme: fillerLabel })
+      : generate({ type: 'bleedguard', label: '' });
+
+  const out = [];
+  puzzles.forEach((p, i) => {
+    out.push(p);
+    if (i < puzzles.length - 1) for (const kind of kinds) out.push(makeFiller(kind));
+  });
+  return out;
 }
 
 module.exports = { assembleBook };
