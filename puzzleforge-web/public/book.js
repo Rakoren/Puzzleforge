@@ -10,6 +10,7 @@
     audience: $('audience'),
     trimSize: $('trimSize'),
     theme: $('theme'),
+    themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
     rows: $('rows'),
     addRow: $('addRow'),
@@ -261,15 +262,11 @@
     invalidate();
   }
 
-  async function init() {
-    try {
-      meta = await (await fetch('/api/meta')).json();
-    } catch (_) {
-      setStatus('Could not reach the server.', 'err');
-      return;
-    }
+  // Build the theme <select> grouped by category from a (possibly filtered) list.
+  function populateThemes(themes) {
+    el.theme.innerHTML = '';
     const byCat = {};
-    for (const th of meta.themes) (byCat[th.category] = byCat[th.category] || []).push(th);
+    for (const th of themes) (byCat[th.category] = byCat[th.category] || []).push(th);
     for (const cat of Object.keys(byCat).sort()) {
       const group = document.createElement('optgroup');
       group.label = cat;
@@ -281,6 +278,35 @@
       }
       el.theme.appendChild(group);
     }
+  }
+
+  function themeMatches(theme, q) {
+    if (!q) return true;
+    const hay = [theme.label, theme.category, theme.id, ...(theme.tags || [])]
+      .join(' ')
+      .toLowerCase();
+    return q.split(/\s+/).every((term) => hay.includes(term));
+  }
+
+  function applyThemeFilter() {
+    if (!meta) return;
+    const q = el.themeFilter.value.trim().toLowerCase();
+    const prev = el.theme.value;
+    const filtered = meta.themes.filter((t) => themeMatches(t, q));
+    populateThemes(filtered);
+    if (filtered.some((t) => t.id === prev)) el.theme.value = prev;
+    invalidate();
+  }
+
+  async function init() {
+    try {
+      meta = await (await fetch('/api/meta')).json();
+    } catch (_) {
+      setStatus('Could not reach the server.', 'err');
+      return;
+    }
+    populateThemes(meta.themes);
+    el.themeFilter.addEventListener('input', applyThemeFilter);
     for (const ts of meta.trimSizes) {
       const o = document.createElement('option');
       o.value = ts;

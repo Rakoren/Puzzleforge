@@ -282,6 +282,44 @@ app.post('/api/book/pdf', async (req, res) => {
   }
 });
 
+// --- AI theme generator ---
+
+const themegen = require('./themegen');
+
+// Whether the server has an API key, so the UI can disable the feature
+// gracefully instead of failing on click.
+app.get('/api/theme/status', (req, res) => {
+  res.json({ available: Boolean(process.env.ANTHROPIC_API_KEY) });
+});
+
+// Generate a theme from a topic. Returns a preview (not saved to disk).
+app.post('/api/theme/generate', async (req, res) => {
+  const body = req.body || {};
+  try {
+    const result = await themegen.generateTheme({
+      topic: body.topic,
+      wordsPerTier: body.wordsPerTier,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code });
+  }
+});
+
+// Persist a previewed (or edited) theme to the themes library.
+app.post('/api/theme/save', (req, res) => {
+  const theme = req.body && req.body.theme;
+  if (!theme || typeof theme !== 'object') {
+    return res.status(400).json({ error: 'No theme to save.' });
+  }
+  try {
+    const saved = themegen.saveTheme(theme);
+    res.json({ id: saved.id, report: saved.report });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 4000;
 if (require.main === module) {
   app.listen(PORT, () => {

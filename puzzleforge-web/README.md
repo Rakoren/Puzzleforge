@@ -24,6 +24,16 @@ npm start           # http://localhost:4000  (PORT env to change)
 PDF export needs a Chromium binary (same as the engine). Set
 `PUPPETEER_EXECUTABLE_PATH` if it is not auto-detected.
 
+The **AI Theme Generator** (the *AI Themes* page) needs an Anthropic API key:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...     # required for theme generation only
+export PUZZLEFORGE_THEME_MODEL=claude-opus-4-8   # optional, this is the default
+```
+
+Without a key the rest of the app works normally; the AI Themes page shows a
+notice instead of failing.
+
 ## What it does
 
 - **Pick a puzzle** — any of the engine's types (word search, sudoku, maze,
@@ -71,6 +81,18 @@ visually — no JSON by hand:
 | POST | `/api/set` | teacher sets → one PDF: `mode: "differentiation" \| "classset"`, `count`, `answers: "none" \| "end" \| "each"` |
 | POST | `/api/book/preview` | assemble a book → `{ bookId, html, meta }` |
 | POST | `/api/book/pdf` | export the book PDF (reuses the assembled book by `bookId`) |
+| GET | `/api/theme/status` | `{ available }` — whether an Anthropic API key is configured |
+| POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
+| POST | `/api/theme/save` | persist a generated theme to the library → `{ id, report }` |
+
+### AI Theme Generator
+
+The *AI Themes* page turns a topic ("dinosaurs", "ancient Egypt") into a
+difficulty-tiered, clued word list in the same on-disk format as the built-in
+themes. Claude writes the words and clues; the engine's offensive-word filter,
+de-duplication, and length checks then sanitize the result before it is shown
+or saved. Saved themes are ordinary `themes/*.json` files, so they immediately
+appear in every theme picker and can be edited or deleted by hand.
 
 ### Recipe format
 

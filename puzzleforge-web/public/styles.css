@@ -162,3 +162,25 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   color: var(--muted); text-align: center; padding: 24px;
 }
 .empty.hidden { display: none; }
+
+/* Theme search/filter box above a theme picker */
+.theme-filter { margin-bottom: 6px; font-size: 13px; padding: 7px 9px; }
+
+/* AI theme generator */
+.banner {
+  background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
+  border-radius: 10px; padding: 10px 12px; font-size: 13px; margin: 0 0 12px;
+}
+.banner code { background: #ffedd5; padding: 1px 5px; border-radius: 5px; }
+.tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tag {
+  font-size: 12px; color: var(--brand); background: #eef1fe;
+  border-radius: 999px; padding: 2px 10px; font-weight: 600;
+}
+.tier-block { margin: 8px 0; }
+.tier-block strong { font-size: 13px; }
+.tier-words { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 4px 0 0; }
+.explainer { padding: 4px 4px 0; color: var(--ink); }
+.explainer ol { margin: 0 0 8px; padding-left: 20px; }
+.explainer li { margin-bottom: 10px; font-size: 14px; line-height: 1.5; }
+.explainer code { background: #eef1fe; padding: 1px 5px; border-radius: 5px; font-size: 13px; }

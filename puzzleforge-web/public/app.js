@@ -6,6 +6,7 @@
   const el = {
     type: $('type'),
     theme: $('theme'),
+    themeFilter: $('themeFilter'),
     themeField: $('themeField'),
     customField: $('customField'),
     customWords: $('customWords'),
@@ -345,6 +346,7 @@
       el.type.appendChild(o);
     }
     populateThemeSelect(el.theme, meta.themes);
+    el.themeFilter.addEventListener('input', applyThemeFilter);
     for (const ts of meta.trimSizes) {
       const o = document.createElement('option');
       o.value = ts;
@@ -378,6 +380,26 @@
     }
   }
   window.__pfPopulateThemeSelect = populateThemeSelect;
+
+  // A theme matches if the query appears in its label, category, id, or any tag.
+  function themeMatches(theme, q) {
+    if (!q) return true;
+    const hay = [theme.label, theme.category, theme.id, ...(theme.tags || [])]
+      .join(' ')
+      .toLowerCase();
+    return q.split(/\s+/).every((term) => hay.includes(term));
+  }
+
+  // Re-populate the theme select from the current filter, keeping the selection
+  // when it still matches.
+  function applyThemeFilter() {
+    if (!meta) return;
+    const q = el.themeFilter.value.trim().toLowerCase();
+    const prev = el.theme.value;
+    const filtered = meta.themes.filter((t) => themeMatches(t, q));
+    populateThemeSelect(el.theme, filtered);
+    if (filtered.some((t) => t.id === prev)) el.theme.value = prev;
+  }
 
   function prettyType(t) {
     const names = {

@@ -18,6 +18,7 @@
     <nav class="nav">
       <a href="index.html" class="active">Puzzle Maker</a>
       <a href="book.html">Book Builder</a>
+      <a href="themes.html">AI Themes</a>
     </nav>
   </header>
 
@@ -41,7 +42,8 @@
 
         <label class="field" id="themeField">
           <span>Theme</span>
-          <select id="theme"></select>
+          <input id="themeFilter" class="theme-filter" type="search" placeholder="Search themes or tags…" autocomplete="off">
+          <select id="theme" size="1"></select>
         </label>
 
         <label class="field hidden" id="customField">

@@ -25,8 +25,10 @@ const {
   selectWords,
   clueMap,
   wordCount,
+  THEME_DIR,
 } = require('./themes');
 const { listTypes } = require('./generators/registry');
+const offensive = require('./filters/offensive');
 
 module.exports = {
   generate,
@@ -46,4 +48,7 @@ module.exports = {
   selectWords,
   clueMap,
   wordCount,
+  themesDir: THEME_DIR,
+  isOffensiveWord: offensive.isOffensiveWord,
+  scanTextForOffensive: offensive.scanText,
 };
