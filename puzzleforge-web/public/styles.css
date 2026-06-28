@@ -202,3 +202,15 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .explainer ol { margin: 0 0 8px; padding-left: 20px; }
 .explainer li { margin-bottom: 10px; font-size: 14px; line-height: 1.5; }
 .explainer code { background: #eef1fe; padding: 1px 5px; border-radius: 5px; font-size: 13px; }
+
+/* Manage themes list */
+.manage-list { margin-top: 8px; }
+.manage-cat { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 12px 0 4px; }
+.manage-row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 6px 8px; border: 1px solid var(--line); border-radius: 9px; margin-bottom: 6px; }
+.manage-name { font-size: 14px; }
+.manage-actions { display: flex; gap: 6px; }
+.manage-actions .iconbtn { border: 1px solid var(--line); background: #fff; border-radius: 7px;
+  padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--ink); }
+.manage-actions .iconbtn:hover { background: #f1f3f9; }
+.manage-actions .iconbtn.del { color: #c92a2a; border-color: #f2c2c2; }

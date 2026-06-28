@@ -94,6 +94,8 @@ visually — no JSON by hand:
 | GET | `/api/theme/status` | `{ available }` — whether an Anthropic API key is configured |
 | POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
 | POST | `/api/theme/save` | persist a generated theme to the library → `{ id, report }` |
+| POST | `/api/theme/clean` | re-run the safety/dedup/length filter over a saved theme → `{ id, report, removed }` |
+| POST | `/api/theme/delete` | delete a saved theme → `{ id }` |
 | POST | `/api/cover/preview` | full-wrap cover → `{ html, dims }` |
 | POST | `/api/cover/pdf` | export the full-wrap cover PDF |
 

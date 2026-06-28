@@ -11,6 +11,8 @@
  *   theme    string   optional — used for labelling
  *   title    string   optional
  */
+const { singularizeForPrompt } = require('../shared/text');
+
 function pick(arr, rand) {
   return arr[Math.floor(rand() * arr.length)];
 }
@@ -20,7 +22,7 @@ function generate(config = {}, rand = Math.random) {
   let prompt = config.prompt;
   if (!prompt) {
     if (words.length) {
-      const subject = pick(words, rand);
+      const subject = singularizeForPrompt(pick(words, rand));
       prompt = `Draw a ${subject.toLowerCase()}!`;
     } else {
       prompt = pick(

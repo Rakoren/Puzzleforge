@@ -324,6 +324,28 @@ app.post('/api/theme/generate', async (req, res) => {
   }
 });
 
+// Delete a theme from the library.
+app.post('/api/theme/delete', (req, res) => {
+  const id = req.body && req.body.id;
+  if (!id) return res.status(400).json({ error: 'No theme id.' });
+  try {
+    res.json(themegen.deleteTheme(id));
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Re-run the safety/dedup/length filter over an existing theme, in place.
+app.post('/api/theme/clean', (req, res) => {
+  const id = req.body && req.body.id;
+  if (!id) return res.status(400).json({ error: 'No theme id.' });
+  try {
+    res.json(themegen.cleanTheme(id));
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // Persist a previewed (or edited) theme to the themes library.
 app.post('/api/theme/save', (req, res) => {
   const theme = req.body && req.body.theme;

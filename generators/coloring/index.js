@@ -18,6 +18,8 @@
  *   theme  string    optional
  *   title  string    optional
  */
+const { singularizeForPrompt } = require('../shared/text');
+
 function pick(arr, rand) {
   return arr[Math.floor(rand() * arr.length)];
 }
@@ -36,7 +38,7 @@ function generate(config = {}, rand = Math.random) {
 
   let word = null;
   if (style === 'bubble') {
-    word = (config.word || (words.length ? pick(words, rand) : 'COLOR')).toUpperCase();
+    word = singularizeForPrompt(config.word || (words.length ? pick(words, rand) : 'COLOR')).toUpperCase();
   }
 
   const seed = config.seed != null ? config.seed : Math.floor(rand() * 1e9);

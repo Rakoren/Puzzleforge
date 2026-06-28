@@ -322,4 +322,64 @@ function saveTheme(rawTheme) {
   return { id, path: file, report };
 }
 
-module.exports = { generateTheme, sanitizeTheme, saveTheme, slugify };
+/** Resolve a theme id to its file path, guarding against path traversal. */
+function themeFile(id) {
+  const slug = slugify(id);
+  if (!slug) {
+    const e = new Error('Invalid theme id.');
+    e.status = 400;
+    throw e;
+  }
+  const file = path.join(pf.themesDir, `${slug}.json`);
+  if (path.dirname(file) !== path.resolve(pf.themesDir)) {
+    const e = new Error('Invalid theme id.');
+    e.status = 400;
+    throw e;
+  }
+  return file;
+}
+
+/** Delete a theme file by id. */
+function deleteTheme(id) {
+  const file = themeFile(id);
+  if (!fs.existsSync(file)) {
+    const e = new Error('Theme not found.');
+    e.status = 404;
+    throw e;
+  }
+  fs.unlinkSync(file);
+  return { id: slugify(id) };
+}
+
+/**
+ * Re-run the safety/dedup/length filter over an existing theme and write the
+ * cleaned result back in place (same id). Returns what changed.
+ */
+function cleanTheme(id) {
+  const file = themeFile(id);
+  if (!fs.existsSync(file)) {
+    const e = new Error('Theme not found.');
+    e.status = 404;
+    throw e;
+  }
+  const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const before =
+    ['1', '2', '3'].reduce((n, t) => n + ((raw.tiers && raw.tiers[t]) || []).length, 0) +
+    (Array.isArray(raw.facts) ? raw.facts.length : 0);
+
+  const { theme, report } = sanitizeTheme(raw, raw.label);
+  const payload = {
+    id: raw.id || slugify(id),
+    label: theme.label,
+    category: theme.category,
+    tags: theme.tags,
+    tiers: theme.tiers,
+    facts: theme.facts || [],
+  };
+  fs.writeFileSync(file, JSON.stringify(payload, null, 2) + '\n', 'utf8');
+
+  const after = report.total + report.factCount;
+  return { id: payload.id, report, removed: Math.max(0, before - after) };
+}
+
+module.exports = { generateTheme, sanitizeTheme, saveTheme, deleteTheme, cleanTheme, slugify };
