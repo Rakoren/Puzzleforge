@@ -18,6 +18,19 @@ const { AUDIENCE } = require('../config/defaults');
 // the coordinate space the renderers lay out in.
 const PX_PER_IN = 96;
 
+// Font-family presets selectable per book/puzzle. `sans` is the default.
+const FONT_FAMILIES = {
+  sans: 'Arial, Helvetica, "Open Sans", Roboto, sans-serif',
+  serif: 'Georgia, "Times New Roman", serif',
+  rounded: '"Trebuchet MS", "Segoe UI", Verdana, sans-serif',
+};
+
+function clampScale(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return 1;
+  return Math.max(0.8, Math.min(2.5, v));
+}
+
 const SPECS = {
   '8x10': require('./8x10'),
   '8.5x11': require('./8.5x11'),
@@ -34,6 +47,8 @@ function listTrimSizes() {
  * @param {string} trimSize  one of listTrimSizes()
  * @param {object} [opts]
  * @param {'kids'|'adult'} [opts.audience='adult']
+ * @param {number} [opts.textScale=1]     multiply font size (large-print mode)
+ * @param {'sans'|'serif'|'rounded'} [opts.fontFamily='sans']
  * @returns {object} resolved layout
  */
 function getLayout(trimSize, opts = {}) {
@@ -58,7 +73,9 @@ function getLayout(trimSize, opts = {}) {
   const usableWidth = Math.round(usableWidthIn * PX_PER_IN);
   const usableHeight = Math.round(usableHeightIn * PX_PER_IN);
 
-  const fontSize = Math.round(spec.baseFontPt * audience.fontScale);
+  const textScale = clampScale(opts.textScale);
+  const fontSize = Math.round(spec.baseFontPt * audience.fontScale * textScale);
+  const fontFamily = FONT_FAMILIES[opts.fontFamily] || FONT_FAMILIES.sans;
 
   const layout = {
     trimSize: spec.trimSize,
@@ -74,7 +91,8 @@ function getLayout(trimSize, opts = {}) {
     usableWidth,
     usableHeight,
     fontSize,
-    fontFamily: 'Arial, Helvetica, "Open Sans", Roboto, sans-serif',
+    textScale,
+    fontFamily,
 
     /**
      * Largest square grid cell size (px) that fits `gridSize` cells across
@@ -92,4 +110,4 @@ function getLayout(trimSize, opts = {}) {
   return layout;
 }
 
-module.exports = { getLayout, listTrimSizes, PX_PER_IN };
+module.exports = { getLayout, listTrimSizes, PX_PER_IN, FONT_FAMILIES };

@@ -345,6 +345,8 @@ function assembleBook(config, opts = {}) {
     answerKey,
     pageNumbers: config.pageNumbers === true, // footer page numbers on content pages
     footerText: config.footerText ? String(config.footerText).trim() : null,
+    fontScale: Number(config.fontScale) || 1, // large-print text scaling
+    fontFamily: config.fontFamily || 'sans',
     frontMatter, // [{ kind, ... }] rendered after the title page
     backMatter, // [{ kind, ... }] rendered after the answer key
     pages, // [{ puzzle, pageNumber }]

@@ -89,6 +89,8 @@ function renderOpts(recipe, answerKey) {
     trimSize: recipe.trimSize || '8.5x11',
     audience: recipe.audience || (difficulty <= 1 ? 'kids' : 'adult'),
     answerKey: Boolean(answerKey),
+    textScale: Number(recipe.fontScale) || 1,
+    fontFamily: recipe.fontFamily || 'sans',
   };
 }
 
@@ -154,6 +156,8 @@ app.post('/api/pdf', async (req, res) => {
       outPath,
       trimSize: opts.trimSize,
       audience: opts.audience,
+      textScale: opts.textScale,
+      fontFamily: opts.fontFamily,
       answerKey,
     });
 

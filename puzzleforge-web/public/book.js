@@ -9,6 +9,8 @@
     author: $('author'),
     audience: $('audience'),
     trimSize: $('trimSize'),
+    fontScale: $('fontScale'),
+    fontFamily: $('fontFamily'),
     theme: $('theme'),
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
@@ -191,6 +193,8 @@
       author: el.author.value.trim() || null,
       audience: el.audience.value,
       trimSize: el.trimSize.value,
+      fontScale: Number(el.fontScale.value) || 1,
+      fontFamily: el.fontFamily.value,
       theme: el.theme.value,
       answerKey: el.answerKey.checked,
       uniqueWords: el.uniqueWords.checked,
@@ -363,6 +367,8 @@
     el.author.value = cfg.author || '';
     if (cfg.audience) el.audience.value = cfg.audience;
     if (cfg.trimSize) el.trimSize.value = cfg.trimSize;
+    if (cfg.fontScale) el.fontScale.value = String(cfg.fontScale);
+    if (cfg.fontFamily) el.fontFamily.value = cfg.fontFamily;
     if (cfg.theme) el.theme.value = cfg.theme;
     el.answerKey.checked = cfg.answerKey !== false;
     el.uniqueWords.checked = cfg.uniqueWords === true;
@@ -500,7 +506,7 @@
     el.footerText.addEventListener('input', invalidate);
     el.about.addEventListener('input', () => { invalidate(); updateSummary(); });
     el.moreBooks.addEventListener('input', () => { invalidate(); updateSummary(); });
-    [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.theme].forEach((node) =>
+    [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.fontScale, el.fontFamily, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );
   }

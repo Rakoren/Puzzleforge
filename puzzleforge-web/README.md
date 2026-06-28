@@ -40,6 +40,7 @@ notice instead of failing.
   cryptogram, word scramble, crossword, kriss-kross)
 - **Words** — choose a built-in theme or paste your own word list
 - **Settings** — difficulty, page (trim) size, audience, optional grid size and title
+- **Text size & font** — Normal / Large print / Extra large, and Sans / Serif / Rounded (large-print "senior" mode)
 - **Live preview** — puzzle and answer-key tabs
 - **Download PDF** — print-ready at the chosen trim size, with optional answer key
 - **Save / Upload recipe** — a `.json` of your settings. Re-upload later to

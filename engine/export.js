@@ -88,7 +88,7 @@ function findChromium(explicit) {
 function renderPuzzleHtml(puzzle, opts = {}) {
   const trimSize = opts.trimSize || '8.5x11';
   const audience = opts.audience || (puzzle.difficulty <= 1 ? 'kids' : 'adult');
-  const layout = getLayout(trimSize, { audience });
+  const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily });
   const mod = getModule(puzzle.type);
   return mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
 }
@@ -254,7 +254,8 @@ async function exportPuzzlePdf(puzzle, opts = {}) {
  * @returns {string} combined HTML
  */
 function renderBookHtml(book) {
-  const layout = getLayout(book.trimSize, { audience: book.audience });
+  const styleOpts = { audience: book.audience, textScale: book.fontScale, fontFamily: book.fontFamily };
+  const layout = getLayout(book.trimSize, styleOpts);
   const numbered = book.pageNumbers === true;
   const docs = [renderTitlePage(book, layout)];
   const footers = [null]; // title page is unnumbered
@@ -271,7 +272,7 @@ function renderBookHtml(book) {
   const prefix = book.footerText ? `${escFooter(book.footerText)} · ` : '';
   let n = 0;
   for (const { puzzle } of book.pages) {
-    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, audience: book.audience }));
+    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts }));
     // Number every page except the blank bleed-guards, which stay clean.
     footers.push(numbered && puzzle.type !== 'bleedguard' ? `${prefix}${++n}` : null);
   }

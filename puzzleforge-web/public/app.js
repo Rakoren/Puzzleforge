@@ -13,6 +13,8 @@
     difficulty: $('difficulty'),
     trimSize: $('trimSize'),
     audience: $('audience'),
+    fontScale: $('fontScale'),
+    fontFamily: $('fontFamily'),
     size: $('size'),
     title: $('title'),
     generate: $('generate'),
@@ -88,6 +90,8 @@
       difficulty: Number(el.difficulty.value),
       trimSize: el.trimSize.value,
       audience: el.audience.value,
+      fontScale: Number(el.fontScale.value) || 1,
+      fontFamily: el.fontFamily.value,
       title: el.title.value.trim() || null,
       size: el.size.value ? Number(el.size.value) : null,
       theme: null,
@@ -195,6 +199,8 @@
     if (recipe.difficulty) el.difficulty.value = String(recipe.difficulty);
     if (recipe.trimSize) el.trimSize.value = recipe.trimSize;
     if (recipe.audience) el.audience.value = recipe.audience;
+    if (recipe.fontScale) el.fontScale.value = String(recipe.fontScale);
+    if (recipe.fontFamily) el.fontFamily.value = recipe.fontFamily;
     el.title.value = recipe.title || '';
     el.size.value = recipe.size || '';
     if (Array.isArray(recipe.words) && recipe.words.length) {
