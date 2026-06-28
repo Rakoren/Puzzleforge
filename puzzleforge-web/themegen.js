@@ -81,8 +81,13 @@ function themeSchema(perTier) {
         required: ['1', '2', '3'],
         additionalProperties: false,
       },
+      facts: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Short, accurate, family-friendly fun facts about the topic (one sentence each).',
+      },
     },
-    required: ['label', 'category', 'tags', 'tiers'],
+    required: ['label', 'category', 'tags', 'tiers', 'facts'],
     additionalProperties: false,
   };
 }
@@ -102,6 +107,8 @@ function buildPrompt(topic, perTier) {
     '',
     'Rules for every word:',
     '  • A single word only — no spaces, hyphens, numbers, or punctuation.',
+    '  • Use the SINGULAR form (CAT, not CATS; LEAF, not LEAVES), unless the word',
+    '    is only ever used in the plural (e.g. SCISSORS).',
     '  • Genuinely on-topic and real (no invented or misspelled words).',
     '  • Unique across all three tiers (never repeat a word).',
     '  • Avoid having one word be contained inside another (e.g. EAR inside HEART).',
@@ -109,7 +116,11 @@ function buildPrompt(topic, perTier) {
     'Each clue should be one short sentence a child could understand — like a',
     'crossword definition, never giving away the spelling.',
     '',
-    'Also give the theme a short label, a sensible broad category, and 3-6',
+    'Also provide 12-15 fun facts about the topic for "did you know?" pages:',
+    '  • Each fact is one short, accurate, family-friendly sentence.',
+    '  • No attributions or quotes — just interesting, true facts about the topic.',
+    '',
+    'Finally, give the theme a short label, a sensible broad category, and 3-6',
     'lowercase search tags.',
   ].join('\n');
 }
@@ -166,12 +177,26 @@ function sanitizeTheme(raw, fallbackTopic) {
     if (tags.length >= 8) break;
   }
 
+  // Fun facts: trim, drop empties/offensive, de-dupe, bound length and count.
+  const facts = [];
+  const seenFacts = new Set();
+  for (const raw_fact of Array.isArray(raw.facts) ? raw.facts : []) {
+    const fact = String(raw_fact || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+    const key = fact.toLowerCase();
+    if (fact.length < 8 || seenFacts.has(key)) continue;
+    if (pf.scanTextForOffensive(fact).length) continue;
+    seenFacts.add(key);
+    facts.push(fact);
+    if (facts.length >= 25) break;
+  }
+
   const id = slugify(label) || slugify(fallbackTopic) || 'theme';
   const counts = { 1: tiers[1].length, 2: tiers[2].length, 3: tiers[3].length };
   report.total = counts[1] + counts[2] + counts[3];
   report.counts = counts;
+  report.factCount = facts.length;
 
-  return { theme: { id, label, category, tags, tiers }, report };
+  return { theme: { id, label, category, tags, tiers, facts }, report };
 }
 
 /** A few sample words per tier, for a preview without dumping the whole list. */
@@ -291,6 +316,7 @@ function saveTheme(rawTheme) {
     category: theme.category,
     tags: theme.tags,
     tiers: theme.tiers,
+    facts: theme.facts || [],
   };
   fs.writeFileSync(file, JSON.stringify(payload, null, 2) + '\n', 'utf8');
   return { id, path: file, report };

@@ -63,6 +63,7 @@ function loadTheme(id) {
     label: raw.label || id,
     category: raw.category || 'Other',
     tags: Array.isArray(raw.tags) ? raw.tags : [],
+    facts: Array.isArray(raw.facts) ? raw.facts : [],
     tiers,
   };
 }

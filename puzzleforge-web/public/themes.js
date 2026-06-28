@@ -38,6 +38,7 @@
     el.rLabel.textContent = current.label;
     const total = data.report.total;
     let meta = `${current.category} · ${total} words (${counts['1']} easy, ${counts['2']} medium, ${counts['3']} hard)`;
+    if (data.report.factCount) meta += ` · ${data.report.factCount} fun facts`;
     if (data.report.blocked) meta += ` · ${data.report.blocked} removed by filter`;
     el.rMeta.textContent = meta;
 

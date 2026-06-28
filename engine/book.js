@@ -28,19 +28,30 @@ const breatherContent = require('../content/breathers');
 
 const BREATHER_KINDS = ['quote', 'fact', 'divider', 'blank'];
 
-// Theme-matched fun-fact pool for the book's theme (a single theme id or a
-// "cat:Category" that expands to its members), empty when not theme-matched.
+// Theme-matched fun-fact pool for the book's theme. Combines facts stored in
+// the theme file (e.g. AI-generated themes) with the curated built-in sets, for
+// a single theme id, an array of ids, or a "cat:Category" that expands to its
+// members. Empty when not theme-matched.
 function themeFactPool(config, themeMatched) {
   if (!themeMatched || !config.theme) return [];
   const ref = config.theme;
-  if (typeof ref === 'string' && ref.startsWith('cat:')) {
-    const ids = themes.themesInCategory(ref.slice(4));
-    return ids.reduce((acc, id) => acc.concat((breatherContent.byTheme[id] || {}).facts || []), []);
+  let ids;
+  if (typeof ref === 'string' && ref.startsWith('cat:')) ids = themes.themesInCategory(ref.slice(4));
+  else if (Array.isArray(ref)) ids = ref;
+  else if (typeof ref === 'string') ids = [ref];
+  else return [];
+
+  const facts = [];
+  for (const id of ids) {
+    if (breatherContent.byTheme[id]) facts.push(...(breatherContent.byTheme[id].facts || []));
+    try {
+      const t = themes.loadTheme(id);
+      if (Array.isArray(t.facts)) facts.push(...t.facts);
+    } catch (_) {
+      /* unknown id — skip */
+    }
   }
-  if (typeof ref === 'string' && breatherContent.byTheme[ref]) {
-    return breatherContent.byTheme[ref].facts || [];
-  }
-  return [];
+  return [...new Set(facts)];
 }
 
 // Choose an unused item, preferring earlier pools; repeats only once all are
