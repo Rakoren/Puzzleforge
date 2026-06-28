@@ -48,9 +48,10 @@ function slugify(s) {
 // JSON schema the model must fill. Structured outputs guarantee the shape so we
 // only have to worry about content, not parsing.
 function themeSchema(perTier) {
+  // Note: structured-output array schemas only allow minItems of 0 or 1, so the
+  // target count is requested in the prompt rather than enforced in the schema.
   const tierArray = {
     type: 'array',
-    minItems: Math.min(6, perTier),
     items: {
       type: 'object',
       properties: {
