@@ -173,10 +173,22 @@ async function main() {
     return;
   }
 
+  const d = puzzle.data;
+  const detail = d.words
+    ? `${d.size}x${d.size}, ${d.words.length} words`
+    : d.numbers
+    ? `${d.size}x${d.size}, ${d.numbers.length} numbers`
+    : d.questions
+    ? `${d.questions.length} questions`
+    : d.size
+    ? `${d.size}x${d.size}`
+    : d.width
+    ? `${d.width}x${d.height}`
+    : '';
   process.stdout.write(
-    `Generated ${puzzle.type} "${puzzle.title}" ` +
-      `(${puzzle.data.size}x${puzzle.data.size}, ${puzzle.data.words.length} words, ` +
-      `score ${puzzle.meta.validationScore}, ${puzzle.meta.attempts} attempt(s)).\n`
+    `Generated ${puzzle.type} "${puzzle.title}"` +
+      (detail ? ` (${detail},` : ' (') +
+      ` score ${puzzle.meta.validationScore}, ${puzzle.meta.attempts} attempt(s)).\n`
   );
   if (puzzle.meta.warnings.length) {
     process.stdout.write('Warnings: ' + puzzle.meta.warnings.join(' | ') + '\n');

@@ -8,6 +8,56 @@ later).
 
 See [`PRD.md`](./PRD.md) for the full product spec.
 
+## Quick start (run it on your computer)
+
+**Prerequisites:** [Node.js](https://nodejs.org) 18 or newer. For PDF export you
+also need Google Chrome, Chromium, or Microsoft Edge installed (the engine drives
+your existing browser — it does not download one). Generating **HTML** needs no
+browser at all.
+
+```bash
+# 1. Get the code
+git clone <your-repo-url> puzzleforge
+cd puzzleforge
+git checkout claude/prd-review-next-steps-6lkbbb
+
+# 2. Install the engine
+npm install
+
+# 3. Try the CLI — HTML needs no browser; open the file to view it
+node cli/index.js --type wordsearch --theme animals --difficulty 1 --html my-puzzle.html
+
+# 4. Make a print-ready PDF (needs Chrome/Chromium/Edge installed)
+node cli/index.js --type sudoku --difficulty 2 --answers --out sudoku.pdf
+
+# 5. Build a whole book from a config file
+node cli/index.js --book examples/puzzle-sampler.json --out sampler.pdf
+
+# 6. Run the tests
+npm test
+```
+
+Standard Chrome/Edge install locations are auto-detected on macOS, Windows, and
+Linux. If yours isn't found, point the engine at it:
+
+```bash
+# macOS / Linux
+export PUPPETEER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+# Windows (PowerShell)
+$env:PUPPETEER_EXECUTABLE_PATH="C:\Program Files\Google\Chrome\Application\chrome.exe"
+```
+
+### Teacher web app
+
+```bash
+cd puzzleforge-web
+npm install
+npm start
+# open http://localhost:4000
+```
+
+See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
+
 ## Status
 
 **Phases 1–4 complete; Phase 5 in progress.** Implemented so far:
