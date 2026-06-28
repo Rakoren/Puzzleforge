@@ -186,7 +186,9 @@ function scopeCss(css, scope) {
  * break is forced before each page after the first. The first page's @page
  * rule governs the sheet size (a book is one trim).
  */
-function combinePages(htmlDocs) {
+function combinePages(htmlDocs, opts = {}) {
+  const footers = opts.footers || [];
+  const pageHeight = opts.pageHeight; // px; only set when footers are in play
   const parts = htmlDocs.map(extractParts);
   const pageRule = parts.map((p) => extractPageRule(p.style)).find(Boolean) || '';
   const breakStyle = 'break-before: page; page-break-before: always;';
@@ -195,17 +197,26 @@ function combinePages(htmlDocs) {
     .map((p, i) => scopeCss(p.style, `.pf-page-${i}`))
     .join('\n');
   const bodyBlock = parts
-    .map(
-      (p, i) =>
-        `<div class="pf-page pf-page-${i}"${i > 0 ? ` style="${breakStyle}"` : ''}>${p.body}</div>`
-    )
+    .map((p, i) => {
+      const footer = footers[i] ? `<div class="pf-footer">${footers[i]}</div>` : '';
+      return `<div class="pf-page pf-page-${i}"${i > 0 ? ` style="${breakStyle}"` : ''}>${p.body}${footer}</div>`;
+    })
     .join('');
+
+  // When footers are present, make each page at least a full page tall so an
+  // absolutely-positioned footer lands at the bottom margin edge.
+  const pageSizing = pageHeight ? `.pf-page { position: relative; min-height: ${pageHeight}px; }` : '';
+  const footerCss =
+    `.pf-footer { position: absolute; bottom: 0; left: 0; width: 100%; text-align: center;` +
+    ` font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 11px; color: #666; }`;
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
   ${pageRule}
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   .pf-page { break-inside: avoid-page; page-break-inside: avoid; }
+  ${pageSizing}
+  ${footerCss}
   ${scopedStyles}
   </style></head><body>${bodyBlock}</body></html>`;
 }
@@ -241,19 +252,40 @@ async function exportPuzzlePdf(puzzle, opts = {}) {
  */
 function renderBookHtml(book) {
   const layout = getLayout(book.trimSize, { audience: book.audience });
+  const numbered = book.pageNumbers === true;
   const docs = [renderTitlePage(book, layout)];
+  const footers = [null]; // title page is unnumbered
+
   for (const fm of book.frontMatter || []) {
     if (fm.kind === 'copyright') docs.push(renderCopyrightPage(book, layout, fm));
     else if (fm.kind === 'belongsTo') docs.push(renderBelongsToPage(book, layout));
     else if (fm.kind === 'intro') docs.push(renderIntroPage(book, layout, fm));
+    else continue;
+    footers.push(null); // front matter is unnumbered
   }
+
+  // Body page numbers start at 1 on the first puzzle page (front matter excluded).
+  const prefix = book.footerText ? `${escFooter(book.footerText)} · ` : '';
+  let n = 0;
   for (const { puzzle } of book.pages) {
     docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, audience: book.audience }));
+    footers.push(numbered ? `${prefix}${++n}` : null);
   }
-  // Only append an answer key when at least one page actually has an answer
-  // (activity-only books — all coloring/drawing — get none).
-  if (book.answerKey && book.meta.puzzleCount > 0) docs.push(renderAnswerKey(book, layout));
-  return combinePages(docs);
+  if (book.answerKey && book.meta.puzzleCount > 0) {
+    docs.push(renderAnswerKey(book, layout));
+    footers.push(numbered ? `${prefix}${++n}` : null);
+  }
+
+  return numbered
+    ? combinePages(docs, { footers, pageHeight: layout.usableHeight })
+    : combinePages(docs);
+}
+
+function escFooter(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 /**

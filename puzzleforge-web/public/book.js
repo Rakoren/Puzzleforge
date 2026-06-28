@@ -16,6 +16,8 @@
     copyrightPage: $('copyrightPage'),
     belongsToPage: $('belongsToPage'),
     intro: $('intro'),
+    pageNumbers: $('pageNumbers'),
+    footerText: $('footerText'),
     betweenColoring: $('betweenColoring'),
     betweenDrawing: $('betweenDrawing'),
     betweenBlank: $('betweenBlank'),
@@ -171,6 +173,8 @@
       copyright: el.copyrightPage.checked,
       belongsTo: el.belongsToPage.checked,
       intro: el.intro.value.trim() || null,
+      pageNumbers: el.pageNumbers.checked,
+      footerText: el.footerText.value.trim() || null,
       interleave: interleaveKinds(),
       interleaveAfterLast: el.afterLast.checked,
       coloringStyle: el.coloringStyle.value,
@@ -287,6 +291,8 @@
     el.copyrightPage.checked = cfg.copyright !== false;
     el.belongsToPage.checked = cfg.belongsTo === true;
     el.intro.value = cfg.intro || '';
+    el.pageNumbers.checked = cfg.pageNumbers === true;
+    el.footerText.value = cfg.footerText || '';
     const inter = Array.isArray(cfg.interleave) ? cfg.interleave : [];
     el.betweenColoring.checked = inter.includes('coloring');
     el.betweenDrawing.checked = inter.includes('drawing');
@@ -395,6 +401,8 @@
     el.coloringStyle.addEventListener('change', invalidate);
     [el.copyrightPage, el.belongsToPage].forEach((n) => n.addEventListener('change', () => { invalidate(); updateSummary(); }));
     el.intro.addEventListener('input', () => { invalidate(); updateSummary(); });
+    el.pageNumbers.addEventListener('change', invalidate);
+    el.footerText.addEventListener('input', invalidate);
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );

@@ -205,6 +205,8 @@ function assembleBook(config, opts = {}) {
     trimSize,
     audience,
     answerKey,
+    pageNumbers: config.pageNumbers === true, // footer page numbers on content pages
+    footerText: config.footerText ? String(config.footerText).trim() : null,
     frontMatter, // [{ kind, ... }] rendered after the title page
     pages, // [{ puzzle, pageNumber }]
     puzzles: ordered, // convenience: ordered puzzle objects (incl. fillers)
