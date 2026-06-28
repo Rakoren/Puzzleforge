@@ -167,7 +167,8 @@ function assembleBook(config, opts = {}) {
         const themeRef = spec.theme || config.theme;
         if (themeRef) {
           const theme = themes.resolveTheme(themeRef);
-          puzzleConfig.words = themes.selectWords(theme, { count: 12 });
+          // Match the row's difficulty so an easy page never gets a hard subject.
+          puzzleConfig.words = themes.selectWords(theme, { difficulty, count: 12 });
           puzzleConfig.theme = theme.label;
         }
       }
@@ -235,24 +236,35 @@ function interleavePuzzles(puzzles, config) {
   const afterLast = config.interleaveAfterLast === true;
   const coloringStyle = config.coloringStyle || 'random';
 
-  // Theme words for drawing prompts / bubble words (fresh; not the unique pool).
-  let fillerWords = [];
+  // Resolve the theme once for the label and as a difficulty-matched fallback
+  // when the preceding puzzle has no words of its own (e.g. a maze or sudoku).
+  let theme = null;
   let fillerLabel;
   if (config.theme) {
     try {
-      const theme = themes.resolveTheme(config.theme);
-      fillerWords = themes.selectWords(theme, { count: 12 });
+      theme = themes.resolveTheme(config.theme);
       fillerLabel = theme.label;
     } catch (_) {
       /* theme optional */
     }
   }
 
+  // Words a filler should draw its "Draw a …" / bubble subject from: the words
+  // of the puzzle it follows (already difficulty-appropriate), falling back to
+  // theme words at that puzzle's difficulty so an easy puzzle never yields a
+  // hard drawing subject.
+  const subjectWords = (precedingPuzzle) => {
+    const own = puzzleWords(precedingPuzzle);
+    if (own.length) return own;
+    if (theme) return themes.selectWords(theme, { difficulty: precedingPuzzle.difficulty, count: 12 });
+    return [];
+  };
+
   let rotateIdx = 0;
-  const makeFiller = (kind) => {
-    if (kind === 'drawing') return generate({ type: 'drawing', words: fillerWords, theme: fillerLabel });
+  const makeFiller = (kind, words) => {
+    if (kind === 'drawing') return generate({ type: 'drawing', words, theme: fillerLabel });
     if (kind === 'blank') return generate({ type: 'bleedguard', label: '' });
-    const cfg = { type: 'coloring', words: fillerWords, theme: fillerLabel };
+    const cfg = { type: 'coloring', words, theme: fillerLabel };
     if (coloringStyle === 'rotate') cfg.style = COLORING_STYLES[rotateIdx++ % COLORING_STYLES.length];
     else if (coloringStyle !== 'random') cfg.style = coloringStyle;
     return generate(cfg);
@@ -262,7 +274,10 @@ function interleavePuzzles(puzzles, config) {
   puzzles.forEach((p, i) => {
     out.push(p);
     const isLast = i === puzzles.length - 1;
-    if (!isLast || afterLast) for (const kind of kinds) out.push(makeFiller(kind));
+    if (!isLast || afterLast) {
+      const words = subjectWords(p); // tie the filler to the puzzle it follows
+      for (const kind of kinds) out.push(makeFiller(kind, words));
+    }
   });
   return out;
 }

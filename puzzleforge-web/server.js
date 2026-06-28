@@ -72,7 +72,7 @@ function configFromRecipe(recipe) {
     // bubble-letter subject, but never require them.
     try {
       const theme = pf.resolveTheme(recipe.theme);
-      config.words = pf.selectWords(theme, { count: 12 });
+      config.words = pf.selectWords(theme, { difficulty, count: 12 });
       config.theme = theme.label;
     } catch (_) {
       /* theme optional for activity pages */
