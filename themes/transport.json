@@ -1,6 +1,8 @@
 {
   "id": "transport",
   "label": "Transport",
+  "category": "Everyday Life",
+  "tags": ["transport", "vehicles", "travel"],
   "tiers": {
     "1": [
       { "word": "CAR", "clue": "A vehicle with four wheels" },

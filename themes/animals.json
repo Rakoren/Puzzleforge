@@ -1,6 +1,8 @@
 {
   "id": "animals",
   "label": "Animals",
+  "category": "Animals & Nature",
+  "tags": ["animals", "nature", "creatures"],
   "tiers": {
     "1": [
       { "word": "CAT", "clue": "A small furry pet that says meow" },

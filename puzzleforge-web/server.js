@@ -82,10 +82,7 @@ function renderOpts(recipe, answerKey) {
 // --- API ---
 
 app.get('/api/meta', (req, res) => {
-  const themes = pf.listThemes().map((id) => {
-    const t = pf.loadTheme(id);
-    return { id, label: t.label, wordCount: pf.wordCount(t) };
-  });
+  const themes = pf.listThemesDetailed();
   res.json({
     types: pf.listTypes(),
     wordTypes: [...WORD_TYPES],

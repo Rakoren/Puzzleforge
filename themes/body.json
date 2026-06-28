@@ -1,6 +1,8 @@
 {
   "id": "body",
   "label": "Human Body",
+  "category": "Science & Space",
+  "tags": ["body", "anatomy", "science", "health"],
   "tiers": {
     "1": [
       { "word": "ARM", "clue": "It connects the shoulder to the hand" },

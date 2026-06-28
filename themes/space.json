@@ -1,6 +1,8 @@
 {
   "id": "space",
   "label": "Space",
+  "category": "Science & Space",
+  "tags": ["space", "astronomy", "science"],
   "tiers": {
     "1": [
       { "word": "SUN", "clue": "The star at the center of our system" },

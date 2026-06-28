@@ -58,7 +58,26 @@ function loadTheme(id) {
     }
   }
 
-  return { id: raw.id || id, label: raw.label || id, tiers };
+  return {
+    id: raw.id || id,
+    label: raw.label || id,
+    category: raw.category || 'Other',
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+    tiers,
+  };
+}
+
+/**
+ * List every theme with its display metadata, sorted by category then label.
+ * @returns {Array<{id,label,category,tags,wordCount}>}
+ */
+function listThemesDetailed() {
+  return listThemes()
+    .map((id) => {
+      const t = loadTheme(id);
+      return { id, label: t.label, category: t.category, tags: t.tags, wordCount: wordCount(t) };
+    })
+    .sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
 }
 
 function tierEntries(theme, tier) {
@@ -158,6 +177,7 @@ function clueMap(theme) {
 
 module.exports = {
   listThemes,
+  listThemesDetailed,
   loadTheme,
   mergeThemes,
   selectWords,

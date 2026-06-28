@@ -1,6 +1,8 @@
 {
   "id": "food",
   "label": "Food",
+  "category": "Everyday Life",
+  "tags": ["food", "cooking", "kitchen"],
   "tiers": {
     "1": [
       { "word": "EGG", "clue": "A breakfast food from a hen" },

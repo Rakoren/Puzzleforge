@@ -1,6 +1,8 @@
 {
   "id": "sports",
   "label": "Sports",
+  "category": "Sports & Games",
+  "tags": ["sports", "games", "fitness"],
   "tiers": {
     "1": [
       { "word": "RUN", "clue": "Move fast on your feet" },

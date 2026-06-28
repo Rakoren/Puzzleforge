@@ -1,6 +1,8 @@
 {
   "id": "jobs",
   "label": "Jobs",
+  "category": "Everyday Life",
+  "tags": ["jobs", "careers", "people"],
   "tiers": {
     "1": [
       { "word": "COOK", "clue": "A person who prepares food" },

@@ -1,6 +1,8 @@
 {
   "id": "ocean",
   "label": "Ocean",
+  "category": "Animals & Nature",
+  "tags": ["ocean", "sea", "water", "nature"],
   "tiers": {
     "1": [
       { "word": "SEA", "clue": "A large body of salt water" },

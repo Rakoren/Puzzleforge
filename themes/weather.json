@@ -1,6 +1,8 @@
 {
   "id": "weather",
   "label": "Weather",
+  "category": "Animals & Nature",
+  "tags": ["weather", "sky", "nature", "science"],
   "tiers": {
     "1": [
       { "word": "SUN", "clue": "It shines on a clear day" },

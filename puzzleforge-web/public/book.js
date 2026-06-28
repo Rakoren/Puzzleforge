@@ -268,11 +268,18 @@
       setStatus('Could not reach the server.', 'err');
       return;
     }
-    for (const th of meta.themes) {
-      const o = document.createElement('option');
-      o.value = th.id;
-      o.textContent = `${th.label} (${th.wordCount} words)`;
-      el.theme.appendChild(o);
+    const byCat = {};
+    for (const th of meta.themes) (byCat[th.category] = byCat[th.category] || []).push(th);
+    for (const cat of Object.keys(byCat).sort()) {
+      const group = document.createElement('optgroup');
+      group.label = cat;
+      for (const th of byCat[cat]) {
+        const o = document.createElement('option');
+        o.value = th.id;
+        o.textContent = `${th.label} (${th.wordCount})`;
+        group.appendChild(o);
+      }
+      el.theme.appendChild(group);
     }
     for (const ts of meta.trimSizes) {
       const o = document.createElement('option');

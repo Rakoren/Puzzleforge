@@ -344,12 +344,7 @@
       o.textContent = prettyType(t);
       el.type.appendChild(o);
     }
-    for (const th of meta.themes) {
-      const o = document.createElement('option');
-      o.value = th.id;
-      o.textContent = `${th.label} (${th.wordCount} words)`;
-      el.theme.appendChild(o);
-    }
+    populateThemeSelect(el.theme, meta.themes);
     for (const ts of meta.trimSizes) {
       const o = document.createElement('option');
       o.value = ts;
@@ -364,6 +359,25 @@
 
     syncWordControls();
   }
+
+  // Build a theme <select> grouped by category (<optgroup>).
+  function populateThemeSelect(select, themes) {
+    select.innerHTML = '';
+    const byCat = {};
+    for (const th of themes) (byCat[th.category] = byCat[th.category] || []).push(th);
+    for (const cat of Object.keys(byCat).sort()) {
+      const group = document.createElement('optgroup');
+      group.label = cat;
+      for (const th of byCat[cat]) {
+        const o = document.createElement('option');
+        o.value = th.id;
+        o.textContent = `${th.label} (${th.wordCount})`;
+        group.appendChild(o);
+      }
+      select.appendChild(group);
+    }
+  }
+  window.__pfPopulateThemeSelect = populateThemeSelect;
 
   function prettyType(t) {
     const names = {
