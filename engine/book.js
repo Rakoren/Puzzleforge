@@ -24,6 +24,9 @@
 const { generate } = require('./generate');
 const themes = require('../themes');
 
+// How many words to draw into a single word-type puzzle by default.
+const DEFAULT_WORD_COUNT = 14;
+
 function pickDifficulty(spec, rand) {
   const d = spec.difficulty;
   if (typeof d === 'string' && d.includes('-')) {
@@ -46,8 +49,10 @@ function wordsForSpec(spec, bookTheme, difficulty) {
   const theme = Array.isArray(themeRef)
     ? themes.mergeThemes(themeRef)
     : themes.loadTheme(themeRef);
-  let words = themes.selectWords(theme, { maxDifficulty: difficulty, count: spec.count_words });
-  if (words.length === 0) words = themes.selectWords(theme);
+  const count = spec.count_words || DEFAULT_WORD_COUNT;
+  // Pull from the difficulty's tier; sample `count` so each puzzle differs.
+  let words = themes.selectWords(theme, { difficulty, count });
+  if (words.length === 0) words = themes.selectWords(theme, { count });
   return { words, clues: themes.clueMap(theme) };
 }
 

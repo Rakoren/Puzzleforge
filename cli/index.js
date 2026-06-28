@@ -142,13 +142,11 @@ async function main() {
       .filter(Boolean);
   } else if (themeId) {
     const theme = themes.loadTheme(themeId);
-    words = themes.selectWords(theme, {
-      maxDifficulty: difficulty,
-      count: args.count ? Number(args.count) : undefined,
-    });
+    const count = args.count ? Number(args.count) : 14;
+    words = themes.selectWords(theme, { difficulty, count });
     if (words.length === 0) {
-      // Difficulty filter excluded everything — fall back to the full list.
-      words = themes.selectWords(theme, { count: args.count ? Number(args.count) : undefined });
+      // Empty tier — fall back to the whole theme.
+      words = themes.selectWords(theme, { count });
     }
     clues = themes.clueMap(theme);
   } else if (WORD_TYPES.has(type)) {

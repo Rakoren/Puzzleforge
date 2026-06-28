@@ -56,8 +56,9 @@ function configFromRecipe(recipe) {
       config.clues = recipe.clues || {};
     } else if (recipe.theme) {
       const theme = pf.loadTheme(recipe.theme);
-      let words = pf.selectWords(theme, { maxDifficulty: difficulty });
-      if (!words.length) words = pf.selectWords(theme);
+      const count = recipe.wordCount || 14;
+      let words = pf.selectWords(theme, { difficulty, count });
+      if (!words.length) words = pf.selectWords(theme, { count });
       config.words = words;
       config.clues = pf.clueMap(theme);
     } else {
@@ -83,7 +84,7 @@ function renderOpts(recipe, answerKey) {
 app.get('/api/meta', (req, res) => {
   const themes = pf.listThemes().map((id) => {
     const t = pf.loadTheme(id);
-    return { id, label: t.label, wordCount: t.words.length };
+    return { id, label: t.label, wordCount: pf.wordCount(t) };
   });
   res.json({
     types: pf.listTypes(),

@@ -13,7 +13,7 @@ const themes = require('../themes');
 
 test('engine generates a valid word search from a theme', () => {
   const theme = themes.loadTheme('animals');
-  const words = themes.selectWords(theme, { maxDifficulty: 2 });
+  const words = themes.selectWords(theme, { difficulty: 1, count: 12 });
   const puzzle = generate({ type: 'wordsearch', theme: 'animals', words, difficulty: 1 });
 
   assert.equal(puzzle.type, 'wordsearch');

@@ -1,20 +1,26 @@
 /**
  * Theme loader.
  *
- * Themes are word lists only — no visual assets. Each word carries a clue
- * (for crossword / kriss-kross use) and a difficulty rating so generators can
- * filter by level. Mixed themes are supported by merging word pools.
+ * Themes are word lists tiered by difficulty. Each theme file has the shape:
+ *
+ *   { "id": "animals", "label": "Animals",
+ *     "tiers": { "1": [ {"word":"CAT","clue":"..."}, "DOG", ... ],
+ *                "2": [ ... ], "3": [ ... ] } }
+ *
+ * An entry may be a plain string or { word, clue } — the clue is optional and
+ * only used by crosswords. Generators pull from the tier matching the puzzle's
+ * difficulty so a level-1 puzzle never sees a level-3 word.
  */
 const fs = require('fs');
 const path = require('path');
 
 const THEME_DIR = __dirname;
+const TIERS = ['1', '2', '3'];
 
 function themePath(id) {
   return path.join(THEME_DIR, `${id}.json`);
 }
 
-/** List available built-in theme ids. */
 function listThemes() {
   return fs
     .readdirSync(THEME_DIR)
@@ -22,69 +28,121 @@ function listThemes() {
     .map((f) => f.replace(/\.json$/, ''));
 }
 
-/** Load a single theme by id. Throws if it does not exist. */
-function loadTheme(id) {
-  const p = themePath(id);
-  if (!fs.existsSync(p)) {
-    throw new Error(
-      `Unknown theme "${id}". Available: ${listThemes().join(', ')}`
-    );
-  }
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
+// Normalize a raw entry (string or object) into { word, clue }.
+function normEntry(entry) {
+  if (typeof entry === 'string') return { word: entry.toUpperCase(), clue: null };
+  return { word: String(entry.word || '').toUpperCase(), clue: entry.clue || null };
 }
 
 /**
- * Merge one or more themes into a single word pool. Accepts theme ids and/or
- * already-loaded theme objects. Later entries win on duplicate words.
- * @param {Array<string|object>} themes
- * @returns {{ id: string, label: string, words: Array }}
+ * Load a theme by id. Returns { id, label, tiers: { '1':[{word,clue}], ... } }.
+ * Accepts the legacy flat format ({ words: [{word, clue, difficulty}] }) too.
+ */
+function loadTheme(id) {
+  const p = themePath(id);
+  if (!fs.existsSync(p)) {
+    throw new Error(`Unknown theme "${id}". Available: ${listThemes().join(', ')}`);
+  }
+  const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const tiers = { 1: [], 2: [], 3: [] };
+
+  if (raw.tiers) {
+    for (const t of TIERS) {
+      for (const entry of raw.tiers[t] || []) tiers[t].push(normEntry(entry));
+    }
+  } else if (raw.words) {
+    // Legacy: split a flat list by each word's `difficulty`.
+    for (const entry of raw.words) {
+      const tier = Math.min(3, Math.max(1, entry.difficulty || 1));
+      tiers[tier].push(normEntry(entry));
+    }
+  }
+
+  return { id: raw.id || id, label: raw.label || id, tiers };
+}
+
+function tierEntries(theme, tier) {
+  return theme.tiers[String(tier)] || [];
+}
+
+function allEntries(theme) {
+  return [...theme.tiers['1'], ...theme.tiers['2'], ...theme.tiers['3']];
+}
+
+/** Total number of words across all tiers. */
+function wordCount(theme) {
+  return allEntries(theme).length;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/**
+ * Merge themes into one pool, preserving tiers. Accepts ids and/or loaded
+ * theme objects.
  */
 function mergeThemes(themes) {
   const loaded = themes.map((t) => (typeof t === 'string' ? loadTheme(t) : t));
-  const byWord = new Map();
+  const tiers = { 1: [], 2: [], 3: [] };
+  const seen = new Set();
   for (const theme of loaded) {
-    for (const entry of theme.words) {
-      byWord.set(entry.word.toUpperCase(), entry);
+    for (const t of TIERS) {
+      for (const entry of theme.tiers[t]) {
+        if (seen.has(entry.word)) continue;
+        seen.add(entry.word);
+        tiers[t].push(entry);
+      }
     }
   }
   return {
     id: loaded.map((t) => t.id).join('+'),
     label: loaded.map((t) => t.label).join(' + '),
-    words: [...byWord.values()],
+    tiers,
   };
 }
 
 /**
- * Select words from a theme (or merged themes) up to `count`, filtered by an
- * inclusive difficulty ceiling and a minimum length.
- * @param {object} theme    loaded theme (or merged pool)
+ * Select words from a theme.
+ * @param {object} theme  loaded theme
  * @param {object} [opts]
- * @param {number} [opts.maxDifficulty=3]
+ * @param {number} [opts.difficulty]    pull from this tier (1|2|3)
+ * @param {number} [opts.maxDifficulty] cumulative: tiers 1..max (legacy)
  * @param {number} [opts.minLength=3]
- * @param {number} [opts.count]   max words to return (default: all matching)
+ * @param {number} [opts.count]         random sample of this many (for variety)
  * @returns {string[]} upper-cased words
  */
 function selectWords(theme, opts = {}) {
-  const maxDifficulty = opts.maxDifficulty != null ? opts.maxDifficulty : 3;
   const minLength = opts.minLength != null ? opts.minLength : 3;
-  let pool = theme.words
-    .filter((w) => (w.difficulty || 1) <= maxDifficulty)
-    .filter((w) => w.word.length >= minLength)
-    .map((w) => w.word.toUpperCase());
+
+  let entries;
+  if (opts.difficulty != null) {
+    entries = tierEntries(theme, opts.difficulty);
+    if (entries.length === 0) entries = allEntries(theme); // graceful fallback
+  } else if (opts.maxDifficulty != null) {
+    entries = [];
+    for (let d = 1; d <= opts.maxDifficulty; d++) entries.push(...tierEntries(theme, d));
+  } else {
+    entries = allEntries(theme);
+  }
+
+  let pool = [...new Set(entries.map((e) => e.word))].filter((w) => w.length >= minLength);
+
   if (opts.count != null && pool.length > opts.count) {
-    pool = pool.slice(0, opts.count);
+    pool = shuffle(pool.slice()).slice(0, opts.count);
   }
   return pool;
 }
 
-/**
- * Build a { WORD: clue } map for a theme (or merged pool). Words without a
- * clue are omitted.
- */
+/** Build a { WORD: clue } map across all tiers (clues are optional). */
 function clueMap(theme) {
   const map = {};
-  for (const entry of theme.words) {
-    if (entry.clue) map[entry.word.toUpperCase()] = entry.clue;
+  for (const entry of allEntries(theme)) {
+    if (entry.clue) map[entry.word] = entry.clue;
   }
   return map;
 }
@@ -95,5 +153,6 @@ module.exports = {
   mergeThemes,
   selectWords,
   clueMap,
+  wordCount,
   THEME_DIR,
 };

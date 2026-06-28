@@ -8,7 +8,7 @@ const themes = require('../themes');
 const { listTypes } = require('../generators/registry');
 
 const SPACE = themes.loadTheme('space');
-const WORDS = themes.selectWords(SPACE);
+const WORDS = themes.selectWords(SPACE, { count: 12 });
 const CLUES = themes.clueMap(SPACE);
 
 test('all seven puzzle types are registered', () => {

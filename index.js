@@ -18,7 +18,7 @@ const {
   renderBookHtml,
 } = require('./engine/export');
 const { getLayout, listTrimSizes } = require('./layouts');
-const { loadTheme, listThemes, selectWords, clueMap } = require('./themes');
+const { loadTheme, listThemes, selectWords, clueMap, wordCount } = require('./themes');
 const { listTypes } = require('./generators/registry');
 
 module.exports = {
@@ -37,4 +37,5 @@ module.exports = {
   listThemes,
   selectWords,
   clueMap,
+  wordCount,
 };
