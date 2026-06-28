@@ -139,6 +139,7 @@ function miniNonogram(puzzle, blockWidth) {
 function miniAnswer(puzzle, blockWidth) {
   switch (puzzle.type) {
     case 'wordsearch':
+    case 'numbersearch':
       return miniWordsearch(puzzle, Math.floor(blockWidth / puzzle.data.size));
     case 'sudoku':
       return miniSudoku(puzzle, Math.floor(blockWidth / puzzle.data.size));
@@ -153,6 +154,8 @@ function miniAnswer(puzzle, blockWidth) {
       return miniCrossword(puzzle, blockWidth);
     case 'nonogram':
       return miniNonogram(puzzle, blockWidth);
+    case 'trivia':
+      return `<ol class="trivia-ans" style="margin:0;padding-left:18px;font-size:${Math.max(9, Math.round(blockWidth / 26))}px">${(puzzle.solution.answers || []).map((a) => `<li>${esc(a)}</li>`).join('')}</ol>`;
     default:
       return `<div class="generic">(no compact answer view for ${esc(puzzle.type)})</div>`;
   }
@@ -182,8 +185,10 @@ function miniCrossword(puzzle, blockWidth) {
 // How many answer blocks fit per row, by type, balancing legibility.
 function blocksPerRow(type) {
   if (type === 'sudoku') return 3;
-  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross') return 1;
-  return 2; // wordsearch, maze, crossword
+  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross' || type === 'trivia') {
+    return 1;
+  }
+  return 2; // wordsearch, numbersearch, maze, crossword, nonogram
 }
 
 /** Back-of-book answer-key section. Overflow paginates naturally in print. */

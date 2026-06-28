@@ -375,6 +375,8 @@
       crossword: 'Crossword',
       krisskross: 'Kriss-Kross',
       nonogram: 'Nonogram',
+      numbersearch: 'Number Search',
+      trivia: 'Trivia Quiz',
     };
     return names[t] || t;
   }

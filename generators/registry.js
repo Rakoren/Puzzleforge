@@ -69,6 +69,22 @@ const nonogram = {
   render: require('./nonogram/renderer').render,
 };
 
+const numbersearch = {
+  type: 'numbersearch',
+  generate: require('./numbersearch').generate,
+  validate: require('./numbersearch/validator').validate,
+  solve: require('./numbersearch/solver').solve,
+  render: require('./numbersearch/renderer').render,
+};
+
+const trivia = {
+  type: 'trivia',
+  generate: require('./trivia').generate,
+  validate: require('./trivia/validator').validate,
+  solve: require('./trivia/solver').solve,
+  render: require('./trivia/renderer').render,
+};
+
 const MODULES = {
   wordsearch,
   sudoku,
@@ -78,6 +94,8 @@ const MODULES = {
   crossword,
   krisskross,
   nonogram,
+  numbersearch,
+  trivia,
 };
 
 function listTypes() {

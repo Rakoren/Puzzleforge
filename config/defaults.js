@@ -27,6 +27,8 @@ const ACCEPT_THRESHOLDS = {
   crossword: 0.8,
   krisskross: 0.8,
   nonogram: 0.85,
+  numbersearch: 0.85,
+  trivia: 0.9,
 };
 
 // Per-type difficulty presets. Each generator interprets these.
@@ -60,6 +62,19 @@ const DIFFICULTY = {
     1: { label: 'easy', size: 5, fill: 0.55 },
     2: { label: 'medium', size: 10, fill: 0.55 },
     3: { label: 'hard', size: 15, fill: 0.52 },
+  },
+  // Number Search: how many numbers, their digit length, directions, and
+  // separation (mirrors word search).
+  numbersearch: {
+    1: { count: 10, len: 3, directions: 'orthogonal', allowBackwards: false, separation: 'isolated' },
+    2: { count: 12, len: 4, directions: 'diagonal', allowBackwards: false, separation: 'noCross' },
+    3: { count: 14, len: 5, directions: 'diagonal', allowBackwards: true, separation: 'dense' },
+  },
+  // Trivia: how many questions per page and the max question difficulty drawn.
+  trivia: {
+    1: { count: 10, maxDifficulty: 1 },
+    2: { count: 12, maxDifficulty: 2 },
+    3: { count: 14, maxDifficulty: 3 },
   },
 };
 

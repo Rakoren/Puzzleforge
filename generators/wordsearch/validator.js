@@ -19,6 +19,7 @@
  */
 const { solve } = require('./solver');
 const { resolveDirections } = require('./index');
+const { gridLines, checkSeparation } = require('../shared/gridsearch');
 const { DIFFICULTY } = require('../../config/defaults');
 const offensive = require('../../filters/offensive');
 const { isCommonWord } = require('../../filters/common-words');
@@ -33,36 +34,6 @@ const PENALTY = {
 // Cap so a flood of accidental common words can't drive the score below the
 // floor on its own.
 const COMMON_WORD_PENALTY_CAP = 0.2;
-
-// Extract every maximal line of the grid as a string, in both orientations,
-// so offensive substrings read in any direction are caught.
-function gridLines(grid) {
-  const n = grid.length;
-  const lines = [];
-  // rows
-  for (let r = 0; r < n; r++) lines.push(grid[r].join(''));
-  // cols
-  for (let c = 0; c < n; c++) {
-    let s = '';
-    for (let r = 0; r < n; r++) s += grid[r][c];
-    lines.push(s);
-  }
-  // diagonals (both directions)
-  for (let k = 0; k < 2 * n - 1; k++) {
-    let d1 = '';
-    let d2 = '';
-    for (let r = 0; r < n; r++) {
-      const c1 = k - r;
-      if (c1 >= 0 && c1 < n) d1 += grid[r][c1];
-      const c2 = r - (k - (n - 1));
-      if (c2 >= 0 && c2 < n) d2 += grid[r][c2];
-    }
-    if (d1) lines.push(d1);
-    if (d2) lines.push(d2);
-  }
-  // include reverses so backwards reads are scanned too
-  return lines.concat(lines.map((l) => l.split('').reverse().join('')));
-}
 
 function validate(puzzle) {
   const errors = [];
@@ -175,43 +146,6 @@ function validate(puzzle) {
   const valid = errors.length === 0;
 
   return { valid, errors, warnings, score };
-}
-
-// Inspect planted placements for separation violations.
-//   shared   — distinct cells occupied by more than one word (a crossing)
-//   touching — pairs of different words whose cells are 8-adjacent
-function checkSeparation(placements, separation) {
-  const owner = new Map(); // "r,c" -> word index
-  let shared = 0;
-  placements.forEach((p, idx) => {
-    for (const [r, c] of p.cells) {
-      const k = `${r},${c}`;
-      if (owner.has(k) && owner.get(k) !== idx) shared++;
-      else owner.set(k, idx);
-    }
-  });
-
-  let touching = 0;
-  if (separation === 'isolated') {
-    const pairs = new Set();
-    placements.forEach((p, idx) => {
-      for (const [r, c] of p.cells) {
-        for (let dr = -1; dr <= 1; dr++) {
-          for (let dc = -1; dc <= 1; dc++) {
-            if (dr === 0 && dc === 0) continue;
-            const k = `${r + dr},${c + dc}`;
-            if (owner.has(k) && owner.get(k) !== idx) {
-              const a = Math.min(idx, owner.get(k));
-              const b = Math.max(idx, owner.get(k));
-              pairs.add(`${a}|${b}`);
-            }
-          }
-        }
-      }
-    });
-    touching = pairs.size;
-  }
-  return { shared, touching };
 }
 
 module.exports = { validate, gridLines, checkSeparation };

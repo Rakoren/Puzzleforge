@@ -16,113 +16,9 @@
  *   instructions string     optional
  */
 const { DIFFICULTY } = require('../../config/defaults');
-
-// Base forward directions per mode.
-const FORWARD = {
-  orthogonal: [
-    [0, 1], // east
-    [1, 0], // south
-  ],
-  diagonal: [
-    [0, 1],
-    [1, 0],
-    [1, 1], // south-east
-    [-1, 1], // north-east
-  ],
-};
-
-function resolveDirections(mode, allowBackwards) {
-  const fwd = FORWARD[mode] || FORWARD.orthogonal;
-  if (!allowBackwards) return fwd.map((d) => d.slice());
-  const all = [];
-  for (const [dr, dc] of fwd) {
-    all.push([dr, dc]);
-    all.push([-dr, -dc]);
-  }
-  return all;
-}
-
-function shuffle(arr, rand) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function makeGrid(n) {
-  return Array.from({ length: n }, () => Array.from({ length: n }, () => null));
-}
-
-const NEIGHBORS = [
-  [-1, -1], [-1, 0], [-1, 1],
-  [0, -1], [0, 1],
-  [1, -1], [1, 0], [1, 1],
-];
-
-// Can `word` be laid from (r,c) along (dr,dc)?
-//   dense    — overlap permitted where the existing letter matches (crossing)
-//   noCross  — no overlap with any existing letter (words never share cells)
-//   isolated — no overlap AND a one-cell buffer around the word (no occupied
-//              8-neighbour), so words never touch
-function canPlace(grid, word, r, c, dr, dc, separation = 'dense') {
-  const n = grid.length;
-  let overlaps = 0;
-  const cells = [];
-  for (let i = 0; i < word.length; i++) {
-    const rr = r + dr * i;
-    const cc = c + dc * i;
-    if (rr < 0 || cc < 0 || rr >= n || cc >= n) return false;
-    const cell = grid[rr][cc];
-    if (cell !== null) {
-      if (separation !== 'dense') return false; // no sharing in noCross/isolated
-      if (cell !== word[i]) return false;
-      overlaps++;
-    }
-    cells.push([rr, cc]);
-  }
-  // Reject a placement that lands entirely on top of existing letters.
-  if (overlaps === word.length) return false;
-
-  if (separation === 'isolated') {
-    // Every cell of the word must be clear of other words on all 8 sides. The
-    // word's own (not-yet-placed) cells are not in the grid, so any occupied
-    // neighbour belongs to a different word.
-    for (const [rr, cc] of cells) {
-      for (const [nr, nc] of NEIGHBORS) {
-        const ar = rr + nr;
-        const ac = cc + nc;
-        if (ar >= 0 && ac >= 0 && ar < n && ac < n && grid[ar][ac] !== null) return false;
-      }
-    }
-  }
-  return true;
-}
-
-function place(grid, word, r, c, dr, dc) {
-  const cells = [];
-  for (let i = 0; i < word.length; i++) {
-    const rr = r + dr * i;
-    const cc = c + dc * i;
-    grid[rr][cc] = word[i];
-    cells.push([rr, cc]);
-  }
-  return { word, row: r, col: c, dr, dc, cells };
-}
+const { resolveDirections, autoSize, placeTokens, fillGrid } = require('../shared/gridsearch');
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-function autoSize(words, separation = 'dense') {
-  const longest = words.reduce((m, w) => Math.max(m, w.length), 0);
-  const totalLetters = words.reduce((s, w) => s + w.length, 0);
-  // Buffered layouts need more room: isolated words consume a ring of empty
-  // cells, so scale the area estimate up as separation gets stricter.
-  const areaFactor = separation === 'isolated' ? 3.6 : separation === 'noCross' ? 2.8 : 2.2;
-  const byArea = Math.ceil(Math.sqrt(totalLetters * areaFactor));
-  // Leave a margin around the longest word when buffering.
-  const longestFloor = separation === 'isolated' ? longest + 2 : longest + 1;
-  return Math.max(longestFloor, byArea, 10);
-}
 
 /**
  * @param {object} config
@@ -165,53 +61,8 @@ function generate(config = {}, rand = Math.random) {
   }
 
   const directions = resolveDirections(mode, allowBackwards);
-  const grid = makeGrid(size);
-  const placements = [];
-  const directionsUsed = new Set();
-
-  // Place longest words first — they are the hardest to fit.
-  const ordered = [...words].sort((a, b) => b.length - a.length);
-
-  for (const word of ordered) {
-    let placed = false;
-    // Try a bounded number of random positions/orientations per word.
-    const positions = [];
-    for (let r = 0; r < size; r++) {
-      for (let c = 0; c < size; c++) positions.push([r, c]);
-    }
-    shuffle(positions, rand);
-
-    outer: for (const [r, c] of positions) {
-      const dirs = shuffle(directions.map((d) => d.slice()), rand);
-      for (const [dr, dc] of dirs) {
-        if (canPlace(grid, word, r, c, dr, dc, separation)) {
-          const p = place(grid, word, r, c, dr, dc);
-          placements.push(p);
-          directionsUsed.add(`${dr},${dc}`);
-          placed = true;
-          break outer;
-        }
-      }
-    }
-
-    if (!placed) {
-      // Signal a transient failure; the engine will retry with a fresh grid.
-      const err = new Error(
-        `wordsearch.generate: could not place "${word}" in ${size}x${size} grid`
-      );
-      err.retryable = true;
-      throw err;
-    }
-  }
-
-  // Fill empty cells with random letters.
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      if (grid[r][c] === null) {
-        grid[r][c] = ALPHABET[Math.floor(rand() * 26)];
-      }
-    }
-  }
+  const { grid, placements } = placeTokens(words, { size, directions, separation, rand });
+  fillGrid(grid, ALPHABET, rand);
 
   return {
     type: 'wordsearch',

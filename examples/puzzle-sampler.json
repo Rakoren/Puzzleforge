@@ -14,6 +14,8 @@
     { "type": "cryptogram", "count": 1, "difficulty": 2 },
     { "type": "sudoku", "count": 1, "difficulty": 2 },
     { "type": "maze", "count": 1, "difficulty": 2 },
-    { "type": "nonogram", "count": 1, "difficulty": 2 }
+    { "type": "nonogram", "count": 1, "difficulty": 2 },
+    { "type": "numbersearch", "count": 1, "difficulty": 2 },
+    { "type": "trivia", "count": 1, "difficulty": 2 }
   ]
 }
