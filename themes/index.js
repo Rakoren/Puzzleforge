@@ -101,6 +101,36 @@ function shuffle(arr) {
   return arr;
 }
 
+/** Theme ids belonging to a category (by the theme file's `category` field). */
+function themesInCategory(category) {
+  return listThemes().filter((id) => loadTheme(id).category === category);
+}
+
+// A theme reference of the form "cat:Animals & Nature" selects every theme in
+// that category, merged into one pool.
+const CATEGORY_PREFIX = 'cat:';
+
+/**
+ * Resolve a theme reference to a loaded theme object. Accepts:
+ *   - a theme id ("animals")
+ *   - an array of ids (merged)
+ *   - a category reference ("cat:Animals & Nature" → all themes in it, merged)
+ */
+function resolveTheme(ref) {
+  if (Array.isArray(ref)) return mergeThemes(ref);
+  if (typeof ref === 'string' && ref.startsWith(CATEGORY_PREFIX)) {
+    const category = ref.slice(CATEGORY_PREFIX.length);
+    const ids = themesInCategory(category);
+    if (ids.length === 0) throw new Error(`No themes found in category "${category}".`);
+    const merged = mergeThemes(ids);
+    merged.label = category;
+    merged.category = category;
+    merged.id = 'cat-' + category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return merged;
+  }
+  return loadTheme(ref);
+}
+
 /**
  * Merge themes into one pool, preserving tiers. Accepts ids and/or loaded
  * theme objects.
@@ -133,10 +163,18 @@ function mergeThemes(themes) {
  * @param {number} [opts.maxDifficulty] cumulative: tiers 1..max (legacy)
  * @param {number} [opts.minLength=3]
  * @param {number} [opts.count]         random sample of this many (for variety)
+ * @param {Set<string>|string[]} [opts.exclude] words to leave out (e.g. already
+ *                                       used elsewhere in a book)
  * @returns {string[]} upper-cased words
  */
 function selectWords(theme, opts = {}) {
   const minLength = opts.minLength != null ? opts.minLength : 3;
+  const exclude =
+    opts.exclude instanceof Set
+      ? opts.exclude
+      : Array.isArray(opts.exclude)
+        ? new Set(opts.exclude)
+        : null;
 
   let entries;
   if (opts.difficulty != null) {
@@ -149,7 +187,9 @@ function selectWords(theme, opts = {}) {
     entries = allEntries(theme);
   }
 
-  let pool = [...new Set(entries.map((e) => e.word))].filter((w) => w.length >= minLength);
+  let pool = [...new Set(entries.map((e) => e.word))].filter(
+    (w) => w.length >= minLength && !(exclude && exclude.has(w))
+  );
 
   if (opts.count != null) {
     // Sample `count` words with no word a substring of another in the set
@@ -180,6 +220,8 @@ module.exports = {
   listThemesDetailed,
   loadTheme,
   mergeThemes,
+  resolveTheme,
+  themesInCategory,
   selectWords,
   clueMap,
   wordCount,

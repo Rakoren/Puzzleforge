@@ -12,6 +12,7 @@
     theme: $('theme'),
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
+    uniqueWords: $('uniqueWords'),
     rows: $('rows'),
     addRow: $('addRow'),
     summary: $('summary'),
@@ -153,6 +154,7 @@
       trimSize: el.trimSize.value,
       theme: el.theme.value,
       answerKey: el.answerKey.checked,
+      uniqueWords: el.uniqueWords.checked,
       puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
     };
   }
@@ -253,6 +255,7 @@
     if (cfg.trimSize) el.trimSize.value = cfg.trimSize;
     if (cfg.theme) el.theme.value = cfg.theme;
     el.answerKey.checked = cfg.answerKey !== false;
+    el.uniqueWords.checked = cfg.uniqueWords === true;
     rows = (cfg.puzzles || []).map((p) => ({
       type: p.type,
       count: p.count || 1,
@@ -267,7 +270,24 @@
     el.theme.innerHTML = '';
     const byCat = {};
     for (const th of themes) (byCat[th.category] = byCat[th.category] || []).push(th);
-    for (const cat of Object.keys(byCat).sort()) {
+    const cats = Object.keys(byCat).sort();
+
+    // Whole-category bundles: pick a category to use every theme in it, merged.
+    if (cats.length) {
+      const bundles = document.createElement('optgroup');
+      bundles.label = 'Whole categories';
+      for (const cat of cats) {
+        const list = byCat[cat];
+        const words = list.reduce((s, t) => s + t.wordCount, 0);
+        const o = document.createElement('option');
+        o.value = `cat:${cat}`;
+        o.textContent = `★ All ${cat} (${list.length} themes, ${words} words)`;
+        bundles.appendChild(o);
+      }
+      el.theme.appendChild(bundles);
+    }
+
+    for (const cat of cats) {
       const group = document.createElement('optgroup');
       group.label = cat;
       for (const th of byCat[cat]) {
@@ -330,6 +350,7 @@
     el.saveRecipe.addEventListener('click', saveRecipe);
     el.loadRecipe.addEventListener('change', onLoad);
     el.answerKey.addEventListener('change', () => { invalidate(); updateSummary(); });
+    el.uniqueWords.addEventListener('change', invalidate);
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );

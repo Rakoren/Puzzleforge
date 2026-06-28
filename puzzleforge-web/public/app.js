@@ -367,7 +367,24 @@
     select.innerHTML = '';
     const byCat = {};
     for (const th of themes) (byCat[th.category] = byCat[th.category] || []).push(th);
-    for (const cat of Object.keys(byCat).sort()) {
+    const cats = Object.keys(byCat).sort();
+
+    // Whole-category bundles: every theme in a category, merged into one pool.
+    if (cats.length) {
+      const bundles = document.createElement('optgroup');
+      bundles.label = 'Whole categories';
+      for (const cat of cats) {
+        const list = byCat[cat];
+        const words = list.reduce((s, t) => s + t.wordCount, 0);
+        const o = document.createElement('option');
+        o.value = `cat:${cat}`;
+        o.textContent = `★ All ${cat} (${list.length} themes, ${words} words)`;
+        bundles.appendChild(o);
+      }
+      select.appendChild(bundles);
+    }
+
+    for (const cat of cats) {
       const group = document.createElement('optgroup');
       group.label = cat;
       for (const th of byCat[cat]) {

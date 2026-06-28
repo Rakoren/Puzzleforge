@@ -55,12 +55,13 @@ function configFromRecipe(recipe) {
       config.words = recipe.words;
       config.clues = recipe.clues || {};
     } else if (recipe.theme) {
-      const theme = pf.loadTheme(recipe.theme);
+      const theme = pf.resolveTheme(recipe.theme); // id, array, or "cat:Category"
       const count = recipe.wordCount || 14;
       let words = pf.selectWords(theme, { difficulty, count });
       if (!words.length) words = pf.selectWords(theme, { count });
       config.words = words;
       config.clues = pf.clueMap(theme);
+      config.theme = theme.label; // clean title for a merged category
     } else {
       const err = new Error('This puzzle type needs a theme or a custom word list.');
       err.status = 400;
