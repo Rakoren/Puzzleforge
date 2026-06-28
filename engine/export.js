@@ -20,6 +20,8 @@ const {
   renderCopyrightPage,
   renderBelongsToPage,
   renderIntroPage,
+  renderAboutPage,
+  renderMoreBooksPage,
   renderAnswerKey,
 } = require('./matter');
 
@@ -274,6 +276,14 @@ function renderBookHtml(book) {
   if (book.answerKey && book.meta.puzzleCount > 0) {
     docs.push(renderAnswerKey(book, layout));
     footers.push(numbered ? `${prefix}${++n}` : null);
+  }
+
+  // Back matter (about / more books) after the answer key — unnumbered.
+  for (const bm of book.backMatter || []) {
+    if (bm.kind === 'about') docs.push(renderAboutPage(book, layout, bm));
+    else if (bm.kind === 'morebooks') docs.push(renderMoreBooksPage(book, layout, bm));
+    else continue;
+    footers.push(null);
   }
 
   return numbered

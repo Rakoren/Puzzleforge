@@ -103,6 +103,35 @@ function renderIntroPage(book, layout, fm) {
   return pageShell(layout, style, body);
 }
 
+/** Back-matter "About the author" page (heading + paragraphs). */
+function renderAboutPage(book, layout, bm) {
+  const paras = String(bm.text || '')
+    .split(/\n{2,}/)
+    .map((p) => `<p>${esc(p.trim())}</p>`)
+    .join('');
+  const style = `
+  .about-pg { padding-top: ${Math.round(layout.usableHeight * 0.1)}px; }
+  .about-pg h2 { font-size: ${Math.round(layout.fontSize * 2)}px; text-align: center; margin: 0 0 24px 0; }
+  .about-pg p { font-size: ${Math.round(layout.fontSize * 1.1)}px; line-height: 1.7; margin: 0 0 14px 0; }`;
+  return pageShell(layout, style, `<div class="about-pg"><h2>${esc(bm.heading)}</h2>${paras}</div>`);
+}
+
+/** Back-matter "More books" page (heading + a centered list of titles). */
+function renderMoreBooksPage(book, layout, bm) {
+  const items = String(bm.text || '')
+    .split(/\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => `<li>${esc(s)}</li>`)
+    .join('');
+  const style = `
+  .more-pg { padding-top: ${Math.round(layout.usableHeight * 0.12)}px; text-align: center; }
+  .more-pg h2 { font-size: ${Math.round(layout.fontSize * 2)}px; margin: 0 0 24px 0; }
+  .more-pg ul { list-style: none; padding: 0; margin: 0; }
+  .more-pg li { font-size: ${Math.round(layout.fontSize * 1.3)}px; line-height: 2; }`;
+  return pageShell(layout, style, `<div class="more-pg"><h2>${esc(bm.heading)}</h2><ul>${items}</ul></div>`);
+}
+
 // --- compact per-type answer renderers -------------------------------------
 
 function miniWordsearch(puzzle, cellPx) {
@@ -280,6 +309,8 @@ module.exports = {
   renderCopyrightPage,
   renderBelongsToPage,
   renderIntroPage,
+  renderAboutPage,
+  renderMoreBooksPage,
   renderAnswerKey,
   pageShell,
 };

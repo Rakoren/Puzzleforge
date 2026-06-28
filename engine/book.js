@@ -50,6 +50,22 @@ function buildFrontMatter(config) {
   return fm;
 }
 
+// Back-matter page descriptors (rendered after the answer key). All opt-in.
+function buildBackMatter(config) {
+  const bm = [];
+  if (config.about && String(config.about).trim()) {
+    bm.push({ kind: 'about', heading: config.aboutHeading || 'About the Author', text: String(config.about).trim() });
+  }
+  if (config.moreBooks && String(config.moreBooks).trim()) {
+    bm.push({
+      kind: 'morebooks',
+      heading: config.moreBooksHeading || "More Books You'll Love",
+      text: String(config.moreBooks).trim(),
+    });
+  }
+  return bm;
+}
+
 function pickDifficulty(spec, rand) {
   const d = spec.difficulty;
   if (typeof d === 'string' && d.includes('-')) {
@@ -183,8 +199,10 @@ function assembleBook(config, opts = {}) {
   const ordered = interleavePuzzles(puzzles, config);
 
   // Front matter (copyright / "belongs to" / intro) sits between the title page
-  // and the puzzles; offset content page numbers past it.
+  // and the puzzles; offset content page numbers past it. Back matter (about /
+  // more books) is rendered after the answer key.
   const frontMatter = buildFrontMatter(config);
+  const backMatter = buildBackMatter(config);
 
   // Page assignment: title page (1) + front matter, then one page per content
   // page, then the answer key (computed by the matter template at render time;
@@ -208,6 +226,7 @@ function assembleBook(config, opts = {}) {
     pageNumbers: config.pageNumbers === true, // footer page numbers on content pages
     footerText: config.footerText ? String(config.footerText).trim() : null,
     frontMatter, // [{ kind, ... }] rendered after the title page
+    backMatter, // [{ kind, ... }] rendered after the answer key
     pages, // [{ puzzle, pageNumber }]
     puzzles: ordered, // convenience: ordered puzzle objects (incl. fillers)
     meta: {
@@ -215,6 +234,7 @@ function assembleBook(config, opts = {}) {
       puzzleCount: ordered.filter((p) => !isActivityType(p.type)).length,
       pageCount: ordered.length,
       frontMatterCount: frontMatter.length,
+      backMatterCount: backMatter.length,
       byType,
       uniqueWords,
       ...(usedWords ? { distinctWords: usedWords.size } : {}),

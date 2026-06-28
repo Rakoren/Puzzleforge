@@ -18,6 +18,8 @@
     intro: $('intro'),
     pageNumbers: $('pageNumbers'),
     footerText: $('footerText'),
+    about: $('about'),
+    moreBooks: $('moreBooks'),
     betweenColoring: $('betweenColoring'),
     betweenDrawing: $('betweenDrawing'),
     betweenBlank: $('betweenBlank'),
@@ -148,8 +150,9 @@
     if (!total) { el.summary.textContent = 'No puzzles yet.'; return; }
     const gaps = el.afterLast.checked ? total : Math.max(0, total - 1);
     const fillers = gaps * interleaveKinds().length;
-    const matter = (el.copyrightPage.checked ? 1 : 0) + (el.belongsToPage.checked ? 1 : 0) + (el.intro.value.trim() ? 1 : 0);
-    const pages = 1 + matter + total + fillers + (el.answerKey.checked ? 1 : 0);
+    const front = (el.copyrightPage.checked ? 1 : 0) + (el.belongsToPage.checked ? 1 : 0) + (el.intro.value.trim() ? 1 : 0);
+    const back = (el.about.value.trim() ? 1 : 0) + (el.moreBooks.value.trim() ? 1 : 0);
+    const pages = 1 + front + total + fillers + (el.answerKey.checked ? 1 : 0) + back;
     const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
     el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (title + puzzles + answer key)`;
   }
@@ -175,6 +178,8 @@
       intro: el.intro.value.trim() || null,
       pageNumbers: el.pageNumbers.checked,
       footerText: el.footerText.value.trim() || null,
+      about: el.about.value.trim() || null,
+      moreBooks: el.moreBooks.value.trim() || null,
       interleave: interleaveKinds(),
       interleaveAfterLast: el.afterLast.checked,
       coloringStyle: el.coloringStyle.value,
@@ -293,6 +298,8 @@
     el.intro.value = cfg.intro || '';
     el.pageNumbers.checked = cfg.pageNumbers === true;
     el.footerText.value = cfg.footerText || '';
+    el.about.value = cfg.about || '';
+    el.moreBooks.value = cfg.moreBooks || '';
     const inter = Array.isArray(cfg.interleave) ? cfg.interleave : [];
     el.betweenColoring.checked = inter.includes('coloring');
     el.betweenDrawing.checked = inter.includes('drawing');
@@ -403,6 +410,8 @@
     el.intro.addEventListener('input', () => { invalidate(); updateSummary(); });
     el.pageNumbers.addEventListener('change', invalidate);
     el.footerText.addEventListener('input', invalidate);
+    el.about.addEventListener('input', () => { invalidate(); updateSummary(); });
+    el.moreBooks.addEventListener('input', () => { invalidate(); updateSummary(); });
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );

@@ -271,7 +271,8 @@ app.post('/api/book/preview', (req, res) => {
           1 +
           (book.meta.frontMatterCount || 0) +
           book.pages.length +
-          (book.answerKey && book.meta.puzzleCount > 0 ? 1 : 0),
+          (book.answerKey && book.meta.puzzleCount > 0 ? 1 : 0) +
+          (book.meta.backMatterCount || 0),
       },
     });
   } catch (err) {
