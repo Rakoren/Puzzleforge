@@ -1,7 +1,7 @@
 # PuzzleForge — Product Requirements Document
 
 **Version:** 0.2 (Active Development)
-**Status:** Engine complete — path to first publishable book
+**Status:** Publishable pipeline complete (interior + cover + KDP bundle) — content depth next
 **Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
 **Author:** Rakoren
@@ -58,10 +58,11 @@ Planned split (future):
 | Nonogram | ✅ Complete |
 | Trivia / Quiz | ✅ Complete |
 
-**3 kids activity page types** (no answer key):
-- **Coloring** — procedural mandala / shape-pattern / bubble-letter line art
-- **Drawing** — framed blank + prompt
-- **Blank / bleed-guard** — blank page so markers don't bleed through
+**4 activity page types** (no answer key):
+- **Coloring** — seed-driven unique line art: mandala / shape-pattern / bubble-letter
+- **Drawing** — framed blank + prompt (subject pulled from the puzzle's words, singularized, difficulty-matched)
+- **Blank / bleed-guard** — blank page so markers don't bleed through (auto-inserted behind coloring/drawing pages by default)
+- **Breather** — quote / fun fact / divider page between puzzle sets (adult books)
 
 **Engine features:**
 - Retry-until-valid generation
@@ -79,10 +80,12 @@ Planned split (future):
 - 9 built-in themes, ~1,275 clued words
 - Words organized by **difficulty tiers** (easy / medium / hard) — level 1 puzzles never pull hard words
 - Categories + tags, grouped in pickers
-- **AI Theme Generator** — topic → Claude-written tiered clued word list, safety/dedup filtered before save, appears instantly in every picker
+- **AI Theme Generator** — topic → Claude-written tiered clued word list **plus fun facts**, singular words, safety/dedup filtered before save, appears instantly in every picker
+- **Manage themes** — re-run the filter over a saved theme ("Clean") or delete it
 - **Tag filter / search** on theme pickers
 - **Whole-category selection** — e.g. "All Animals & Nature" merges animals + ocean + weather into one pool
 - **Mixed themes** fully supported — generator receives a merged word pool
+- Theme files carry curated/AI **fun facts** used by breather pages
 
 ### Web App ✅
 
@@ -96,12 +99,22 @@ Planned split (future):
 - Custom crossword clue editor
 
 **Book Builder:**
-- Visual multi-puzzle assembly
-- Preview
-- Full-book PDF export
-- Recipe save / load
+- Visual multi-puzzle assembly, preview, full-book PDF export, recipe save / load
 - **"No repeated words" toggle** — each theme word used once across a book, respects difficulty tiers
-- **"Between puzzles, insert"** — auto-drop drawing and/or blank page into each gap (20 puzzles → 19 of each)
+- **Shuffle puzzle order** — mix puzzle types instead of grouping by row (keeps fillers)
+- **"Between puzzles, insert"** — drop coloring / drawing / blank page after each puzzle (with coloring style + after-last options)
+- **Bleed-guard** — a blank page auto-inserted behind every coloring/drawing page (default on)
+- **Breather pages** — quote / fun fact / divider between puzzle sets (theme-matched facts)
+- **Front matter** — copyright, "this book belongs to", intro pages
+- **Back matter** — about-the-author, more-books pages
+- **Page numbers / footer** — optional, numbered from the first puzzle
+
+**Cover Builder:**
+- Full-wrap KDP cover (back + spine + front) sized from trim + page count + paper
+- Title/subtitle/author, front/back/spine colors, optional full-bleed front image, back blurb, barcode keep-out box
+
+**One-click KDP export:**
+- Single zip: interior PDF + cover PDF (spine sized from the *actual* rendered page count) + build-info sheet
 
 ---
 
@@ -558,27 +571,33 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - AI Theme Generator
 - Tag filter, category merge, no-repeated-words, between-puzzle inserts
 
-### 🔲 Phase 5 — Path to First Publishable Book (Next)
+### ✅ Phase 5 — Path to First Publishable Book (Complete)
+- ✅ Filler page logic — insert after every puzzle (with after-last option)
+- ✅ Filler UI — coloring/drawing/blank inserts, coloring style, bleed-guard
+- ✅ Curated quotes + fun facts — general + theme-matched (built-in and AI themes)
+- ✅ Front/back matter — copyright, "belongs to", intro, about, more-books
+- ✅ Cover Builder — full-wrap cover PDF, auto spine from page count
+- ✅ One-click KDP export bundle — interior + cover + build-info, zipped
 
-**Prerequisite: Repo cleanup (do at PC, ~1 hour)**
+**Bonus polish shipped alongside Phase 5:**
+- ✅ Optional page numbers / running footer
+- ✅ Shuffle puzzle order (keeps fillers)
+- ✅ Auto bleed-guard behind coloring/drawing pages
+- ✅ AI themes generate fun facts; words forced singular
+- ✅ Singular draw/coloring prompts at build time (no regen needed)
+- ✅ Theme management — re-run filter ("Clean") + delete
+
+**Remaining (manual, do at PC, ~1 hour): repo split/cleanup**
 1. Checkout `claude/prd-review-next-steps-6lkbbb` locally
 2. Identify file split — engine files vs web app files
 3. Create `puzzleforge-engine` (new private repo) — clean initial commit, no maze-books history
 4. Create `puzzleforge-web` (new public repo, MIT license) — clean initial commit
 5. Archive `maze-books` repo
 
-**Phase 5 work:**
-6. **Filler page logic fix** — insert after every individual puzzle, not between sets
-7. **Filler UI panel** — progressive disclosure toggle + expand for full control
-8. **Curated quotes + fun facts database** — ~20 each per built-in theme
-9. **Front/back matter** — copyright page, "this book belongs to" page, intro page
-10. **Cover Builder** — image upload, title/author text overlay, font + color picker, auto spine, back with blurb + barcode placeholder, full-wrap PDF output
-11. **One-click KDP export bundle** — interior PDF + cover PDF + metadata sheet (title, trim, page count)
-
-### 🔲 Phase 6 — Content Depth
-7. Theme editing UI — edit/delete saved themes in browser
-8. More built-in themes + AI category generator (hierarchical: e.g. gaming → TTRPG → genre)
-9. Per-book style/font presets + large-print "senior" mode
+### 🔲 Phase 6 — Content Depth (Next)
+- 🟡 Theme editing UI — delete + "Clean" **done**; in-browser word/clue/fact editing **to do**
+- 🔲 Per-book style/font presets + large-print "senior" mode  ← **in progress**
+- 🔲 More built-in themes + AI category generator (hierarchical: e.g. gaming → TTRPG → genre)
 
 ### 🔲 Phase 7 — More Puzzle Variety
 10. Word Ladder
