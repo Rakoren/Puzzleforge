@@ -172,17 +172,29 @@ async function main() {
   }
 
   const d = puzzle.data;
-  const detail = d.words
-    ? `${d.size}x${d.size}, ${d.words.length} words`
-    : d.numbers
-    ? `${d.size}x${d.size}, ${d.numbers.length} numbers`
-    : d.questions
-    ? `${d.questions.length} questions`
-    : d.size
-    ? `${d.size}x${d.size}`
-    : d.width
-    ? `${d.width}x${d.height}`
-    : '';
+  let detail = '';
+  switch (puzzle.type) {
+    case 'wordsearch':
+      detail = `${d.size}x${d.size}, ${d.words.length} words`;
+      break;
+    case 'numbersearch':
+      detail = `${d.size}x${d.size}, ${d.numbers.length} numbers`;
+      break;
+    case 'trivia':
+      detail = `${d.questions.length} questions`;
+      break;
+    case 'crossword':
+    case 'krisskross':
+      detail = `${d.width}x${d.height}, ${d.across ? d.across.length + d.down.length : d.wordBank.reduce((n, g) => n + g.words.length, 0)} words`;
+      break;
+    case 'sudoku':
+    case 'maze':
+    case 'nonogram':
+      detail = d.size ? `${d.size}x${d.size}` : `${d.width}x${d.height}`;
+      break;
+    default:
+      detail = '';
+  }
   process.stdout.write(
     `Generated ${puzzle.type} "${puzzle.title}"` +
       (detail ? ` (${detail},` : ' (') +

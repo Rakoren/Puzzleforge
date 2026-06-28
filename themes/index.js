@@ -132,8 +132,17 @@ function selectWords(theme, opts = {}) {
 
   let pool = [...new Set(entries.map((e) => e.word))].filter((w) => w.length >= minLength);
 
-  if (opts.count != null && pool.length > opts.count) {
-    pool = shuffle(pool.slice()).slice(0, opts.count);
+  if (opts.count != null) {
+    // Sample `count` words with no word a substring of another in the set
+    // (word searches reject substrings; it's undesirable for crosswords too).
+    const shuffled = shuffle(pool.slice());
+    const chosen = [];
+    for (const w of shuffled) {
+      if (chosen.length >= opts.count) break;
+      if (chosen.some((c) => c.includes(w) || w.includes(c))) continue;
+      chosen.push(w);
+    }
+    return chosen;
   }
   return pool;
 }
