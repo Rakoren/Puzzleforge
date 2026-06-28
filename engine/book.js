@@ -273,6 +273,16 @@ function interleavePuzzles(puzzles, config) {
   };
 
   let rotateIdx = 0;
+  let lastStyle = null;
+  // For 'random', pick a style at the book level so consecutive coloring pages
+  // don't repeat the same one (bubble only when there's a subject word).
+  const pickRandomStyle = (hasSubject) => {
+    const cands = hasSubject ? COLORING_STYLES : COLORING_STYLES.filter((s) => s !== 'bubble');
+    const fresh = cands.filter((s) => s !== lastStyle);
+    const pool = fresh.length ? fresh : cands;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
   const makeFiller = (kind, subject) => {
     if (kind === 'drawing') {
       return generate({ type: 'drawing', words: subject ? [subject] : [], theme: fillerLabel });
@@ -280,7 +290,9 @@ function interleavePuzzles(puzzles, config) {
     if (kind === 'blank') return generate({ type: 'bleedguard', label: '' });
     const cfg = { type: 'coloring', word: subject || undefined, words: subject ? [subject] : [], theme: fillerLabel };
     if (coloringStyle === 'rotate') cfg.style = COLORING_STYLES[rotateIdx++ % COLORING_STYLES.length];
-    else if (coloringStyle !== 'random') cfg.style = coloringStyle;
+    else if (coloringStyle === 'random') cfg.style = pickRandomStyle(Boolean(subject));
+    else cfg.style = coloringStyle;
+    lastStyle = cfg.style;
     return generate(cfg);
   };
 

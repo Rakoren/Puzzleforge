@@ -478,6 +478,15 @@ A planned feature that takes an uploaded image and:
 
 This is a standalone generator module with its own image processing pipeline (likely using Canvas API or Sharp). Architecture is compatible — it will conform to the standard module interface when implemented. Flagged as a stretch goal.
 
+**Future: Theme-Shaped (Silhouette) Coloring Pages**
+An evolution of the procedural `coloring` page type. Today the coloring generator produces seed-driven, infinitely-varied geometric line art in three styles (mandala, shape-pattern, bubble-letter). The next step is **subject-shaped** coloring art: a mandala or pattern fill clipped to the outline of the page's theme — e.g. a cat-shaped or fish-shaped mandala for an animals book, tied to the same "word to find" the drawing/bubble pages already use.
+
+Two implementation paths (not mutually exclusive):
+1. **Curated SVG silhouettes** — a small library of clean outline shapes per theme. The procedural fill (mandala rings / shape pattern) is clipped inside the silhouette via an SVG `clipPath`. Reliable and offline; cost is sourcing/drawing the outlines.
+2. **AI-generated line art** — reuse the planned ComfyUI pipeline (prompt → black line art → Potrace → SVG) to produce the silhouette on demand, then fill it the same way.
+
+Compatible with the existing module interface — it's an additional coloring `style`, selectable in the Book Builder like mandala/pattern/bubble. Flagged as a stretch goal alongside the image tools.
+
 ---
 
 ## Offensive Language Filter
