@@ -13,9 +13,12 @@ const {
   exportPuzzlePdf,
   exportBookPdf,
   exportPuzzlesPdf,
+  exportCoverPdf,
   renderPuzzleHtml,
   renderPuzzlesHtml,
   renderBookHtml,
+  renderCoverHtml,
+  coverDimensions,
 } = require('./engine/export');
 const { getLayout, listTrimSizes } = require('./layouts');
 const {
@@ -38,9 +41,12 @@ module.exports = {
   exportPdf: exportPuzzlePdf,
   exportBookPdf,
   exportPuzzlesPdf,
+  exportCoverPdf,
   renderHtml: renderPuzzleHtml,
   renderPuzzlesHtml,
   renderBookHtml,
+  renderCoverHtml,
+  coverDimensions,
   getLayout,
   listTrimSizes,
   listTypes,

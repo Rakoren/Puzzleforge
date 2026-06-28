@@ -21,7 +21,8 @@ try {
 }
 
 const app = express();
-app.use(express.json({ limit: '1mb' }));
+// Larger limit so the Cover Builder can accept a full-bleed front image as a data URL.
+app.use(express.json({ limit: '16mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const WORD_TYPES = new Set(['wordsearch', 'wordscramble', 'crossword', 'krisskross']);
@@ -331,6 +332,36 @@ app.post('/api/theme/save', (req, res) => {
   try {
     const saved = themegen.saveTheme(theme);
     res.json({ id: saved.id, report: saved.report });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// --- Cover Builder ---
+
+// Preview a full-wrap cover: returns the HTML and computed dimensions.
+app.post('/api/cover/preview', (req, res) => {
+  const config = (req.body && req.body.config) || {};
+  try {
+    const { html, dims } = pf.renderCoverHtml(config);
+    res.json({ html, dims });
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+// Export the full-wrap cover as a print-ready PDF.
+app.post('/api/cover/pdf', async (req, res) => {
+  const config = (req.body && req.body.config) || {};
+  try {
+    const outPath = path.join(os.tmpdir(), `pf-cover-${crypto.randomUUID()}.pdf`);
+    await pf.exportCoverPdf(config, { outPath });
+    const pdf = fs.readFileSync(outPath);
+    fs.unlink(outPath, () => {});
+    const base = (config.title || 'cover').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}-cover.pdf"`);
+    res.send(pdf);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

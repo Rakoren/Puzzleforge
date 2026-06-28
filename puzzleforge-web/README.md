@@ -91,6 +91,18 @@ visually — no JSON by hand:
 | GET | `/api/theme/status` | `{ available }` — whether an Anthropic API key is configured |
 | POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
 | POST | `/api/theme/save` | persist a generated theme to the library → `{ id, report }` |
+| POST | `/api/cover/preview` | full-wrap cover → `{ html, dims }` |
+| POST | `/api/cover/pdf` | export the full-wrap cover PDF |
+
+### Cover Builder
+
+A fourth page (**Cover Builder**) produces a print-ready **full-wrap** cover
+(back + spine + front as one PDF) at the exact size KDP expects, including
+0.125" bleed. The spine width is computed from the page count and paper type
+(white/cream); spine text appears once the book is long enough (≥ 79 pages).
+Set title/subtitle/author, front/back/spine colors, an optional full-bleed
+front image, and a back blurb. The dashed box on the back marks the KDP
+barcode keep-out area.
 
 ### AI Theme Generator
 

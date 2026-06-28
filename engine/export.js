@@ -24,6 +24,7 @@ const {
   renderMoreBooksPage,
   renderAnswerKey,
 } = require('./matter');
+const { renderCoverHtml, coverDimensions } = require('./cover');
 
 function findChromium(explicit) {
   const home = process.env.HOME || process.env.USERPROFILE || '';
@@ -345,13 +346,29 @@ async function exportPuzzlesPdf(entries, opts = {}) {
   return { outPath: opts.outPath, pages: entries.length };
 }
 
+/**
+ * Export a full-wrap KDP cover to a print-ready PDF.
+ * @param {object} config see cover.renderCoverHtml
+ * @param {object} opts { outPath (required), executablePath? }
+ * @returns {Promise<{ outPath: string, dims: object }>}
+ */
+async function exportCoverPdf(config, opts = {}) {
+  if (!opts.outPath) throw new Error('export: opts.outPath is required');
+  const { html, dims } = renderCoverHtml(config);
+  await htmlToPdf(html, opts.outPath, opts.executablePath);
+  return { outPath: opts.outPath, dims };
+}
+
 module.exports = {
   exportPuzzlePdf,
   exportBookPdf,
   exportPuzzlesPdf,
+  exportCoverPdf,
   renderPuzzleHtml,
   renderPuzzlesHtml,
   renderBookHtml,
+  renderCoverHtml,
+  coverDimensions,
   combinePages,
   findChromium,
 };

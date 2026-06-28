@@ -163,6 +163,11 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 }
 .empty.hidden { display: none; }
 
+/* Cover Builder preview */
+.cover-frame { min-height: 40vh; padding: 12px; overflow: auto; }
+.cover-scale { transform-origin: top left; }
+.cover-scale iframe { border: 1px solid var(--line); background: #fff; display: block; }
+
 /* Theme search/filter box above a theme picker */
 .theme-filter { margin-bottom: 6px; font-size: 13px; padding: 7px 9px; }
 
