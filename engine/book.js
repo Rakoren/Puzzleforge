@@ -192,6 +192,24 @@ function puzzleWords(puzzle) {
   return [];
 }
 
+// Pages a reader colors/draws on with markers — each should be backed by a
+// blank page so ink doesn't bleed onto the next printed page.
+const DRAWABLE_TYPES = new Set(['coloring', 'drawing']);
+
+// Insert a blank bleed-guard page after each drawable page (unless one already
+// follows). Returns a new array.
+function addBleedGuards(pages) {
+  const out = [];
+  for (let i = 0; i < pages.length; i++) {
+    out.push(pages[i]);
+    if (DRAWABLE_TYPES.has(pages[i].type)) {
+      const next = pages[i + 1];
+      if (!next || next.type !== 'bleedguard') out.push(generate({ type: 'bleedguard', label: '' }));
+    }
+  }
+  return out;
+}
+
 // Fisher-Yates shuffle returning a new array.
 function shuffled(arr, rand) {
   const a = arr.slice();
@@ -295,7 +313,10 @@ function assembleBook(config, opts = {}) {
   }
 
   // Optional filler pages inserted after puzzles (kids fillers / inserts).
-  const ordered = interleavePuzzles(sequence, config);
+  let ordered = interleavePuzzles(sequence, config);
+  // Back every coloring/drawing page with a blank page so markers don't bleed
+  // through to the next printed page (on by default).
+  if (config.bleedGuard !== false) ordered = addBleedGuards(ordered);
 
   // Front matter (copyright / "belongs to" / intro) sits between the title page
   // and the puzzles; offset content page numbers past it. Back matter (about /

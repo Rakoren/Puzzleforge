@@ -272,7 +272,8 @@ function renderBookHtml(book) {
   let n = 0;
   for (const { puzzle } of book.pages) {
     docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, audience: book.audience }));
-    footers.push(numbered ? `${prefix}${++n}` : null);
+    // Number every page except the blank bleed-guards, which stay clean.
+    footers.push(numbered && puzzle.type !== 'bleedguard' ? `${prefix}${++n}` : null);
   }
   if (book.answerKey && book.meta.puzzleCount > 0) {
     docs.push(renderAnswerKey(book, layout));
