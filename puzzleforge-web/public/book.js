@@ -13,6 +13,7 @@
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
     uniqueWords: $('uniqueWords'),
+    shuffle: $('shuffle'),
     copyrightPage: $('copyrightPage'),
     belongsToPage: $('belongsToPage'),
     intro: $('intro'),
@@ -185,6 +186,7 @@
       theme: el.theme.value,
       answerKey: el.answerKey.checked,
       uniqueWords: el.uniqueWords.checked,
+      shuffle: el.shuffle.checked,
       copyright: el.copyrightPage.checked,
       belongsTo: el.belongsToPage.checked,
       intro: el.intro.value.trim() || null,
@@ -355,6 +357,7 @@
     if (cfg.theme) el.theme.value = cfg.theme;
     el.answerKey.checked = cfg.answerKey !== false;
     el.uniqueWords.checked = cfg.uniqueWords === true;
+    el.shuffle.checked = cfg.shuffle === true;
     el.copyrightPage.checked = cfg.copyright !== false;
     el.belongsToPage.checked = cfg.belongsTo === true;
     el.intro.value = cfg.intro || '';
@@ -470,6 +473,7 @@
     el.loadRecipe.addEventListener('change', onLoad);
     el.answerKey.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.uniqueWords.addEventListener('change', invalidate);
+    el.shuffle.addEventListener('change', invalidate);
     el.betweenColoring.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.betweenDrawing.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.betweenBlank.addEventListener('change', () => { invalidate(); updateSummary(); });

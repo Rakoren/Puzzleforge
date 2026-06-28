@@ -192,6 +192,16 @@ function puzzleWords(puzzle) {
   return [];
 }
 
+// Fisher-Yates shuffle returning a new array.
+function shuffled(arr, rand) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 /**
  * @param {object} config book config (see above)
  * @param {object} [opts]
@@ -212,8 +222,6 @@ function assembleBook(config, opts = {}) {
   const uniqueWords = config.uniqueWords === true;
   const usedWords = uniqueWords ? new Set() : null;
 
-  const puzzles = [];
-
   // Breather pages (adult): between puzzle sets, not between every puzzle.
   const breatherKinds = (Array.isArray(config.breathers) ? config.breathers : [])
     .map((k) => String(k).toLowerCase())
@@ -221,9 +229,13 @@ function assembleBook(config, opts = {}) {
   const breatherThemeMatched = config.breatherThemeMatched !== false;
   const breatherState = { usedQuotes: new Set(), usedFacts: new Set() };
 
+  // Generate each spec's puzzles as its own group so we can keep them grouped
+  // (with breathers between sets) or shuffle them across the whole book.
+  const groups = [];
   for (let si = 0; si < config.puzzles.length; si++) {
     const spec = config.puzzles[si];
     const count = spec.count || 1;
+    const group = [];
     for (let i = 0; i < count; i++) {
       const difficulty = pickDifficulty(spec, rand);
       const puzzleConfig = { type: spec.type, difficulty, size: spec.size };
@@ -259,19 +271,31 @@ function assembleBook(config, opts = {}) {
       }
       const puzzle = generate(puzzleConfig);
       if (usedWords) for (const w of puzzleWords(puzzle)) usedWords.add(w);
-      puzzles.push(puzzle);
+      group.push(puzzle);
     }
-    // A breather between this set and the next (never after the last set).
-    if (breatherKinds.length && si < config.puzzles.length - 1) {
-      for (const kind of breatherKinds) {
-        puzzles.push(makeBreather(kind, config, breatherThemeMatched, breatherState));
-      }
-    }
+    groups.push(group);
   }
 
-  // Optional filler pages inserted in every gap between puzzles (20 puzzles →
-  // 19 gaps). `interleave` is an ordered list of 'drawing' and/or 'blank'.
-  const ordered = interleavePuzzles(puzzles, config);
+  // Assemble the puzzle sequence: either shuffled across the whole book, or
+  // grouped in row order with breathers between sets. (Shuffling randomizes the
+  // order, so the between-sets breather concept doesn't apply.)
+  let sequence;
+  if (config.shuffle === true) {
+    sequence = shuffled(groups.flat(), rand);
+  } else {
+    sequence = [];
+    groups.forEach((group, gi) => {
+      sequence.push(...group);
+      if (breatherKinds.length && gi < groups.length - 1) {
+        for (const kind of breatherKinds) {
+          sequence.push(makeBreather(kind, config, breatherThemeMatched, breatherState));
+        }
+      }
+    });
+  }
+
+  // Optional filler pages inserted after puzzles (kids fillers / inserts).
+  const ordered = interleavePuzzles(sequence, config);
 
   // Front matter (copyright / "belongs to" / intro) sits between the title page
   // and the puzzles; offset content page numbers past it. Back matter (about /
