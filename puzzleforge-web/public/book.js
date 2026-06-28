@@ -30,6 +30,7 @@
     wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku',
     maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble',
     crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz',
+    coloring: 'Coloring Page', drawing: 'Drawing Page', bleedguard: 'Blank (bleed guard)',
   };
   const DIFFICULTIES = [
     ['1', 'Easy'], ['2', 'Medium'], ['3', 'Hard'],

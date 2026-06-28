@@ -85,6 +85,31 @@ const trivia = {
   render: require('./trivia/renderer').render,
 };
 
+// Activity pages for kids' books — no answer, no puzzle solving.
+const coloring = {
+  type: 'coloring',
+  generate: require('./coloring').generate,
+  validate: require('./coloring/validator').validate,
+  solve: require('./coloring/solver').solve,
+  render: require('./coloring/renderer').render,
+};
+
+const drawing = {
+  type: 'drawing',
+  generate: require('./drawing').generate,
+  validate: require('./drawing/validator').validate,
+  solve: require('./drawing/solver').solve,
+  render: require('./drawing/renderer').render,
+};
+
+const bleedguard = {
+  type: 'bleedguard',
+  generate: require('./bleedguard').generate,
+  validate: require('./bleedguard/validator').validate,
+  solve: require('./bleedguard/solver').solve,
+  render: require('./bleedguard/renderer').render,
+};
+
 const MODULES = {
   wordsearch,
   sudoku,
@@ -96,7 +121,17 @@ const MODULES = {
   nonogram,
   numbersearch,
   trivia,
+  coloring,
+  drawing,
+  bleedguard,
 };
+
+// Activity (non-puzzle) page types: excluded from the answer key and from the
+// "puzzle count".
+const ACTIVITY_TYPES = new Set(['coloring', 'drawing', 'bleedguard']);
+function isActivityType(type) {
+  return ACTIVITY_TYPES.has(type);
+}
 
 function listTypes() {
   return Object.keys(MODULES);
@@ -112,4 +147,4 @@ function getModule(type) {
   return mod;
 }
 
-module.exports = { getModule, listTypes, MODULES };
+module.exports = { getModule, listTypes, MODULES, isActivityType, ACTIVITY_TYPES };

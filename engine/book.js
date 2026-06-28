@@ -22,6 +22,7 @@
  * is chosen per puzzle.
  */
 const { generate } = require('./generate');
+const { isActivityType } = require('../generators/registry');
 const themes = require('../themes');
 
 // How many words to draw into a single word-type puzzle by default.
@@ -138,6 +139,16 @@ function assembleBook(config, opts = {}) {
           puzzleConfig.clues = themes.clueMap(theme);
           puzzleConfig.theme = theme.label; // clean title even for a merged category
         }
+      } else if (isActivityType(spec.type)) {
+        // Activity pages (coloring / drawing) can use a few theme words for a
+        // prompt or bubble-letter subject, but never draw from the unique word
+        // pool — they aren't puzzles.
+        const themeRef = spec.theme || config.theme;
+        if (themeRef) {
+          const theme = themes.resolveTheme(themeRef);
+          puzzleConfig.words = themes.selectWords(theme, { count: 12 });
+          puzzleConfig.theme = theme.label;
+        }
       }
       const puzzle = generate(puzzleConfig);
       if (usedWords) for (const w of puzzleWords(puzzle)) usedWords.add(w);
@@ -166,7 +177,8 @@ function assembleBook(config, opts = {}) {
     puzzles, // convenience: ordered puzzle objects
     meta: {
       generatedAt: Date.now(),
-      puzzleCount: puzzles.length,
+      puzzleCount: puzzles.filter((p) => !isActivityType(p.type)).length,
+      pageCount: puzzles.length,
       byType,
       uniqueWords,
       ...(usedWords ? { distinctWords: usedWords.size } : {}),

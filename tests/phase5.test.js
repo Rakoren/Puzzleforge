@@ -7,11 +7,15 @@ const { renderPuzzleHtml } = require('../engine/export');
 const { listTypes } = require('../generators/registry');
 const { checkSeparation, findToken } = require('../generators/shared/gridsearch');
 
-test('number search and trivia are registered (ten types total)', () => {
+test('number search and trivia are registered (ten puzzle types + activity pages)', () => {
   const types = listTypes();
   assert.ok(types.includes('numbersearch'));
   assert.ok(types.includes('trivia'));
-  assert.equal(types.length, 10);
+  // Ten puzzle types plus the three kids-book activity pages.
+  assert.ok(types.includes('coloring'));
+  assert.ok(types.includes('drawing'));
+  assert.ok(types.includes('bleedguard'));
+  assert.equal(types.length, 13);
 });
 
 // --- Number Search ---

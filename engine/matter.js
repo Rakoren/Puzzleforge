@@ -11,6 +11,13 @@
  * miniAnswer(); everything else is generic.
  */
 
+const { isActivityType } = require('../generators/registry');
+
+// Activity pages (coloring/drawing/bleed-through) have no answer to print.
+function hasAnswer(type) {
+  return !isActivityType(type);
+}
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
@@ -201,6 +208,7 @@ function renderAnswerKey(book, layout) {
   .key-block .label { font-size: ${Math.round(layout.fontSize * 0.9)}px; margin: 0 0 4px 0; font-weight: 700; }`;
 
   const blocks = book.pages
+    .filter(({ puzzle }) => hasAnswer(puzzle.type))
     .map(({ puzzle, pageNumber }, i) => {
       const perRow = blocksPerRow(puzzle.type);
       const blockWidth = Math.floor((layout.usableWidth - gap * (perRow - 1)) / perRow);

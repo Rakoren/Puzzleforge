@@ -69,6 +69,11 @@ visually — no JSON by hand:
 - Preview the assembled book, then download the print-ready PDF
 - Save / load the book recipe (`.json`) — the same format the CLI's `--book`
   flag accepts
+- **No repeated words** — keep every theme word to a single puzzle across the book
+- **Kids-book activity pages** (no answer key): **Coloring Page** (procedural
+  mandala / shape-pattern / bubble-letter art), **Drawing Page** (framed blank
+  with a prompt), and **Blank (bleed guard)** pages to place after coloring
+  pages so marker ink doesn't bleed through
 
 ## API
 

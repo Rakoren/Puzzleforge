@@ -239,7 +239,9 @@ function renderBookHtml(book) {
   for (const { puzzle } of book.pages) {
     docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, audience: book.audience }));
   }
-  if (book.answerKey) docs.push(renderAnswerKey(book, layout));
+  // Only append an answer key when at least one page actually has an answer
+  // (activity-only books — all coloring/drawing — get none).
+  if (book.answerKey && book.meta.puzzleCount > 0) docs.push(renderAnswerKey(book, layout));
   return combinePages(docs);
 }
 

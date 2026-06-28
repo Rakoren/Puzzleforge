@@ -29,7 +29,7 @@ const {
   wordCount,
   THEME_DIR,
 } = require('./themes');
-const { listTypes } = require('./generators/registry');
+const { listTypes, isActivityType } = require('./generators/registry');
 const offensive = require('./filters/offensive');
 
 module.exports = {
@@ -44,6 +44,7 @@ module.exports = {
   getLayout,
   listTrimSizes,
   listTypes,
+  isActivityType,
   loadTheme,
   listThemes,
   listThemesDetailed,

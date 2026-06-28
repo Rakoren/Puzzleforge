@@ -430,6 +430,9 @@
       nonogram: 'Nonogram',
       numbersearch: 'Number Search',
       trivia: 'Trivia Quiz',
+      coloring: 'Coloring Page',
+      drawing: 'Drawing Page',
+      bleedguard: 'Blank (bleed guard)',
     };
     return names[t] || t;
   }

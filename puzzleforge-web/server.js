@@ -67,6 +67,16 @@ function configFromRecipe(recipe) {
       err.status = 400;
       throw err;
     }
+  } else if (pf.isActivityType(type) && recipe.theme) {
+    // Coloring / drawing pages can take a few theme words for a prompt or
+    // bubble-letter subject, but never require them.
+    try {
+      const theme = pf.resolveTheme(recipe.theme);
+      config.words = pf.selectWords(theme, { count: 12 });
+      config.theme = theme.label;
+    } catch (_) {
+      /* theme optional for activity pages */
+    }
   }
   return config;
 }
