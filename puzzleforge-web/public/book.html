@@ -140,6 +140,33 @@
         </label>
       </div>
       <p class="status" id="status"></p>
+
+      <h2>4 · Publish (KDP)</h2>
+      <fieldset class="matter">
+        <legend>Cover basics</legend>
+        <div class="row">
+          <label class="field"><span>Cover color</span><input id="coverBg" type="color" value="#1f3a93"></label>
+          <label class="field"><span>Text color</span><input id="coverText" type="color" value="#ffffff"></label>
+        </div>
+        <label class="field">
+          <span>Paper</span>
+          <select id="coverPaper">
+            <option value="white">White</option>
+            <option value="cream">Cream</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Back-cover blurb (optional)</span>
+          <textarea id="coverBlurb" rows="3" placeholder="A short description for the back cover…"></textarea>
+        </label>
+      </fieldset>
+      <div class="actions">
+        <button id="kdpBundle" class="primary">Download KDP bundle (.zip)</button>
+      </div>
+      <p class="hint">One zip with <strong>interior.pdf</strong>, <strong>cover.pdf</strong> (spine sized
+        from the final page count), and a <strong>build-info</strong> sheet. For a fancier cover —
+        image, custom layout — use the Cover Builder. Uses the title, subtitle, and author above.</p>
+      <p class="status" id="kdpStatus"></p>
     </section>
 
     <section class="panel preview" aria-label="Preview">

@@ -30,6 +30,12 @@
     breatherDivider: $('breatherDivider'),
     breatherBlank: $('breatherBlank'),
     breatherThemed: $('breatherThemed'),
+    coverBg: $('coverBg'),
+    coverText: $('coverText'),
+    coverPaper: $('coverPaper'),
+    coverBlurb: $('coverBlurb'),
+    kdpBundle: $('kdpBundle'),
+    kdpStatus: $('kdpStatus'),
     rows: $('rows'),
     addRow: $('addRow'),
     summary: $('summary'),
@@ -211,6 +217,45 @@
     if (el.breatherDivider.checked) kinds.push('divider');
     if (el.breatherBlank.checked) kinds.push('blank');
     return kinds;
+  }
+
+  function coverConfig() {
+    return {
+      bgColor: el.coverBg.value,
+      backColor: el.coverBg.value,
+      textColor: el.coverText.value,
+      paper: el.coverPaper.value,
+      blurb: el.coverBlurb.value.trim() || null,
+    };
+  }
+
+  function setKdpStatus(text, kind) {
+    el.kdpStatus.textContent = text || '';
+    el.kdpStatus.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  async function buildBundle() {
+    if (!rows.length) { setKdpStatus('Add at least one puzzle first.', 'err'); return; }
+    setKdpStatus('Building interior + cover… (this can take a while)', 'busy');
+    el.kdpBundle.disabled = true;
+    try {
+      const res = await fetch('/api/book/kdp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: config(), cover: coverConfig() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'KDP export failed');
+      }
+      const blob = await res.blob();
+      download(blob, fileBase() + '-kdp.zip');
+      setKdpStatus('KDP bundle downloaded — interior.pdf, cover.pdf, build-info.txt.', 'ok');
+    } catch (err) {
+      setKdpStatus(err.message, 'err');
+    } finally {
+      el.kdpBundle.disabled = false;
+    }
   }
 
   async function preview() {
@@ -420,6 +465,7 @@
     el.addRow.addEventListener('click', () => addRow());
     el.preview.addEventListener('click', preview);
     el.buildPdf.addEventListener('click', buildPdf);
+    el.kdpBundle.addEventListener('click', buildBundle);
     el.saveRecipe.addEventListener('click', saveRecipe);
     el.loadRecipe.addEventListener('change', onLoad);
     el.answerKey.addEventListener('change', () => { invalidate(); updateSummary(); });

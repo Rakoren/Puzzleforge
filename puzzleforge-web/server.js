@@ -10,6 +10,7 @@ const os = require('os');
 const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
+const archiver = require('archiver');
 
 // Import the engine as a package (file:.. dependency) with a relative fallback
 // so the app runs whether or not it has been `npm install`ed.
@@ -364,6 +365,110 @@ app.post('/api/cover/pdf', async (req, res) => {
     res.send(pdf);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// --- One-click KDP export bundle ---
+
+// Count physical pages in a rendered PDF (the answer key paginates naturally,
+// so the spine must be sized from the actual count, not an estimate).
+function countPdfPages(pdfBuffer) {
+  const s = pdfBuffer.toString('latin1');
+  const pageObjs = (s.match(/\/Type\s*\/Page\b(?!s)/g) || []).length;
+  let maxCount = 0;
+  for (const m of s.matchAll(/\/Type\s*\/Pages\b[\s\S]*?\/Count\s+(\d+)/g)) {
+    maxCount = Math.max(maxCount, Number(m[1]));
+  }
+  return Math.max(pageObjs, maxCount) || pageObjs;
+}
+
+function buildInfoSheet(config, book, pageCount, paper, dims) {
+  const lines = [
+    'PuzzleForge — KDP Build Info',
+    '============================',
+    '',
+    `Title:            ${config.title || ''}`,
+    config.subtitle ? `Subtitle:         ${config.subtitle}` : null,
+    `Author:           ${config.author || ''}`,
+    '',
+    `Trim size:        ${dims.trimWidthIn} x ${dims.trimHeightIn} in`,
+    `Interior pages:   ${pageCount}`,
+    `Paper:            ${paper}`,
+    `Spine width:      ${dims.spineIn} in`,
+    `Full cover size:  ${dims.fullWidthIn} x ${dims.fullHeightIn} in (includes 0.125" bleed)`,
+    `Spine text:       ${dims.spineTextAllowed ? 'printed (book is long enough)' : 'hidden (KDP needs >= 79 pages)'}`,
+    '',
+    'Files in this bundle',
+    '--------------------',
+    'interior.pdf  — upload as the book interior / manuscript',
+    'cover.pdf     — upload as the full-wrap paperback cover',
+    '',
+    'When setting up the KDP paperback, match these exactly:',
+    `  • Trim size: ${dims.trimWidthIn} x ${dims.trimHeightIn} in`,
+    `  • Paper type: ${paper}`,
+    '  • Bleed: Yes (the cover includes 0.125" bleed)',
+  ];
+  if (pageCount < 24) {
+    lines.push('', `WARNING: KDP requires at least 24 pages — this book has ${pageCount}. Add more content.`);
+  }
+  return lines.filter((l) => l !== null).join('\n') + '\n';
+}
+
+// Build interior PDF + cover PDF + build-info sheet, zipped, in one request.
+app.post('/api/book/kdp', async (req, res) => {
+  const body = req.body || {};
+  const config = body.config || {};
+  const coverIn = body.cover || {};
+  let interiorPath;
+  let coverPath;
+  try {
+    const book = pf.assembleBook(config);
+    interiorPath = path.join(os.tmpdir(), `pf-int-${crypto.randomUUID()}.pdf`);
+    await pf.exportBookPdf(book, { outPath: interiorPath });
+    const interior = fs.readFileSync(interiorPath);
+
+    const pageCount = countPdfPages(interior);
+    const paper = coverIn.paper === 'cream' ? 'cream' : 'white';
+    const coverConfig = {
+      trimSize: book.trimSize,
+      pageCount,
+      paper,
+      title: config.title,
+      subtitle: config.subtitle,
+      author: config.author,
+      front: {
+        bgColor: coverIn.bgColor,
+        textColor: coverIn.textColor,
+        titlePosition: coverIn.titlePosition || 'center',
+        image: coverIn.image || null,
+      },
+      back: { bgColor: coverIn.backColor || coverIn.bgColor, textColor: coverIn.textColor, blurb: coverIn.blurb || null },
+      spine: { bgColor: coverIn.bgColor, textColor: coverIn.textColor },
+    };
+    coverPath = path.join(os.tmpdir(), `pf-cov-${crypto.randomUUID()}.pdf`);
+    await pf.exportCoverPdf(coverConfig, { outPath: coverPath });
+    const cover = fs.readFileSync(coverPath);
+
+    const dims = pf.coverDimensions(book.trimSize, pageCount, paper);
+    const info = buildInfoSheet(config, book, pageCount, paper, dims);
+
+    const base = (config.title || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}-kdp.zip"`);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.on('error', (err) => {
+      if (!res.headersSent) res.status(500).json({ error: err.message });
+    });
+    archive.pipe(res);
+    archive.append(interior, { name: 'interior.pdf' });
+    archive.append(cover, { name: 'cover.pdf' });
+    archive.append(info, { name: 'build-info.txt' });
+    await archive.finalize();
+  } catch (err) {
+    if (!res.headersSent) res.status(err.status || 500).json({ error: err.message });
+  } finally {
+    if (interiorPath) fs.unlink(interiorPath, () => {});
+    if (coverPath) fs.unlink(coverPath, () => {});
   }
 });
 
