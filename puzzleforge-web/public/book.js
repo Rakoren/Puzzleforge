@@ -13,8 +13,14 @@
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
     uniqueWords: $('uniqueWords'),
+    copyrightPage: $('copyrightPage'),
+    belongsToPage: $('belongsToPage'),
+    intro: $('intro'),
+    betweenColoring: $('betweenColoring'),
     betweenDrawing: $('betweenDrawing'),
     betweenBlank: $('betweenBlank'),
+    coloringStyle: $('coloringStyle'),
+    afterLast: $('afterLast'),
     rows: $('rows'),
     addRow: $('addRow'),
     summary: $('summary'),
@@ -138,8 +144,10 @@
   function updateSummary() {
     const total = totalPuzzles();
     if (!total) { el.summary.textContent = 'No puzzles yet.'; return; }
-    const fillers = Math.max(0, total - 1) * interleaveKinds().length;
-    const pages = 1 + total + fillers + (el.answerKey.checked ? 1 : 0);
+    const gaps = el.afterLast.checked ? total : Math.max(0, total - 1);
+    const fillers = gaps * interleaveKinds().length;
+    const matter = (el.copyrightPage.checked ? 1 : 0) + (el.belongsToPage.checked ? 1 : 0) + (el.intro.value.trim() ? 1 : 0);
+    const pages = 1 + matter + total + fillers + (el.answerKey.checked ? 1 : 0);
     const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
     el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (title + puzzles + answer key)`;
   }
@@ -160,13 +168,20 @@
       theme: el.theme.value,
       answerKey: el.answerKey.checked,
       uniqueWords: el.uniqueWords.checked,
+      copyright: el.copyrightPage.checked,
+      belongsTo: el.belongsToPage.checked,
+      intro: el.intro.value.trim() || null,
       interleave: interleaveKinds(),
+      interleaveAfterLast: el.afterLast.checked,
+      coloringStyle: el.coloringStyle.value,
+      puzzleforgeBook: 1,
       puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
     };
   }
 
   function interleaveKinds() {
     const kinds = [];
+    if (el.betweenColoring.checked) kinds.push('coloring');
     if (el.betweenDrawing.checked) kinds.push('drawing');
     if (el.betweenBlank.checked) kinds.push('blank');
     return kinds;
@@ -269,9 +284,15 @@
     if (cfg.theme) el.theme.value = cfg.theme;
     el.answerKey.checked = cfg.answerKey !== false;
     el.uniqueWords.checked = cfg.uniqueWords === true;
+    el.copyrightPage.checked = cfg.copyright !== false;
+    el.belongsToPage.checked = cfg.belongsTo === true;
+    el.intro.value = cfg.intro || '';
     const inter = Array.isArray(cfg.interleave) ? cfg.interleave : [];
+    el.betweenColoring.checked = inter.includes('coloring');
     el.betweenDrawing.checked = inter.includes('drawing');
     el.betweenBlank.checked = inter.includes('blank');
+    el.afterLast.checked = cfg.interleaveAfterLast === true;
+    if (cfg.coloringStyle) el.coloringStyle.value = cfg.coloringStyle;
     rows = (cfg.puzzles || []).map((p) => ({
       type: p.type,
       count: p.count || 1,
@@ -367,8 +388,13 @@
     el.loadRecipe.addEventListener('change', onLoad);
     el.answerKey.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.uniqueWords.addEventListener('change', invalidate);
+    el.betweenColoring.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.betweenDrawing.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.betweenBlank.addEventListener('change', () => { invalidate(); updateSummary(); });
+    el.afterLast.addEventListener('change', () => { invalidate(); updateSummary(); });
+    el.coloringStyle.addEventListener('change', invalidate);
+    [el.copyrightPage, el.belongsToPage].forEach((n) => n.addEventListener('change', () => { invalidate(); updateSummary(); }));
+    el.intro.addEventListener('input', () => { invalidate(); updateSummary(); });
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );

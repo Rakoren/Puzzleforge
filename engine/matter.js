@@ -52,6 +52,57 @@ function renderTitlePage(book, layout) {
   return pageShell(layout, style, body);
 }
 
+/** Copyright page (publishing front matter). */
+function renderCopyrightPage(book, layout, fm) {
+  const holder = esc(fm.publisher || book.author || book.title);
+  const style = `
+  .cp { position: absolute; bottom: 0; left: 0; width: 100%; font-size: ${Math.round(layout.fontSize * 0.95)}px; color: #222; line-height: 1.6; }
+  .cp p { margin: 0 0 8px 0; }
+  .cp .small { font-size: ${Math.round(layout.fontSize * 0.85)}px; color: #555; }
+  .cp-wrap { position: relative; height: ${layout.usableHeight}px; }`;
+  const body = `<div class="cp-wrap"><div class="cp">
+    <p>Copyright © ${fm.year} ${holder}</p>
+    <p>All rights reserved.</p>
+    <p class="small">No part of this publication may be reproduced, distributed, or transmitted in
+      any form or by any means without the prior written permission of the publisher, except for
+      brief quotations in reviews.</p>
+    ${fm.rights ? `<p class="small">${esc(fm.rights)}</p>` : ''}
+  </div></div>`;
+  return pageShell(layout, style, body);
+}
+
+/** "This book belongs to" page (kids). */
+function renderBelongsToPage(book, layout) {
+  const style = `
+  .belongs { height: ${layout.usableHeight}px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .belongs h2 { font-size: ${Math.round(layout.fontSize * 2.2)}px; margin: 0 0 40px 0; }
+  .belongs .line { border-bottom: 3px solid #000; width: 70%; height: 1.6em; }
+  .belongs .star { font-size: ${Math.round(layout.fontSize * 2)}px; margin-top: 30px; letter-spacing: 10px; }`;
+  const body = `<div class="belongs">
+    <h2>This Book Belongs To</h2>
+    <div class="line"></div>
+    <div class="star">★ ★ ★</div>
+  </div>`;
+  return pageShell(layout, style, body);
+}
+
+/** Optional introduction / welcome page. */
+function renderIntroPage(book, layout, fm) {
+  const paras = String(fm.text || '')
+    .split(/\n{2,}/)
+    .map((p) => `<p>${esc(p.trim())}</p>`)
+    .join('');
+  const style = `
+  .intro { padding-top: ${Math.round(layout.usableHeight * 0.12)}px; }
+  .intro h2 { font-size: ${Math.round(layout.fontSize * 2)}px; text-align: center; margin: 0 0 24px 0; }
+  .intro p { font-size: ${Math.round(layout.fontSize * 1.1)}px; line-height: 1.7; margin: 0 0 14px 0; }`;
+  const body = `<div class="intro">
+    <h2>${esc(fm.heading || 'Welcome!')}</h2>
+    ${paras}
+  </div>`;
+  return pageShell(layout, style, body);
+}
+
 // --- compact per-type answer renderers -------------------------------------
 
 function miniWordsearch(puzzle, cellPx) {
@@ -224,4 +275,11 @@ function renderAnswerKey(book, layout) {
   return pageShell(layout, style, body);
 }
 
-module.exports = { renderTitlePage, renderAnswerKey, pageShell };
+module.exports = {
+  renderTitlePage,
+  renderCopyrightPage,
+  renderBelongsToPage,
+  renderIntroPage,
+  renderAnswerKey,
+  pageShell,
+};

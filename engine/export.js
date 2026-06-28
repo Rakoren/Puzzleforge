@@ -15,7 +15,13 @@ const fs = require('fs');
 const path = require('path');
 const { getModule } = require('../generators/registry');
 const { getLayout } = require('../layouts');
-const { renderTitlePage, renderAnswerKey } = require('./matter');
+const {
+  renderTitlePage,
+  renderCopyrightPage,
+  renderBelongsToPage,
+  renderIntroPage,
+  renderAnswerKey,
+} = require('./matter');
 
 function findChromium(explicit) {
   const home = process.env.HOME || process.env.USERPROFILE || '';
@@ -236,6 +242,11 @@ async function exportPuzzlePdf(puzzle, opts = {}) {
 function renderBookHtml(book) {
   const layout = getLayout(book.trimSize, { audience: book.audience });
   const docs = [renderTitlePage(book, layout)];
+  for (const fm of book.frontMatter || []) {
+    if (fm.kind === 'copyright') docs.push(renderCopyrightPage(book, layout, fm));
+    else if (fm.kind === 'belongsTo') docs.push(renderBelongsToPage(book, layout));
+    else if (fm.kind === 'intro') docs.push(renderIntroPage(book, layout, fm));
+  }
   for (const { puzzle } of book.pages) {
     docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, audience: book.audience }));
   }

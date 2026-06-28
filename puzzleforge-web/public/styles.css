@@ -173,6 +173,12 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 }
 .interleave-label { font-size: 13px; color: var(--muted); }
 
+/* Front-matter fieldset */
+.matter { border: 1px solid var(--line); border-radius: 11px; padding: 12px; margin: 12px 0; }
+.matter legend { font-size: 12px; color: var(--muted); padding: 0 6px; }
+.matter .checkbox { display: flex; margin-bottom: 6px; }
+.matter .field { margin-top: 8px; margin-bottom: 0; }
+
 /* AI theme generator */
 .banner {
   background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;

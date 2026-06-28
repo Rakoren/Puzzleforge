@@ -28,6 +28,28 @@ const themes = require('../themes');
 // How many words to draw into a single word-type puzzle by default.
 const DEFAULT_WORD_COUNT = 14;
 
+// Book-recipe format version (distinct from the single-puzzle recipe version).
+const BOOK_RECIPE_VERSION = 1;
+
+// Build the front-matter page descriptors from the book config. All opt-in.
+function buildFrontMatter(config) {
+  const fm = [];
+  if (config.copyright) {
+    const c = typeof config.copyright === 'object' ? config.copyright : {};
+    fm.push({
+      kind: 'copyright',
+      year: c.year || config.year || new Date().getFullYear(),
+      publisher: c.publisher || config.publisher || config.author || null,
+      rights: c.rights || null,
+    });
+  }
+  if (config.belongsTo) fm.push({ kind: 'belongsTo' });
+  if (config.intro && String(config.intro).trim()) {
+    fm.push({ kind: 'intro', heading: config.introHeading || 'Welcome!', text: String(config.intro).trim() });
+  }
+  return fm;
+}
+
 function pickDifficulty(spec, rand) {
   const d = spec.difficulty;
   if (typeof d === 'string' && d.includes('-')) {
@@ -159,10 +181,14 @@ function assembleBook(config, opts = {}) {
   // 19 gaps). `interleave` is an ordered list of 'drawing' and/or 'blank'.
   const ordered = interleavePuzzles(puzzles, config);
 
-  // Page assignment: 1 title page, then one page per puzzle, then the answer
-  // key pages (computed by the matter template at render time; here we record
-  // the puzzle page numbers for cross-referencing in the key).
-  let page = 1; // title page
+  // Front matter (copyright / "belongs to" / intro) sits between the title page
+  // and the puzzles; offset content page numbers past it.
+  const frontMatter = buildFrontMatter(config);
+
+  // Page assignment: title page (1) + front matter, then one page per content
+  // page, then the answer key (computed by the matter template at render time;
+  // here we record content page numbers for cross-referencing in the key).
+  let page = 1 + frontMatter.length; // title + front matter
   const pages = ordered.map((puzzle) => {
     page += 1;
     return { puzzle, pageNumber: page };
@@ -178,12 +204,14 @@ function assembleBook(config, opts = {}) {
     trimSize,
     audience,
     answerKey,
+    frontMatter, // [{ kind, ... }] rendered after the title page
     pages, // [{ puzzle, pageNumber }]
     puzzles: ordered, // convenience: ordered puzzle objects (incl. fillers)
     meta: {
       generatedAt: Date.now(),
       puzzleCount: ordered.filter((p) => !isActivityType(p.type)).length,
       pageCount: ordered.length,
+      frontMatterCount: frontMatter.length,
       byType,
       uniqueWords,
       ...(usedWords ? { distinctWords: usedWords.size } : {}),
@@ -191,14 +219,23 @@ function assembleBook(config, opts = {}) {
   };
 }
 
-// Insert filler pages between consecutive puzzles. Returns a new ordered list.
+// Insert filler pages after puzzles. `interleave` is an ordered list of
+// 'coloring' | 'drawing' | 'blank'. By default fillers go in the gaps *between*
+// puzzles; with `interleaveAfterLast` they also follow the final puzzle.
+// `coloringStyle` controls coloring fillers: 'random' (default), 'rotate', or a
+// fixed style ('mandala' | 'pattern' | 'bubble').
+const COLORING_STYLES = ['mandala', 'pattern', 'bubble'];
+
 function interleavePuzzles(puzzles, config) {
   const kinds = (Array.isArray(config.interleave) ? config.interleave : [])
     .map((k) => String(k).toLowerCase())
-    .filter((k) => k === 'drawing' || k === 'blank');
-  if (kinds.length === 0 || puzzles.length < 2) return puzzles;
+    .filter((k) => k === 'coloring' || k === 'drawing' || k === 'blank');
+  if (kinds.length === 0 || puzzles.length === 0) return puzzles;
 
-  // Theme words for drawing prompts (sampled fresh; not the unique pool).
+  const afterLast = config.interleaveAfterLast === true;
+  const coloringStyle = config.coloringStyle || 'random';
+
+  // Theme words for drawing prompts / bubble words (fresh; not the unique pool).
   let fillerWords = [];
   let fillerLabel;
   if (config.theme) {
@@ -211,15 +248,21 @@ function interleavePuzzles(puzzles, config) {
     }
   }
 
-  const makeFiller = (kind) =>
-    kind === 'drawing'
-      ? generate({ type: 'drawing', words: fillerWords, theme: fillerLabel })
-      : generate({ type: 'bleedguard', label: '' });
+  let rotateIdx = 0;
+  const makeFiller = (kind) => {
+    if (kind === 'drawing') return generate({ type: 'drawing', words: fillerWords, theme: fillerLabel });
+    if (kind === 'blank') return generate({ type: 'bleedguard', label: '' });
+    const cfg = { type: 'coloring', words: fillerWords, theme: fillerLabel };
+    if (coloringStyle === 'rotate') cfg.style = COLORING_STYLES[rotateIdx++ % COLORING_STYLES.length];
+    else if (coloringStyle !== 'random') cfg.style = coloringStyle;
+    return generate(cfg);
+  };
 
   const out = [];
   puzzles.forEach((p, i) => {
     out.push(p);
-    if (i < puzzles.length - 1) for (const kind of kinds) out.push(makeFiller(kind));
+    const isLast = i === puzzles.length - 1;
+    if (!isLast || afterLast) for (const kind of kinds) out.push(makeFiller(kind));
   });
   return out;
 }

@@ -65,6 +65,16 @@
       <p class="hint">“No repeated words” keeps every theme word to a single puzzle across the
         whole book. If a theme runs out of words, later puzzles reuse some so they stay full.</p>
 
+      <fieldset class="matter">
+        <legend>Front matter</legend>
+        <label class="checkbox"><input type="checkbox" id="copyrightPage" checked> Copyright page</label>
+        <label class="checkbox"><input type="checkbox" id="belongsToPage"> “This book belongs to” page</label>
+        <label class="field">
+          <span>Intro / welcome text (optional)</span>
+          <textarea id="intro" rows="3" placeholder="A short welcome for the reader…"></textarea>
+        </label>
+      </fieldset>
+
       <h2>2 · Puzzles in the book</h2>
       <div id="rows" class="rows"></div>
       <button id="addRow" class="ghost">+ Add puzzle</button>
@@ -72,10 +82,22 @@
 
       <div class="interleave">
         <span class="interleave-label">Between puzzles, insert:</span>
+        <label class="checkbox"><input type="checkbox" id="betweenColoring"> Coloring page</label>
         <label class="checkbox"><input type="checkbox" id="betweenDrawing"> Drawing page</label>
         <label class="checkbox"><input type="checkbox" id="betweenBlank"> Blank page</label>
+        <label class="inline">Coloring style
+          <select id="coloringStyle">
+            <option value="random">Random</option>
+            <option value="rotate">Rotate all</option>
+            <option value="mandala">Mandala</option>
+            <option value="pattern">Shapes</option>
+            <option value="bubble">Bubble word</option>
+          </select>
+        </label>
+        <label class="checkbox"><input type="checkbox" id="afterLast"> Also after the last puzzle</label>
       </div>
-      <p class="hint">Adds a page in every gap between puzzles — e.g. 20 puzzles → 19 of each.</p>
+      <p class="hint">Adds the chosen page(s) after each puzzle — e.g. 20 puzzles → 19 of each
+        (or 20 with “after the last puzzle”).</p>
 
       <h2>3 · Build</h2>
       <div class="actions">

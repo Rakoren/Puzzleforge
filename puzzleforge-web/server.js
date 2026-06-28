@@ -267,7 +267,11 @@ app.post('/api/book/preview', (req, res) => {
         trimSize: book.trimSize,
         puzzleCount: book.meta.puzzleCount,
         byType: book.meta.byType,
-        pages: 1 + book.pages.length + (book.answerKey ? 1 : 0),
+        pages:
+          1 +
+          (book.meta.frontMatterCount || 0) +
+          book.pages.length +
+          (book.answerKey && book.meta.puzzleCount > 0 ? 1 : 0),
       },
     });
   } catch (err) {
