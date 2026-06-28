@@ -243,10 +243,44 @@ async function exportBookPdf(book, opts = {}) {
   return { outPath: opts.outPath, pages, trimSize: book.trimSize };
 }
 
+/**
+ * Render a heterogeneous list of puzzle pages into one combined HTML document.
+ * Each entry is one page. Powers the teacher tools (differentiation sets,
+ * class sets, worksheets) where the page sequence is built by the caller.
+ * @param {Array<{puzzle:object, trimSize?:string, audience?:string, answerKey?:boolean}>} entries
+ * @returns {string} combined HTML
+ */
+function renderPuzzlesHtml(entries) {
+  const docs = entries.map((e) =>
+    renderPuzzleHtml(e.puzzle, {
+      trimSize: e.trimSize || '8.5x11',
+      audience: e.audience,
+      answerKey: Boolean(e.answerKey),
+    })
+  );
+  return combinePages(docs);
+}
+
+/**
+ * Export a list of puzzle pages to a single print-ready PDF.
+ * @param {Array} entries see renderPuzzlesHtml
+ * @param {object} opts { outPath (required), executablePath? }
+ * @returns {Promise<{ outPath: string, pages: number }>}
+ */
+async function exportPuzzlesPdf(entries, opts = {}) {
+  if (!opts.outPath) throw new Error('export: opts.outPath is required');
+  if (!entries || !entries.length) throw new Error('export: no puzzles to export');
+  const html = renderPuzzlesHtml(entries);
+  await htmlToPdf(html, opts.outPath, opts.executablePath);
+  return { outPath: opts.outPath, pages: entries.length };
+}
+
 module.exports = {
   exportPuzzlePdf,
   exportBookPdf,
+  exportPuzzlesPdf,
   renderPuzzleHtml,
+  renderPuzzlesHtml,
   renderBookHtml,
   combinePages,
   findChromium,

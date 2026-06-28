@@ -3,7 +3,8 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 
 const { assembleBook } = require('../engine/book');
-const { renderBookHtml } = require('../engine/export');
+const { renderBookHtml, renderPuzzlesHtml } = require('../engine/export');
+const { generate } = require('../engine/generate');
 
 const CONFIG = {
   title: 'Test Activity Book',
@@ -49,4 +50,17 @@ test('renderBookHtml includes title, both puzzle types, and the answer key', () 
 test('assembleBook requires a title and puzzles', () => {
   assert.throws(() => assembleBook({ puzzles: [] }), /title is required/);
   assert.throws(() => assembleBook({ title: 'x', puzzles: [] }), /non-empty/);
+});
+
+test('renderPuzzlesHtml combines a teacher set (differentiation) into one document', () => {
+  const entries = [1, 2, 3].map((d) => ({
+    puzzle: generate({ type: 'sudoku', difficulty: d }),
+    trimSize: '8.5x11',
+    answerKey: false,
+  }));
+  const html = renderPuzzlesHtml(entries);
+  // three page wrappers, sized to one trim, each its own scoped styles
+  const pages = (html.match(/class="pf-page pf-page-\d+"/g) || []).length;
+  assert.equal(pages, 3);
+  assert.match(html, /size: 8\.5in 11in/);
 });

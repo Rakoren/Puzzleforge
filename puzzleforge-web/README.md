@@ -36,6 +36,14 @@ PDF export needs a Chromium binary (same as the engine). Set
   regenerate (the grid re-rolls; your words, title, and options are preserved).
   Doubles as a share format.
 
+### Teacher tools
+
+- **Custom clue editor** (crosswords) — load the theme's words and write your
+  own clues to match a lesson
+- **Differentiation set** — the same puzzle at Easy / Medium / Hard in one PDF
+- **Class set** — N re-rolled copies (each student gets a different grid, same
+  words), with answers off, interleaved, or collected at the back
+
 No accounts, no database — recipes live on the teacher's own machine
 (Option A in the PRD).
 
@@ -46,6 +54,8 @@ No accounts, no database — recipes live on the teacher's own machine
 | GET | `/api/meta` | types, themes, trim sizes, recipe version |
 | POST | `/api/preview` | generate → `{ puzzleId, previewHtml, answerHtml, meta }` |
 | POST | `/api/pdf` | export a print-ready PDF (reuses the previewed puzzle by `puzzleId`) |
+| POST | `/api/words` | resolve a recipe's words + clues (for the clue editor) |
+| POST | `/api/set` | teacher sets → one PDF: `mode: "differentiation" \| "classset"`, `count`, `answers: "none" \| "end" \| "each"` |
 
 ### Recipe format
 

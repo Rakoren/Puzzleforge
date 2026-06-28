@@ -157,6 +157,84 @@ app.post('/api/pdf', async (req, res) => {
   }
 });
 
+// Resolve the words + clues a clue-type puzzle would use, so the UI can offer
+// an editable clue list.
+app.post('/api/words', (req, res) => {
+  const recipe = (req.body && req.body.recipe) || {};
+  try {
+    const config = configFromRecipe(recipe);
+    const words = config.words || [];
+    const clues = config.clues || {};
+    res.json({ words, clues });
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+const labeled = (puzzle, suffix) => ({ ...puzzle, title: `${puzzle.title} — ${suffix}` });
+
+// Teacher sets: differentiation (one puzzle at each level) and class sets (N
+// re-randomized copies). Returns a single combined PDF.
+app.post('/api/set', async (req, res) => {
+  const body = req.body || {};
+  const recipe = body.recipe || {};
+  const mode = body.mode || 'classset';
+  const answers = body.answers || 'none'; // 'none' | 'end' | 'each'
+
+  try {
+    const trimSize = recipe.trimSize || '8.5x11';
+    const audience = recipe.audience || (Number(recipe.difficulty) <= 1 ? 'kids' : 'adult');
+    const puzzlePages = [];
+    const answerPages = [];
+
+    const push = (puzzle, opts) => {
+      puzzlePages.push({ puzzle, trimSize, audience, answerKey: false });
+      answerPages.push({ puzzle: labeled(puzzle, 'Answer Key'), trimSize, audience, answerKey: true });
+    };
+
+    if (mode === 'differentiation') {
+      const levelName = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+      for (const level of [1, 2, 3]) {
+        const puzzle = pf.generate(configFromRecipe({ ...recipe, difficulty: level }));
+        push(labeled(puzzle, levelName[level]));
+      }
+    } else {
+      let count = Math.max(2, Math.min(30, Number(body.count) || 5));
+      for (let i = 1; i <= count; i++) {
+        const puzzle = pf.generate(configFromRecipe(recipe));
+        push(labeled(puzzle, `Copy ${i} of ${count}`));
+      }
+    }
+
+    let entries;
+    if (answers === 'each') {
+      entries = [];
+      for (let i = 0; i < puzzlePages.length; i++) {
+        entries.push(puzzlePages[i], answerPages[i]);
+      }
+    } else if (answers === 'end') {
+      entries = puzzlePages.concat(answerPages);
+    } else {
+      entries = puzzlePages;
+    }
+
+    const outPath = path.join(os.tmpdir(), `pf-set-${crypto.randomUUID()}.pdf`);
+    await pf.exportPuzzlesPdf(entries, { outPath });
+    const pdf = fs.readFileSync(outPath);
+    fs.unlink(outPath, () => {});
+
+    const base = (recipe.title || recipe.theme || recipe.type || 'puzzle')
+      .toString()
+      .replace(/[^a-z0-9]+/gi, '-')
+      .toLowerCase();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}-${mode}.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 4000;
 if (require.main === module) {
   app.listen(PORT, () => {

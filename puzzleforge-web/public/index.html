@@ -46,6 +46,13 @@
         </label>
       </fieldset>
 
+      <details class="clue-editor hidden" id="clueEditor">
+        <summary>Edit clues (crossword)</summary>
+        <p class="hint">Write your own clues to match your lesson. Load the words, edit, then generate.</p>
+        <button id="loadClues" class="ghost" type="button">Load words &amp; clues</button>
+        <div id="clueList" class="clue-list"></div>
+      </details>
+
       <div class="row">
         <label class="field">
           <span>Difficulty</span>
@@ -101,6 +108,34 @@
       </div>
       <p class="hint">A <strong>recipe</strong> saves your settings (words, title, difficulty) so you can
         regenerate or share the puzzle later. The grid re-rolls; your words stay.</p>
+
+      <h2>4 · Teacher tools</h2>
+      <div class="tool">
+        <div class="tool-head">
+          <strong>Differentiation set</strong>
+          <span class="tool-desc">The same puzzle at Easy, Medium &amp; Hard — one PDF.</span>
+        </div>
+        <button id="diffSet" class="ghost" disabled>Download 3 levels (PDF)</button>
+      </div>
+      <div class="tool">
+        <div class="tool-head">
+          <strong>Class set</strong>
+          <span class="tool-desc">Many re-rolled copies so students can’t copy each other.</span>
+        </div>
+        <div class="actions">
+          <label class="inline">Copies
+            <input id="copies" type="number" min="2" max="30" value="5">
+          </label>
+          <label class="inline">Answers
+            <select id="setAnswers">
+              <option value="none">None</option>
+              <option value="end">Key at end</option>
+              <option value="each">After each</option>
+            </select>
+          </label>
+        </div>
+        <button id="classSet" class="ghost" disabled>Download class set (PDF)</button>
+      </div>
     </section>
 
     <section class="panel preview" aria-label="Preview">
