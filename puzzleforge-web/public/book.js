@@ -25,6 +25,11 @@
     betweenBlank: $('betweenBlank'),
     coloringStyle: $('coloringStyle'),
     afterLast: $('afterLast'),
+    breatherFact: $('breatherFact'),
+    breatherQuote: $('breatherQuote'),
+    breatherDivider: $('breatherDivider'),
+    breatherBlank: $('breatherBlank'),
+    breatherThemed: $('breatherThemed'),
     rows: $('rows'),
     addRow: $('addRow'),
     summary: $('summary'),
@@ -150,9 +155,10 @@
     if (!total) { el.summary.textContent = 'No puzzles yet.'; return; }
     const gaps = el.afterLast.checked ? total : Math.max(0, total - 1);
     const fillers = gaps * interleaveKinds().length;
+    const breathers = Math.max(0, rows.length - 1) * breatherKinds().length;
     const front = (el.copyrightPage.checked ? 1 : 0) + (el.belongsToPage.checked ? 1 : 0) + (el.intro.value.trim() ? 1 : 0);
     const back = (el.about.value.trim() ? 1 : 0) + (el.moreBooks.value.trim() ? 1 : 0);
-    const pages = 1 + front + total + fillers + (el.answerKey.checked ? 1 : 0) + back;
+    const pages = 1 + front + total + fillers + breathers + (el.answerKey.checked ? 1 : 0) + back;
     const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
     el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (title + puzzles + answer key)`;
   }
@@ -183,6 +189,8 @@
       interleave: interleaveKinds(),
       interleaveAfterLast: el.afterLast.checked,
       coloringStyle: el.coloringStyle.value,
+      breathers: breatherKinds(),
+      breatherThemeMatched: el.breatherThemed.checked,
       puzzleforgeBook: 1,
       puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
     };
@@ -193,6 +201,15 @@
     if (el.betweenColoring.checked) kinds.push('coloring');
     if (el.betweenDrawing.checked) kinds.push('drawing');
     if (el.betweenBlank.checked) kinds.push('blank');
+    return kinds;
+  }
+
+  function breatherKinds() {
+    const kinds = [];
+    if (el.breatherFact.checked) kinds.push('fact');
+    if (el.breatherQuote.checked) kinds.push('quote');
+    if (el.breatherDivider.checked) kinds.push('divider');
+    if (el.breatherBlank.checked) kinds.push('blank');
     return kinds;
   }
 
@@ -306,6 +323,12 @@
     el.betweenBlank.checked = inter.includes('blank');
     el.afterLast.checked = cfg.interleaveAfterLast === true;
     if (cfg.coloringStyle) el.coloringStyle.value = cfg.coloringStyle;
+    const br = Array.isArray(cfg.breathers) ? cfg.breathers : [];
+    el.breatherFact.checked = br.includes('fact');
+    el.breatherQuote.checked = br.includes('quote');
+    el.breatherDivider.checked = br.includes('divider');
+    el.breatherBlank.checked = br.includes('blank');
+    el.breatherThemed.checked = cfg.breatherThemeMatched !== false;
     rows = (cfg.puzzles || []).map((p) => ({
       type: p.type,
       count: p.count || 1,
@@ -406,6 +429,10 @@
     el.betweenBlank.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.afterLast.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.coloringStyle.addEventListener('change', invalidate);
+    [el.breatherFact, el.breatherQuote, el.breatherDivider, el.breatherBlank].forEach((n) =>
+      n.addEventListener('change', () => { invalidate(); updateSummary(); })
+    );
+    el.breatherThemed.addEventListener('change', invalidate);
     [el.copyrightPage, el.belongsToPage].forEach((n) => n.addEventListener('change', () => { invalidate(); updateSummary(); }));
     el.intro.addEventListener('input', () => { invalidate(); updateSummary(); });
     el.pageNumbers.addEventListener('change', invalidate);

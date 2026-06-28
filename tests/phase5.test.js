@@ -11,11 +11,12 @@ test('number search and trivia are registered (ten puzzle types + activity pages
   const types = listTypes();
   assert.ok(types.includes('numbersearch'));
   assert.ok(types.includes('trivia'));
-  // Ten puzzle types plus the three kids-book activity pages.
+  // Ten puzzle types plus the kids-book activity pages and breather pages.
   assert.ok(types.includes('coloring'));
   assert.ok(types.includes('drawing'));
   assert.ok(types.includes('bleedguard'));
-  assert.equal(types.length, 13);
+  assert.ok(types.includes('breather'));
+  assert.equal(types.length, 14);
 });
 
 // --- Number Search ---

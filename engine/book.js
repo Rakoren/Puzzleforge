@@ -24,6 +24,56 @@
 const { generate } = require('./generate');
 const { isActivityType } = require('../generators/registry');
 const themes = require('../themes');
+const breatherContent = require('../content/breathers');
+
+const BREATHER_KINDS = ['quote', 'fact', 'divider', 'blank'];
+
+// Theme-matched fun-fact pool for the book's theme (a single theme id or a
+// "cat:Category" that expands to its members), empty when not theme-matched.
+function themeFactPool(config, themeMatched) {
+  if (!themeMatched || !config.theme) return [];
+  const ref = config.theme;
+  if (typeof ref === 'string' && ref.startsWith('cat:')) {
+    const ids = themes.themesInCategory(ref.slice(4));
+    return ids.reduce((acc, id) => acc.concat((breatherContent.byTheme[id] || {}).facts || []), []);
+  }
+  if (typeof ref === 'string' && breatherContent.byTheme[ref]) {
+    return breatherContent.byTheme[ref].facts || [];
+  }
+  return [];
+}
+
+// Choose an unused item, preferring earlier pools; repeats only once all are
+// exhausted. `key` maps an item to its dedupe string.
+function chooseUnused(pools, used, key) {
+  for (const pool of pools) {
+    const fresh = pool.filter((x) => !used.has(key(x)));
+    if (fresh.length) {
+      const item = fresh[Math.floor(Math.random() * fresh.length)];
+      used.add(key(item));
+      return item;
+    }
+  }
+  const all = pools.find((p) => p.length) || [];
+  return all.length ? all[Math.floor(Math.random() * all.length)] : null;
+}
+
+// Build one breather page of the given kind, pulling content from the store.
+function makeBreather(kind, config, themeMatched, state) {
+  if (kind === 'quote') {
+    const q = chooseUnused([breatherContent.general.quotes], state.usedQuotes, (x) => x.text);
+    return generate({ type: 'breather', kind: 'quote', text: q ? q.text : '', source: q ? q.source : null });
+  }
+  if (kind === 'fact') {
+    const f = chooseUnused(
+      [themeFactPool(config, themeMatched), breatherContent.general.facts],
+      state.usedFacts,
+      (x) => x
+    );
+    return generate({ type: 'breather', kind: 'fact', text: f || '' });
+  }
+  return generate({ type: 'breather', kind }); // divider | blank
+}
 
 // How many words to draw into a single word-type puzzle by default.
 const DEFAULT_WORD_COUNT = 14;
@@ -153,7 +203,15 @@ function assembleBook(config, opts = {}) {
 
   const puzzles = [];
 
-  for (const spec of config.puzzles) {
+  // Breather pages (adult): between puzzle sets, not between every puzzle.
+  const breatherKinds = (Array.isArray(config.breathers) ? config.breathers : [])
+    .map((k) => String(k).toLowerCase())
+    .filter((k) => BREATHER_KINDS.includes(k));
+  const breatherThemeMatched = config.breatherThemeMatched !== false;
+  const breatherState = { usedQuotes: new Set(), usedFacts: new Set() };
+
+  for (let si = 0; si < config.puzzles.length; si++) {
+    const spec = config.puzzles[si];
     const count = spec.count || 1;
     for (let i = 0; i < count; i++) {
       const difficulty = pickDifficulty(spec, rand);
@@ -191,6 +249,12 @@ function assembleBook(config, opts = {}) {
       const puzzle = generate(puzzleConfig);
       if (usedWords) for (const w of puzzleWords(puzzle)) usedWords.add(w);
       puzzles.push(puzzle);
+    }
+    // A breather between this set and the next (never after the last set).
+    if (breatherKinds.length && si < config.puzzles.length - 1) {
+      for (const kind of breatherKinds) {
+        puzzles.push(makeBreather(kind, config, breatherThemeMatched, breatherState));
+      }
     }
   }
 
@@ -318,11 +382,18 @@ function interleavePuzzles(puzzles, config) {
     return generate(cfg);
   };
 
+  // Only attach fillers after real puzzles (not breathers or other activity
+  // pages). "afterLast" refers to the last real puzzle.
+  let lastReal = -1;
+  puzzles.forEach((p, i) => {
+    if (!isActivityType(p.type)) lastReal = i;
+  });
+
   const out = [];
   puzzles.forEach((p, i) => {
     out.push(p);
-    const isLast = i === puzzles.length - 1;
-    if (!isLast || afterLast) {
+    if (isActivityType(p.type)) return;
+    if (i !== lastReal || afterLast) {
       const subject = chooseSubject(subjectWords(p)); // one subject, tied to this puzzle
       for (const kind of kinds) out.push(makeFiller(kind, subject));
     }

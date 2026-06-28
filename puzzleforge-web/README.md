@@ -76,6 +76,9 @@ visually — no JSON by hand:
   pages so marker ink doesn't bleed through
 - **Between puzzles, insert** — automatically drop a drawing and/or blank page
   into every gap between puzzles (20 puzzles → 19 of each)
+- **Breather pages** (adult) — a calm page between puzzle *sets*: a fun fact
+  (theme-matched when available), a quote, a divider, or a blank. Curated,
+  non-repeating content from `content/breathers.js`
 
 ## API
 

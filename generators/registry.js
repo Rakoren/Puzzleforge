@@ -110,6 +110,14 @@ const bleedguard = {
   render: require('./bleedguard/renderer').render,
 };
 
+const breather = {
+  type: 'breather',
+  generate: require('./breather').generate,
+  validate: require('./breather/validator').validate,
+  solve: require('./breather/solver').solve,
+  render: require('./breather/renderer').render,
+};
+
 const MODULES = {
   wordsearch,
   sudoku,
@@ -124,11 +132,12 @@ const MODULES = {
   coloring,
   drawing,
   bleedguard,
+  breather,
 };
 
 // Activity (non-puzzle) page types: excluded from the answer key and from the
 // "puzzle count".
-const ACTIVITY_TYPES = new Set(['coloring', 'drawing', 'bleedguard']);
+const ACTIVITY_TYPES = new Set(['coloring', 'drawing', 'bleedguard', 'breather']);
 function isActivityType(type) {
   return ACTIVITY_TYPES.has(type);
 }
