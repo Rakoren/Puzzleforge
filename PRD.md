@@ -1,30 +1,31 @@
 # PuzzleForge — Product Requirements Document
 
-**Version:** 0.1 (Draft)
-**Status:** Pre-development
+**Version:** 0.2 (Active Development)
+**Status:** Engine complete — path to first publishable book
+**Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
+**Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
 **Author:** Rakoren
 
 ---
 
 ## Overview
 
-PuzzleForge is a puzzle generation engine and web platform designed to produce print-ready, publication-quality puzzle content at scale. It has two primary use cases:
+PuzzleForge is a puzzle generation engine and print-ready PDF pipeline for self-publishing activity books on Amazon KDP, plus a free browser tool for teachers and creators. No accounts, no database — settings save as portable "recipe" JSON files.
 
-1. **KDP Publishing** — Generate complete puzzle books exportable as print-ready PDFs for self-publishing on Amazon KDP and similar platforms. Target: passive income through puzzle book sales.
-
-2. **Teacher Tool** — A public-facing web UI where educators can generate custom puzzles for their students, preview them, and print or download single-page PDFs.
+Two use cases:
+1. **KDP Publishing** — Generate complete puzzle books as print-ready PDFs for self-publishing. Target: passive income through puzzle book sales.
+2. **Teacher Tool** — Free public web UI where educators generate custom puzzles, preview them, and print or download single-page PDFs.
 
 ---
 
-## Repository Structure
+## Repository
 
-PuzzleForge is split into two repositories:
+Single repo for now: `rakoren/maze-books`
+Active branch: `claude/prd-review-next-steps-6lkbbb`
 
-### `puzzleforge-engine`
-The core library. Contains all puzzle generators, validators, solvers, layout system, and PDF export pipeline. Also includes the CLI for batch book generation. Has no UI dependencies — it is a pure Node.js library and CLI tool.
-
-### `puzzleforge-web`
-The teacher-facing web application. Imports `puzzleforge-engine` as a local package. Handles UI, single-puzzle preview, and single-page print/download. No puzzle logic lives here.
+Planned split (future):
+- `puzzleforge-engine` — core library, private repo
+- `puzzleforge-web` — teacher UI, MIT license
 
 ---
 
@@ -32,60 +33,120 @@ The teacher-facing web application. Imports `puzzleforge-engine` as a local pack
 
 | Audience | Use Case | Entry Point |
 |---|---|---|
-| Publisher (Rakoren) | Batch-generate full puzzle books for KDP | CLI |
+| Publisher (Rakoren) | Batch-generate full puzzle books for KDP | Web Book Builder + PDF export |
 | Teachers / Educators | Generate custom single puzzles for students | Web UI |
 | Parents / Homeschoolers | Custom activity pages | Web UI |
 
 ---
 
-## Puzzle Types
+## Current Status — What's Built ✅
 
-Puzzle types are prioritized by publishability, generator complexity, and market demand. Each type will be implemented as a standalone module conforming to the standard module interface.
+### Engine (45 tests passing)
 
-### Tier 1 — Core (implement first)
-These appear in nearly every activity book and have strong, consistent sales.
+**10 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
-| Type | Notes |
+| Puzzle Type | Status |
 |---|---|
-| Word Search | Entry point module; most prior art from maze-books repo |
-| Sudoku | Numbers only; highly algorithmic; high volume potential |
-| Crossword | Complex generator; prior art exists; needs Golden Standards compliance |
-| Maze | Visual; essential for kids books; path generation algorithm |
+| Word Search | ✅ Complete — offensive-aware fill, reliable |
+| Number Search | ✅ Complete |
+| Sudoku | ✅ Complete |
+| Maze | ✅ Complete |
+| Cryptogram | ✅ Complete |
+| Word Scramble | ✅ Complete |
+| Crossword | ✅ Complete — recalibrated acceptance thresholds |
+| Kriss-Kross | ✅ Complete |
+| Nonogram | ✅ Complete |
+| Trivia / Quiz | ✅ Complete |
 
-### Tier 2 — Strong Differentiators (implement second)
-These expand the book catalog and increase per-book variety.
+**3 kids activity page types** (no answer key):
+- **Coloring** — procedural mandala / shape-pattern / bubble-letter line art
+- **Drawing** — framed blank + prompt
+- **Blank / bleed-guard** — blank page so markers don't bleed through
 
-| Type | Notes |
+**Engine features:**
+- Retry-until-valid generation
+- Solver-verified answer keys
+- Per-type quality thresholds
+- Non-bypassable offensive content filter (offensive-aware fill + word-aware scan — fixed false positives on legit words like RACCOON, PEACOCK)
+
+### Layout & Export System ✅
+
+- **4 KDP trim sizes**: 8×10, 8.5×11, 8.5×8.5, 6×9 — all with correct margins and gutters
+- **Book pipeline**: title page → puzzles → auto answer key → full-book PDF via Chromium
+
+### Theme System ✅
+
+- 9 built-in themes, ~1,275 clued words
+- Words organized by **difficulty tiers** (easy / medium / hard) — level 1 puzzles never pull hard words
+- Categories + tags, grouped in pickers
+- **AI Theme Generator** — topic → Claude-written tiered clued word list, safety/dedup filtered before save, appears instantly in every picker
+- **Tag filter / search** on theme pickers
+- **Whole-category selection** — e.g. "All Animals & Nature" merges animals + ocean + weather into one pool
+- **Mixed themes** fully supported — generator receives a merged word pool
+
+### Web App ✅
+
+**Puzzle Maker:**
+- Type / theme / difficulty picker
+- Live preview
+- PDF + answer key download
+- Recipe save / load (.json)
+- Differentiation sets (same puzzle at all 3 difficulty levels)
+- Class sets (N varied versions, same words, re-randomized grids)
+- Custom crossword clue editor
+
+**Book Builder:**
+- Visual multi-puzzle assembly
+- Preview
+- Full-book PDF export
+- Recipe save / load
+- **"No repeated words" toggle** — each theme word used once across a book, respects difficulty tiers
+- **"Between puzzles, insert"** — auto-drop drawing and/or blank page into each gap (20 puzzles → 19 of each)
+
+---
+
+## Puzzle Types — Full Scope
+
+### Tier 1 — Core ✅ All Complete
+| Type | Status |
 |---|---|
-| Cryptogram | Encode a quote via substitution cipher; decode to solve |
-| Word Scramble | Anagram each word in a themed list |
-| Kriss-Kross / Fill-In | Given all the words, place them in a blank crossword grid |
-| Number Search | Word search variant using number sequences; popular with seniors |
-| Logic Grid | "Who owns the cat?" deduction grids; Murdle-style; trending |
-| Dot-to-Dot | Connect numbered dots to reveal an image; kids staple |
-| Trivia / Quiz | Q&A pages with answer key; minimal generation complexity |
+| Word Search | ✅ |
+| Sudoku | ✅ |
+| Crossword | ✅ |
+| Maze | ✅ |
 
-### Tier 3 — Niche / High Value (implement third)
-Viable standalone book types for specific audiences.
-
-| Type | Notes |
+### Tier 2 — Strong Differentiators
+| Type | Status |
 |---|---|
-| Nonogram / Picross | Logic grid that reveals a pixel image; dedicated fanbase |
-| Word Ladder | Change one letter at a time from word A to word B |
-| Anagram Puzzles | Unscramble a themed set of words |
-| Riddles | Text only; trivial to generate from a database |
-| Math Puzzles | Addition/subtraction grids, magic squares; good for kids |
-| Rebus Puzzles | Picture + letter combos spelling a word/phrase |
-| Cipher / Code Puzzles | Full substitution alphabet puzzles beyond basic cryptogram |
-| Brain Teasers | Lateral thinking questions with explanatory answers |
-| Word Wheel | Circular letter arrangement; find all words using center letter |
+| Cryptogram | ✅ |
+| Word Scramble | ✅ |
+| Kriss-Kross / Fill-In | ✅ |
+| Number Search | ✅ |
+| Trivia / Quiz | ✅ |
+| Nonogram / Picross | ✅ |
+| Logic Grid | 🔲 Not started |
+| Dot-to-Dot | 🔲 Deferred (needs image assets) |
+
+### Tier 3 — Niche / High Value
+| Type | Status |
+|---|---|
+| Word Ladder | 🔲 Roadmap |
+| Spot the Difference | 🔲 Roadmap |
+| Sudoku Variants | 🔲 Roadmap |
+| Math Puzzles | 🔲 Roadmap |
+| Riddles | 🔲 Roadmap |
+| Brain Teasers | 🔲 Roadmap |
+| Word Wheel | 🔲 Roadmap |
+| Cipher / Code Puzzles | 🔲 Roadmap |
 
 ### Tier 4 — Stretch Goals
-| Type | Notes |
+| Type | Status |
 |---|---|
-| Kakuro | Crossword-style with math sums; complex generator |
-| Futoshiki | Number placement with inequality constraints |
-| Hanjie | Alternate nonogram format |
+| Kakuro | 🔲 |
+| Futoshiki | 🔲 |
+| Color-by-Number (image input → puzzle) | 🔲 Future — image processing pipeline (Sharp or Canvas API) |
+| Hidden Pictures / Seek & Find | 🔲 Future — requires original artwork |
+| Rebus Puzzles | 🔲 Future — requires image assets |
 
 ---
 
@@ -93,353 +154,86 @@ Viable standalone book types for specific audiences.
 
 ### The Puzzle Lifecycle
 
-Every puzzle type, regardless of complexity, follows the same lifecycle:
+Every puzzle type follows the same lifecycle:
 
 ```
 generate(config) → validate(puzzle) → solve(puzzle) → render(puzzle, layout)
 ```
 
-The engine orchestrates this lifecycle. Puzzle modules implement it. Nothing reaches the export pipeline unless it has passed validation.
+The engine orchestrates this. Puzzle modules implement it. Nothing reaches the export pipeline without passing validation.
 
 ### Standard Puzzle Object
-
-Every generated puzzle produces an object with this shape:
 
 ```js
 {
   id: "uuid",
-  type: "wordsearch",           // puzzle type identifier
+  type: "wordsearch",
   difficulty: 1 | 2 | 3,
-  theme: "animals",             // optional
+  theme: "animals",
   title: "Animal Word Search",
   instructions: "Find all the hidden words...",
-
-  data: { ... },                // type-specific puzzle data (grid, clues, etc.)
-  solution: { ... },            // type-specific solution data
-
+  data: { ... },        // type-specific puzzle data
+  solution: { ... },    // type-specific solution data
   meta: {
     generatedAt: timestamp,
-    attempts: 3,                // how many generation attempts before valid
-    validationScore: 0.94,      // quality score 0–1
-    warnings: []                // non-fatal issues flagged during validation
+    attempts: 3,
+    validationScore: 0.94,
+    warnings: []
   }
 }
 ```
 
-`data` and `solution` are type-specific. The outer shape is always identical.
-
 ### Standard Module Interface
-
-Every puzzle type lives in `generators/<type>/` and exports four functions:
 
 ```js
 {
-  generate(config)     → puzzle       // produces a puzzle object
-  validate(puzzle)     → result       // { valid: bool, errors: [], score: float }
-  solve(puzzle)        → solution     // returns solution data for answer key
-  render(puzzle, layout) → html       // produces print-ready HTML for this layout
+  generate(config)        → puzzle
+  validate(puzzle)        → { valid: bool, errors: [], score: float }
+  solve(puzzle)           → solution
+  render(puzzle, layout)  → html
 }
 ```
 
-Adding a new puzzle type = adding a new folder that exports these four functions. The engine does not need to change.
-
-### Engine Modules
-
-**`engine/generate.js`**
-Calls `module.generate` then `module.validate`. Retries up to `MAX_ATTEMPTS` on validation failure. Throws with a descriptive reason if all attempts fail. The caller always receives a valid puzzle or a clear error — never a silently broken one.
-
-**`engine/book.js`**
-Assembles a sequence of puzzles into a book object. Handles ordering, page assignment, answer key section placement, and front/back matter.
-
-**`engine/export.js`**
-Puppeteer-based PDF export pipeline. Receives a book object and a layout config. Renders each puzzle's HTML into a headless Chrome instance and exports a single print-ready PDF at the target trim size and resolution.
+Adding a new puzzle type = new folder, same four exports. Engine doesn't change.
 
 ### Layout System
-
-A layout is a computed set of rendering constraints passed to every `render()` call:
 
 ```js
 {
   trimSize: "8x10",
-  usableWidth: 680,      // px
+  usableWidth: 680,
   usableHeight: 880,
-  fontSize: 14,          // base font size; scales with audience
-  cellSize: 48,          // grid cell px; computed from usableWidth / gridSize
+  fontSize: 14,
+  cellSize: 48,
   gutterPx: 72,
   audience: "kids" | "adult"
 }
 ```
 
-Layout configs live in `layouts/`. The engine selects the correct layout based on book config. Puzzle renderers use these values — they do not hardcode dimensions.
+### KDP Specs
 
-### Config System
-
-**Book-level config:**
-```js
-{
-  title: "Animals Activity Book",
-  audience: "kids",
-  trimSize: "8x10",
-  theme: "animals",
-  pageCount: 50,
-
-  puzzles: [
-    { type: "wordsearch", count: 10, difficulty: 1 },
-    { type: "maze", count: 8, difficulty: "1-2" },
-    { type: "sudoku", count: 5, difficulty: 1 },
-    { type: "crossword", count: 3, difficulty: 2 }
-  ]
-}
-```
-
-**Puzzle-level config** (per generator, passed via `generate(config)`):
-Type-specific options such as grid size, word list, theme, direction constraints, etc.
-
----
-
-## KDP Publishing Specs
-
-### Trim Sizes by Book Type
-
-| Book Type | Trim Size | Notes |
-|---|---|---|
-| Adult puzzle (word search, crossword, sudoku) | **8.5 × 11"** | Industry standard; 92% of top sellers |
-| Kids activity book (mixed puzzles) | **8 × 10"** | Best balance of space and print cost |
-| Kids picture-book style | **8.5 × 8.5"** | Square format; familiar for young children |
-| Compact / travel | **6 × 9"** | Pocket size; coat-pocket friendly |
-
-### PDF Spec Requirements
+| Book Type | Trim Size |
+|---|---|
+| Adult puzzle (word search, crossword, sudoku) | 8.5 × 11" |
+| Kids activity book (mixed puzzles) | 8 × 10" |
+| Kids picture-book style | 8.5 × 8.5" |
+| Compact / travel | 6 × 9" |
 
 | Requirement | Value |
 |---|---|
-| Grid / body text resolution | 300 DPI |
+| Grid resolution | 300 DPI |
 | Crossword cell numbers | 600 DPI |
-| Fonts | Arial, Helvetica, Open Sans, Roboto (no decorative fonts) |
-| Gutter (inside margin) | 0.75" for ≤150 pages; 0.875" for 151–300 pages; 1.0" for 300+ |
+| Gutter (inside margin) | 0.75" ≤150pp / 0.875" 151–300pp / 1.0" 300+pp |
 | Outside margin | 0.625" |
 | Top / bottom margins | 0.75" |
-| Bleed | None (unless decorative edge elements; then 0.125" all sides) |
-| Answer key | Required; placed at back of book |
-| Minimum page count | 24 pages (KDP minimum); 50+ recommended for perceived value |
-
-### Recommended Book Volumes
-
-| Type | Puzzle Count | Page Count |
-|---|---|---|
-| Word Search | 50–100 | 100–200 |
-| Crossword | 50–80 | 100–160 |
-| Sudoku | 100–300 | 100–300 |
-| Mixed Activity (kids) | 50–80 mixed | 80–150 |
+| Bleed | None (0.125" if decorative edges) |
+| Minimum page count | 24 (50+ recommended) |
 
 ---
 
-## Quality Standards ("Golden Standards")
+## Theming Strategy
 
-Every puzzle type must pass its validator before it can be rendered or exported. Validation returns a score (0–1) and a list of errors/warnings.
-
-### Universal Rules (all puzzle types)
-- No puzzle is exported without passing validation
-- Generator retries up to `MAX_ATTEMPTS` (configurable; default 10) before throwing
-- Validation score must meet the type's minimum threshold
-- Solution must be verified by the solver before export — not just trusted from the generator
-- Offensive content filter applied to all text content
-
-### Word Search Specific
-- All words must be placed and findable by the solver
-- No duplicate words in the grid
-- Grid fully filled — no empty cells
-- Direction mix matches difficulty level (level 1: H/V only; level 2: + diagonals; level 3: + backwards)
-- Minimum word length: 3 characters
-- No word is an accidental substring of another placed word
-- Buffer zones between word endpoints prevent unintended adjacencies
-- Fill letters scanned for accidental common words (configurable threshold)
-
-### Sudoku Specific
-- Exactly one valid solution — verified by solver
-- Minimum given clues per difficulty (easy: ~36, medium: ~28, hard: ~22)
-- No naked singles filling the entire puzzle at easy difficulty
-
-### Crossword Specific
-- Single connected component (no isolated word islands)
-- Rotational symmetry (180°) — publishing convention
-- No unchecked squares (every letter must be part of both an across and a down word)
-- No duplicate words
-- No isolated single-letter fills
-- Intersection density appropriate for difficulty
-- All clues present and non-empty
-- Grid fully solvable from clues — verified by solver
-
-### Maze Specific
-- Exactly one solution path (or configurable: one primary + dead ends)
-- Start and end are reachable
-- No inaccessible regions
-- Difficulty correlates to path length and dead-end density
-
----
-
-## Folder Structure
-
-### `puzzleforge-engine`
-```
-puzzleforge-engine/
-  generators/
-    wordsearch/
-      index.js         ← generate()
-      validator.js     ← validate()
-      solver.js        ← solve()
-      renderer.js      ← render()
-    sudoku/
-    crossword/
-    maze/
-    cryptogram/
-    wordscrumble/
-    krisscross/
-    logicgrid/
-    ...
-
-  engine/
-    generate.js        ← retry loop, orchestrates module lifecycle
-    book.js            ← assembles puzzles into a book object
-    export.js          ← Puppeteer PDF pipeline
-
-  layouts/
-    8x10.js
-    8.5x11.js
-    8.5x8.5.js
-    6x9.js
-
-  themes/
-    animals.json
-    space.json
-    fruits.json
-    ocean.json
-    sports.json
-    ...
-
-  config/
-    defaults.js        ← difficulty defaults, font scales, audience presets
-
-  filters/
-    offensive.js       ← blocked word list
-    common-words.js    ← fill validation word list
-
-  cli/
-    index.js           ← batch book generation entry point
-
-  tests/
-    wordsearch.test.js
-    sudoku.test.js
-    crossword.test.js
-    ...
-```
-
-### `puzzleforge-web`
-```
-puzzleforge-web/
-  src/
-    components/
-      PuzzlePreview.jsx
-      PuzzleConfig.jsx
-      ThemePicker.jsx
-      PrintButton.jsx
-    pages/
-      index.jsx        ← landing / puzzle picker
-      generate.jsx     ← config UI + live preview
-    lib/
-      engine.js        ← thin wrapper importing puzzleforge-engine
-  public/
-  package.json
-```
-
----
-
-## Implementation Order
-
-### Phase 1 — Foundation
-1. Repo scaffolding (both repos, package.json, folder structure)
-2. Layout system (all 4 trim sizes)
-3. Word Search module (generate → validate → solve → render)
-4. Engine orchestration (generate.js with retry loop)
-5. Puppeteer export pipeline (single puzzle → PDF)
-6. CLI: single puzzle export
-
-### Phase 2 — Book Pipeline
-7. `engine/book.js` — assembles multiple puzzles
-8. Answer key generation
-9. Front matter / back matter templates
-10. CLI: full book export from config file
-11. Sudoku module
-
-### Phase 3 — More Puzzle Types
-12. Maze
-13. Crossword (port + upgrade from maze-books)
-14. Cryptogram
-15. Word Scramble
-16. Kriss-Kross
-
-### Phase 4 — Web UI
-17. `puzzleforge-web` scaffolding
-18. Single-puzzle generator UI
-19. Live preview
-20. Single-page print/PDF download
-
-### Phase 5 — Expansion
-21. Logic Grid
-22. Nonogram
-23. Dot-to-Dot
-24. Remaining Tier 2/3 types
-25. Theme expansion
-
----
-
-## Web Platform (`puzzleforge-web`)
-
-### Business Model
-
-The book generator (CLI) funds the project. Revenue from KDP puzzle book sales covers hosting and operating costs. The teacher web tool is free, permanently. No ads, no paywalls, no freemium tiers.
-
-### Authentication
-
-**None — v1 is accountless.**
-
-No logins, no profiles, no backend user storage. Teachers interact with the site, generate puzzles, and save their work locally. This eliminates auth complexity, privacy obligations, and maintenance overhead entirely.
-
-If saved puzzle libraries become a strong user request in the future, Google sign-in via Clerk can be added in v2 with minimal architectural change. There is no plan to verify teacher identity — the tool is positioned for teachers but open to anyone making puzzles for kids.
-
-### Save & Retrieve (Option A — Local Save)
-
-After generating a puzzle the user receives two download options:
-
-- **PDF** — print-ready single page, ready to hand to students
-- **Recipe file (.json)** — the puzzle config (word list, theme, difficulty, grid size, title, instructions). Saved locally by the teacher.
-
-To regenerate or modify a puzzle later, the teacher re-uploads their recipe file. The engine re-generates from that config. The grid will be re-randomized but all their customizations (words, title, clues) are preserved.
-
-This also serves as a natural **share mechanism** — teachers can share recipe files with colleagues, post them in teacher forums, or upload them to curriculum sharing sites. Each shared recipe is implicit marketing for PuzzleForge.
-
-### Teacher Tools
-
-All tools use the same puzzle engine. No separate logic required.
-
-| Tool | Description |
-|---|---|
-| **Single puzzle generator** | Core feature — configure and generate any puzzle type, preview, download PDF + recipe |
-| **Worksheet builder** | Combine 3–4 puzzle types around one theme into a single printable page |
-| **Differentiation mode** | Generate the same puzzle at all three difficulty levels simultaneously for tiered classrooms |
-| **Class set export** | Generate N slightly-varied versions of the same puzzle (re-randomized grids, same words) so students can't copy — huge practical value, trivial for the engine |
-| **Answer key toggle** | Print with or without answer key — separate PDF downloads |
-| **Custom clue editor** | For crosswords — teacher writes their own clues instead of theme defaults, tying the puzzle to their actual curriculum |
-| **Curriculum word lists** | Prebuilt themed word lists around common curriculum topics (US states, multiplication vocabulary, human body, planets, etc.) so teachers can generate without typing anything |
-
-### Hosting
-
-Vercel (free tier) for v1. Handles the web UI with no cost until traffic warrants an upgrade. The engine runs entirely client-side or as lightweight serverless functions — no persistent server required for Option A.
-
----
-
-
-
-Themes are **word lists only** — no visual assets, no decorative page borders, no imagery tied to themes. A "space" theme is simply a curated word list with associated crossword clues. Visual presentation is handled entirely by the layout system and is consistent across all themes.
+Themes are **word lists only** — no visual assets. Visual presentation is handled by the layout system.
 
 **Theme structure:**
 ```js
@@ -449,106 +243,381 @@ Themes are **word lists only** — no visual assets, no decorative page borders,
   words: [
     { word: "ASTEROID", clue: "A rocky object orbiting the sun", difficulty: 2 },
     { word: "COMET", clue: "An icy body with a glowing tail", difficulty: 1 },
-    ...
   ]
 }
 ```
 
-Each word carries a clue (for crossword/kriss-kross use) and a difficulty rating (so generators can filter by level).
-
-**Mixed themes:** Fully supported. A book or single puzzle can draw from multiple theme word lists. The generator receives a merged word pool and selects from it based on difficulty and length requirements.
-
-**Custom word lists:** Both the CLI and web UI support user-supplied word lists, bypassing the built-in themes entirely. This is the core teacher tool feature.
-
----
-
-## Image-Dependent Puzzle Types
-
-The following puzzle types require image assets and are **deferred to a later phase:**
-
-- Hidden Pictures / Seek & Find
-- Rebus Puzzles
-- Dot-to-Dot (requires path data for the reveal image)
-
-**Future: Color-by-Number / Picture Simplification Generator**
-A planned feature that takes an uploaded image and:
-1. Simplifies it into flat regions using edge detection / posterization
-2. Assigns a number to each color region
-3. Outputs a printable color-by-number puzzle page
-
-This is a standalone generator module with its own image processing pipeline (likely using Canvas API or Sharp). Architecture is compatible — it will conform to the standard module interface when implemented. Flagged as a stretch goal.
-
-**Future: Theme-Shaped (Silhouette) Coloring Pages**
-An evolution of the procedural `coloring` page type. Today the coloring generator produces seed-driven, infinitely-varied geometric line art in three styles (mandala, shape-pattern, bubble-letter). The next step is **subject-shaped** coloring art: a mandala or pattern fill clipped to the outline of the page's theme — e.g. a cat-shaped or fish-shaped mandala for an animals book, tied to the same "word to find" the drawing/bubble pages already use.
-
-Two implementation paths (not mutually exclusive):
-1. **Curated SVG silhouettes** — a small library of clean outline shapes per theme. The procedural fill (mandala rings / shape pattern) is clipped inside the silhouette via an SVG `clipPath`. Reliable and offline; cost is sourcing/drawing the outlines.
-2. **AI-generated line art** — reuse the planned ComfyUI pipeline (prompt → black line art → Potrace → SVG) to produce the silhouette on demand, then fill it the same way.
-
-Compatible with the existing module interface — it's an additional coloring `style`, selectable in the Book Builder like mandala/pattern/bubble. Flagged as a stretch goal alongside the image tools.
+- Words carry a clue (for crossword/kriss-kross) and a difficulty rating
+- Mixed themes fully supported — generator receives a merged pool
+- Custom word lists supported in both CLI and web UI
+- AI Theme Generator available — topic → tiered clued word list via Claude API
 
 ---
 
-## Offensive Language Filter
+## Web Platform
 
-**Priority: Implement in Phase 1, before any puzzle ships.**
+### Business Model
+Book generator revenue funds the project. Teacher tool is free permanently. No ads, no paywalls.
 
-The filter runs on:
-- All placed words in word search and crossword grids
-- All fill letters in word search (scanned for accidental word formation)
-- All user-supplied custom word lists (input sanitization)
-- All clue text
+### Authentication
+**None — accountless by design.** No logins, no backend user storage.
 
-**Implementation approach:**
-Use the `bad-words` npm package as the base filter (maintained, configurable, widely used). Supplement with a custom blocklist for puzzle-specific edge cases (short words that appear accidentally in fill, e.g. common 3-letter slurs that a general filter might miss in a grid context).
+Future: Google sign-in via Clerk if saved libraries become a strong request.
 
-The filter lives in `filters/offensive.js` and is imported by every generator's validator. It is not optional and cannot be bypassed by config.
+### Save & Retrieve
+- **PDF** — print-ready, download and print
+- **Recipe file (.json)** — portable puzzle config, re-upload to regenerate or modify
+
+Recipe files also serve as a share mechanism — teachers share with colleagues, post in forums.
+
+### Teacher Tools
+
+| Tool | Status |
+|---|---|
+| Single puzzle generator | ✅ |
+| Book Builder | ✅ |
+| Differentiation sets | ✅ |
+| Class sets | ✅ |
+| Answer key toggle | ✅ |
+| Custom crossword clue editor | ✅ |
+| Recipe save / load | ✅ |
+| AI Theme Generator | ✅ |
+| Worksheet builder (3–4 types, one page) | 🔲 Roadmap |
+| Curriculum word list presets | 🔲 Roadmap |
+| Theme editing UI (edit/delete saved themes) | 🔲 Roadmap |
+
+### Hosting
+Vercel free tier for v1.
+
+---
+
+## Deployment Strategy
+
+PuzzleForge has two distinct deployments with different audiences and access levels.
+
+### Public Deployment (`puzzleforge-web`)
+- Hosted on Vercel free tier
+- Teacher tool only — Puzzle Maker, single puzzle generator, recipe save/load
+- No book builder, no cover builder, no ComfyUI integration
+- MIT licensed, open source
+- No auth required
+
+### Private / Local Deployment (publisher tools)
+- Runs locally on Rakoren's machine
+- Full app — everything in the public deployment plus Book Builder, Cover Builder, ComfyUI border generation, KDP export bundle
+- Not deployed publicly — never exposed to the internet
+- The engine (`puzzleforge-engine`) stays private repo
+- ComfyUI integration is local-only by design (`http://localhost:8188`)
+
+### Why this split
+The book builder is the commercial advantage. Keeping it local means:
+- No hosting costs for the heavy PDF generation workload
+- ComfyUI integration works naturally (same machine)
+- No risk of competitors accessing the publisher pipeline
+- Teacher tool stays fast and lightweight on Vercel
+
+### Repo Structure (post-cleanup)
+
+| Repo | Visibility | License | Contents |
+|---|---|---|---|
+| `puzzleforge-engine` | Private | None | Generators, validators, solvers, layout system, PDF export, book pipeline |
+| `puzzleforge-web` | Public | MIT | Teacher UI only — Puzzle Maker, single puzzle preview, recipe save/load |
+| `maze-books` | Archived | — | Original sandbox repo, preserved for reference |
+
+---
+
+## Border System
+
+A toggle on every puzzle page and book-level settings. Book-level applies to all pages by default with per-puzzle override available in advanced settings.
+
+### Toggle & Modes
+
+```
+[ ] Add page border
+```
+
+Expands to a style picker with four modes:
+
+**None** — no border (default)
+
+**Simple line** — clean geometric border
+- Line style: single / double / dashed
+- Color picker
+- Thickness slider
+
+**Themed** — decorative border matching the active theme
+- Swatches of available border styles for the current theme auto-shown
+- Auto-selects the matching theme border by default
+- Built using the same SVG tile pipeline as custom borders — just ships with the theme
+
+**Custom** — user-supplied SVG
+- Upload SVG field
+- Mode toggle: **Tile icon** (repeats around perimeter) or **Full border strip** (stretches/tiles as top/bottom/side strips)
+- If tiling: tile size slider, spacing slider, rotation option (0° / 45° / 90°)
+- If full strip: corner handling — auto-scale (default) / mirror / repeat
+- Optional corner icon upload (separate SVG for corners)
+
+### Corner Handling (Tiled Mode)
+
+Auto-scale default — spacing adjusts so icons land evenly and corners always get a full icon. Optional corner icon upload for polished results.
+
+### Scope
+
+- **Book-level** (default) — same border on every page
+- **Per-puzzle override** — available in advanced puzzle settings, hidden by default
+
+### ComfyUI Integration (Publisher Only)
+
+A "Generate with AI" button in the border picker — local publisher deployment only.
+
+Opens a generation panel:
+- Text prompt field (e.g. "cute space rockets and stars, black line art, white background")
+- Style preset: line art / silhouette / detailed — maps to different ComfyUI workflows
+- Aspect ratio locked to tile or strip depending on selected mode
+- Generate → calls ComfyUI API at `http://localhost:8188` via PuzzleForge Express proxy
+- Result previews inline → Accept drops it into the border upload slot
+
+**Image format note:** ComfyUI outputs PNG. Pipeline:
+- Full border strips: use PNG directly
+- Tiles: run through Potrace (Node.js) to convert PNG → SVG for clean scalable output
+
+### Themed Border Assets
+
+Built-in themed borders ship as SVG tile sets alongside the theme word list. Created in ComfyUI and traced to SVG. Same rendering pipeline as custom uploads.
+
+---
+
+## Image Upload Features
+
+All image processing uses **Sharp** (Node.js) — handles resize, edge detection, posterization, and compositing. Single dependency covers all image-based features.
+
+### Image-to-Coloring Page
+
+Separate tool from color-by-number. Converts an uploaded photo into a clean black-and-white coloring page.
+
+**Pipeline:**
+1. Optional background removal (toggle, default on — produces much cleaner results)
+2. Edge detection + contrast boost + threshold to pure black and white
+3. Output sized to match selected page size (uses same trim size dropdown as rest of UI)
+
+**Best results with:** clear subjects with defined edges (animals, objects, simple scenes). Busy backgrounds should use background removal.
+
+**UI:**
+- Upload image
+- Background removal toggle (default on)
+- Page size dropdown (matches book trim size)
+- Preview
+- Download PDF
+
+---
+
+### Image-to-Color-by-Number Page
+
+Separate tool. Converts an uploaded photo into a numbered region color-by-number puzzle with a color reference key.
+
+**Pipeline:**
+1. Optional background removal (toggle, default on)
+2. Posterization — reduce image to N colors (user-selected)
+3. Region detection — identify contiguous areas of each color
+4. Number assignment — each color gets a number, regions get labeled
+5. Color key rendered at bottom of page
+6. Optional small reference image showing the finished result
+
+**UI controls:**
+- Upload image
+- Background removal toggle (default on)
+- Color count slider — user picks number of colors (range: 5–15, default: 8)
+- Show reference image toggle (default on — small finished image in corner, ~20% page size, motivates kids to complete the puzzle and looks more professional)
+- Page size dropdown (matches book trim size)
+- Preview
+- Download PDF
+
+**Output:** numbered regions only as the main puzzle, color key at bottom, optional reference image in corner.
+
+---
+
+### Book Cover Generator
+
+Produces a KDP-ready cover with three components: front, spine, back. Spine width is auto-calculated from page count using KDP's formula (0.0025" × page count for white paper).
+
+**Front Cover:**
+- Upload a full bleed image
+- Title text field — rendered on top of image
+- Author name text field — rendered on top of image
+- Font picker
+- Text color picker
+- Text position (top / center / bottom)
+
+**Back Cover:**
+- Solid background color picker
+- Book description text field (blurb)
+- KDP barcode placeholder — white box auto-positioned at bottom right (KDP fills this at upload)
+- Author name optional repeat
+
+**Spine:**
+- Width auto-calculated from page count (user inputs page count or it pulls from book recipe)
+- Title + author name rendered as rotated text
+- Background color picker (independent from back cover)
+
+**Output:**
+- Single stitched full-wrap PDF (front + spine + back as one file) — what KDP requires
+- Correct dimensions based on trim size and page count
+
+**UI:** separate Cover Builder tool, not part of the Book Builder flow. User builds the book first, notes the page count, then goes to Cover Builder.
+
+---
+
+## Filler Pages & Breather Pages
+
+### Overview
+
+Filler behavior is audience-aware and configurable via a progressive disclosure UI panel — simple toggle by default, expandable for full control.
+
+### Kids Mode — Filler Pages
+
+Inserted after **every individual puzzle**, including after the last puzzle. Kids end the book on a creative note. If they don't want to use it they can skip it — but it's there.
+
+**Default behavior (toggle on):**
+- Coloring page → Bleed guard after every puzzle
+- Coloring page style: random
+- Included after last puzzle: yes
+
+**Expanded customization:**
+- Which filler types to include: coloring page / drawing prompt / bleed guard (checkboxes)
+- Coloring page style: random / mandala / shape-pattern / bubble-letter / rotate through all
+- Filler order: coloring first vs bleed first
+- Include after last puzzle: toggle (default on)
+
+### Adult Mode — Breather Pages
+
+Optional, off by default. Inserted between **puzzle sets** (e.g. between word search section and crossword section), not between every individual puzzle.
+
+**Default behavior:** off
+
+**When enabled, content options (checkboxes):**
+- Quote (themed or general)
+- Fun fact (themed or general)
+- Decorative divider
+- Blank page
+
+**Theme-matched content toggle:** when on, quotes and fun facts are pulled from the book's active theme. A space book gets NASA facts and Carl Sagan quotes. This is a perceived premium quality differentiator.
+
+**Not inserted after the last puzzle** — adults go straight to the answer key.
+
+### Quote & Fun Fact Content Strategy
+
+**Phase 1 — Curated database per theme:**
+A small hand-curated set of quotes and fun facts per built-in theme, stored alongside the theme's word list. Fast, free, no API dependency. Each theme gets ~20 quotes and ~20 fun facts to start.
+
+**Phase 2 — AI fallback (future):**
+When the curated database runs dry or a custom/AI-generated theme has no curated content, fall back to generating quotes and fun facts via Claude API at book-build time. Adds variety at minimal cost.
+
+### UI Pattern — Progressive Disclosure
+
+The filler panel in Book Builder starts collapsed:
+
+```
+[ ] Add filler pages between puzzles
+```
+
+Toggling on reveals sensible defaults based on audience. A "customize" link expands the full options panel. This covers the majority of users with zero friction while giving power users full control.
+
+---
+
+## Offensive Language Filter ✅ Complete
+
+Runs on all placed words, fill letters, user-supplied word lists, and clue text. Non-bypassable. Fixed false positives where legit words (RACCOON, PEACOCK) were triggering — now uses offensive-aware fill + word-aware scan.
+
+---
+
+## Implementation Roadmap
+
+### ✅ Phase 1 — Foundation (Complete)
+- Repo scaffolding
+- Layout system (4 trim sizes)
+- Word Search module
+- Engine orchestration with retry loop
+- Chromium PDF export pipeline
+- Offensive content filter
+
+### ✅ Phase 2 — Book Pipeline (Complete)
+- Book assembly
+- Answer key generation
+- Full-book PDF export
+- Sudoku, Maze, Crossword modules
+
+### ✅ Phase 3 — Puzzle Type Expansion (Complete)
+- Cryptogram, Word Scramble, Kriss-Kross, Number Search, Trivia, Nonogram
+
+### ✅ Phase 4 — Web UI (Complete)
+- Puzzle Maker
+- Book Builder
+- Live preview
+- Recipe save/load
+- Differentiation + class sets
+- AI Theme Generator
+- Tag filter, category merge, no-repeated-words, between-puzzle inserts
+
+### 🔲 Phase 5 — Path to First Publishable Book (Next)
+
+**Prerequisite: Repo cleanup (do at PC, ~1 hour)**
+1. Checkout `claude/prd-review-next-steps-6lkbbb` locally
+2. Identify file split — engine files vs web app files
+3. Create `puzzleforge-engine` (new private repo) — clean initial commit, no maze-books history
+4. Create `puzzleforge-web` (new public repo, MIT license) — clean initial commit
+5. Archive `maze-books` repo
+
+**Phase 5 work:**
+6. **Filler page logic fix** — insert after every individual puzzle, not between sets
+7. **Filler UI panel** — progressive disclosure toggle + expand for full control
+8. **Curated quotes + fun facts database** — ~20 each per built-in theme
+9. **Front/back matter** — copyright page, "this book belongs to" page, intro page
+10. **Cover Builder** — image upload, title/author text overlay, font + color picker, auto spine, back with blurb + barcode placeholder, full-wrap PDF output
+11. **One-click KDP export bundle** — interior PDF + cover PDF + metadata sheet (title, trim, page count)
+
+### 🔲 Phase 6 — Content Depth
+7. Theme editing UI — edit/delete saved themes in browser
+8. More built-in themes + AI category generator (hierarchical: e.g. gaming → TTRPG → genre)
+9. Per-book style/font presets + large-print "senior" mode
+
+### 🔲 Phase 7 — More Puzzle Variety
+10. Word Ladder
+11. Spot the Difference
+12. Sudoku variants
+13. Logic Grid
+
+### 🔲 Phase 8 — Image-Based Tools
+14. Image-to-Coloring Page (Sharp pipeline — edge detection, background removal, trim-size output)
+15. Image-to-Color-by-Number (posterization, region numbering, color key, reference image toggle)
+16. Dot-to-Dot (procedural path generation — approach TBD)
+
+### 🔲 Phase 9 — Stretch Goals
+17. AI fallback for quotes/fun facts when curated database runs dry
+18. Hidden Pictures / Seek & Find (requires original artwork)
+19. Color-by-Number as a bookable puzzle type (generate from theme-matched procedural art, no upload required)
 
 ---
 
 ## License Strategy
 
-PuzzleForge has two components with different licensing needs.
-
-### Why licensing matters
-A license tells anyone who finds your code what they can and can't do with it. Without a license, copyright law defaults to "all rights reserved" — nobody can legally use or contribute to your code. With the wrong license, you could accidentally let competitors freely use your engine to publish their own puzzle books.
-
-### The two repos have different goals
-
-**`puzzleforge-engine` — keep it private or source-available**
-
-This is your competitive advantage. The generator quality, the Golden Standards implementation, the export pipeline — this is what makes your books better than the generic KDP puzzle book noise. You don't want a competitor cloning it and flooding Amazon with the same output.
-
-Options:
-- **Private repo** (simplest) — code never public, nobody sees it, no license needed. Fine if you never want community contributions.
-- **Business Source License (BUSL)** — code is visible on GitHub but commercial use is restricted. Converts to open source after a set period (e.g. 4 years). Used by HashiCorp, MariaDB. Good if you want transparency without giving it away.
-- **Proprietary / All Rights Reserved** — public repo, visible code, but explicitly no reuse rights. Rare but valid if you want people to see the work without being able to use it.
-
-**Recommendation: Private repo for now.** You can always open it later. You can't un-open it.
-
-**`puzzleforge-web` — MIT is fine**
-
-The teacher tool UI has no competitive moat. It's a form that calls your engine. Making it MIT (fully open, anyone can use/fork/modify) costs you nothing and could get you contributions or goodwill from the teacher community. It also makes it easier to deploy on free hosting tiers.
-
-### Summary
-
-| Repo | Recommended License | Reason |
+| Repo | License | Reason |
 |---|---|---|
-| `puzzleforge-engine` | Private (no license) | Protects your publishing advantage |
-| `puzzleforge-web` | MIT | Low risk, community-friendly |
+| `puzzleforge-engine` (future) | Private | Protects publishing advantage |
+| `puzzleforge-web` (future) | MIT | Low risk, teacher community friendly |
 
-You can revisit engine licensing once you're established. Plenty of successful tool makers start private and open source once the business is stable enough that giving the code away doesn't hurt.
+Current single repo: no license assigned yet. Keep private until split.
 
 ---
 
 ## Open Questions
 
-- [ ] Color-by-number image processing library — Sharp (Node.js) vs Canvas API — decide when scoping that feature
-- [ ] Crossword clue database depth — built-in themed clues only, or integrate an external clue API for broader coverage?
-- [ ] Sudoku difficulty calibration — define exact given-count ranges per difficulty level before implementing
-- [ ] Logic grid puzzles — generate narrative/clues via AI assist, or from a static database?
-- [ ] Recipe file format — finalize schema before v1 ships so saved files don't break on future engine updates. Needs a version field.
+- [ ] Color-by-number reference image — size and position (corner vs bottom strip vs separate page)
+- [ ] Cover Builder — should it pull page count automatically from the book recipe, or manual entry?
+- [ ] KDP metadata sheet — what fields does KDP actually require at upload? Research before Phase 5.
+- [ ] Logic grid — AI-generated narrative/clues vs static database?
+- [ ] Dot-to-dot — procedural path generation vs curated SVG paths?
+- [ ] Recipe file versioning — needs a `version` field before any public release so future engine changes don't break saved files
 
 ---
 
-*Last updated: 2026-06-27*
+*Last updated: 2026-06-28*
