@@ -121,6 +121,7 @@
         el.thickness.addEventListener('input', () => { el.thickVal.textContent = el.thickness.value; });
       },
       onShow() { if (source) showImg(); else emptyState.classList.remove('hidden'); },
+      loadImage(dataUrl) { source = dataUrl; el.apply.disabled = false; preview(); },
     };
   })();
 
@@ -216,6 +217,7 @@
         el.smoothing.addEventListener('input', () => { el.smoothVal.textContent = el.smoothing.value; });
       },
       onShow() { if (last) showCbn(); else emptyState.classList.remove('hidden'); },
+      loadImage(dataUrl) { source = dataUrl; el.apply.disabled = false; preview(); },
     };
   })();
 
@@ -343,7 +345,21 @@
     cbn.init();
     dots.init();
     document.querySelectorAll('#toolTabs .tab').forEach((b) => b.addEventListener('click', () => activate(b.dataset.tool)));
-    activate('coloring');
+
+    // If we arrived from the AI Art page ("Send to …"), open that tool with the
+    // generated image already loaded.
+    let handoff = null;
+    try {
+      const raw = localStorage.getItem('pf_handoff');
+      if (raw) { handoff = JSON.parse(raw); localStorage.removeItem('pf_handoff'); }
+    } catch (_) { /* ignore */ }
+
+    if (handoff && handoff.image && tools[handoff.tool]) {
+      activate(handoff.tool);
+      tools[handoff.tool].loadImage(handoff.image);
+    } else {
+      activate('coloring');
+    }
   }
 
   init();

@@ -614,9 +614,11 @@ app.get('/api/comfy/status', async (req, res) => {
   res.json(await comfyui.status());
 });
 
-// Installed checkpoints, for a model dropdown ([] when ComfyUI is down).
+// Installed checkpoints + the tuned workflow presets, for the dropdowns
+// (checkpoints come back [] when ComfyUI is down; presets are always available).
 app.get('/api/comfy/checkpoints', async (req, res) => {
-  res.json({ checkpoints: await comfyui.listCheckpoints(), styles: Object.keys(comfyui.STYLES) });
+  const workflows = Object.keys(comfyui.WORKFLOWS).map((id) => ({ id, label: comfyui.WORKFLOWS[id].label }));
+  res.json({ checkpoints: await comfyui.listCheckpoints(), workflows });
 });
 
 // Generate one image from a text prompt. Long-running (polls ComfyUI).

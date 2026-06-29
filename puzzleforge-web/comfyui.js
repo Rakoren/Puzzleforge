@@ -16,19 +16,38 @@ const crypto = require('crypto');
 const BASE_URL = (process.env.COMFYUI_URL || 'http://localhost:8188').replace(/\/$/, '');
 const DEFAULT_CKPT = process.env.COMFYUI_CKPT || 'v1-5-pruned-emaonly.safetensors';
 
-// Style presets → prompt additions + a negative prompt.
-const STYLES = {
-  lineart: {
-    add: ', black and white line art, clean bold outlines, coloring book style, white background, no shading, no color',
-    negative: 'color, shading, grayscale gradients, photo, realistic, text, watermark',
+// Workflow presets, each tuned for a specific book-page purpose: prompt
+// additions, a strong negative prompt, sampler/scheduler/steps/cfg, and an
+// optional `post` step that cleans the raw output in our own pipeline
+// (ComfyUI generation is rarely print-clean on its own).
+//
+//   post: 'lineart'    → trace to crisp black outlines on white (coloring page)
+//   post: 'silhouette' → threshold to a solid black shape on white
+//   post: null         → leave as generated (cover art, or feed into CBN)
+const WORKFLOWS = {
+  coloring: {
+    label: 'Coloring page (clean line art)',
+    add: ', black and white line art, clean bold even outlines, coloring book page for kids, thick uniform lines, large simple shapes, pure white background, no shading, no grey, no color',
+    negative: 'color, grey, gray, shading, gradient, cross-hatching, hatching, sketchy, rough, noisy, busy, photo, realistic, 3d, watermark, text, signature, frame, border',
+    sampler: 'dpmpp_2m', scheduler: 'karras', steps: 30, cfg: 7, post: 'lineart',
+  },
+  cbn: {
+    label: 'Color-by-number base (flat colors)',
+    add: ', flat vector illustration, bold simple shapes, flat solid colors, clean dark outlines, minimal shading, plain white background, cute cartoon style',
+    negative: 'photorealistic, photo, realistic, complex gradient, heavy shading, texture, grain, noise, busy background, watermark, text, signature',
+    sampler: 'dpmpp_2m', scheduler: 'karras', steps: 28, cfg: 7, post: null,
   },
   silhouette: {
-    add: ', solid black silhouette on a plain white background, simple bold shape',
-    negative: 'color, detail, shading, photo, text, watermark',
+    label: 'Silhouette (solid black)',
+    add: ', solid black silhouette of a single subject, centered, plain white background, one bold simple shape, no internal detail',
+    negative: 'color, detail, internal lines, shading, gradient, photo, texture, text, watermark, multiple objects',
+    sampler: 'euler', scheduler: 'normal', steps: 22, cfg: 7, post: 'silhouette',
   },
-  detailed: {
-    add: ', detailed illustration, intricate line work, white background',
-    negative: 'photo, blurry, text, watermark',
+  illustration: {
+    label: 'Detailed illustration (cover art)',
+    add: ', polished detailed illustration, vibrant colors, clean composition, professional book cover art, plain background',
+    negative: 'blurry, lowres, jpeg artifacts, deformed, extra limbs, watermark, text, signature',
+    sampler: 'dpmpp_2m', scheduler: 'karras', steps: 34, cfg: 7, post: null,
   },
 };
 
@@ -68,7 +87,7 @@ async function listCheckpoints() {
 
 // Canonical txt2img workflow in ComfyUI API format. Values are real numbers so
 // the graph validates; node ids are stable strings.
-function buildWorkflow({ prompt, negative, width, height, seed, steps, cfg, ckpt }) {
+function buildWorkflow({ prompt, negative, width, height, seed, steps, cfg, ckpt, sampler, scheduler }) {
   return {
     3: {
       class_type: 'KSampler',
@@ -76,8 +95,8 @@ function buildWorkflow({ prompt, negative, width, height, seed, steps, cfg, ckpt
         seed,
         steps,
         cfg,
-        sampler_name: 'euler',
-        scheduler: 'normal',
+        sampler_name: sampler || 'euler',
+        scheduler: scheduler || 'normal',
         denoise: 1,
         model: ['4', 0],
         positive: ['6', 0],
@@ -99,7 +118,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * Generate one image from a text prompt.
  * @param {object} opts { prompt, style, negative?, width?, height?, seed?, steps?, cfg?, ckpt?, workflow? }
- * @returns {Promise<{ dataUrl, seed }>}
+ *   `style` selects a WORKFLOWS preset (default 'coloring'). Each preset sets a
+ *   sampler/scheduler/steps/cfg and an optional post-process applied after the
+ *   raw image comes back. opts.steps/cfg override the preset.
+ * @returns {Promise<{ dataUrl, seed, post }>}
  */
 async function generate(opts = {}) {
   const prompt = String(opts.prompt || '').trim();
@@ -116,19 +138,21 @@ async function generate(opts = {}) {
     throw e;
   }
 
-  const style = STYLES[opts.style] || STYLES.lineart;
+  const preset = WORKFLOWS[opts.style] || WORKFLOWS.coloring;
   const seed = opts.seed != null ? Number(opts.seed) : Math.floor(Math.random() * 1e15);
   const workflow =
     opts.workflow ||
     buildWorkflow({
-      prompt: prompt + style.add,
-      negative: opts.negative ? String(opts.negative) : style.negative,
+      prompt: prompt + preset.add,
+      negative: opts.negative ? String(opts.negative) : preset.negative,
       width: clampDim(opts.width, 1024),
       height: clampDim(opts.height, 1024),
       seed,
-      steps: Math.max(1, Math.min(60, Number(opts.steps) || 25)),
-      cfg: Math.max(1, Math.min(20, Number(opts.cfg) || 7)),
+      steps: Math.max(1, Math.min(60, Number(opts.steps) || preset.steps || 25)),
+      cfg: Math.max(1, Math.min(20, Number(opts.cfg) || preset.cfg || 7)),
       ckpt: opts.ckpt || DEFAULT_CKPT,
+      sampler: preset.sampler,
+      scheduler: preset.scheduler,
     });
 
   const clientId = crypto.randomUUID();
@@ -170,7 +194,9 @@ async function generate(opts = {}) {
     const image = firstImage(entry.outputs);
     if (image) {
       const buf = await fetchImage(image);
-      return { dataUrl: `data:image/png;base64,${buf.toString('base64')}`, seed };
+      const post = opts.post !== undefined ? opts.post : preset.post;
+      const dataUrl = await applyPost(buf, post, opts);
+      return { dataUrl, seed, post: post || null };
     }
     if (entry.status && entry.status.status_str === 'error') {
       const e = new Error('ComfyUI reported an error running the workflow.');
@@ -181,6 +207,24 @@ async function generate(opts = {}) {
   const e = new Error('Timed out waiting for ComfyUI to finish.');
   e.status = 504;
   throw e;
+}
+
+// Clean the raw ComfyUI output in our own pipeline. ComfyUI line art is usually
+// grey and uneven; tracing it to crisp black/white makes it print-ready.
+async function applyPost(buf, post, opts = {}) {
+  if (post === 'lineart' || post === 'silhouette') {
+    const imagetools = require('./imagetools');
+    if (post === 'silhouette') {
+      const out = await imagetools.toSilhouette(buf);
+      return out.dataUrl;
+    }
+    const out = await imagetools.toColoringPage(buf, {
+      detail: opts.detail != null ? opts.detail : 7,
+      thickness: opts.thickness != null ? opts.thickness : 2,
+    });
+    return out.dataUrl;
+  }
+  return `data:image/png;base64,${buf.toString('base64')}`;
 }
 
 function clampDim(v, def) {
@@ -212,4 +256,4 @@ function comfyError(data) {
   return null;
 }
 
-module.exports = { status, listCheckpoints, generate, buildWorkflow, STYLES, BASE_URL };
+module.exports = { status, listCheckpoints, generate, buildWorkflow, WORKFLOWS, BASE_URL };

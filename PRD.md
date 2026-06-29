@@ -617,10 +617,17 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
     checkpoint auto-listed from the server, size/steps/CFG/seed controls, PNG download.
     Express proxy (`/api/comfy/*`) builds a canonical txt2img workflow, submits it,
     polls `/history`, and returns the image. Degrades gracefully when ComfyUI is down.
-    (Potrace PNG→SVG tracing for border tiles still deferred.)
+    Tuned **workflow presets** (coloring / color-by-number base / silhouette / cover
+    illustration), each setting prompt + negative + sampler/scheduler/steps, with
+    automatic post-processing (line-art traced to crisp B/W, silhouette thresholded)
+    so output is print-ready. **Hand-off** buttons send a generated image straight into
+    the Color-by-Number or Coloring-Page tools. (Potrace PNG→SVG tracing for border
+    tiles still deferred.)
 16. ✅ Image-to-Color-by-Number — Sharp + JS k-means posterization → flat color regions,
     connected-component numbering, printed color key, optional on-page reference guide.
-    Colors (4–24) and smoothing controls. Numbers snap to a pixel inside each region.
+    Noise control: median despeckle before clustering, perceptual color merging (so
+    "Colors" is a soft max with no duplicate shades), and small-region dissolving into
+    neighbours. Colors (4–24) + Cleanup (0–5) controls; numbers snap inside each region.
 17. ✅ Dot-to-Dot — Sharp + JS: Otsu threshold + auto fore/background detection + largest
     blob, outer boundary sampled at evenly spaced angles around the centroid → ordered
     numbered dots. Dot count (12–120) + optional faint guide silhouette. (Polar sampling

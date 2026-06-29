@@ -134,11 +134,25 @@ All three size to any trim and export a print-ready PDF.
 
 The *AI Art* page generates illustrations from a text prompt through a **local
 ComfyUI** instance (default `http://localhost:8188`). It is meant to run on the
-publisher's own machine and is **never deployed publicly**. Pick a style preset
-(line art for coloring pages, solid silhouette, or detailed illustration),
-choose a checkpoint (auto-listed from ComfyUI), set size/steps/CFG/seed, and
-generate. Output downloads as PNG for use in covers, borders, or coloring /
-silhouette pages.
+publisher's own machine and is **never deployed publicly**. Choose a checkpoint
+(auto-listed from ComfyUI), set size/steps/CFG/seed, pick a **workflow preset**,
+and generate.
+
+**Workflow presets** each tune the prompt, negative prompt, sampler, scheduler,
+and steps for one purpose, and some auto-clean the raw output in our own
+pipeline (ComfyUI line art is rarely print-ready on its own):
+
+| Preset | For | Post-processing |
+|---|---|---|
+| Coloring page (clean line art) | coloring-book pages | traced to crisp black outlines on white |
+| Color-by-number base (flat colors) | feeding into Color by Number | none (flat cartoon colors) |
+| Silhouette (solid black) | silhouette pages | thresholded to a solid black shape |
+| Detailed illustration (cover art) | covers / decorative art | none |
+
+**Hand-off:** after generating, **Send to Color by Number** or **Send to
+Coloring Page** carries the image straight into the matching Image Tools tab —
+the cleanest path to a numbered page is *Color-by-number base* → *Send to Color
+by Number*. Output also downloads as PNG.
 
 ```bash
 export COMFYUI_URL=http://localhost:8188              # optional, this is the default

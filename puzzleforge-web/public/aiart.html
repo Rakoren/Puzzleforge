@@ -39,13 +39,11 @@
         <textarea id="prompt" rows="3" placeholder="e.g. a friendly cartoon elephant holding a balloon"></textarea>
       </label>
       <label class="field">
-        <span>Style</span>
-        <select id="style">
-          <option value="lineart">Line art (coloring book)</option>
-          <option value="silhouette">Silhouette (solid black)</option>
-          <option value="detailed">Detailed illustration</option>
-        </select>
+        <span>Workflow</span>
+        <select id="style"></select>
       </label>
+      <p class="hint" id="styleHint">Each workflow tunes the prompt, sampler, and steps for its purpose —
+        and line-art / silhouette outputs are auto-cleaned to crisp black &amp; white.</p>
       <label class="field">
         <span>Negative prompt (optional)</span>
         <input id="negative" type="text" placeholder="leave blank to use the style default">
@@ -88,13 +86,16 @@
       </div>
       <p class="status" id="status"></p>
 
-      <h2>4 · Download</h2>
+      <h2>4 · Use it</h2>
       <div class="actions">
         <button id="download" class="primary" disabled>Download PNG</button>
       </div>
-      <p class="hint">Generated art is for covers, borders, and coloring/silhouette pages.
-        For line-art coloring pages you can also trace a photo on the
-        <a href="imagetools.html">Image Tools</a> page.</p>
+      <div class="actions">
+        <button id="toCbn" class="ghost" disabled>Send to Color by Number →</button>
+        <button id="toColoring" class="ghost" disabled>Send to Coloring Page →</button>
+      </div>
+      <p class="hint">Tip: use the <strong>Color-by-number base</strong> workflow, then “Send to Color by
+        Number” to turn it into a numbered page — that pipeline gives the cleanest results.</p>
     </section>
 
     <section class="panel preview" aria-label="Preview">

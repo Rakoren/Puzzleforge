@@ -103,6 +103,56 @@ function coloringPageHtml(dataUrl, layout, title) {
 </body></html>`;
 }
 
+/**
+ * Reduce an image to a solid black silhouette on white (Otsu threshold + auto
+ * fore/background detection). Used to clean up "silhouette" AI-art output.
+ * @returns {Promise<{ buffer, width, height, dataUrl }>}
+ */
+async function toSilhouette(image) {
+  const { data, info } = await sharp(toBuffer(image)).rotate().grayscale().raw().toBuffer({ resolveWithObject: true });
+  const w = info.width;
+  const h = info.height;
+  const ch = info.channels;
+  const n = w * h;
+  const hist = new Uint32Array(256);
+  for (let p = 0; p < n; p++) hist[data[p * ch]]++;
+  // Inline Otsu (toDotToDot's helper is defined later in the file).
+  let sum = 0;
+  for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sumB = 0;
+  let wB = 0;
+  let maxVar = -1;
+  let thr = 127;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t];
+    if (!wB) continue;
+    const wF = n - wB;
+    if (!wF) break;
+    sumB += t * hist[t];
+    const mB = sumB / wB;
+    const mF = (sum - sumB) / wF;
+    const v = wB * wF * (mB - mF) * (mB - mF);
+    if (v > maxVar) { maxVar = v; thr = t; }
+  }
+  // Subject = the class less present on the border (background hugs the edges).
+  let darkBorder = 0;
+  let lightBorder = 0;
+  for (let x = 0; x < w; x++) {
+    for (const y of [0, h - 1]) { if (data[(y * w + x) * ch] <= thr) darkBorder++; else lightBorder++; }
+  }
+  for (let y = 0; y < h; y++) {
+    for (const x of [0, w - 1]) { if (data[(y * w + x) * ch] <= thr) darkBorder++; else lightBorder++; }
+  }
+  const fgIsDark = darkBorder <= lightBorder;
+  const out = new Uint8Array(n);
+  for (let p = 0; p < n; p++) {
+    const dark = data[p * ch] <= thr;
+    out[p] = dark === fgIsDark ? 0 : 255; // subject black, background white
+  }
+  const buffer = await sharp(Buffer.from(out), { raw: { width: w, height: h, channels: 1 } }).png().toBuffer();
+  return { buffer, width: w, height: h, dataUrl: `data:image/png;base64,${buffer.toString('base64')}` };
+}
+
 // --- Color by Number ---------------------------------------------------------
 
 const clampInt = (v, lo, hi, def) => {
@@ -664,6 +714,7 @@ function dotToDotHtml(result, layout, title, opts = {}) {
 module.exports = {
   toColoringPage,
   coloringPageHtml,
+  toSilhouette,
   toColorByNumber,
   colorByNumberHtml,
   toDotToDot,
