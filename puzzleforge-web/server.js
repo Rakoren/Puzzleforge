@@ -532,6 +532,79 @@ app.post('/api/image/coloring/pdf', async (req, res) => {
   }
 });
 
+// Preview: photo → color-by-number (outline + reference + palette + numbers).
+app.post('/api/image/cbn/preview', async (req, res) => {
+  const body = req.body || {};
+  if (!body.image) return res.status(400).json({ error: 'No image uploaded.' });
+  try {
+    const out = await imagetools.toColorByNumber(body.image, { colors: body.colors, smoothing: body.smoothing });
+    res.json({
+      outline: out.outlineDataUrl,
+      reference: out.referenceDataUrl,
+      width: out.width,
+      height: out.height,
+      palette: out.palette,
+      regions: out.regions,
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Export the color-by-number page as a print-ready PDF.
+app.post('/api/image/cbn/pdf', async (req, res) => {
+  const body = req.body || {};
+  if (!body.image) return res.status(400).json({ error: 'No image uploaded.' });
+  try {
+    const out = await imagetools.toColorByNumber(body.image, { colors: body.colors, smoothing: body.smoothing });
+    const layout = pf.getLayout(body.trimSize || '8.5x11', { audience: 'kids' });
+    const html = imagetools.colorByNumberHtml(out, layout, body.title || null, { showReference: Boolean(body.showReference) });
+    const outPath = path.join(os.tmpdir(), `pf-cbn-${crypto.randomUUID()}.pdf`);
+    await pf.exportHtmlPdf(html, { outPath });
+    const pdf = fs.readFileSync(outPath);
+    fs.unlink(outPath, () => {});
+    const base = (body.title || 'color-by-number').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Preview: photo → dot-to-dot (ordered numbered dots + faint silhouette).
+app.post('/api/image/dots/preview', async (req, res) => {
+  const body = req.body || {};
+  if (!body.image) return res.status(400).json({ error: 'No image uploaded.' });
+  try {
+    const out = await imagetools.toDotToDot(body.image, { dots: body.dots });
+    res.json({ width: out.width, height: out.height, dots: out.dots, reference: out.referenceDataUrl });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Export the dot-to-dot page as a print-ready PDF.
+app.post('/api/image/dots/pdf', async (req, res) => {
+  const body = req.body || {};
+  if (!body.image) return res.status(400).json({ error: 'No image uploaded.' });
+  try {
+    const out = await imagetools.toDotToDot(body.image, { dots: body.dots });
+    const layout = pf.getLayout(body.trimSize || '8.5x11', { audience: 'kids' });
+    const html = imagetools.dotToDotHtml(out, layout, body.title || null, { showReference: Boolean(body.showReference) });
+    const outPath = path.join(os.tmpdir(), `pf-dots-${crypto.randomUUID()}.pdf`);
+    await pf.exportHtmlPdf(html, { outPath });
+    const pdf = fs.readFileSync(outPath);
+    fs.unlink(outPath, () => {});
+    const base = (body.title || 'dot-to-dot').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // --- ComfyUI (publisher-only, local AI art) ---
 
 const comfyui = require('./comfyui');

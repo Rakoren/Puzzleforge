@@ -105,16 +105,30 @@ visually — no JSON by hand:
 | POST | `/api/cover/pdf` | export the full-wrap cover PDF |
 | POST | `/api/image/coloring/preview` | photo → line-art coloring page (PNG data URL) |
 | POST | `/api/image/coloring/pdf` | export the coloring page as a print-ready PDF |
+| POST | `/api/image/cbn/preview` | photo → color-by-number (outline + numbers + palette + reference) |
+| POST | `/api/image/cbn/pdf` | export the color-by-number page as a print-ready PDF |
+| POST | `/api/image/dots/preview` | photo → dot-to-dot (ordered numbered dots + silhouette) |
+| POST | `/api/image/dots/pdf` | export the dot-to-dot page as a print-ready PDF |
 | GET | `/api/comfy/status` | `{ available, url }` — whether a local ComfyUI is reachable |
 | GET | `/api/comfy/checkpoints` | `{ checkpoints:[], styles:[] }` for the model/style pickers |
 | POST | `/api/comfy/generate` | text prompt → `{ image (PNG data URL), seed }` via ComfyUI |
 
 ### Image Tools (publisher)
 
-A **Photo → Coloring Page** tool: upload a photo and it's traced into clean
-black-outline line art (Sharp + a JS Sobel edge detector), with **Detail** and
-**line thickness** controls, sized to any trim. Best on clear subjects with
-defined edges. (Needs the `sharp` dependency; `npm install`.)
+Three publisher tools on one tabbed page (Sharp + pure-JS pipelines; needs the
+`sharp` dependency, `npm install`):
+
+- **Coloring Page** — a photo traced into clean black-outline line art (JS Sobel
+  edge detector) with **Detail** and **line thickness** controls. Best on clear
+  subjects with defined edges.
+- **Color by Number** — a photo reduced to a few flat colors (k-means), each
+  region numbered to match a printed color key, with **Colors** and **Smoothing**
+  controls and an optional on-page color guide.
+- **Dot to Dot** — a photo's main subject auto-detected (Otsu threshold + largest
+  blob) and its outline sampled into an ordered ring of numbered dots, with a
+  **Dots** count and an optional faint guide silhouette.
+
+All three size to any trim and export a print-ready PDF.
 
 ### AI Art (ComfyUI — publisher only)
 

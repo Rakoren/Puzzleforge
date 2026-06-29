@@ -607,7 +607,7 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 12. Sudoku variants
 13. Logic Grid
 
-### 🟡 Phase 8 — Image-Based Tools (in progress)
+### ✅ Phase 8 — Image-Based Tools (complete)
 14. ✅ Image-to-Coloring Page — Sharp + JS Sobel edge detector → black line art, detail
     & thickness controls, trim-sized PDF. (Semantic background removal deferred —
     needs an ML model; "detail" trades line count for cleanliness.)
@@ -618,8 +618,14 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
     Express proxy (`/api/comfy/*`) builds a canonical txt2img workflow, submits it,
     polls `/history`, and returns the image. Degrades gracefully when ComfyUI is down.
     (Potrace PNG→SVG tracing for border tiles still deferred.)
-16. 🔲 Image-to-Color-by-Number (posterization, region numbering, color key, reference image toggle)
-17. 🔲 Dot-to-Dot (procedural path generation — approach TBD)
+16. ✅ Image-to-Color-by-Number — Sharp + JS k-means posterization → flat color regions,
+    connected-component numbering, printed color key, optional on-page reference guide.
+    Colors (4–24) and smoothing controls. Numbers snap to a pixel inside each region.
+17. ✅ Dot-to-Dot — Sharp + JS: Otsu threshold + auto fore/background detection + largest
+    blob, outer boundary sampled at evenly spaced angles around the centroid → ordered
+    numbered dots. Dot count (12–120) + optional faint guide silhouette. (Polar sampling
+    handles star-convex subjects well; contour-tracing for deep concavities is a future
+    refinement.)
 
 ### 🔲 Phase 9 — Stretch Goals
 18. AI fallback for quotes/fun facts when curated database runs dry
@@ -641,11 +647,11 @@ Current single repo: no license assigned yet. Keep private until split.
 
 ## Open Questions
 
-- [ ] Color-by-number reference image — size and position (corner vs bottom strip vs separate page)
+- [x] Color-by-number reference image — shipped as an optional small "color guide" below the page (toggle)
 - [ ] Cover Builder — should it pull page count automatically from the book recipe, or manual entry?
 - [ ] KDP metadata sheet — what fields does KDP actually require at upload? Research before Phase 5.
 - [ ] Logic grid — AI-generated narrative/clues vs static database?
-- [ ] Dot-to-dot — procedural path generation vs curated SVG paths?
+- [x] Dot-to-dot — shipped photo-traced (polar boundary sampling); curated SVG paths / contour tracing for concave shapes is a future refinement
 - [ ] Recipe file versioning — needs a `version` field before any public release so future engine changes don't break saved files
 
 ---
