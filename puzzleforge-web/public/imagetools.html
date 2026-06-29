@@ -91,8 +91,8 @@
           <input id="colors" type="range" min="4" max="24" value="12">
         </label>
         <label class="field">
-          <span>Smoothing (<span id="smoothVal">2</span>)</span>
-          <input id="smoothing" type="range" min="0" max="5" value="2">
+          <span>Cleanup (<span id="smoothVal">3</span>)</span>
+          <input id="smoothing" type="range" min="0" max="5" value="3">
         </label>
         <div class="row">
           <label class="field">
@@ -114,8 +114,9 @@
         <div class="actions">
           <button id="cbnDownload" class="primary" disabled>Download color-by-number (PDF)</button>
         </div>
-        <p class="hint">Fewer colors and more smoothing make larger, easier regions for young kids;
-          more colors keep detail for older ones.</p>
+        <p class="hint">Fewer colors and higher cleanup make larger, tidier regions for young kids;
+          more colors and lower cleanup keep detail for older ones. Flat, bold pictures
+          (or AI-generated art) give the cleanest pages — busy photos stay noisy.</p>
       </div>
 
       <!-- Dot to Dot -->

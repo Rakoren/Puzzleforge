@@ -187,6 +187,56 @@ function smoothLabels(labels, w, h, passes) {
   return labels;
 }
 
+// Dissolve speckle: any connected region smaller than minArea is repainted with
+// the palette color of the neighbor it shares the longest border with. Repeated
+// until stable, this is what turns a noisy posterization into clean, colorable
+// regions (the difference between a photo trace and a tidy color-by-number).
+function mergeSmallRegions(pal, w, h, minArea, maxPasses) {
+  const n = w * h;
+  const comp = new Int32Array(n);
+  const stack = new Int32Array(n);
+  for (let pass = 0; pass < maxPasses; pass++) {
+    comp.fill(-1);
+    let changed = false;
+    let cid = 0;
+    for (let s = 0; s < n; s++) {
+      if (comp[s] !== -1) continue;
+      const target = pal[s];
+      let sp = 0;
+      stack[sp++] = s;
+      comp[s] = cid;
+      const cells = [];
+      while (sp > 0) {
+        const p = stack[--sp];
+        cells.push(p);
+        const x = p % w;
+        const y = (p - x) / w;
+        if (x > 0 && comp[p - 1] === -1 && pal[p - 1] === target) { comp[p - 1] = cid; stack[sp++] = p - 1; }
+        if (x < w - 1 && comp[p + 1] === -1 && pal[p + 1] === target) { comp[p + 1] = cid; stack[sp++] = p + 1; }
+        if (y > 0 && comp[p - w] === -1 && pal[p - w] === target) { comp[p - w] = cid; stack[sp++] = p - w; }
+        if (y < h - 1 && comp[p + w] === -1 && pal[p + w] === target) { comp[p + w] = cid; stack[sp++] = p + w; }
+      }
+      if (cells.length < minArea) {
+        const counts = {};
+        for (const p of cells) {
+          const x = p % w;
+          const y = (p - x) / w;
+          if (x > 0 && comp[p - 1] !== cid) counts[pal[p - 1]] = (counts[pal[p - 1]] || 0) + 1;
+          if (x < w - 1 && comp[p + 1] !== cid) counts[pal[p + 1]] = (counts[pal[p + 1]] || 0) + 1;
+          if (y > 0 && comp[p - w] !== cid) counts[pal[p - w]] = (counts[pal[p - w]] || 0) + 1;
+          if (y < h - 1 && comp[p + w] !== cid) counts[pal[p + w]] = (counts[pal[p + w]] || 0) + 1;
+        }
+        let bestV = -1;
+        let bestC = 0;
+        for (const v in counts) { if (counts[v] > bestC) { bestC = counts[v]; bestV = Number(v); } }
+        if (bestV >= 0 && bestV !== target) { for (const p of cells) pal[p] = bestV; changed = true; }
+      }
+      cid++;
+    }
+    if (!changed) break;
+  }
+}
+
 /**
  * Convert a photo into a color-by-number page: flat color regions, a number in
  * each sizable region, and a numbered color key.
@@ -194,19 +244,25 @@ function smoothLabels(labels, w, h, passes) {
  * @param {Buffer|string} image
  * @param {object} [opts]
  * @param {number} [opts.colors=12]   palette size (4–24)
- * @param {number} [opts.smoothing=2] speckle-removal passes (0–5)
+ * @param {number} [opts.smoothing=3] cleanup strength 0–5 (despeckle + merge); accepts opts.cleanup too
  * @returns {Promise<{ outlineDataUrl, referenceDataUrl, width, height, palette, regions }>}
  *   regions: [{ x, y, n }] with x/y as 0–1 fractions of the image; n = palette number.
  */
 async function toColorByNumber(image, opts = {}) {
   const colors = clampInt(opts.colors, 4, 24, 12);
-  const smoothing = clampInt(opts.smoothing, 0, 5, 2);
+  // "Cleanup" drives despeckling, smoothing, and small-region merging — the
+  // higher it is, the larger and tidier the regions (fewer stray numbers).
+  const cleanup = clampInt(opts.smoothing != null ? opts.smoothing : opts.cleanup, 0, 5, 3);
 
   // Work at a modest resolution so clustering + components stay fast.
   let pipeline = sharp(toBuffer(image)).rotate();
   const meta = await pipeline.metadata();
   const workW = Math.min(meta.width || 600, 600);
-  const { data, info } = await pipeline.resize({ width: workW }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  pipeline = pipeline.resize({ width: workW });
+  // Edge-preserving despeckle BEFORE clustering, so photo texture collapses into
+  // flat areas instead of becoming thousands of tiny color specks.
+  if (cleanup > 0) pipeline = pipeline.median(1 + cleanup * 2);
+  const { data, info } = await pipeline.removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const w = info.width;
   const h = info.height;
   const ch = info.channels;
@@ -221,13 +277,31 @@ async function toColorByNumber(image, opts = {}) {
   }
 
   const { labels: raw, cent } = kmeans(px, n, colors, 12);
-  let labels = smoothLabels(raw, w, h, smoothing);
+  const labels = smoothLabels(raw, w, h, Math.max(1, cleanup));
 
-  // Keep only clusters that survived, and number them by brightness (dark → 1).
+  // Order clusters dark → light, then merge perceptually similar ones so asking
+  // for "more colors" never yields near-duplicate shades (a major noise source).
+  // "Colors" becomes a soft maximum; cleanup widens the merge tolerance.
   const used = [...new Set(labels)];
   used.sort((a, b) => luminance(cent[a * 3], cent[a * 3 + 1], cent[a * 3 + 2]) - luminance(cent[b * 3], cent[b * 3 + 1], cent[b * 3 + 2]));
+  const colorThresh = 16 + cleanup * 8;
+  const reps = []; // representative cluster ids that survive merging
+  const repOf = new Int16Array(colors).fill(-1);
+  for (const c of used) {
+    const r = cent[c * 3];
+    const g = cent[c * 3 + 1];
+    const b = cent[c * 3 + 2];
+    let found = -1;
+    for (const rc of reps) {
+      const dr = r - cent[rc * 3];
+      const dg = g - cent[rc * 3 + 1];
+      const db = b - cent[rc * 3 + 2];
+      if (Math.sqrt(dr * dr + dg * dg + db * db) < colorThresh) { found = rc; break; }
+    }
+    if (found >= 0) { repOf[c] = found; } else { reps.push(c); repOf[c] = c; }
+  }
   const remap = new Int16Array(colors).fill(-1);
-  const palette = used.map((c, i) => {
+  let palette = reps.map((c, i) => {
     remap[c] = i;
     const r = cent[c * 3];
     const g = cent[c * 3 + 1];
@@ -235,10 +309,23 @@ async function toColorByNumber(image, opts = {}) {
     return { n: i + 1, hex: toHex(r, g, b), rgb: [Math.round(r), Math.round(g), Math.round(b)] };
   });
   const pal = new Uint8Array(n); // 0-based palette index per pixel
-  for (let p = 0; p < n; p++) pal[p] = remap[labels[p]];
+  for (let p = 0; p < n; p++) pal[p] = remap[repOf[labels[p]]];
+
+  // Dissolve tiny regions into their neighbours — the main noise-killer.
+  const mergeArea = Math.round(n * (0.0008 + cleanup * 0.0007));
+  mergeSmallRegions(pal, w, h, Math.max(24, mergeArea), 8);
+
+  // Drop palette colors that no longer appear, and renumber 1..k contiguously.
+  const present = [...new Set(pal)].sort((a, b) => a - b);
+  const reindex = new Int16Array(palette.length).fill(-1);
+  palette = present.map((oldIdx, i) => {
+    reindex[oldIdx] = i;
+    return { n: i + 1, hex: palette[oldIdx].hex, rgb: palette[oldIdx].rgb };
+  });
+  for (let p = 0; p < n; p++) pal[p] = reindex[pal[p]];
 
   // Connected components (4-connectivity) → one number per sizable region.
-  const minArea = Math.max(40, Math.round(n * 0.0009));
+  const minArea = Math.max(80, Math.round(n * 0.0016));
   const comp = new Int32Array(n).fill(-1);
   const stack = new Int32Array(n);
   const regions = [];
