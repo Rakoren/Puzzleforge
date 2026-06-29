@@ -103,6 +103,15 @@ visually — no JSON by hand:
 | POST | `/api/theme/delete` | delete a saved theme → `{ id }` |
 | POST | `/api/cover/preview` | full-wrap cover → `{ html, dims }` |
 | POST | `/api/cover/pdf` | export the full-wrap cover PDF |
+| POST | `/api/image/coloring/preview` | photo → line-art coloring page (PNG data URL) |
+| POST | `/api/image/coloring/pdf` | export the coloring page as a print-ready PDF |
+
+### Image Tools (publisher)
+
+A **Photo → Coloring Page** tool: upload a photo and it's traced into clean
+black-outline line art (Sharp + a JS Sobel edge detector), with **Detail** and
+**line thickness** controls, sized to any trim. Best on clear subjects with
+defined edges. (Needs the `sharp` dependency; `npm install`.)
 
 ### Cover Builder
 

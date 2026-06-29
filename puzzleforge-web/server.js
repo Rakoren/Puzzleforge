@@ -495,6 +495,43 @@ app.post('/api/cover/pdf', async (req, res) => {
   }
 });
 
+// --- Image tools (publisher) ---
+
+const imagetools = require('./imagetools');
+
+// Preview: photo → coloring-page line art (returns a PNG data URL).
+app.post('/api/image/coloring/preview', async (req, res) => {
+  const body = req.body || {};
+  if (!body.image) return res.status(400).json({ error: 'No image uploaded.' });
+  try {
+    const out = await imagetools.toColoringPage(body.image, { detail: body.detail, thickness: body.thickness });
+    res.json({ image: out.dataUrl, width: out.width, height: out.height });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Export the coloring page as a print-ready PDF at the chosen trim size.
+app.post('/api/image/coloring/pdf', async (req, res) => {
+  const body = req.body || {};
+  if (!body.image) return res.status(400).json({ error: 'No image uploaded.' });
+  try {
+    const out = await imagetools.toColoringPage(body.image, { detail: body.detail, thickness: body.thickness });
+    const layout = pf.getLayout(body.trimSize || '8.5x11', { audience: 'kids' });
+    const html = imagetools.coloringPageHtml(out.dataUrl, layout, body.title || null);
+    const outPath = path.join(os.tmpdir(), `pf-color-${crypto.randomUUID()}.pdf`);
+    await pf.exportHtmlPdf(html, { outPath });
+    const pdf = fs.readFileSync(outPath);
+    fs.unlink(outPath, () => {});
+    const base = (body.title || 'coloring-page').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // --- One-click KDP export bundle ---
 
 // Count physical pages in a rendered PDF (the answer key paginates naturally,

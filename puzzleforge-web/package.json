@@ -13,6 +13,7 @@
     "@anthropic-ai/sdk": "^0.106.0",
     "archiver": "^7.0.1",
     "express": "^4.19.2",
-    "puzzleforge-engine": "file:.."
+    "puzzleforge-engine": "file:..",
+    "sharp": "^0.35.2"
   }
 }

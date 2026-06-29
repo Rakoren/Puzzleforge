@@ -607,10 +607,12 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 12. Sudoku variants
 13. Logic Grid
 
-### 🔲 Phase 8 — Image-Based Tools
-14. Image-to-Coloring Page (Sharp pipeline — edge detection, background removal, trim-size output)
-15. Image-to-Color-by-Number (posterization, region numbering, color key, reference image toggle)
-16. Dot-to-Dot (procedural path generation — approach TBD)
+### 🟡 Phase 8 — Image-Based Tools (in progress)
+14. ✅ Image-to-Coloring Page — Sharp + JS Sobel edge detector → black line art, detail
+    & thickness controls, trim-sized PDF. (Semantic background removal deferred —
+    needs an ML model; "detail" trades line count for cleanliness.)
+15. 🔲 Image-to-Color-by-Number (posterization, region numbering, color key, reference image toggle)
+16. 🔲 Dot-to-Dot (procedural path generation — approach TBD)
 
 ### 🔲 Phase 9 — Stretch Goals
 17. AI fallback for quotes/fun facts when curated database runs dry

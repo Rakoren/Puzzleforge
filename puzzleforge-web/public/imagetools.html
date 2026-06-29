@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PuzzleForge — Photo to Coloring Page</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <div>
+        <h1>PuzzleForge</h1>
+        <p class="tagline">Photo → Coloring Page</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Puzzle Maker</a>
+      <a href="book.html">Book Builder</a>
+      <a href="themes.html">AI Themes</a>
+      <a href="cover.html">Cover Builder</a>
+      <a href="imagetools.html" class="active">Image Tools</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="panel config" aria-label="Image settings">
+      <h2>1 · Upload a photo</h2>
+      <label class="field">
+        <span>Image</span>
+        <input id="image" type="file" accept="image/*">
+      </label>
+      <p class="hint">Works best on clear subjects with defined edges (animals, objects, simple
+        scenes). Busy backgrounds add clutter — crop tight first for the cleanest result.</p>
+
+      <h2>2 · Adjust</h2>
+      <label class="field">
+        <span>Detail (<span id="detailVal">6</span>)</span>
+        <input id="detail" type="range" min="1" max="10" value="6">
+      </label>
+      <label class="field">
+        <span>Line thickness (<span id="thickVal">2</span>)</span>
+        <input id="thickness" type="range" min="1" max="4" value="2">
+      </label>
+      <div class="row">
+        <label class="field">
+          <span>Page size</span>
+          <select id="trimSize"></select>
+        </label>
+        <label class="field">
+          <span>Title (optional)</span>
+          <input id="title" type="text" placeholder="e.g. My Cat">
+        </label>
+      </div>
+      <div class="actions">
+        <button id="apply" class="primary" disabled>Update preview</button>
+      </div>
+      <p class="status" id="status"></p>
+
+      <h2>3 · Download</h2>
+      <div class="actions">
+        <button id="downloadPdf" class="primary" disabled>Download coloring page (PDF)</button>
+      </div>
+      <p class="hint">Tip: lower the detail for younger kids (fewer, bolder lines); raise it to
+        keep more of the picture.</p>
+    </section>
+
+    <section class="panel preview" aria-label="Preview">
+      <div class="preview-head">
+        <h2>Preview</h2>
+      </div>
+      <div class="preview-frame img-preview">
+        <img id="previewImg" alt="Coloring page preview" hidden>
+        <div class="empty" id="emptyState">
+          <p>Upload a photo to see the coloring page here.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="imagetools.js"></script>
+</body>
+</html>

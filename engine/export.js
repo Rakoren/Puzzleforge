@@ -361,11 +361,24 @@ async function exportCoverPdf(config, opts = {}) {
   return { outPath: opts.outPath, dims };
 }
 
+/**
+ * Export an arbitrary standalone HTML document (with its own @page rule) to a
+ * print-ready PDF. Used by image tools and other one-off pages.
+ * @param {string} html
+ * @param {object} opts { outPath (required), executablePath? }
+ */
+async function exportHtmlPdf(html, opts = {}) {
+  if (!opts.outPath) throw new Error('export: opts.outPath is required');
+  await htmlToPdf(html, opts.outPath, opts.executablePath);
+  return { outPath: opts.outPath };
+}
+
 module.exports = {
   exportPuzzlePdf,
   exportBookPdf,
   exportPuzzlesPdf,
   exportCoverPdf,
+  exportHtmlPdf,
   renderPuzzleHtml,
   renderPuzzlesHtml,
   renderBookHtml,
