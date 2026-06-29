@@ -11,7 +11,7 @@
  *   theme    string   optional — used for labelling
  *   title    string   optional
  */
-const { singularizeForPrompt } = require('../shared/text');
+const { singularizeForPrompt, indefiniteArticle } = require('../shared/text');
 
 function pick(arr, rand) {
   return arr[Math.floor(rand() * arr.length)];
@@ -20,10 +20,12 @@ function pick(arr, rand) {
 function generate(config = {}, rand = Math.random) {
   const words = (config.words || []).filter((w) => typeof w === 'string' && w.length);
   let prompt = config.prompt;
+  let subject = null; // the raw word the prompt is built from (for re-rolling)
   if (!prompt) {
     if (words.length) {
-      const subject = singularizeForPrompt(pick(words, rand));
-      prompt = `Draw a ${subject.toLowerCase()}!`;
+      subject = pick(words, rand);
+      const noun = singularizeForPrompt(subject).toLowerCase();
+      prompt = `Draw ${indefiniteArticle(noun)} ${noun}!`;
     } else {
       prompt = pick(
         ['Draw your own picture!', 'What can you imagine?', 'Draw something you love!'],
@@ -38,7 +40,7 @@ function generate(config = {}, rand = Math.random) {
     theme: config.theme || null,
     title: config.title || 'My Drawing',
     instructions: prompt,
-    data: { prompt, caption: 'My drawing of…' },
+    data: { prompt, caption: 'My drawing of…', subject },
     solution: {},
   };
 }

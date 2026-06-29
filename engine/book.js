@@ -289,6 +289,10 @@ function assembleBook(config, opts = {}) {
       }
       const puzzle = generate(puzzleConfig);
       if (usedWords) for (const w of puzzleWords(puzzle)) usedWords.add(w);
+      // Activity rows: record swap options so a subject can be re-rolled later.
+      if (isActivityType(spec.type) && Array.isArray(puzzleConfig.words) && puzzleConfig.words.length) {
+        puzzle.data.choices = [...new Set(puzzleConfig.words)].slice(0, 30);
+      }
       group.push(puzzle);
     }
     groups.push(group);
@@ -427,17 +431,22 @@ function interleavePuzzles(puzzles, config) {
     return pool[Math.floor(Math.random() * pool.length)];
   };
 
-  const makeFiller = (kind, subject) => {
-    if (kind === 'drawing') {
-      return generate({ type: 'drawing', words: subject ? [subject] : [], theme: fillerLabel });
-    }
+  const makeFiller = (kind, subject, choices) => {
     if (kind === 'blank') return generate({ type: 'bleedguard', label: '' });
-    const cfg = { type: 'coloring', word: subject || undefined, words: subject ? [subject] : [], theme: fillerLabel };
-    if (coloringStyle === 'rotate') cfg.style = COLORING_STYLES[rotateIdx++ % COLORING_STYLES.length];
-    else if (coloringStyle === 'random') cfg.style = pickRandomStyle(Boolean(subject));
-    else cfg.style = coloringStyle;
-    lastStyle = cfg.style;
-    return generate(cfg);
+    let page;
+    if (kind === 'drawing') {
+      page = generate({ type: 'drawing', words: subject ? [subject] : [], theme: fillerLabel });
+    } else {
+      const cfg = { type: 'coloring', word: subject || undefined, words: subject ? [subject] : [], theme: fillerLabel };
+      if (coloringStyle === 'rotate') cfg.style = COLORING_STYLES[rotateIdx++ % COLORING_STYLES.length];
+      else if (coloringStyle === 'random') cfg.style = pickRandomStyle(Boolean(subject));
+      else cfg.style = coloringStyle;
+      lastStyle = cfg.style;
+      page = generate(cfg);
+    }
+    // Record swap options so a specific page's subject can be re-rolled later.
+    if (choices && choices.length) page.data.choices = [...new Set(choices)].slice(0, 30);
+    return page;
   };
 
   // Only attach fillers after real puzzles (not breathers or other activity
@@ -452,8 +461,9 @@ function interleavePuzzles(puzzles, config) {
     out.push(p);
     if (isActivityType(p.type)) return;
     if (i !== lastReal || afterLast) {
-      const subject = chooseSubject(subjectWords(p)); // one subject, tied to this puzzle
-      for (const kind of kinds) out.push(makeFiller(kind, subject));
+      const candidates = subjectWords(p);
+      const subject = chooseSubject(candidates); // one subject, tied to this puzzle
+      for (const kind of kinds) out.push(makeFiller(kind, subject, candidates));
     }
   });
   return out;

@@ -35,4 +35,15 @@ function singularizeForPrompt(word) {
   return w;
 }
 
-module.exports = { singularizeForPrompt };
+// "a" vs "an" for a following word. Uses the vowel-letter heuristic with the
+// common exceptions: "yoo"-sound words take "a" (a unicorn), silent-h and a few
+// vowel-sound consonants take "an" (an hour, an FBI).
+function indefiniteArticle(word) {
+  const w = String(word || '').toLowerCase().trim();
+  if (!w) return 'a';
+  if (/^(uni|use|usu|eu|ewe|one|once|ufo)/.test(w)) return 'a';
+  if (/^(hour|honest|honou?r|heir)/.test(w)) return 'an';
+  return /^[aeiou]/.test(w) ? 'an' : 'a';
+}
+
+module.exports = { singularizeForPrompt, indefiniteArticle };

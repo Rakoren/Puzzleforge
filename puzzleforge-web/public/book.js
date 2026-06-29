@@ -51,6 +51,8 @@
     previewFrame: $('previewFrame'),
     emptyState: $('emptyState'),
     pageInfo: $('pageInfo'),
+    editPanel: $('editPanel'),
+    editList: $('editList'),
   };
 
   const TYPE_NAMES = {
@@ -184,6 +186,66 @@
   function invalidate() {
     lastBookId = null;
     el.buildPdf.disabled = true;
+    el.editPanel.classList.add('hidden');
+    el.editList.innerHTML = '';
+  }
+
+  // List drawing/coloring pages with an editable subject (datalist of choices).
+  function renderEditable(editable) {
+    el.editList.innerHTML = '';
+    if (!editable.length) { el.editPanel.classList.add('hidden'); return; }
+    el.editPanel.classList.remove('hidden');
+    editable.forEach((ep, i) => {
+      const row = document.createElement('div');
+      row.className = 'edit-row';
+
+      const label = document.createElement('span');
+      label.className = 'edit-label';
+      label.textContent = `${ep.type === 'drawing' ? '✎' : '🎨'} ${ep.label || ep.current}`;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = ep.current || '';
+      input.setAttribute('list', `choices-${i}`);
+      input.title = 'Pick or type a subject';
+
+      const list = document.createElement('datalist');
+      list.id = `choices-${i}`;
+      for (const w of ep.choices || []) {
+        const o = document.createElement('option');
+        o.value = w;
+        list.appendChild(o);
+      }
+
+      input.addEventListener('change', () => {
+        const word = input.value.trim();
+        if (word && word.toUpperCase() !== String(ep.current).toUpperCase()) applyEdit(ep.index, word);
+      });
+
+      row.appendChild(label);
+      row.appendChild(input);
+      row.appendChild(list);
+      el.editList.appendChild(row);
+    });
+  }
+
+  async function applyEdit(index, word) {
+    if (!lastBookId) { setStatus('Preview the book again before editing.', 'err'); return; }
+    setStatus('Updating page…', 'busy');
+    try {
+      const res = await fetch('/api/book/page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId: lastBookId, index, word }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not update page');
+      el.previewFrame.srcdoc = data.html;
+      renderEditable(data.editable || []);
+      setStatus('Page updated.', 'ok');
+    } catch (err) {
+      setStatus(err.message, 'err');
+    }
   }
 
   function config() {
@@ -288,6 +350,7 @@
       lastBookId = data.bookId;
       el.previewFrame.srcdoc = data.html;
       el.emptyState.classList.add('hidden');
+      renderEditable(data.editable || []);
       const m = data.meta;
       const types = Object.entries(m.byType).map(([t, n]) => `${n} ${TYPE_NAMES[t] || t}`).join(', ');
       setStatus(`Built “${m.title}” — ${m.puzzleCount} puzzles (${types}).`, 'ok');

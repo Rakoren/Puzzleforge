@@ -37,8 +37,10 @@ function generate(config = {}, rand = Math.random) {
   }
 
   let word = null;
+  let subject = null; // raw word behind the bubble (for re-rolling)
   if (style === 'bubble') {
-    word = singularizeForPrompt(config.word || (words.length ? pick(words, rand) : 'COLOR')).toUpperCase();
+    subject = config.word || (words.length ? pick(words, rand) : 'COLOR');
+    word = singularizeForPrompt(subject).toUpperCase();
   }
 
   const seed = config.seed != null ? config.seed : Math.floor(rand() * 1e9);
@@ -49,7 +51,7 @@ function generate(config = {}, rand = Math.random) {
     theme: config.theme || null,
     title: config.title || 'Color the Picture',
     instructions: 'Color the picture however you like!',
-    data: { style, word, seed },
+    data: { style, word, seed, subject },
     solution: {},
   };
 }

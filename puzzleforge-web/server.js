@@ -260,6 +260,20 @@ function cacheBook(book) {
   return id;
 }
 
+// Drawing / coloring-bubble pages whose subject word can be swapped.
+function editablePages(book) {
+  const out = [];
+  book.pages.forEach((pg, index) => {
+    const p = pg.puzzle;
+    if (p.type === 'drawing') {
+      out.push({ index, type: 'drawing', current: p.data.subject || '', label: p.data.prompt, choices: p.data.choices || [] });
+    } else if (p.type === 'coloring' && p.data.word) {
+      out.push({ index, type: 'coloring', current: p.data.subject || p.data.word, label: `Color: ${p.data.word}`, choices: p.data.choices || [] });
+    }
+  });
+  return out;
+}
+
 app.post('/api/book/preview', (req, res) => {
   const config = (req.body && req.body.config) || {};
   try {
@@ -268,6 +282,7 @@ app.post('/api/book/preview', (req, res) => {
     res.json({
       bookId,
       html: pf.renderBookHtml(book),
+      editable: editablePages(book),
       meta: {
         title: book.title,
         trimSize: book.trimSize,
@@ -299,6 +314,35 @@ app.post('/api/book/pdf', async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${base}.pdf"`);
     res.send(pdf);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Swap the subject word on a single drawing/coloring page of a cached book.
+app.post('/api/book/page', (req, res) => {
+  const body = req.body || {};
+  const book = body.bookId && bookCache.get(body.bookId);
+  if (!book) return res.status(404).json({ error: 'Preview the book again, then change a page.' });
+  const pg = book.pages[body.index];
+  if (!pg) return res.status(400).json({ error: 'Invalid page.' });
+  const word = String(body.word || '').trim();
+  if (!word) return res.status(400).json({ error: 'Enter a word.' });
+  try {
+    const p = pg.puzzle;
+    let np;
+    if (p.type === 'drawing') {
+      np = pf.generate({ type: 'drawing', words: [word], theme: p.theme || undefined });
+    } else if (p.type === 'coloring') {
+      np = pf.generate({ type: 'coloring', word, words: [word], style: p.data.style });
+    } else {
+      return res.status(400).json({ error: 'That page has no subject to change.' });
+    }
+    np.data.choices = p.data.choices || [];
+    const pi = book.puzzles.indexOf(p);
+    pg.puzzle = np;
+    if (pi >= 0) book.puzzles[pi] = np;
+    res.json({ html: pf.renderBookHtml(book), editable: editablePages(book) });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }
