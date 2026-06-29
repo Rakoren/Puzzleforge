@@ -353,6 +353,27 @@ app.post('/api/book/page', (req, res) => {
   }
 });
 
+// Pre-flight publish checklist (logic checks). Renders the interior once to get
+// an accurate page count (the answer key paginates), then runs the checks.
+app.post('/api/book/checklist', async (req, res) => {
+  const body = req.body || {};
+  const config = body.config || {};
+  let outPath;
+  try {
+    let book = body.bookId && bookCache.get(body.bookId);
+    if (!book) book = pf.assembleBook(config);
+    outPath = path.join(os.tmpdir(), `pf-chk-${crypto.randomUUID()}.pdf`);
+    await pf.exportBookPdf(book, { outPath });
+    const pageCount = countPdfPages(fs.readFileSync(outPath));
+    const result = pf.runChecklist(book, { pageCount, specs: config.puzzles });
+    res.json({ ...result, pageCount });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  } finally {
+    if (outPath) fs.unlink(outPath, () => {});
+  }
+});
+
 // --- AI theme generator ---
 
 const themegen = require('./themegen');

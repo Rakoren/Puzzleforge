@@ -81,6 +81,18 @@
           <input id="borderColor" type="color" value="#333333">
         </label>
       </div>
+      <label class="field">
+        <span>Difficulty curve</span>
+        <select id="difficultyCurve">
+          <option value="">Per-row (use each row's difficulty)</option>
+          <option value="easy-to-hard">Easy → Hard (ramp up)</option>
+          <option value="hard-to-easy">Hard → Easy (ramp down)</option>
+          <option value="mixed">Mixed (random)</option>
+          <option value="flat">Flat (all medium)</option>
+        </select>
+      </label>
+      <p class="hint">Distributes difficulty across the whole book by position, overriding each
+        row's difficulty. Ramps assume grouped order (turn off Shuffle to keep the ramp).</p>
       <div class="row">
         <label class="field">
           <span>Default theme</span>
@@ -174,11 +186,13 @@
         <button id="buildPdf" class="primary" disabled>Download PDF</button>
       </div>
       <div class="actions">
+        <button id="runChecklist" class="ghost">Run publish checklist</button>
         <button id="saveRecipe" class="ghost">Save book recipe</button>
         <label class="upload ghost">Load book recipe
           <input id="loadRecipe" type="file" accept="application/json" hidden>
         </label>
       </div>
+      <div id="checklist" class="checklist hidden"></div>
       <p class="status" id="status"></p>
 
       <h2>4 · Publish (KDP)</h2>

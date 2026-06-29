@@ -42,6 +42,8 @@ notice instead of failing.
 - **Settings** — difficulty, page (trim) size, audience, optional grid size and title
 - **Text size & font** — Normal / Large print / Extra large, and Sans / Serif / Rounded (large-print "senior" mode)
 - **Page border** — a decorative vector frame (single / double / rounded / dashed / dots / scallop / stars) in any color, drawn around each puzzle page (skipped on blank and activity pages)
+- **Difficulty curve** — distribute difficulty across the book by position (Easy→Hard / Hard→Easy / Mixed / Flat), overriding each row's difficulty so the book ramps intentionally
+- **Publish checklist** — a pre-flight pass that renders the book and flags KDP issues (🔴 blockers / 🟡 warnings / 🟢 passes): page count even/≥24, puzzle count, complete answer key, blank pages, bleed guards, front/back matter
 - **Live preview** — puzzle and answer-key tabs
 - **Download PDF** — print-ready at the chosen trim size, with optional answer key
 - **Save / Upload recipe** — a `.json` of your settings. Re-upload later to
@@ -93,6 +95,7 @@ visually — no JSON by hand:
 | POST | `/api/set` | teacher sets → one PDF: `mode: "differentiation" \| "classset"`, `count`, `answers: "none" \| "end" \| "each"` |
 | POST | `/api/book/preview` | assemble a book → `{ bookId, html, meta }` |
 | POST | `/api/book/pdf` | export the book PDF (reuses the assembled book by `bookId`) |
+| POST | `/api/book/checklist` | pre-flight publish checks → `{ items, summary, pageCount }` |
 | GET | `/api/theme/status` | `{ available }` — whether an Anthropic API key is configured |
 | POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
 | POST | `/api/category/generate` | broad topic → `{ category, themes:[{theme,report,sample}] }` (preview) |

@@ -136,6 +136,19 @@ function pickDifficulty(spec, rand) {
   return d ? Number(d) : 1;
 }
 
+// Distribute difficulty across the whole book by a curve, overriding per-row
+// difficulty. Makes a book feel intentionally designed rather than arbitrary.
+//   easy-to-hard / hard-to-easy → ramp in even thirds across the N puzzles
+//   mixed                       → random 1–3 per puzzle
+//   flat                        → every puzzle at `flatLevel`
+const DIFFICULTY_CURVES = new Set(['flat', 'easy-to-hard', 'hard-to-easy', 'mixed']);
+function curveLevel(i, n, curve, flatLevel, rand) {
+  if (curve === 'mixed') return 1 + Math.floor(rand() * 3);
+  if (curve === 'flat') return flatLevel;
+  const step = Math.min(2, Math.floor((n > 1 ? i / n : 0) * 3)); // 0,1,2
+  return curve === 'hard-to-easy' ? 3 - step : 1 + step;
+}
+
 // Select the word list for a word-type puzzle from an already-resolved theme.
 // When `exclude` is a Set, words already used elsewhere in the book are avoided;
 // if uniqueness leaves the puzzle short, it tops up (allowing repeats, but never
@@ -247,6 +260,14 @@ function assembleBook(config, opts = {}) {
   const breatherThemeMatched = config.breatherThemeMatched !== false;
   const breatherState = { usedQuotes: new Set(), usedFacts: new Set() };
 
+  // Optional difficulty curve across the book (overrides per-row difficulty).
+  // Applied in generation order, which is the final reading order unless the
+  // book is shuffled (a ramp assumes grouped order).
+  const curve = DIFFICULTY_CURVES.has(config.difficultyCurve) ? config.difficultyCurve : null;
+  const flatLevel = Math.max(1, Math.min(3, Number(config.difficultyLevel) || 2));
+  const totalPuzzles = config.puzzles.reduce((sum, sp) => sum + (sp.count || 1), 0);
+  let gIdx = 0;
+
   // Generate each spec's puzzles as its own group so we can keep them grouped
   // (with breathers between sets) or shuffle them across the whole book.
   const groups = [];
@@ -255,7 +276,9 @@ function assembleBook(config, opts = {}) {
     const count = spec.count || 1;
     const group = [];
     for (let i = 0; i < count; i++) {
-      const difficulty = pickDifficulty(spec, rand);
+      const difficulty = curve
+        ? curveLevel(gIdx++, totalPuzzles, curve, flatLevel, rand)
+        : pickDifficulty(spec, rand);
       const puzzleConfig = { type: spec.type, difficulty, size: spec.size };
       if (WORD_TYPES.has(spec.type)) {
         if (spec.words) {
@@ -365,6 +388,7 @@ function assembleBook(config, opts = {}) {
       backMatterCount: backMatter.length,
       byType,
       uniqueWords,
+      difficultyCurve: curve,
       ...(usedWords ? { distinctWords: usedWords.size } : {}),
     },
   };

@@ -13,6 +13,9 @@
     fontFamily: $('fontFamily'),
     border: $('border'),
     borderColor: $('borderColor'),
+    difficultyCurve: $('difficultyCurve'),
+    runChecklist: $('runChecklist'),
+    checklist: $('checklist'),
     theme: $('theme'),
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
@@ -261,6 +264,7 @@
       fontFamily: el.fontFamily.value,
       border: el.border.value,
       borderColor: el.borderColor.value,
+      difficultyCurve: el.difficultyCurve.value || undefined,
       theme: el.theme.value,
       answerKey: el.answerKey.checked,
       uniqueWords: el.uniqueWords.checked,
@@ -390,6 +394,44 @@
     }
   }
 
+  async function runChecklist() {
+    el.checklist.classList.remove('hidden');
+    el.checklist.innerHTML = '<p class="chk-busy">Rendering the book and running checks…</p>';
+    el.runChecklist.disabled = true;
+    try {
+      const res = await fetch('/api/book/checklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastBookId ? { bookId: lastBookId, config: config() } : { config: config() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Checklist failed');
+      renderChecklist(data);
+    } catch (err) {
+      el.checklist.innerHTML = `<p class="chk-busy">${err.message}</p>`;
+    } finally {
+      el.runChecklist.disabled = false;
+    }
+  }
+
+  function renderChecklist(data) {
+    const icon = (it) => (it.status === 'pass' ? '🟢' : it.severity === 'blocker' ? '🔴' : '🟡');
+    const s = data.summary;
+    const head =
+      `<div class="chk-summary">${data.pageCount} pages · ` +
+      `<strong>${s.blockers}</strong> blocker${s.blockers === 1 ? '' : 's'}, ` +
+      `<strong>${s.warnings}</strong> warning${s.warnings === 1 ? '' : 's'}, ` +
+      `${s.passes} passed</div>`;
+    const rows = data.items
+      .map(
+        (it) =>
+          `<div class="chk-row chk-${it.status}"><span class="chk-ic">${icon(it)}</span>` +
+          `<span class="chk-label">${it.label}${it.message ? ` — <span class="chk-msg">${it.message}</span>` : ''}</span></div>`
+      )
+      .join('');
+    el.checklist.innerHTML = head + rows;
+  }
+
   function fileBase() {
     return (el.title.value.trim() || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
   }
@@ -436,6 +478,7 @@
     if (cfg.trimSize) el.trimSize.value = cfg.trimSize;
     if (cfg.border) el.border.value = cfg.border;
     if (cfg.borderColor) el.borderColor.value = cfg.borderColor;
+    if (cfg.difficultyCurve) el.difficultyCurve.value = cfg.difficultyCurve;
     if (cfg.fontScale) el.fontScale.value = String(cfg.fontScale);
     if (cfg.fontFamily) el.fontFamily.value = cfg.fontFamily;
     if (cfg.theme) el.theme.value = cfg.theme;
@@ -559,6 +602,7 @@
     el.addRow.addEventListener('click', () => addRow());
     el.preview.addEventListener('click', preview);
     el.buildPdf.addEventListener('click', buildPdf);
+    el.runChecklist.addEventListener('click', runChecklist);
     el.kdpBundle.addEventListener('click', buildBundle);
     el.saveRecipe.addEventListener('click', saveRecipe);
     el.loadRecipe.addEventListener('change', onLoad);
@@ -567,6 +611,7 @@
     el.shuffle.addEventListener('change', invalidate);
     el.border.addEventListener('change', invalidate);
     el.borderColor.addEventListener('change', invalidate);
+    el.difficultyCurve.addEventListener('change', invalidate);
     el.betweenColoring.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.betweenDrawing.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.betweenBlank.addEventListener('change', () => { invalidate(); updateSummary(); });

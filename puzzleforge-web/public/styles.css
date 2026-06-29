@@ -252,6 +252,17 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .chip-x:hover { background: #c92a2a; color: #fff; }
 .fact-edit-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 
+/* Publish checklist */
+.checklist { margin: 10px 0; border: 1px solid var(--line); border-radius: 11px; padding: 12px; }
+.checklist.hidden { display: none; }
+.chk-busy { font-size: 13px; color: var(--muted); margin: 0; }
+.chk-summary { font-size: 13px; margin: 0 0 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.chk-row { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 13px; }
+.chk-ic { flex: 0 0 auto; }
+.chk-label { color: var(--ink); }
+.chk-row.chk-pass .chk-label { color: var(--muted); }
+.chk-msg { color: #9a3412; }
+
 /* Manage themes list */
 .manage-list { margin-top: 8px; }
 .manage-cat { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 12px 0 4px; }

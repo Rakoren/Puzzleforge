@@ -9,6 +9,7 @@
  */
 const { generate } = require('./engine/generate');
 const { assembleBook } = require('./engine/book');
+const { runChecklist } = require('./engine/checklist');
 const {
   exportPuzzlePdf,
   exportBookPdf,
@@ -40,6 +41,7 @@ const offensive = require('./filters/offensive');
 module.exports = {
   generate,
   assembleBook,
+  runChecklist,
   exportPdf: exportPuzzlePdf,
   exportBookPdf,
   exportPuzzlesPdf,

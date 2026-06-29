@@ -1029,7 +1029,7 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner
 - **ComfyUI visibility** — WebSocket progress display, live latent preview, workflow debug panel
 - **ComfyUI prompt helper** — Claude-powered prompt optimizer, context-aware per preset, positive + negative prompt output, "explain changes" toggle
-- **Publish Checklist** — pre-flight checklist with 🔴 blockers / 🟡 warnings / 🟢 passes, structural + KDP compliance checks (logic), content quality checks (Claude API), "Fix it" shortcuts per item, auto-runs on export
+- **Publish Checklist** — pre-flight checklist with 🔴 blockers / 🟡 warnings / 🟢 passes, structural + KDP compliance checks (logic), content quality checks (Claude API), "Fix it" shortcuts per item, auto-runs on export. *(Shipped early: the structural/print logic checks — `engine/checklist.js`, "Run publish checklist" button in Book Builder, renders the book for an accurate page count. Claude content-quality checks, "Fix it" jumps, and auto-run-on-export still to come.)*
 
 ### 🔲 Phase 10 — Digital Layer + Multi-Platform (Publisher)
 - **QR full digital layer** — celebration animations, story continuation, bonus puzzles, audio, parent/teacher pages
