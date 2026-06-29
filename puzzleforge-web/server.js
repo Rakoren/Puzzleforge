@@ -532,6 +532,31 @@ app.post('/api/image/coloring/pdf', async (req, res) => {
   }
 });
 
+// --- ComfyUI (publisher-only, local AI art) ---
+
+const comfyui = require('./comfyui');
+
+// Is a local ComfyUI server reachable? (lets the UI degrade gracefully)
+app.get('/api/comfy/status', async (req, res) => {
+  res.json(await comfyui.status());
+});
+
+// Installed checkpoints, for a model dropdown ([] when ComfyUI is down).
+app.get('/api/comfy/checkpoints', async (req, res) => {
+  res.json({ checkpoints: await comfyui.listCheckpoints(), styles: Object.keys(comfyui.STYLES) });
+});
+
+// Generate one image from a text prompt. Long-running (polls ComfyUI).
+app.post('/api/comfy/generate', async (req, res) => {
+  const body = req.body || {};
+  try {
+    const out = await comfyui.generate(body);
+    res.json({ image: out.dataUrl, seed: out.seed });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code });
+  }
+});
+
 // --- One-click KDP export bundle ---
 
 // Count physical pages in a rendered PDF (the answer key paginates naturally,

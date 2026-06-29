@@ -105,6 +105,9 @@ visually — no JSON by hand:
 | POST | `/api/cover/pdf` | export the full-wrap cover PDF |
 | POST | `/api/image/coloring/preview` | photo → line-art coloring page (PNG data URL) |
 | POST | `/api/image/coloring/pdf` | export the coloring page as a print-ready PDF |
+| GET | `/api/comfy/status` | `{ available, url }` — whether a local ComfyUI is reachable |
+| GET | `/api/comfy/checkpoints` | `{ checkpoints:[], styles:[] }` for the model/style pickers |
+| POST | `/api/comfy/generate` | text prompt → `{ image (PNG data URL), seed }` via ComfyUI |
 
 ### Image Tools (publisher)
 
@@ -112,6 +115,24 @@ A **Photo → Coloring Page** tool: upload a photo and it's traced into clean
 black-outline line art (Sharp + a JS Sobel edge detector), with **Detail** and
 **line thickness** controls, sized to any trim. Best on clear subjects with
 defined edges. (Needs the `sharp` dependency; `npm install`.)
+
+### AI Art (ComfyUI — publisher only)
+
+The *AI Art* page generates illustrations from a text prompt through a **local
+ComfyUI** instance (default `http://localhost:8188`). It is meant to run on the
+publisher's own machine and is **never deployed publicly**. Pick a style preset
+(line art for coloring pages, solid silhouette, or detailed illustration),
+choose a checkpoint (auto-listed from ComfyUI), set size/steps/CFG/seed, and
+generate. Output downloads as PNG for use in covers, borders, or coloring /
+silhouette pages.
+
+```bash
+export COMFYUI_URL=http://localhost:8188              # optional, this is the default
+export COMFYUI_CKPT=v1-5-pruned-emaonly.safetensors   # optional default checkpoint
+```
+
+When ComfyUI isn't running the page shows a notice and disables generation; the
+rest of the app is unaffected.
 
 ### Cover Builder
 

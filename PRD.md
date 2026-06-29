@@ -611,13 +611,20 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 14. ✅ Image-to-Coloring Page — Sharp + JS Sobel edge detector → black line art, detail
     & thickness controls, trim-sized PDF. (Semantic background removal deferred —
     needs an ML model; "detail" trades line count for cleanliness.)
-15. 🔲 Image-to-Color-by-Number (posterization, region numbering, color key, reference image toggle)
-16. 🔲 Dot-to-Dot (procedural path generation — approach TBD)
+15. ✅ ComfyUI Integration (publisher-only AI art) — *AI Art* page generates art from a
+    text prompt via a local ComfyUI (`http://localhost:8188`, configurable via
+    `COMFYUI_URL`/`COMFYUI_CKPT`). Style presets (line art / silhouette / detailed),
+    checkpoint auto-listed from the server, size/steps/CFG/seed controls, PNG download.
+    Express proxy (`/api/comfy/*`) builds a canonical txt2img workflow, submits it,
+    polls `/history`, and returns the image. Degrades gracefully when ComfyUI is down.
+    (Potrace PNG→SVG tracing for border tiles still deferred.)
+16. 🔲 Image-to-Color-by-Number (posterization, region numbering, color key, reference image toggle)
+17. 🔲 Dot-to-Dot (procedural path generation — approach TBD)
 
 ### 🔲 Phase 9 — Stretch Goals
-17. AI fallback for quotes/fun facts when curated database runs dry
-18. Hidden Pictures / Seek & Find (requires original artwork)
-19. Color-by-Number as a bookable puzzle type (generate from theme-matched procedural art, no upload required)
+18. AI fallback for quotes/fun facts when curated database runs dry
+19. Hidden Pictures / Seek & Find (requires original artwork)
+20. Color-by-Number as a bookable puzzle type (generate from theme-matched procedural art, no upload required)
 
 ---
 
