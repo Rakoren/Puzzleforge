@@ -18,6 +18,10 @@
     discard: $('discard'),
     saveStatus: $('saveStatus'),
     manageList: $('manageList'),
+    themeEditor: $('themeEditor'),
+    editorTitle: $('editorTitle'),
+    editorClose: $('editorClose'),
+    editorBody: $('editorBody'),
   };
 
   let current = null; // the generated theme object awaiting save
@@ -163,6 +167,12 @@
     name.className = 'manage-name';
     name.textContent = `${th.label} (${th.wordCount})`;
 
+    const edit = document.createElement('button');
+    edit.className = 'iconbtn';
+    edit.type = 'button';
+    edit.textContent = 'Edit';
+    edit.addEventListener('click', () => openEditor(th));
+
     const clean = document.createElement('button');
     clean.className = 'iconbtn';
     clean.type = 'button';
@@ -177,6 +187,7 @@
 
     const actions = document.createElement('span');
     actions.className = 'manage-actions';
+    actions.appendChild(edit);
     actions.appendChild(clean);
     actions.appendChild(del);
     row.appendChild(name);
@@ -228,6 +239,105 @@
     }
   }
 
+  // --- Theme word/fact editor ---
+
+  let editing = null; // current theme id being edited
+
+  const TIER_LABEL = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+
+  async function openEditor(th) {
+    editing = th.id;
+    el.editorTitle.textContent = `Edit: ${th.label}`;
+    el.editorBody.innerHTML = 'Loading…';
+    el.themeEditor.classList.remove('hidden');
+    el.themeEditor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    try {
+      const res = await fetch('/api/theme/get', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: th.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load theme');
+      renderEditor(data);
+    } catch (err) {
+      el.editorBody.textContent = err.message;
+    }
+  }
+
+  function renderEditor(theme) {
+    el.editorBody.innerHTML = '';
+    for (const t of ['1', '2', '3']) {
+      const entries = theme.tiers[t] || [];
+      const block = document.createElement('div');
+      block.className = 'editor-block';
+      const h = document.createElement('strong');
+      h.textContent = `${TIER_LABEL[t]} (${entries.length})`;
+      block.appendChild(h);
+      const chips = document.createElement('div');
+      chips.className = 'chips';
+      for (const e of entries) {
+        const word = typeof e === 'string' ? e : e.word;
+        chips.appendChild(chip(word, () => removeItems({ words: [word] }, () => openEditor({ id: editing, label: theme.label }))));
+      }
+      block.appendChild(chips);
+      el.editorBody.appendChild(block);
+    }
+    if (Array.isArray(theme.facts) && theme.facts.length) {
+      const block = document.createElement('div');
+      block.className = 'editor-block';
+      const h = document.createElement('strong');
+      h.textContent = `Fun facts (${theme.facts.length})`;
+      block.appendChild(h);
+      const list = document.createElement('div');
+      list.className = 'fact-edit-list';
+      for (const f of theme.facts) {
+        list.appendChild(chip(f, () => removeItems({ facts: [f] }, () => openEditor({ id: editing, label: theme.label })), true));
+      }
+      block.appendChild(list);
+      el.editorBody.appendChild(block);
+    }
+  }
+
+  function chip(text, onRemove, wide) {
+    const span = document.createElement('span');
+    span.className = 'chip' + (wide ? ' chip-wide' : '');
+    const label = document.createElement('span');
+    label.textContent = text;
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'chip-x';
+    x.textContent = '✕';
+    x.title = 'Remove';
+    x.addEventListener('click', onRemove);
+    span.appendChild(label);
+    span.appendChild(x);
+    return span;
+  }
+
+  async function removeItems(payload, refresh) {
+    try {
+      const res = await fetch('/api/theme/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editing, ...payload }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Remove failed');
+      setStatus(el.saveStatus, 'Removed.', 'ok');
+      refresh();
+      loadThemeList();
+    } catch (err) {
+      setStatus(el.saveStatus, err.message, 'err');
+    }
+  }
+
+  function closeEditor() {
+    editing = null;
+    el.themeEditor.classList.add('hidden');
+    el.editorBody.innerHTML = '';
+  }
+
   async function init() {
     try {
       const res = await fetch('/api/theme/status');
@@ -247,6 +357,7 @@
     });
     el.save.addEventListener('click', save);
     el.discard.addEventListener('click', discard);
+    el.editorClose.addEventListener('click', closeEditor);
     loadThemeList();
   }
 

@@ -96,9 +96,18 @@
       <div class="preview-head" style="margin-top:18px;">
         <h2>Manage themes</h2>
       </div>
-      <p class="hint">“Clean” re-runs the safety / duplicate / length filter over a theme.
-        “Delete” removes it permanently.</p>
+      <p class="hint">“Edit” removes individual words or facts. “Clean” re-runs the safety /
+        duplicate / length filter. “Delete” removes the theme permanently.</p>
       <div id="manageList" class="manage-list"></div>
+
+      <div id="themeEditor" class="theme-editor hidden">
+        <div class="preview-head">
+          <h2 id="editorTitle">Edit theme</h2>
+          <button id="editorClose" class="iconbtn" type="button">Done</button>
+        </div>
+        <p class="hint">Click a word or fact to remove it. Changes save immediately.</p>
+        <div id="editorBody"></div>
+      </div>
     </section>
   </main>
 

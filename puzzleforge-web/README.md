@@ -96,6 +96,8 @@ visually — no JSON by hand:
 | POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
 | POST | `/api/theme/save` | persist a generated theme to the library → `{ id, report }` |
 | POST | `/api/theme/clean` | re-run the safety/dedup/length filter over a saved theme → `{ id, report, removed }` |
+| POST | `/api/theme/get` | full contents of a saved theme (for the editor) → `{ id, label, category, tags, facts, tiers }` |
+| POST | `/api/theme/remove` | remove specific words / facts from a saved theme → `{ id, counts, factCount, removedWords, removedFacts }` |
 | POST | `/api/theme/delete` | delete a saved theme → `{ id }` |
 | POST | `/api/cover/preview` | full-wrap cover → `{ html, dims }` |
 | POST | `/api/cover/pdf` | export the full-wrap cover PDF |

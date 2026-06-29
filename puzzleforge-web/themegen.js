@@ -382,4 +382,60 @@ function cleanTheme(id) {
   return { id: payload.id, report, removed: Math.max(0, before - after) };
 }
 
-module.exports = { generateTheme, sanitizeTheme, saveTheme, deleteTheme, cleanTheme, slugify };
+/** Normalize a tier entry's word for comparison. */
+function entryWord(e) {
+  return String((typeof e === 'string' ? e : (e && e.word)) || '')
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+}
+
+/**
+ * Remove specific words and/or facts from a saved theme, writing the file back.
+ * @returns {{ id, counts: {1,2,3}, factCount, removedWords, removedFacts }}
+ */
+function removeFromTheme(id, { words = [], facts = [] } = {}) {
+  const file = themeFile(id);
+  if (!fs.existsSync(file)) {
+    const e = new Error('Theme not found.');
+    e.status = 404;
+    throw e;
+  }
+  const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const dropWords = new Set((words || []).map((w) => entryWord(w)).filter(Boolean));
+  const dropFacts = new Set((facts || []).map((f) => String(f).trim()).filter(Boolean));
+
+  let removedWords = 0;
+  const tiers = raw.tiers || {};
+  for (const t of ['1', '2', '3']) {
+    const before = (tiers[t] || []).length;
+    tiers[t] = (tiers[t] || []).filter((e) => !dropWords.has(entryWord(e)));
+    removedWords += before - tiers[t].length;
+  }
+  raw.tiers = tiers;
+
+  let removedFacts = 0;
+  if (Array.isArray(raw.facts)) {
+    const before = raw.facts.length;
+    raw.facts = raw.facts.filter((f) => !dropFacts.has(String(f).trim()));
+    removedFacts = before - raw.facts.length;
+  }
+
+  fs.writeFileSync(file, JSON.stringify(raw, null, 2) + '\n', 'utf8');
+  return {
+    id: raw.id || slugify(id),
+    counts: { 1: tiers['1'].length, 2: tiers['2'].length, 3: tiers['3'].length },
+    factCount: Array.isArray(raw.facts) ? raw.facts.length : 0,
+    removedWords,
+    removedFacts,
+  };
+}
+
+module.exports = {
+  generateTheme,
+  sanitizeTheme,
+  saveTheme,
+  deleteTheme,
+  cleanTheme,
+  removeFromTheme,
+  slugify,
+};
