@@ -138,9 +138,17 @@ publisher's own machine and is **never deployed publicly**. Choose a checkpoint
 (auto-listed from ComfyUI), set size/steps/CFG/seed, pick a **workflow preset**,
 and generate.
 
-**Workflow presets** each tune the prompt, negative prompt, sampler, scheduler,
-and steps for one purpose, and some auto-clean the raw output in our own
-pipeline (ComfyUI line art is rarely print-ready on its own):
+**Checkpoint auto-tuning:** the app reads the checkpoint name and picks the
+right sampler / steps / CFG / resolution for it — **Turbo / Lightning** models
+get ~8 steps at low CFG with DPM++ SDE Karras (high CFG burns them), **LCM**
+gets the LCM sampler, **SDXL** runs at 1024px, **SD 1.5** at 768px. The fields
+prefill with the recommendation when you pick a checkpoint; you can still
+override them. (Set `COMFYUI_CKPT` to your model, e.g.
+`DreamshaperXL_Turbo_v2.safetensors`.)
+
+**Workflow presets** each tune the prompt and negative prompt for one purpose,
+and some auto-clean the raw output in our own pipeline (ComfyUI line art is
+rarely print-ready on its own):
 
 | Preset | For | Post-processing |
 |---|---|---|

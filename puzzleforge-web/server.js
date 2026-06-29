@@ -626,6 +626,12 @@ app.get('/api/comfy/checkpoints', async (req, res) => {
   res.json({ checkpoints, loras, controlnets, workflows });
 });
 
+// Recommended settings for a checkpoint (the UI prefills the fields with these
+// so Turbo/SDXL/SD1.5 models each get sane steps/cfg/resolution).
+app.get('/api/comfy/tune', (req, res) => {
+  res.json(comfyui.tuneForModel(req.query.ckpt || comfyui.DEFAULT_CKPT));
+});
+
 // Generate one image from a text prompt. Long-running (polls ComfyUI).
 app.post('/api/comfy/generate', async (req, res) => {
   const body = req.body || {};

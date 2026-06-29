@@ -9,6 +9,7 @@
     style: $('style'),
     negative: $('negative'),
     ckpt: $('ckpt'),
+    tuneNote: $('tuneNote'),
     width: $('width'),
     height: $('height'),
     steps: $('steps'),
@@ -138,6 +139,22 @@
     window.location.href = 'imagetools.html';
   }
 
+  // Fetch the recommended settings for the selected checkpoint and prefill the
+  // fields, so Turbo/SDXL/SD1.5 models each get sane steps/cfg/resolution.
+  async function applyTune() {
+    try {
+      const q = el.ckpt.value ? '?ckpt=' + encodeURIComponent(el.ckpt.value) : '';
+      const t = await (await fetch('/api/comfy/tune' + q)).json();
+      el.width.value = t.width;
+      el.height.value = t.height;
+      el.steps.value = t.steps;
+      el.cfg.value = t.cfg;
+      el.tuneNote.textContent =
+        `Detected ${t.family}. Tuned to ${t.steps} steps, CFG ${t.cfg}, ${t.width}px` +
+        (t.fast ? ' (fast model — low steps/CFG on purpose).' : '.');
+    } catch (_) { /* leave defaults */ }
+  }
+
   async function loadWorkflows() {
     try {
       const data = await (await fetch('/api/comfy/checkpoints')).json();
@@ -186,7 +203,9 @@
   async function init() {
     const online = await refreshStatus();
     await loadWorkflows();
+    await applyTune();
     if (online) setStatus('ComfyUI ready.', 'ok');
+    el.ckpt.addEventListener('change', applyTune);
     el.generate.addEventListener('click', () => generate(false));
     el.reroll.addEventListener('click', () => generate(true));
     el.download.addEventListener('click', download);

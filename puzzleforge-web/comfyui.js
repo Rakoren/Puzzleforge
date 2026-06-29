@@ -111,6 +111,26 @@ async function uploadImage(image) {
   return data.subfolder ? `${data.subfolder}/${data.name}` : data.name;
 }
 
+// Pick sampler/steps/cfg/resolution that suit the checkpoint family. The wrong
+// settings ruin output: Turbo/Lightning/LCM models need very few steps and low
+// CFG (high CFG "burns" them), and SDXL wants ~1024 while SD1.5 wants ~768.
+// Detected from the checkpoint filename.
+function tuneForModel(ckpt) {
+  const name = String(ckpt || '').toLowerCase();
+  const isXL = /xl|sdxl/.test(name);
+  const dim = isXL ? 1024 : 768;
+  const t = { family: isXL ? 'SDXL' : 'SD1.5', width: dim, height: dim, fast: false };
+  if (/lcm/.test(name)) {
+    Object.assign(t, { sampler: 'lcm', scheduler: 'sgm_uniform', steps: 6, cfg: 1.5, fast: true, family: t.family + ' LCM' });
+  } else if (/turbo|lightning|hyper/.test(name)) {
+    // DreamShaper XL Turbo and friends: DPM++ SDE Karras, ~8 steps, CFG ~2.
+    Object.assign(t, { sampler: 'dpmpp_sde', scheduler: 'karras', steps: 8, cfg: 2, fast: true, family: t.family + ' Turbo' });
+  } else {
+    Object.assign(t, { sampler: 'dpmpp_2m', scheduler: 'karras', steps: isXL ? 30 : 26, cfg: 7 });
+  }
+  return t;
+}
+
 const clampNum = (v, def, lo, hi) => {
   const n = Number(v);
   if (!Number.isFinite(n)) return def;
@@ -231,19 +251,24 @@ async function generate(opts = {}) {
     controlnet = { name: opts.controlnet.name, image: uploaded, strength: opts.controlnet.strength };
   }
 
+  // Auto-tune sampler/steps/cfg/resolution to the checkpoint (Turbo/SDXL/etc).
+  // The sampler/scheduler always follow the model; steps/cfg/size honor explicit
+  // opts (the UI sends tuned values) and fall back to the model's defaults.
+  const ckpt = opts.ckpt || DEFAULT_CKPT;
+  const tune = tuneForModel(ckpt);
   const workflow =
     opts.workflow ||
     buildWorkflow({
       prompt: prompt + preset.add,
       negative: opts.negative ? String(opts.negative) : preset.negative,
-      width: clampDim(opts.width, 1024),
-      height: clampDim(opts.height, 1024),
+      width: clampDim(opts.width, tune.width),
+      height: clampDim(opts.height, tune.height),
       seed,
-      steps: Math.max(1, Math.min(60, Number(opts.steps) || preset.steps || 25)),
-      cfg: Math.max(1, Math.min(20, Number(opts.cfg) || preset.cfg || 7)),
-      ckpt: opts.ckpt || DEFAULT_CKPT,
-      sampler: preset.sampler,
-      scheduler: preset.scheduler,
+      steps: Math.max(1, Math.min(60, Number(opts.steps) || tune.steps)),
+      cfg: Math.max(0, Math.min(20, opts.cfg != null && opts.cfg !== '' ? Number(opts.cfg) : tune.cfg)),
+      ckpt,
+      sampler: tune.sampler,
+      scheduler: tune.scheduler,
       loras,
       controlnet,
     });
@@ -357,6 +382,8 @@ module.exports = {
   uploadImage,
   generate,
   buildWorkflow,
+  tuneForModel,
   WORKFLOWS,
   BASE_URL,
+  DEFAULT_CKPT,
 };
