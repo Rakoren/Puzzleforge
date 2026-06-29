@@ -22,6 +22,7 @@
  * is chosen per puzzle.
  */
 const { generate } = require('./generate');
+const { withSeed } = require('./rng');
 const { isActivityType } = require('../generators/registry');
 const themes = require('../themes');
 const breatherContent = require('../content/breathers');
@@ -223,19 +224,6 @@ function addBleedGuards(pages) {
   return out;
 }
 
-// Small seeded PRNG so a book's structure (ordering, difficulty ranges) is
-// reproducible from a saved seed. Not cryptographic — just stable.
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 // Fisher-Yates shuffle returning a new array.
 function shuffled(arr, rand) {
   const a = arr.slice();
@@ -253,11 +241,16 @@ function shuffled(arr, rand) {
  * @returns {object} book object with generated puzzles
  */
 function assembleBook(config, opts = {}) {
-  // Seed makes the page structure (shuffle, difficulty ranges) reproducible so a
-  // saved recipe's per-page state lines up by index on reload. A fresh seed is
-  // generated when none is supplied, and recorded on the book for saving.
+  // Seed makes the whole book reproducible — page structure, word selection, and
+  // puzzle content. A fresh seed is generated when none is supplied, recorded on
+  // the book for saving. When we own the randomness (no injected rand), run the
+  // entire assembly under a seeded Math.random so every module reproduces.
   const seed = Number.isFinite(config.seed) ? config.seed >>> 0 : (Math.random() * 0xffffffff) >>> 0;
-  const rand = opts.rand || mulberry32(seed);
+  if (!opts.rand) return withSeed(seed, () => buildBook(config, opts, seed, Math.random));
+  return buildBook(config, opts, seed, opts.rand);
+}
+
+function buildBook(config, opts, seed, rand) {
   if (!config.title) throw new Error('book: config.title is required');
   if (!Array.isArray(config.puzzles) || config.puzzles.length === 0) {
     throw new Error('book: config.puzzles must be a non-empty array');

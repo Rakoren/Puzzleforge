@@ -14,11 +14,19 @@
  */
 const crypto = require('crypto');
 const { getModule } = require('../generators/registry');
+const { withSeed } = require('./rng');
 const { MAX_ATTEMPTS, acceptThreshold } = require('../config/defaults');
 
 function generate(config = {}, opts = {}) {
   if (!config.type) {
     throw new Error('engine.generate: config.type is required');
+  }
+  // Reproducible single-puzzle generation: with a seed, run the whole retry loop
+  // under a seeded Math.random so the same (config, seed) yields the same puzzle.
+  // (config.seed is accepted too, for convenience from callers like the editor.)
+  const seed = opts.seed != null ? opts.seed : config.seed;
+  if (seed != null && !opts._seeded) {
+    return withSeed(Number(seed) >>> 0, () => generate(config, { ...opts, _seeded: true }));
   }
   const mod = getModule(config.type);
   const maxAttempts = opts.maxAttempts || MAX_ATTEMPTS;

@@ -65,13 +65,22 @@ test('difficulty curve distributes levels by position', () => {
   assert.ok(flat);
 });
 
-test('a seed makes the book structure reproducible', () => {
-  const seq = (b) => b.puzzles.map((p) => `${p.type}:${p.difficulty}`).join(',');
+test('a seed makes the whole book reproducible (structure + grid content)', () => {
+  const content = (b) => b.puzzles.map((p) => `${p.type}:${p.difficulty}:${JSON.stringify(p.data)}`).join('|');
   const cfg = { ...CONFIG, shuffle: true, puzzles: [{ type: 'wordsearch', count: 3, difficulty: '1-3' }, { type: 'maze', count: 2, difficulty: 1 }] };
   const a = assembleBook({ ...cfg, seed: 42 });
   const b = assembleBook({ ...cfg, seed: 42 });
+  const c = assembleBook({ ...cfg, seed: 43 });
   assert.equal(a.seed, 42);
-  assert.equal(seq(a), seq(b));
+  assert.equal(content(a), content(b)); // same seed → identical grids
+  assert.notEqual(content(a), content(c)); // different seed → different grids
+});
+
+test('generate() reproduces a single puzzle from a seed', () => {
+  const cfg = { type: 'wordsearch', words: ['CAT', 'DOG', 'FISH', 'BIRD', 'FROG'], difficulty: 1 };
+  const same = (x, y) => JSON.stringify(x.data) === JSON.stringify(y.data) && JSON.stringify(x.solution) === JSON.stringify(y.solution);
+  assert.ok(same(generate(cfg, { seed: 9 }), generate(cfg, { seed: 9 })));
+  assert.ok(!same(generate(cfg, { seed: 9 }), generate(cfg, { seed: 10 })));
 });
 
 test('recipe v2 round-trips and migrates v1', () => {
