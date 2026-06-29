@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PuzzleForge — Page Editor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <div>
+        <h1>PuzzleForge</h1>
+        <p class="tagline">Page Editor</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="book.html">← Book Builder</a>
+      <a href="editor.html" class="active">Page Editor</a>
+    </nav>
+    <div class="editor-actions">
+      <button id="save" class="ghost">Save recipe</button>
+      <button id="exportPdf" class="primary">Export PDF</button>
+    </div>
+  </header>
+
+  <p class="status editor-status" id="status"></p>
+
+  <main class="editor-layout" id="editorMain" hidden>
+    <aside class="editor-pages" aria-label="Pages">
+      <h2>Pages</h2>
+      <ol id="pageList" class="page-list"></ol>
+    </aside>
+
+    <section class="editor-stage" aria-label="Canvas">
+      <div class="stage-wrap" id="stageWrap">
+        <iframe id="bg" class="stage-bg" title="Page background"></iframe>
+        <canvas id="deco" class="stage-deco"></canvas>
+      </div>
+    </section>
+
+    <aside class="editor-tools" aria-label="Tools">
+      <h2>Add</h2>
+      <div class="actions">
+        <button id="addText" class="ghost">+ Text</button>
+        <label class="upload ghost">+ Image<input id="addImage" type="file" accept="image/*" hidden></label>
+      </div>
+
+      <h2>Selected</h2>
+      <div class="row">
+        <label class="field"><span>Font size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
+        <label class="field"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
+      </div>
+      <div class="actions">
+        <button id="forward" class="ghost">Bring forward</button>
+        <button id="backward" class="ghost">Send back</button>
+      </div>
+      <div class="actions">
+        <button id="deleteObj" class="ghost del">Delete selected</button>
+      </div>
+
+      <h2>This page</h2>
+      <label class="field">
+        <span>Border override</span>
+        <select id="border"><option value="">(book default)</option></select>
+      </label>
+      <div class="actions">
+        <button id="reroll" class="ghost">Reroll puzzle</button>
+      </div>
+      <p class="hint">Reroll lays out a fresh version of this page's puzzle (same type, difficulty,
+        and words). Your text and clip art stay put. Export composites the decoration layer over
+        the puzzle at print resolution.</p>
+    </aside>
+  </main>
+
+  <div class="editor-empty" id="emptyState">
+    <p>Open a book from the <a href="book.html">Book Builder</a> (“Open in Editor”), or
+      <label class="upload ghost">load a book recipe<input id="loadRecipe" type="file" accept="application/json" hidden></label>.</p>
+  </div>
+
+  <script src="vendor/fabric.min.js"></script>
+  <script src="editor.js"></script>
+</body>
+</html>

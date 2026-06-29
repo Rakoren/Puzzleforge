@@ -1018,16 +1018,19 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
     workflow presets on the AI Art page for custom decorations. (Clip-art *placement* onto
     pages — corner/scatter — still to come.)
 
-### 🔲 Phase 9 — Page Editor + QR Basics (Publisher Only)
-- Recipe format v2 redesign (prerequisite — do first)
-- Fabric.js canvas editor replacing read-only preview
-- Per-page reroll for individual puzzles
-- Text box placement (story snippets, captions, chapter titles)
-- Clipart upload + AI Art hand-off → place on page
-- Page reorder, add/remove in sidebar
-- Per-page border override
-- Filler page swap inline
-- Export from editor (composites puzzle + decoration layers)
+### 🟡 Phase 9 — Page Editor + QR Basics (Publisher Only)
+- ✅ Recipe format v2 (prerequisite) — done; seeded generators give full reproduction
+- ✅ Fabric.js canvas editor (`editor.html/js`) — opt-in "Open in Editor" from the
+  Book Builder, decoration layer over each puzzle page, vendored Fabric 5.5.2
+- ✅ Per-page reroll for individual puzzles (seeded; same type/difficulty/words)
+- ✅ Text box placement (move/resize/rotate/recolor)
+- ✅ Clipart upload → place on page (AI Art PNGs work)
+- ✅ Per-page border override (live preview)
+- ✅ Export from editor — decoration layer → SVG composited over the puzzle at
+  print resolution via the normal book pipeline (`pageState[i].canvasState.svg`)
+- 🔲 Page reorder / add / remove in the sidebar (select-only for now)
+- 🔲 Filler page swap inline
+- 🔲 Built-in undo/redo, snapping, alignment guides
 - **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner
 - **ComfyUI visibility** — WebSocket progress display, live latent preview, workflow debug panel
 - **ComfyUI prompt helper** — Claude-powered prompt optimizer, context-aware per preset, positive + negative prompt output, "explain changes" toggle

@@ -312,6 +312,9 @@ app.post('/api/book/pdf', async (req, res) => {
   try {
     let book = body.bookId && bookCache.get(body.bookId);
     if (!book) book = pf.assembleBook(body.config || {});
+    // The Page Editor sends live per-page state (decorations + per-page border)
+    // to apply onto the cached (possibly rerolled) book before rendering.
+    applyPageState(book, body.pageState);
     const outPath = path.join(os.tmpdir(), `pf-book-${crypto.randomUUID()}.pdf`);
     await pf.exportBookPdf(book, { outPath });
     const pdf = fs.readFileSync(outPath);
@@ -349,6 +352,113 @@ app.post('/api/book/page', (req, res) => {
     pg.puzzle = np;
     if (pi >= 0) book.puzzles[pi] = np;
     res.json({ html: pf.renderBookHtml(book), editable: editablePages(book) });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// --- Page Editor ---
+
+// Apply an editor pageState array (by content-page index) onto a cached book.
+function applyPageState(book, pageState) {
+  if (!Array.isArray(pageState) || !book || !Array.isArray(book.pages)) return;
+  book.pages.forEach((pg, i) => {
+    if (pageState[i] && typeof pageState[i] === 'object') pg.state = pageState[i];
+  });
+}
+
+// Render one content page's puzzle HTML (single-page doc) at the book's trim,
+// honoring per-page border but NOT the decoration overlay (the editor draws
+// that live on the Fabric canvas).
+function pageHtml(book, puzzle, state) {
+  const st = state || {};
+  const border = st.border !== undefined ? st.border : book.border;
+  const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
+  return pf.renderHtml(puzzle, {
+    trimSize: book.trimSize,
+    audience: book.audience,
+    textScale: book.fontScale,
+    fontFamily: book.fontFamily,
+    border,
+    borderColor,
+  });
+}
+
+// Open a book in the editor: assemble (or reuse), return per-page background
+// HTML + the usable-area dimensions the Fabric canvas maps onto.
+app.post('/api/book/editor', (req, res) => {
+  const body = req.body || {};
+  try {
+    let book = body.bookId && bookCache.get(body.bookId);
+    let bookId = body.bookId;
+    if (!book) {
+      book = pf.assembleBook(body.config || {});
+      bookId = cacheBook(book);
+    }
+    const layout = pf.getLayout(book.trimSize, { audience: book.audience });
+    const pages = book.pages.map((pg, index) => ({
+      index,
+      type: pg.puzzle.type,
+      title: pg.puzzle.title || pg.puzzle.type,
+      activity: pf.isActivityType(pg.puzzle.type),
+      html: pageHtml(book, pg.puzzle, pg.state),
+      state: pg.state || null,
+    }));
+    res.json({
+      bookId,
+      seed: book.seed,
+      title: book.title,
+      dims: {
+        usableWidth: layout.usableWidth,
+        usableHeight: layout.usableHeight,
+        widthIn: layout.widthIn,
+        heightIn: layout.heightIn,
+      },
+      pages,
+    });
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+// Re-render one page's background HTML with a given per-page state (e.g. a
+// border override), for live preview in the editor. Cheap (no PDF render).
+app.post('/api/book/page-html', (req, res) => {
+  const body = req.body || {};
+  const book = body.bookId && bookCache.get(body.bookId);
+  if (!book) return res.status(404).json({ error: 'Open the book in the editor again.' });
+  const pg = book.pages[body.index];
+  if (!pg) return res.status(400).json({ error: 'Invalid page.' });
+  res.json({ html: pageHtml(book, pg.puzzle, body.state || pg.state) });
+});
+
+// Rebuild a generation config from an existing puzzle so it can be re-rolled.
+function configFromPuzzle(p) {
+  const c = { type: p.type, difficulty: p.difficulty, theme: p.theme || undefined };
+  const d = p.data || {};
+  if (Array.isArray(d.words)) c.words = d.words.map((w) => (typeof w === 'string' ? w : w.word)).filter(Boolean);
+  if (d.clues) c.clues = d.clues;
+  if (d.size) c.size = d.size;
+  return c;
+}
+
+// Reroll one puzzle page (new layout, same type/difficulty/words) with a fresh
+// seed. Decorations live in the editor client and are unaffected.
+app.post('/api/book/reroll', (req, res) => {
+  const body = req.body || {};
+  const book = body.bookId && bookCache.get(body.bookId);
+  if (!book) return res.status(404).json({ error: 'Open the book in the editor again.' });
+  const pg = book.pages[body.index];
+  if (!pg) return res.status(400).json({ error: 'Invalid page.' });
+  try {
+    const p = pg.puzzle;
+    if (pf.isActivityType(p.type)) return res.status(400).json({ error: 'Activity pages have no puzzle to reroll.' });
+    const seed = (Math.random() * 0xffffffff) >>> 0;
+    const np = pf.generate(configFromPuzzle(p), { seed });
+    const pi = book.puzzles.indexOf(p);
+    pg.puzzle = np;
+    if (pi >= 0) book.puzzles[pi] = np;
+    res.json({ index: body.index, type: np.type, title: np.title, html: pageHtml(book, np, pg.state), seed });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

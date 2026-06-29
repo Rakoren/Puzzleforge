@@ -16,6 +16,7 @@
     difficultyCurve: $('difficultyCurve'),
     runChecklist: $('runChecklist'),
     checklist: $('checklist'),
+    openEditor: $('openEditor'),
     theme: $('theme'),
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
@@ -518,6 +519,17 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function openEditor() {
+    if (!rows.length) { setStatus('Add at least one puzzle first.', 'err'); return; }
+    try {
+      localStorage.setItem('pf_editor', JSON.stringify({ config: config(), bookId: lastBookId }));
+    } catch (_) {
+      setStatus('Could not open the editor (storage blocked).', 'err');
+      return;
+    }
+    window.location.href = 'editor.html';
+  }
+
   function saveRecipe() {
     // v2 recipe: book config + the previewed seed + per-page state layer.
     const book = config();
@@ -710,6 +722,7 @@
     el.addRow.addEventListener('click', () => addRow());
     el.preview.addEventListener('click', preview);
     el.buildPdf.addEventListener('click', buildPdf);
+    el.openEditor.addEventListener('click', openEditor);
     el.runChecklist.addEventListener('click', runChecklist);
     el.kdpBundle.addEventListener('click', buildBundle);
     el.estimateRoyalty.addEventListener('click', estimateRoyalty);

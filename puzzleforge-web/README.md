@@ -99,6 +99,9 @@ visually — no JSON by hand:
 | POST | `/api/book/pdf` | export the book PDF (reuses the assembled book by `bookId`) |
 | POST | `/api/book/checklist` | pre-flight publish checks → `{ items, summary, pageCount }` |
 | POST | `/api/book/royalty` | KDP royalty estimate (renders for page count) → `{ printCost, royalty, breakeven, suggested… }` |
+| POST | `/api/book/editor` | open a book in the page editor → `{ bookId, seed, dims, pages:[{index,type,html,…}] }` |
+| POST | `/api/book/page-html` | re-render one page's background with a per-page state (border override) |
+| POST | `/api/book/reroll` | reroll one puzzle page with a fresh seed → new page HTML |
 | GET | `/api/theme/status` | `{ available }` — whether an Anthropic API key is configured |
 | POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
 | POST | `/api/category/generate` | broad topic → `{ category, themes:[{theme,report,sample}] }` (preview) |
@@ -195,6 +198,24 @@ A fourth page (**Cover Builder**) produces a print-ready **full-wrap** cover
 Set title/subtitle/author, front/back/spine colors, an optional full-bleed
 front image, and a back blurb. The dashed box on the back marks the KDP
 barcode keep-out area.
+
+### Page Editor (publisher, desktop)
+
+An opt-in layout editor reached from the Book Builder's **Open in Editor** button
+(the fast Generate → Export path is unchanged). It overlays a **Fabric.js**
+decoration layer on each puzzle page:
+
+- **Page list** sidebar — click to select a page
+- **Add text** and **add clip art** (upload; AI Art images work too) — move,
+  resize, rotate, layer, recolor, resize fonts
+- **Reroll** a single puzzle (fresh layout, same type/difficulty/words) without
+  touching the rest of the book — powered by seeded generation
+- **Per-page border override**
+- **Save recipe** (v2, with the decoration layer) and **Export PDF** — the
+  decoration layer is serialized to SVG and composited over the puzzle at print
+  resolution through the normal book pipeline (`pageState[i].canvasState.svg`)
+
+Fabric.js is vendored at `public/vendor/fabric.min.js` (works offline).
 
 ### AI Theme Generator
 

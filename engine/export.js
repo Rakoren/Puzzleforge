@@ -91,13 +91,29 @@ function renderPuzzleHtml(puzzle, opts = {}) {
   const audience = opts.audience || (puzzle.difficulty <= 1 ? 'kids' : 'adult');
   const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily });
   const mod = getModule(puzzle.type);
-  const doc = mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
+  let doc = mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
   // Decorative border, but never on blank/activity pages (bleed guards stay
   // clean; drawing/coloring pages have their own framing).
   if (opts.border && opts.border !== 'none' && !isActivityType(puzzle.type)) {
-    return applyBorder(doc, layout, opts.border, opts.borderColor);
+    doc = applyBorder(doc, layout, opts.border, opts.borderColor);
+  }
+  // Page Editor decoration layer (recipe v2): an SVG overlaid on top of the
+  // puzzle, in the page's usable-area coordinate space (px).
+  if (opts.overlay) {
+    doc = applyOverlay(doc, layout, opts.overlay);
   }
   return doc;
+}
+
+// Inject the editor's decoration SVG as a top overlay covering the usable area.
+function applyOverlay(doc, layout, svg) {
+  const css =
+    `\n  body { position: relative; min-height: ${layout.usableHeight}px; }` +
+    `\n  .pf-overlay { position: absolute; top: 0; left: 0; width: ${layout.usableWidth}px; height: ${layout.usableHeight}px; z-index: 5; pointer-events: none; }` +
+    `\n  .pf-overlay > svg { width: 100%; height: 100%; display: block; overflow: visible; }\n`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-overlay">${svg}</div>`);
+  return out;
 }
 
 // Inject a vector border as an overlay behind the puzzle content. The frame is
@@ -299,7 +315,8 @@ function renderBookHtml(book) {
     const st = pg.state || {};
     const border = st.border !== undefined ? st.border : book.border;
     const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
-    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor }));
+    const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
+    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay }));
     // Number every page except the blank bleed-guards, which stay clean.
     footers.push(numbered && puzzle.type !== 'bleedguard' ? `${prefix}${++n}` : null);
   }
