@@ -293,8 +293,13 @@ function renderBookHtml(book) {
   // Body page numbers start at 1 on the first puzzle page (front matter excluded).
   const prefix = book.footerText ? `${escFooter(book.footerText)} · ` : '';
   let n = 0;
-  for (const { puzzle } of book.pages) {
-    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border: book.border, borderColor: book.borderColor }));
+  for (const pg of book.pages) {
+    const puzzle = pg.puzzle;
+    // Per-page state (recipe v2) can override the book-level border.
+    const st = pg.state || {};
+    const border = st.border !== undefined ? st.border : book.border;
+    const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
+    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor }));
     // Number every page except the blank bleed-guards, which stay clean.
     footers.push(numbered && puzzle.type !== 'bleedguard' ? `${prefix}${++n}` : null);
   }

@@ -288,6 +288,7 @@ app.post('/api/book/preview', (req, res) => {
       bookId,
       html: pf.renderBookHtml(book),
       editable: editablePages(book),
+      seed: book.seed,
       meta: {
         title: book.title,
         trimSize: book.trimSize,

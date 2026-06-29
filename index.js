@@ -11,6 +11,7 @@ const { generate } = require('./engine/generate');
 const { assembleBook } = require('./engine/book');
 const { runChecklist } = require('./engine/checklist');
 const kdp = require('./engine/kdp');
+const recipe = require('./engine/recipe');
 const {
   exportPuzzlePdf,
   exportBookPdf,
@@ -47,6 +48,11 @@ module.exports = {
   printingCostUSD: kdp.printingCostUSD,
   normalizeMetadata: kdp.normalizeMetadata,
   aiDisclosure: kdp.aiDisclosure,
+  recipeVersion: recipe.RECIPE_VERSION,
+  migrateRecipe: recipe.migrate,
+  recipeToBookConfig: recipe.toBookConfig,
+  bookToRecipe: recipe.fromBook,
+  isBookRecipe: recipe.isBookRecipe,
   exportPdf: exportPuzzlePdf,
   exportBookPdf,
   exportPuzzlesPdf,

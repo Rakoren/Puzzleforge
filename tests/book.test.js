@@ -5,6 +5,7 @@ const assert = require('node:assert');
 const { assembleBook } = require('../engine/book');
 const { renderBookHtml, renderPuzzlesHtml } = require('../engine/export');
 const { generate } = require('../engine/generate');
+const recipe = require('../engine/recipe');
 
 const CONFIG = {
   title: 'Test Activity Book',
@@ -50,6 +51,47 @@ test('renderBookHtml includes title, both puzzle types, and the answer key', () 
 test('assembleBook requires a title and puzzles', () => {
   assert.throws(() => assembleBook({ puzzles: [] }), /title is required/);
   assert.throws(() => assembleBook({ title: 'x', puzzles: [] }), /non-empty/);
+});
+
+test('difficulty curve distributes levels by position', () => {
+  const cfg = { ...CONFIG, puzzles: [{ type: 'wordsearch', count: 6, difficulty: 1 }] };
+  const ramp = assembleBook({ ...cfg, difficultyCurve: 'easy-to-hard' }).puzzles
+    .filter((p) => p.type === 'wordsearch')
+    .map((p) => p.difficulty);
+  assert.deepEqual(ramp, [1, 1, 2, 2, 3, 3]);
+  const flat = assembleBook({ ...cfg, difficultyCurve: 'flat' }).puzzles
+    .filter((p) => p.type === 'wordsearch')
+    .every((p) => p.difficulty === 2);
+  assert.ok(flat);
+});
+
+test('a seed makes the book structure reproducible', () => {
+  const seq = (b) => b.puzzles.map((p) => `${p.type}:${p.difficulty}`).join(',');
+  const cfg = { ...CONFIG, shuffle: true, puzzles: [{ type: 'wordsearch', count: 3, difficulty: '1-3' }, { type: 'maze', count: 2, difficulty: 1 }] };
+  const a = assembleBook({ ...cfg, seed: 42 });
+  const b = assembleBook({ ...cfg, seed: 42 });
+  assert.equal(a.seed, 42);
+  assert.equal(seq(a), seq(b));
+});
+
+test('recipe v2 round-trips and migrates v1', () => {
+  const book = assembleBook({ ...CONFIG, seed: 7 });
+  const rec = recipe.fromBook(CONFIG, book);
+  assert.equal(rec.recipeVersion, 2);
+  assert.equal(rec.seed, 7);
+  // Round-trip reproduces the same page structure.
+  const seq = (b) => b.puzzles.map((p) => `${p.type}:${p.difficulty}`).join(',');
+  assert.equal(seq(assembleBook(recipe.toBookConfig(rec))), seq(book));
+  // v1 (bare config) migrates to v2.
+  const mig = recipe.migrate({ puzzleforgeBook: 1, ...CONFIG });
+  assert.equal(mig.recipeVersion, 2);
+  assert.equal(mig.book.title, CONFIG.title);
+});
+
+test('per-page state overrides the book border', () => {
+  const book = assembleBook({ ...CONFIG, border: 'single', pageState: [{ border: 'stars' }] });
+  assert.equal(book.pages[0].state.border, 'stars');
+  assert.match(renderBookHtml(book), /<svg/); // a frame is rendered
 });
 
 test('renderPuzzlesHtml combines a teacher set (differentiation) into one document', () => {

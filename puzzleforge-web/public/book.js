@@ -85,6 +85,10 @@
   let meta = null;
   let rows = []; // [{ type, count, difficulty }]
   let lastBookId = null;
+  let currentSeed = null; // locked seed from a loaded recipe (reproduces structure)
+  let lastSeed = null; // seed of the most recent preview (saved into the recipe)
+  let pageState = []; // recipe v2 per-page overrides / canvasState (by page index)
+  const RECIPE_V = 2;
 
   function setStatus(text, kind) {
     el.status.textContent = text || '';
@@ -296,6 +300,10 @@
       metadata: metadata(),
       coverBg: el.coverBg.value,
       coverText: el.coverText.value,
+      // Locked seed (from a loaded recipe) reproduces the page structure; omitted
+      // for a fresh book so each preview re-rolls.
+      ...(currentSeed != null ? { seed: currentSeed } : {}),
+      ...(pageState.length ? { pageState } : {}),
       puzzleforgeBook: 1,
       puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
     };
@@ -418,6 +426,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not build book');
       lastBookId = data.bookId;
+      if (data.seed != null) lastSeed = data.seed; // saved into the recipe
       el.previewFrame.srcdoc = data.html;
       el.emptyState.classList.add('hidden');
       renderEditable(data.editable || []);
@@ -510,9 +519,29 @@
   }
 
   function saveRecipe() {
-    const blob = new Blob([JSON.stringify(config(), null, 2)], { type: 'application/json' });
+    // v2 recipe: book config + the previewed seed + per-page state layer.
+    const book = config();
+    const seed = currentSeed != null ? currentSeed : lastSeed;
+    delete book.seed;
+    delete book.pageState;
+    delete book.puzzleforgeBook;
+    const recipe = { recipeVersion: RECIPE_V, kind: 'book', book, seed: seed != null ? seed : null, pageState };
+    const blob = new Blob([JSON.stringify(recipe, null, 2)], { type: 'application/json' });
     download(blob, fileBase() + '-book.json');
     setStatus('Book recipe saved.', 'ok');
+  }
+
+  // Normalize a loaded recipe (v1 bare config or v2 wrapper) to { cfg, seed, pageState }.
+  function migrateRecipe(raw) {
+    if (raw && raw.recipeVersion === 2) {
+      return {
+        cfg: raw.book || {},
+        seed: Number.isFinite(raw.seed) ? raw.seed : null,
+        pageState: Array.isArray(raw.pageState) ? raw.pageState : [],
+      };
+    }
+    // v1: the file *is* the book config.
+    return { cfg: raw || {}, seed: null, pageState: [] };
   }
 
   function onLoad(ev) {
@@ -521,7 +550,11 @@
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const cfg = JSON.parse(reader.result);
+        const raw = JSON.parse(reader.result);
+        const { cfg, seed, pageState: ps } = migrateRecipe(raw);
+        currentSeed = seed; // reproduce the saved structure
+        lastSeed = seed;
+        pageState = ps;
         applyConfig(cfg);
         setStatus('Recipe loaded — press Preview book.', 'ok');
       } catch (_) {

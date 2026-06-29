@@ -71,8 +71,9 @@ visually — no JSON by hand:
 - Add puzzle rows (type · count · difficulty, including mixed ranges), reorder
   or remove them
 - Preview the assembled book, then download the print-ready PDF
-- Save / load the book recipe (`.json`) — the same format the CLI's `--book`
-  flag accepts
+- Save / load the book recipe (**v2** `.json`: book config + a `seed` that
+  reproduces the page structure + a per-page `pageState` layer for overrides and
+  the future page editor; old v1 recipes migrate automatically on load)
 - **No repeated words** — keep every theme word to a single puzzle across the book
 - **Kids-book activity pages** (no answer key): **Coloring Page** (procedural
   mandala / shape-pattern / bubble-letter art), **Drawing Page** (framed blank

@@ -223,6 +223,19 @@ function addBleedGuards(pages) {
   return out;
 }
 
+// Small seeded PRNG so a book's structure (ordering, difficulty ranges) is
+// reproducible from a saved seed. Not cryptographic — just stable.
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 // Fisher-Yates shuffle returning a new array.
 function shuffled(arr, rand) {
   const a = arr.slice();
@@ -240,7 +253,11 @@ function shuffled(arr, rand) {
  * @returns {object} book object with generated puzzles
  */
 function assembleBook(config, opts = {}) {
-  const rand = opts.rand || Math.random;
+  // Seed makes the page structure (shuffle, difficulty ranges) reproducible so a
+  // saved recipe's per-page state lines up by index on reload. A fresh seed is
+  // generated when none is supplied, and recorded on the book for saving.
+  const seed = Number.isFinite(config.seed) ? config.seed >>> 0 : (Math.random() * 0xffffffff) >>> 0;
+  const rand = opts.rand || mulberry32(seed);
   if (!config.title) throw new Error('book: config.title is required');
   if (!Array.isArray(config.puzzles) || config.puzzles.length === 0) {
     throw new Error('book: config.puzzles must be a non-empty array');
@@ -355,9 +372,14 @@ function assembleBook(config, opts = {}) {
   // page, then the answer key (computed by the matter template at render time;
   // here we record content page numbers for cross-referencing in the key).
   let page = 1 + frontMatter.length; // title + front matter
-  const pages = ordered.map((puzzle) => {
+  // Per-page state layer (recipe v2): overrides + reserved Fabric canvasState,
+  // keyed by content-page index. Stable across reloads because the seed fixes
+  // the page sequence.
+  const pageState = Array.isArray(config.pageState) ? config.pageState : [];
+  const pages = ordered.map((puzzle, i) => {
     page += 1;
-    return { puzzle, pageNumber: page };
+    const state = pageState[i] && typeof pageState[i] === 'object' ? pageState[i] : null;
+    return { puzzle, pageNumber: page, state };
   });
 
   const byType = {};
@@ -376,6 +398,7 @@ function assembleBook(config, opts = {}) {
     fontFamily: config.fontFamily || 'sans',
     border: config.border && config.border !== 'none' ? String(config.border) : null, // decorative page frame
     borderColor: config.borderColor || null,
+    seed, // recorded so a saved recipe reproduces the same page structure
     frontMatter, // [{ kind, ... }] rendered after the title page
     backMatter, // [{ kind, ... }] rendered after the answer key
     pages, // [{ puzzle, pageNumber }]
