@@ -34,6 +34,7 @@ const {
   THEME_DIR,
 } = require('./themes');
 const { listTypes, isActivityType } = require('./generators/registry');
+const { BORDER_STYLES } = require('./engine/decor');
 const offensive = require('./filters/offensive');
 
 module.exports = {
@@ -53,6 +54,7 @@ module.exports = {
   listTrimSizes,
   listTypes,
   isActivityType,
+  borderStyles: BORDER_STYLES,
   loadTheme,
   listThemes,
   listThemesDetailed,

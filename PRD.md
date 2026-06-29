@@ -618,13 +618,14 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
     Express proxy (`/api/comfy/*`) builds a canonical txt2img workflow, submits it,
     polls `/history`, and returns the image. Degrades gracefully when ComfyUI is down.
     Tuned **workflow presets** (coloring / color-by-number base / silhouette / cover
-    illustration), each setting prompt + negative + sampler/scheduler/steps, with
-    automatic post-processing (line-art traced to crisp B/W, silhouette thresholded)
-    so output is print-ready. **LoRA + ControlNet** support (dynamic workflow graph:
-    LoraLoader chain, ControlNetApplyAdvanced with an uploaded reference image; models
-    auto-listed from ComfyUI). **Hand-off** buttons send a generated image straight into
-    the Color-by-Number or Coloring-Page tools. (Potrace PNG→SVG tracing for border
-    tiles still deferred.)
+    illustration / clip art / border), each setting prompt + negative + sampler/scheduler/
+    steps, with automatic post-processing (line-art traced to crisp B/W, silhouette
+    thresholded) so output is print-ready. **Checkpoint auto-tuning** picks sampler/steps/
+    CFG/resolution per model family (Turbo/Lightning → low steps + low CFG, SDXL → 1024,
+    SD1.5 → 768). **LoRA + ControlNet** support (dynamic workflow graph: LoraLoader chain,
+    ControlNetApplyAdvanced with an uploaded reference image; models auto-listed from
+    ComfyUI). **Hand-off** buttons send a generated image straight into the Color-by-Number
+    or Coloring-Page tools. (Potrace PNG→SVG tracing for border tiles still deferred.)
 16. ✅ Image-to-Color-by-Number — Sharp + JS k-means posterization → flat color regions,
     connected-component numbering, printed color key, optional on-page reference guide.
     Noise control: median despeckle before clustering, perceptual color merging (so
@@ -635,6 +636,11 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
     numbered dots. Dot count (12–120) + optional faint guide silhouette. (Polar sampling
     handles star-convex subjects well; contour-tracing for deep concavities is a future
     refinement.)
+- ✅ Page borders — procedural vector frames (`engine/decor.js`: single / double / rounded /
+    dashed / dots / scallop / stars) in any color, drawn around puzzle pages in both the
+    Puzzle Maker and Book Builder (skipped on blank/activity pages). AI border + clip-art
+    workflow presets on the AI Art page for custom decorations. (Clip-art *placement* onto
+    pages — corner/scatter — still to come.)
 
 ### 🔲 Phase 9 — Stretch Goals
 18. AI fallback for quotes/fun facts when curated database runs dry

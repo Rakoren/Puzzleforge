@@ -91,6 +91,8 @@ function renderOpts(recipe, answerKey) {
     answerKey: Boolean(answerKey),
     textScale: Number(recipe.fontScale) || 1,
     fontFamily: recipe.fontFamily || 'sans',
+    border: recipe.border || null,
+    borderColor: recipe.borderColor || null,
   };
 }
 
@@ -103,6 +105,7 @@ app.get('/api/meta', (req, res) => {
     wordTypes: [...WORD_TYPES],
     themes,
     trimSizes: pf.listTrimSizes(),
+    borderStyles: pf.borderStyles,
     recipeVersion: RECIPE_VERSION,
   });
 });
@@ -158,6 +161,8 @@ app.post('/api/pdf', async (req, res) => {
       audience: opts.audience,
       textScale: opts.textScale,
       fontFamily: opts.fontFamily,
+      border: opts.border,
+      borderColor: opts.borderColor,
       answerKey,
     });
 

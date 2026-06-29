@@ -49,6 +49,18 @@ const WORKFLOWS = {
     negative: 'blurry, lowres, jpeg artifacts, deformed, extra limbs, watermark, text, signature',
     sampler: 'dpmpp_2m', scheduler: 'karras', steps: 34, cfg: 7, post: null,
   },
+  clipart: {
+    label: 'Clip art (single object, line art)',
+    add: ', simple clip art of a single object, centered, black and white line art, bold clean outlines, thick lines, plain white background, no shading, no color, lots of empty margin',
+    negative: 'color, shading, gradient, multiple objects, scene, background, photo, realistic, text, watermark, frame, border',
+    sampler: 'dpmpp_2m', scheduler: 'karras', steps: 28, cfg: 7, post: 'lineart',
+  },
+  border: {
+    label: 'Border / frame (line art)',
+    add: ', decorative rectangular page border frame, ornamental line art frame around a large empty white center, symmetric, black and white, clean bold outlines, no color, no shading, empty middle',
+    negative: 'filled center, portrait, person, scene, photo, color, shading, gradient, text, watermark',
+    sampler: 'dpmpp_2m', scheduler: 'karras', steps: 30, cfg: 7, post: 'lineart',
+  },
 };
 
 async function fetchWithTimeout(url, opts = {}, ms = 8000) {

@@ -41,6 +41,7 @@ notice instead of failing.
 - **Words** — choose a built-in theme or paste your own word list
 - **Settings** — difficulty, page (trim) size, audience, optional grid size and title
 - **Text size & font** — Normal / Large print / Extra large, and Sans / Serif / Rounded (large-print "senior" mode)
+- **Page border** — a decorative vector frame (single / double / rounded / dashed / dots / scallop / stars) in any color, drawn around each puzzle page (skipped on blank and activity pages)
 - **Live preview** — puzzle and answer-key tabs
 - **Download PDF** — print-ready at the chosen trim size, with optional answer key
 - **Save / Upload recipe** — a `.json` of your settings. Re-upload later to
@@ -156,6 +157,8 @@ rarely print-ready on its own):
 | Color-by-number base (flat colors) | feeding into Color by Number | none (flat cartoon colors) |
 | Silhouette (solid black) | silhouette pages | thresholded to a solid black shape |
 | Detailed illustration (cover art) | covers / decorative art | none |
+| Clip art (single object, line art) | page decorations | traced to crisp black outlines |
+| Border / frame (line art) | decorative page frames | traced to crisp black outlines |
 
 **LoRA / ControlNet (advanced):** when ComfyUI reports installed LoRAs or
 ControlNet models, an *Advanced* section appears. Pick a **LoRA** (with strength)

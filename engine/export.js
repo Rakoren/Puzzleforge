@@ -13,8 +13,9 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { getModule } = require('../generators/registry');
+const { getModule, isActivityType } = require('../generators/registry');
 const { getLayout } = require('../layouts');
+const { frameSvg } = require('./decor');
 const {
   renderTitlePage,
   renderCopyrightPage,
@@ -90,7 +91,28 @@ function renderPuzzleHtml(puzzle, opts = {}) {
   const audience = opts.audience || (puzzle.difficulty <= 1 ? 'kids' : 'adult');
   const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily });
   const mod = getModule(puzzle.type);
-  return mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
+  const doc = mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
+  // Decorative border, but never on blank/activity pages (bleed guards stay
+  // clean; drawing/coloring pages have their own framing).
+  if (opts.border && opts.border !== 'none' && !isActivityType(puzzle.type)) {
+    return applyBorder(doc, layout, opts.border, opts.borderColor);
+  }
+  return doc;
+}
+
+// Inject a vector border as an overlay behind the puzzle content. The frame is
+// absolutely positioned over the usable area and painted behind content
+// (z-index:-1), so it travels with the page body through combinePages too.
+function applyBorder(doc, layout, style, color) {
+  const svg = frameSvg(style, layout.usableWidth, layout.usableHeight, { color });
+  if (!svg) return doc;
+  const css =
+    `\n  body { position: relative; min-height: ${layout.usableHeight}px; }` +
+    `\n  .pf-frame { position: absolute; inset: 0; z-index: -1; pointer-events: none; }` +
+    `\n  .pf-frame svg { width: 100%; height: 100%; display: block; }\n`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-frame">${svg}</div>`);
+  return out;
 }
 
 /**
@@ -272,7 +294,7 @@ function renderBookHtml(book) {
   const prefix = book.footerText ? `${escFooter(book.footerText)} · ` : '';
   let n = 0;
   for (const { puzzle } of book.pages) {
-    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts }));
+    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border: book.border, borderColor: book.borderColor }));
     // Number every page except the blank bleed-guards, which stay clean.
     footers.push(numbered && puzzle.type !== 'bleedguard' ? `${prefix}${++n}` : null);
   }

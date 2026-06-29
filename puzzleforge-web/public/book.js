@@ -11,6 +11,8 @@
     trimSize: $('trimSize'),
     fontScale: $('fontScale'),
     fontFamily: $('fontFamily'),
+    border: $('border'),
+    borderColor: $('borderColor'),
     theme: $('theme'),
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'),
@@ -257,6 +259,8 @@
       trimSize: el.trimSize.value,
       fontScale: Number(el.fontScale.value) || 1,
       fontFamily: el.fontFamily.value,
+      border: el.border.value,
+      borderColor: el.borderColor.value,
       theme: el.theme.value,
       answerKey: el.answerKey.checked,
       uniqueWords: el.uniqueWords.checked,
@@ -430,6 +434,8 @@
     el.author.value = cfg.author || '';
     if (cfg.audience) el.audience.value = cfg.audience;
     if (cfg.trimSize) el.trimSize.value = cfg.trimSize;
+    if (cfg.border) el.border.value = cfg.border;
+    if (cfg.borderColor) el.borderColor.value = cfg.borderColor;
     if (cfg.fontScale) el.fontScale.value = String(cfg.fontScale);
     if (cfg.fontFamily) el.fontFamily.value = cfg.fontFamily;
     if (cfg.theme) el.theme.value = cfg.theme;
@@ -534,6 +540,12 @@
       el.trimSize.appendChild(o);
     }
     el.trimSize.value = meta.trimSizes.includes('8x10') ? '8x10' : meta.trimSizes[0];
+    for (const b of meta.borderStyles || []) {
+      const o = document.createElement('option');
+      o.value = b.id;
+      o.textContent = b.label;
+      el.border.appendChild(o);
+    }
 
     // Seed with a sensible starter book.
     rows = [
@@ -553,6 +565,8 @@
     el.answerKey.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.uniqueWords.addEventListener('change', invalidate);
     el.shuffle.addEventListener('change', invalidate);
+    el.border.addEventListener('change', invalidate);
+    el.borderColor.addEventListener('change', invalidate);
     el.betweenColoring.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.betweenDrawing.addEventListener('change', () => { invalidate(); updateSummary(); });
     el.betweenBlank.addEventListener('change', () => { invalidate(); updateSummary(); });

@@ -351,6 +351,8 @@ function assembleBook(config, opts = {}) {
     footerText: config.footerText ? String(config.footerText).trim() : null,
     fontScale: Number(config.fontScale) || 1, // large-print text scaling
     fontFamily: config.fontFamily || 'sans',
+    border: config.border && config.border !== 'none' ? String(config.border) : null, // decorative page frame
+    borderColor: config.borderColor || null,
     frontMatter, // [{ kind, ... }] rendered after the title page
     backMatter, // [{ kind, ... }] rendered after the answer key
     pages, // [{ puzzle, pageNumber }]

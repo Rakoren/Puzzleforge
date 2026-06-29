@@ -15,6 +15,8 @@
     audience: $('audience'),
     fontScale: $('fontScale'),
     fontFamily: $('fontFamily'),
+    border: $('border'),
+    borderColor: $('borderColor'),
     size: $('size'),
     title: $('title'),
     generate: $('generate'),
@@ -92,6 +94,8 @@
       audience: el.audience.value,
       fontScale: Number(el.fontScale.value) || 1,
       fontFamily: el.fontFamily.value,
+      border: el.border.value,
+      borderColor: el.borderColor.value,
       title: el.title.value.trim() || null,
       size: el.size.value ? Number(el.size.value) : null,
       theme: null,
@@ -201,6 +205,8 @@
     if (recipe.audience) el.audience.value = recipe.audience;
     if (recipe.fontScale) el.fontScale.value = String(recipe.fontScale);
     if (recipe.fontFamily) el.fontFamily.value = recipe.fontFamily;
+    if (recipe.border) el.border.value = recipe.border;
+    if (recipe.borderColor) el.borderColor.value = recipe.borderColor;
     el.title.value = recipe.title || '';
     el.size.value = recipe.size || '';
     if (Array.isArray(recipe.words) && recipe.words.length) {
@@ -360,6 +366,12 @@
       el.trimSize.appendChild(o);
     }
     el.trimSize.value = meta.trimSizes.includes('8x10') ? '8x10' : meta.trimSizes[0];
+    for (const b of meta.borderStyles || []) {
+      const o = document.createElement('option');
+      o.value = b.id;
+      o.textContent = b.label;
+      el.border.appendChild(o);
+    }
 
     // Teacher set exports generate fresh, so they don't need a prior preview.
     el.diffSet.disabled = false;
