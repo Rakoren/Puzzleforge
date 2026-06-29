@@ -372,6 +372,40 @@ app.post('/api/theme/generate', async (req, res) => {
   }
 });
 
+// Generate a whole category of related themes (preview, not saved).
+app.post('/api/category/generate', async (req, res) => {
+  const body = req.body || {};
+  try {
+    const result = await themegen.generateCategory({
+      topic: body.topic,
+      count: body.count,
+      wordsPerTier: body.wordsPerTier,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code });
+  }
+});
+
+// Save a batch of themes (a generated category) to the library.
+app.post('/api/category/save', (req, res) => {
+  const body = req.body || {};
+  const themes = Array.isArray(body.themes) ? body.themes : [];
+  const category = body.category ? String(body.category) : null;
+  if (!themes.length) return res.status(400).json({ error: 'No themes to save.' });
+  const saved = [];
+  try {
+    for (const theme of themes) {
+      if (!theme || typeof theme !== 'object') continue;
+      if (category) theme.category = category;
+      saved.push(themegen.saveTheme(theme).id);
+    }
+    res.json({ saved });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, saved });
+  }
+});
+
 // Delete a theme from the library.
 app.post('/api/theme/delete', (req, res) => {
   const id = req.body && req.body.id;

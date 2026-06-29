@@ -94,6 +94,8 @@ visually — no JSON by hand:
 | POST | `/api/book/pdf` | export the book PDF (reuses the assembled book by `bookId`) |
 | GET | `/api/theme/status` | `{ available }` — whether an Anthropic API key is configured |
 | POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
+| POST | `/api/category/generate` | broad topic → `{ category, themes:[{theme,report,sample}] }` (preview) |
+| POST | `/api/category/save` | save a batch of themes under one category → `{ saved:[id] }` |
 | POST | `/api/theme/save` | persist a generated theme to the library → `{ id, report }` |
 | POST | `/api/theme/clean` | re-run the safety/dedup/length filter over a saved theme → `{ id, report, removed }` |
 | POST | `/api/theme/get` | full contents of a saved theme (for the editor) → `{ id, label, category, tags, facts, tiers }` |

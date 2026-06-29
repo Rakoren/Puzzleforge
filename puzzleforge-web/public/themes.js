@@ -22,6 +22,15 @@
     editorTitle: $('editorTitle'),
     editorClose: $('editorClose'),
     editorBody: $('editorBody'),
+    catTopic: $('catTopic'),
+    catCount: $('catCount'),
+    catGenerate: $('catGenerate'),
+    catStatus: $('catStatus'),
+    catResult: $('catResult'),
+    catList: $('catList'),
+    catSave: $('catSave'),
+    catDiscard: $('catDiscard'),
+    catSaveStatus: $('catSaveStatus'),
   };
 
   let current = null; // the generated theme object awaiting save
@@ -239,6 +248,88 @@
     }
   }
 
+  // --- Category generator ---
+
+  let categoryData = null; // { category, themes:[{theme,report,sample}] } awaiting save
+
+  async function categoryGenerate() {
+    const topic = el.catTopic.value.trim();
+    if (!topic) { setStatus(el.catStatus, 'Enter a broad topic.', 'err'); return; }
+    setStatus(el.catStatus, 'Generating a category… this can take a minute or two.', 'busy');
+    el.catGenerate.disabled = true;
+    el.catResult.classList.add('hidden');
+    categoryData = null;
+    try {
+      const res = await fetch('/api/category/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, count: Number(el.catCount.value) || 4 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Generation failed');
+      categoryData = data;
+      renderCategory(data);
+      setStatus(el.catStatus, `Generated “${data.category}” — ${data.themes.length} themes. Review, then save.`, 'ok');
+    } catch (err) {
+      setStatus(el.catStatus, err.message, 'err');
+    } finally {
+      el.catGenerate.disabled = false;
+    }
+  }
+
+  function renderCategory(data) {
+    el.catList.innerHTML = '';
+    const head = document.createElement('p');
+    head.className = 'hint';
+    head.innerHTML = `Category: <strong>${data.category}</strong>`;
+    el.catList.appendChild(head);
+    for (const item of data.themes) {
+      const t = item.theme;
+      const c = item.report.counts;
+      const row = document.createElement('div');
+      row.className = 'tool';
+      const total = item.report.total;
+      row.innerHTML =
+        `<div class="tool-head"><strong>${t.label}</strong>` +
+        `<span class="tool-desc">${total} words (${c['1']}/${c['2']}/${c['3']})` +
+        `${item.report.factCount ? ` · ${item.report.factCount} facts` : ''}</span></div>`;
+      el.catList.appendChild(row);
+    }
+    el.catResult.classList.remove('hidden');
+    setStatus(el.catSaveStatus, '');
+  }
+
+  async function categorySaveAll() {
+    if (!categoryData) return;
+    setStatus(el.catSaveStatus, 'Saving…', 'busy');
+    el.catSave.disabled = true;
+    try {
+      const res = await fetch('/api/category/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: categoryData.category, themes: categoryData.themes.map((x) => x.theme) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      setStatus(el.catSaveStatus, `Saved ${data.saved.length} themes under “${categoryData.category}”.`, 'ok');
+      el.catSave.disabled = true;
+      el.catDiscard.textContent = 'Make another category';
+      loadThemeList();
+    } catch (err) {
+      setStatus(el.catSaveStatus, err.message, 'err');
+      el.catSave.disabled = false;
+    }
+  }
+
+  function categoryDiscard() {
+    categoryData = null;
+    el.catResult.classList.add('hidden');
+    el.catSave.disabled = false;
+    el.catDiscard.textContent = 'Discard';
+    el.catTopic.value = '';
+    setStatus(el.catStatus, '');
+  }
+
   // --- Theme word/fact editor ---
 
   let editing = null; // current theme id being edited
@@ -347,6 +438,9 @@
         el.generate.disabled = true;
         el.topic.disabled = true;
         el.perTier.disabled = true;
+        el.catGenerate.disabled = true;
+        el.catTopic.disabled = true;
+        el.catCount.disabled = true;
       }
     } catch (_) {
       /* leave the form enabled; the generate call will surface any error */
@@ -358,6 +452,9 @@
     el.save.addEventListener('click', save);
     el.discard.addEventListener('click', discard);
     el.editorClose.addEventListener('click', closeEditor);
+    el.catGenerate.addEventListener('click', categoryGenerate);
+    el.catSave.addEventListener('click', categorySaveAll);
+    el.catDiscard.addEventListener('click', categoryDiscard);
     loadThemeList();
   }
 

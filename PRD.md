@@ -594,10 +594,12 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 4. Create `puzzleforge-web` (new public repo, MIT license) — clean initial commit
 5. Archive `maze-books` repo
 
-### 🔲 Phase 6 — Content Depth (Next)
-- 🟡 Theme editing UI — delete + "Clean" **done**; in-browser word/clue/fact editing **to do**
-- 🔲 Per-book style/font presets + large-print "senior" mode  ← **in progress**
-- 🔲 More built-in themes + AI category generator (hierarchical: e.g. gaming → TTRPG → genre)
+### 🟡 Phase 6 — Content Depth (in progress)
+- ✅ Theme editing UI — delete, "Clean", and in-browser word/fact removal
+- ✅ Per-book style/font presets + large-print "senior" mode
+- ✅ AI category generator — one broad topic → several related themes saved under a shared category
+- 🔲 More built-in themes (hand-authored)
+- 🔲 (optional) edit clues / add words to an existing theme
 
 ### 🔲 Phase 7 — More Puzzle Variety
 10. Word Ladder

@@ -71,6 +71,31 @@
         </div>
         <p class="status" id="saveStatus"></p>
       </div>
+
+      <h2 style="margin-top:22px;">Or generate a whole category</h2>
+      <p class="hint">Turn a broad topic into several related themes at once (e.g. “Gaming” →
+        Tabletop RPGs, Retro Arcade, Game Genres…), all sharing one category so you can pick
+        “All &lt;category&gt;” in the Book Builder.</p>
+      <label class="field">
+        <span>Broad topic</span>
+        <input id="catTopic" type="text" placeholder="e.g. gaming, the ocean, world history" maxlength="80">
+      </label>
+      <label class="field">
+        <span>How many sub-themes</span>
+        <input id="catCount" type="number" min="2" max="6" value="4">
+      </label>
+      <div class="actions">
+        <button id="catGenerate" class="primary">✨ Generate category</button>
+      </div>
+      <p class="status" id="catStatus"></p>
+      <div id="catResult" class="hidden">
+        <div id="catList"></div>
+        <div class="actions">
+          <button id="catSave" class="primary">Save all themes</button>
+          <button id="catDiscard" class="ghost">Discard</button>
+        </div>
+        <p class="status" id="catSaveStatus"></p>
+      </div>
     </section>
 
     <section class="panel preview" aria-label="How it works">

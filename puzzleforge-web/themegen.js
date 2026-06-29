@@ -268,6 +268,93 @@ async function generateTheme({ topic, wordsPerTier, model } = {}) {
   return { theme, report, sample: sampleWords(theme), model: useModel };
 }
 
+/**
+ * Generate a whole category: break a broad topic into several concrete
+ * sub-themes, then generate a full theme for each (all sharing one category
+ * label so "Whole category" selection merges them). Returns previews; nothing
+ * is saved.
+ * @returns {Promise<{ category, themes: Array<{theme, report, sample}> }>}
+ */
+async function generateCategory({ topic, count, wordsPerTier } = {}) {
+  topic = String(topic || '').trim();
+  if (!topic) {
+    const e = new Error('Enter a topic to generate a category.');
+    e.status = 400;
+    throw e;
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    const e = new Error(
+      'The AI generator needs an Anthropic API key. Set ANTHROPIC_API_KEY and restart the server.'
+    );
+    e.status = 503;
+    e.code = 'NO_API_KEY';
+    throw e;
+  }
+
+  const n = Math.max(2, Math.min(6, Math.round(Number(count) || 4)));
+  const client = new Anthropic();
+
+  // Step 1: a category label + N concrete sub-theme names.
+  const schema = {
+    type: 'object',
+    properties: {
+      category: { type: 'string', description: 'A short label for the whole group, e.g. "Gaming".' },
+      subthemes: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Distinct, concrete sub-topics suitable for puzzle word lists.',
+      },
+    },
+    required: ['category', 'subthemes'],
+    additionalProperties: false,
+  };
+  const prompt = [
+    `Break the broad topic "${topic}" into ${n} distinct, concrete sub-themes.`,
+    'Each sub-theme must be specific enough to build a 60+ word puzzle list from',
+    '(e.g. for "Gaming": "Tabletop RPGs", "Retro Arcade Games", "Game Genres").',
+    'Avoid overlap between sub-themes. Also give the whole group a short category label.',
+  ].join('\n');
+
+  let names;
+  let category;
+  try {
+    const msg = await client.messages
+      .stream({
+        model: DEFAULT_MODEL,
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+        output_config: { format: { type: 'json_schema', schema } },
+      })
+      .finalMessage();
+    const text = (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+    const data = JSON.parse(text);
+    category = String(data.category || topic).trim().slice(0, 40) || topic;
+    names = (data.subthemes || []).map((s) => String(s || '').trim()).filter(Boolean).slice(0, n);
+  } catch (err) {
+    const e = new Error(friendlyApiError(err));
+    e.status = err && err.status ? err.status : 502;
+    throw e;
+  }
+
+  // Step 2: generate a full theme for each sub-theme; skip any that fail.
+  const themes = [];
+  for (const name of names) {
+    try {
+      const r = await generateTheme({ topic: name, wordsPerTier });
+      r.theme.category = category; // force shared grouping
+      themes.push({ theme: r.theme, report: r.report, sample: r.sample });
+    } catch (_) {
+      /* skip a sub-theme that couldn't be built */
+    }
+  }
+  if (!themes.length) {
+    const e = new Error('Could not generate any themes for that topic. Try a broader subject.');
+    e.status = 422;
+    throw e;
+  }
+  return { category, themes };
+}
+
 function friendlyApiError(err) {
   if (err instanceof Anthropic.AuthenticationError) {
     return 'The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.';
@@ -432,6 +519,7 @@ function removeFromTheme(id, { words = [], facts = [] } = {}) {
 
 module.exports = {
   generateTheme,
+  generateCategory,
   sanitizeTheme,
   saveTheme,
   deleteTheme,
