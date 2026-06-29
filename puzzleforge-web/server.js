@@ -374,6 +374,29 @@ app.post('/api/book/checklist', async (req, res) => {
   }
 });
 
+// KDP royalty estimate. Renders the interior for an accurate page count unless
+// a pageCount is supplied directly.
+app.post('/api/book/royalty', async (req, res) => {
+  const body = req.body || {};
+  let outPath;
+  try {
+    let pageCount = Number(body.pageCount) || 0;
+    if (!pageCount) {
+      let book = body.bookId && bookCache.get(body.bookId);
+      if (!book) book = pf.assembleBook(body.config || {});
+      outPath = path.join(os.tmpdir(), `pf-roy-${crypto.randomUUID()}.pdf`);
+      await pf.exportBookPdf(book, { outPath });
+      pageCount = countPdfPages(fs.readFileSync(outPath));
+    }
+    const paper = body.paper === 'standard-color' || body.paper === 'premium-color' ? body.paper : 'bw';
+    res.json(pf.royaltyEstimate({ pageCount, paper, listPrice: body.listPrice }));
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  } finally {
+    if (outPath) fs.unlink(outPath, () => {});
+  }
+});
+
 // --- AI theme generator ---
 
 const themegen = require('./themegen');
@@ -683,7 +706,15 @@ function countPdfPages(pdfBuffer) {
   return Math.max(pageObjs, maxCount) || pageObjs;
 }
 
-function buildInfoSheet(config, book, pageCount, paper, dims) {
+function buildInfoSheet(config, book, pageCount, paper, dims, meta) {
+  const md = pf.normalizeMetadata(meta || {});
+  const colorPaper = paper === 'cream' ? 'bw' : 'bw'; // interiors here are B&W
+  const est = pf.royaltyEstimate({ pageCount, paper: colorPaper, listPrice: md.listPrice });
+  const disc = pf.aiDisclosure(md);
+  const usd = (n) => (n == null ? '—' : `$${Number(n).toFixed(2)}`);
+  const slot = (arr, n) =>
+    Array.from({ length: n }, (_, i) => `  ${i + 1}. ${arr[i] || ''}`).join('\n');
+
   const lines = [
     'PuzzleForge — KDP Build Info',
     '============================',
@@ -691,6 +722,8 @@ function buildInfoSheet(config, book, pageCount, paper, dims) {
     `Title:            ${config.title || ''}`,
     config.subtitle ? `Subtitle:         ${config.subtitle}` : null,
     `Author:           ${config.author || ''}`,
+    md.seriesName ? `Series:           ${md.seriesName}${md.seriesNumber ? ` (book ${md.seriesNumber})` : ''}` : null,
+    md.readingAge ? `Reading age:      ${md.readingAge}` : null,
     '',
     `Trim size:        ${dims.trimWidthIn} x ${dims.trimHeightIn} in`,
     `Interior pages:   ${pageCount}`,
@@ -698,6 +731,32 @@ function buildInfoSheet(config, book, pageCount, paper, dims) {
     `Spine width:      ${dims.spineIn} in`,
     `Full cover size:  ${dims.fullWidthIn} x ${dims.fullHeightIn} in (includes 0.125" bleed)`,
     `Spine text:       ${dims.spineTextAllowed ? 'printed (book is long enough)' : 'hidden (KDP needs >= 79 pages)'}`,
+    '',
+    'Description / blurb',
+    '-------------------',
+    md.description || '(none entered)',
+    '',
+    'Keywords (7 slots — fill all for discoverability)',
+    '-------------------------------------------------',
+    slot(md.keywords, 7),
+    '',
+    'Categories (3 slots)',
+    '--------------------',
+    slot(md.categories, 3),
+    '',
+    'Royalty estimate (US, 60%, B&W) — confirm rates on KDP',
+    '------------------------------------------------------',
+    `Printing cost:    ${usd(est.printCost)}  (rates as of ${est.ratesUpdated})`,
+    `Breakeven price:  ${usd(est.breakeven)}  (minimum list price for any royalty)`,
+    `Suggested range:  ${usd(est.suggestedLow)} – ${usd(est.suggestedHigh)}`,
+    md.listPrice != null ? `At list ${usd(est.listPrice)}: royalty ${usd(est.royalty)} / sale${est.belowMinimum ? '  ⚠ BELOW BREAKEVEN' : ''}` : 'List price:       (not set)',
+    '',
+    'AI disclosure (KDP upload form — readers never see this)',
+    '-------------------------------------------------------',
+    `Used AI:          ${disc.usedAI ? 'Yes' : 'No'}`,
+    `Content type(s):  ${disc.contentTypes.length ? disc.contentTypes.join('; ') : 'None'}`,
+    `AI tool(s):       ${disc.tools.length ? disc.tools.join('; ') : 'None'}`,
+    'Note: puzzle grids and answer keys are algorithmic — not AI — and are not disclosed.',
     '',
     'Files in this bundle',
     '--------------------',
@@ -711,6 +770,9 @@ function buildInfoSheet(config, book, pageCount, paper, dims) {
   ];
   if (pageCount < 24) {
     lines.push('', `WARNING: KDP requires at least 24 pages — this book has ${pageCount}. Add more content.`);
+  }
+  if (pageCount % 2 !== 0) {
+    lines.push('', `NOTE: page count is odd (${pageCount}) — add one blank page so KDP doesn't pad it unpredictably.`);
   }
   return lines.filter((l) => l !== null).join('\n') + '\n';
 }
@@ -751,7 +813,7 @@ app.post('/api/book/kdp', async (req, res) => {
     const cover = fs.readFileSync(coverPath);
 
     const dims = pf.coverDimensions(book.trimSize, pageCount, paper);
-    const info = buildInfoSheet(config, book, pageCount, paper, dims);
+    const info = buildInfoSheet(config, book, pageCount, paper, dims, body.metadata);
 
     const base = (config.title || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
     res.setHeader('Content-Type', 'application/zip');

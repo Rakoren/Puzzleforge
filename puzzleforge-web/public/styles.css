@@ -263,6 +263,15 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .chk-row.chk-pass .chk-label { color: var(--muted); }
 .chk-msg { color: #9a3412; }
 
+/* Royalty estimate */
+.royalty { margin-top: 8px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+.royalty.hidden { display: none; }
+.roy-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding: 3px 0; }
+.roy-row span:first-child { color: var(--muted); }
+.roy-good { color: var(--ok); }
+.roy-bad { color: #c92a2a; }
+.checkbox-label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+
 /* Manage themes list */
 .manage-list { margin-top: 8px; }
 .manage-cat { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 12px 0 4px; }

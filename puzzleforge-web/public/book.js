@@ -43,6 +43,17 @@
     coverText: $('coverText'),
     coverPaper: $('coverPaper'),
     coverBlurb: $('coverBlurb'),
+    mdSeriesName: $('mdSeriesName'),
+    mdSeriesNumber: $('mdSeriesNumber'),
+    mdDescription: $('mdDescription'),
+    mdKeywords: $('mdKeywords'),
+    mdCategories: $('mdCategories'),
+    mdReadingAge: $('mdReadingAge'),
+    mdAiText: $('mdAiText'),
+    mdAiImages: $('mdAiImages'),
+    mdListPrice: $('mdListPrice'),
+    estimateRoyalty: $('estimateRoyalty'),
+    royaltyOut: $('royaltyOut'),
     kdpBundle: $('kdpBundle'),
     kdpStatus: $('kdpStatus'),
     rows: $('rows'),
@@ -282,6 +293,9 @@
       bleedGuard: el.bleedGuard.checked,
       breathers: breatherKinds(),
       breatherThemeMatched: el.breatherThemed.checked,
+      metadata: metadata(),
+      coverBg: el.coverBg.value,
+      coverText: el.coverText.value,
       puzzleforgeBook: 1,
       puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
     };
@@ -314,6 +328,54 @@
     };
   }
 
+  function metadata() {
+    return {
+      seriesName: el.mdSeriesName.value.trim(),
+      seriesNumber: el.mdSeriesNumber.value.trim(),
+      description: el.mdDescription.value.trim() || el.coverBlurb.value.trim(),
+      keywords: el.mdKeywords.value,
+      categories: el.mdCategories.value,
+      readingAge: el.mdReadingAge.value.trim(),
+      paper: el.coverPaper.value,
+      listPrice: el.mdListPrice.value || null,
+      aiText: el.mdAiText.checked,
+      aiImages: el.mdAiImages.checked,
+    };
+  }
+
+  async function estimateRoyalty() {
+    el.royaltyOut.classList.remove('hidden');
+    el.royaltyOut.innerHTML = '<p class="chk-busy">Rendering the book and estimating…</p>';
+    el.estimateRoyalty.disabled = true;
+    try {
+      const res = await fetch('/api/book/royalty', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          lastBookId
+            ? { bookId: lastBookId, listPrice: el.mdListPrice.value || null }
+            : { config: config(), listPrice: el.mdListPrice.value || null }
+        ),
+      });
+      const e = await res.json();
+      if (!res.ok) throw new Error(e.error || 'Estimate failed');
+      const usd = (n) => (n == null ? '—' : '$' + Number(n).toFixed(2));
+      const royaltyLine =
+        e.royalty != null
+          ? `<div class="roy-row"><span>Royalty at ${usd(e.listPrice)}</span><strong class="${e.belowMinimum ? 'roy-bad' : 'roy-good'}">${usd(e.royalty)}/sale${e.belowMinimum ? ' (below breakeven!)' : ''}</strong></div>`
+          : '<div class="roy-row"><span>Royalty</span><span>enter a list price</span></div>';
+      el.royaltyOut.innerHTML =
+        `<div class="roy-row"><span>${e.pageCount} pages, B&W</span><span>print cost ${usd(e.printCost)}</span></div>` +
+        `<div class="roy-row"><span>Breakeven (min price)</span><strong>${usd(e.breakeven)}</strong></div>` +
+        `<div class="roy-row"><span>Suggested range</span><strong>${usd(e.suggestedLow)} – ${usd(e.suggestedHigh)}</strong></div>` +
+        royaltyLine;
+    } catch (err) {
+      el.royaltyOut.innerHTML = `<p class="chk-busy">${err.message}</p>`;
+    } finally {
+      el.estimateRoyalty.disabled = false;
+    }
+  }
+
   function setKdpStatus(text, kind) {
     el.kdpStatus.textContent = text || '';
     el.kdpStatus.className = 'status' + (kind ? ' ' + kind : '');
@@ -327,7 +389,7 @@
       const res = await fetch('/api/book/kdp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config: config(), cover: coverConfig() }),
+        body: JSON.stringify({ config: config(), cover: coverConfig(), metadata: metadata() }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -479,6 +541,19 @@
     if (cfg.border) el.border.value = cfg.border;
     if (cfg.borderColor) el.borderColor.value = cfg.borderColor;
     if (cfg.difficultyCurve) el.difficultyCurve.value = cfg.difficultyCurve;
+    if (cfg.coverBg) el.coverBg.value = cfg.coverBg;
+    if (cfg.coverText) el.coverText.value = cfg.coverText;
+    const md = cfg.metadata || {};
+    el.mdSeriesName.value = md.seriesName || '';
+    el.mdSeriesNumber.value = md.seriesNumber || '';
+    el.mdDescription.value = md.description || '';
+    el.mdKeywords.value = Array.isArray(md.keywords) ? md.keywords.join('\n') : (md.keywords || '');
+    el.mdCategories.value = Array.isArray(md.categories) ? md.categories.join('\n') : (md.categories || '');
+    el.mdReadingAge.value = md.readingAge || '';
+    el.mdListPrice.value = md.listPrice != null ? md.listPrice : '';
+    el.mdAiText.checked = Boolean(md.aiText);
+    el.mdAiImages.checked = Boolean(md.aiImages);
+    if (md.paper) el.coverPaper.value = md.paper;
     if (cfg.fontScale) el.fontScale.value = String(cfg.fontScale);
     if (cfg.fontFamily) el.fontFamily.value = cfg.fontFamily;
     if (cfg.theme) el.theme.value = cfg.theme;
@@ -604,6 +679,7 @@
     el.buildPdf.addEventListener('click', buildPdf);
     el.runChecklist.addEventListener('click', runChecklist);
     el.kdpBundle.addEventListener('click', buildBundle);
+    el.estimateRoyalty.addEventListener('click', estimateRoyalty);
     el.saveRecipe.addEventListener('click', saveRecipe);
     el.loadRecipe.addEventListener('change', onLoad);
     el.answerKey.addEventListener('change', () => { invalidate(); updateSummary(); });

@@ -96,6 +96,7 @@ visually — no JSON by hand:
 | POST | `/api/book/preview` | assemble a book → `{ bookId, html, meta }` |
 | POST | `/api/book/pdf` | export the book PDF (reuses the assembled book by `bookId`) |
 | POST | `/api/book/checklist` | pre-flight publish checks → `{ items, summary, pageCount }` |
+| POST | `/api/book/royalty` | KDP royalty estimate (renders for page count) → `{ printCost, royalty, breakeven, suggested… }` |
 | GET | `/api/theme/status` | `{ available }` — whether an Anthropic API key is configured |
 | POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
 | POST | `/api/category/generate` | broad topic → `{ category, themes:[{theme,report,sample}] }` (preview) |

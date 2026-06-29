@@ -10,6 +10,7 @@
 const { generate } = require('./engine/generate');
 const { assembleBook } = require('./engine/book');
 const { runChecklist } = require('./engine/checklist');
+const kdp = require('./engine/kdp');
 const {
   exportPuzzlePdf,
   exportBookPdf,
@@ -42,6 +43,10 @@ module.exports = {
   generate,
   assembleBook,
   runChecklist,
+  royaltyEstimate: kdp.royaltyEstimate,
+  printingCostUSD: kdp.printingCostUSD,
+  normalizeMetadata: kdp.normalizeMetadata,
+  aiDisclosure: kdp.aiDisclosure,
   exportPdf: exportPuzzlePdf,
   exportBookPdf,
   exportPuzzlesPdf,

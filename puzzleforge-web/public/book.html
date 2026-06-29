@@ -214,12 +214,53 @@
           <textarea id="coverBlurb" rows="3" placeholder="A short description for the back cover…"></textarea>
         </label>
       </fieldset>
+      <fieldset class="matter">
+        <legend>KDP listing metadata (goes in the build-info sheet)</legend>
+        <div class="row">
+          <label class="field"><span>Series name (optional)</span><input id="mdSeriesName" type="text" placeholder="e.g. Animal Activity Books"></label>
+          <label class="field"><span>Series number</span><input id="mdSeriesNumber" type="text" inputmode="numeric" placeholder="e.g. 3"></label>
+        </div>
+        <label class="field">
+          <span>Description / blurb</span>
+          <textarea id="mdDescription" rows="3" placeholder="Amazon listing description (can reuse the back-cover blurb)…"></textarea>
+        </label>
+        <label class="field">
+          <span>Keywords — one per line, up to 7</span>
+          <textarea id="mdKeywords" rows="4" placeholder="kids word search&#10;animal puzzles&#10;activity book ages 6-8"></textarea>
+        </label>
+        <label class="field">
+          <span>Categories — one per line, up to 3</span>
+          <textarea id="mdCategories" rows="3" placeholder="Children's Books > Activity Books&#10;…"></textarea>
+        </label>
+        <label class="field">
+          <span>Reading age</span>
+          <input id="mdReadingAge" type="text" placeholder="e.g. 6-10 (kids) or leave blank for adult">
+        </label>
+        <span class="checkbox-label">AI disclosure (KDP asks — readers never see it; puzzle grids are algorithmic and excluded):</span>
+        <label class="checkbox"><input type="checkbox" id="mdAiText"> Used AI-generated text (theme words / clues via Claude)</label>
+        <label class="checkbox"><input type="checkbox" id="mdAiImages"> Used AI-generated images (ComfyUI / Stable Diffusion)</label>
+      </fieldset>
+
+      <fieldset class="matter">
+        <legend>Royalty estimate</legend>
+        <div class="row">
+          <label class="field"><span>List price (USD)</span><input id="mdListPrice" type="number" min="0" step="0.01" placeholder="6.99"></label>
+          <label class="field checkbox-field"><span>&nbsp;</span>
+            <button id="estimateRoyalty" class="ghost" type="button">Estimate royalty</button>
+          </label>
+        </div>
+        <div id="royaltyOut" class="royalty hidden"></div>
+        <p class="hint">US paperback, 60% royalty, B&amp;W interior. Estimate only — confirm current
+          printing rates on KDP before pricing.</p>
+      </fieldset>
+
       <div class="actions">
         <button id="kdpBundle" class="primary">Download KDP bundle (.zip)</button>
       </div>
       <p class="hint">One zip with <strong>interior.pdf</strong>, <strong>cover.pdf</strong> (spine sized
-        from the final page count), and a <strong>build-info</strong> sheet. For a fancier cover —
-        image, custom layout — use the Cover Builder. Uses the title, subtitle, and author above.</p>
+        from the final page count), and a <strong>build-info</strong> sheet (now including your listing
+        metadata, royalty estimate, and pre-filled AI disclosure). For a fancier cover — image, custom
+        layout — use the Cover Builder.</p>
       <p class="status" id="kdpStatus"></p>
     </section>
 

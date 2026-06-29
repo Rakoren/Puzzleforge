@@ -295,6 +295,8 @@ The PuzzleForge export bundle should pre-fill both fields based on which tools w
 
 ### KDP Royalty Estimator
 
+*Shipped (v1): `engine/kdp.js` + "Estimate royalty" button and a listing-metadata fieldset in the Book Builder. US paperback, 60%, B&W modeled precisely (color approximate); renders the book for an accurate page count; build-info sheet now includes metadata, royalty estimate, and pre-filled AI disclosure. Multi-marketplace currency and IngramSpark/Books.by are still to come.*
+
 Built into the export bundle screen. Calculates estimated royalty per sale before upload so you can set pricing confidently without switching to KDP's external calculator.
 
 **Inputs (pulled from book config):**
