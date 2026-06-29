@@ -79,6 +79,36 @@
         <input id="seed" type="number" placeholder="random">
       </label>
 
+      <div id="advanced" class="hidden">
+        <h2>Advanced (LoRA / ControlNet)</h2>
+        <div id="loraWrap" class="hidden">
+          <label class="field">
+            <span>LoRA</span>
+            <select id="lora"><option value="">(none)</option></select>
+          </label>
+          <label class="field">
+            <span>LoRA strength (<span id="loraStrengthVal">1.0</span>)</span>
+            <input id="loraStrength" type="range" min="0" max="2" step="0.05" value="1">
+          </label>
+        </div>
+        <div id="cnetWrap" class="hidden">
+          <label class="field">
+            <span>ControlNet model</span>
+            <select id="cnet"><option value="">(none)</option></select>
+          </label>
+          <label class="field">
+            <span>ControlNet reference image</span>
+            <input id="cnetImage" type="file" accept="image/*">
+          </label>
+          <label class="field">
+            <span>ControlNet strength (<span id="cnetStrengthVal">0.80</span>)</span>
+            <input id="cnetStrength" type="range" min="0" max="2" step="0.05" value="0.8">
+          </label>
+          <p class="hint">Upload a reference (a sketch, silhouette, or line drawing) to steer the
+            shape/pose. A matching ControlNet model must be selected.</p>
+        </div>
+      </div>
+
       <h2>3 · Generate</h2>
       <div class="actions">
         <button id="generate" class="primary" disabled>Generate</button>

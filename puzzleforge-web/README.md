@@ -149,6 +149,13 @@ pipeline (ComfyUI line art is rarely print-ready on its own):
 | Silhouette (solid black) | silhouette pages | thresholded to a solid black shape |
 | Detailed illustration (cover art) | covers / decorative art | none |
 
+**LoRA / ControlNet (advanced):** when ComfyUI reports installed LoRAs or
+ControlNet models, an *Advanced* section appears. Pick a **LoRA** (with strength)
+to bias the style — a coloring-book or flat-illustration LoRA is the single
+biggest quality jump for this pipeline. Pick a **ControlNet** model and upload a
+**reference image** (a sketch, silhouette, or line drawing) to steer the
+shape/pose. Both are optional and the graph stays valid without them.
+
 **Hand-off:** after generating, **Send to Color by Number** or **Send to
 Coloring Page** carries the image straight into the matching Image Tools tab —
 the cleanest path to a numbered page is *Color-by-number base* → *Send to Color

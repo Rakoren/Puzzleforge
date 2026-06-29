@@ -620,7 +620,9 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
     Tuned **workflow presets** (coloring / color-by-number base / silhouette / cover
     illustration), each setting prompt + negative + sampler/scheduler/steps, with
     automatic post-processing (line-art traced to crisp B/W, silhouette thresholded)
-    so output is print-ready. **Hand-off** buttons send a generated image straight into
+    so output is print-ready. **LoRA + ControlNet** support (dynamic workflow graph:
+    LoraLoader chain, ControlNetApplyAdvanced with an uploaded reference image; models
+    auto-listed from ComfyUI). **Hand-off** buttons send a generated image straight into
     the Color-by-Number or Coloring-Page tools. (Potrace PNG→SVG tracing for border
     tiles still deferred.)
 16. ✅ Image-to-Color-by-Number — Sharp + JS k-means posterization → flat color regions,

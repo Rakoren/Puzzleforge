@@ -71,46 +71,124 @@ async function status() {
   }
 }
 
-/** List installed checkpoints (for a model dropdown), [] if unavailable. */
-async function listCheckpoints() {
+// Read one combo-input's option list off a node's /object_info (the shape is
+// { required: { field: [ [opt, opt, ...], {...} ] } }). [] if unavailable.
+async function listNodeOptions(nodeClass, field) {
   try {
-    const res = await fetchWithTimeout(`${BASE_URL}/object_info/CheckpointLoaderSimple`, {}, 4000);
+    const res = await fetchWithTimeout(`${BASE_URL}/object_info/${nodeClass}`, {}, 4000);
     if (!res.ok) return [];
     const info = await res.json();
-    const node = info.CheckpointLoaderSimple || Object.values(info)[0];
-    const opts = node && node.input && node.input.required && node.input.required.ckpt_name;
+    const node = info[nodeClass] || Object.values(info)[0];
+    const opts = node && node.input && node.input.required && node.input.required[field];
     return Array.isArray(opts) && Array.isArray(opts[0]) ? opts[0] : [];
   } catch (_) {
     return [];
   }
 }
 
-// Canonical txt2img workflow in ComfyUI API format. Values are real numbers so
-// the graph validates; node ids are stable strings.
-function buildWorkflow({ prompt, negative, width, height, seed, steps, cfg, ckpt, sampler, scheduler }) {
-  return {
-    3: {
-      class_type: 'KSampler',
+/** List installed checkpoints (for a model dropdown), [] if unavailable. */
+const listCheckpoints = () => listNodeOptions('CheckpointLoaderSimple', 'ckpt_name');
+
+/** List installed LoRAs, [] if unavailable. */
+const listLoras = () => listNodeOptions('LoraLoader', 'lora_name');
+
+/** List installed ControlNet models, [] if unavailable. */
+const listControlnets = () => listNodeOptions('ControlNetLoader', 'control_net_name');
+
+// Upload a control image (data URL / base64) to ComfyUI's input dir so a
+// LoadImage node can reference it. Returns the stored filename.
+async function uploadImage(image) {
+  const s = String(image || '');
+  const comma = s.indexOf(',');
+  const b64 = s.startsWith('data:') && comma >= 0 ? s.slice(comma + 1) : s;
+  const buf = Buffer.from(b64, 'base64');
+  const form = new FormData();
+  form.append('image', new Blob([buf], { type: 'image/png' }), `pf-control-${Date.now()}.png`);
+  form.append('overwrite', 'true');
+  const res = await fetchWithTimeout(`${BASE_URL}/upload/image`, { method: 'POST', body: form }, 15000);
+  if (!res.ok) throw new Error('Could not upload the ControlNet reference image to ComfyUI.');
+  const data = await res.json();
+  return data.subfolder ? `${data.subfolder}/${data.name}` : data.name;
+}
+
+const clampNum = (v, def, lo, hi) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return def;
+  return Math.max(lo, Math.min(hi, n));
+};
+
+// Build a txt2img workflow (ComfyUI API format) with an optional LoRA chain and
+// optional ControlNet guidance. Node ids are stable strings; refs are dynamic so
+// the graph stays valid whether or not LoRA/ControlNet are present.
+//
+//   loras:      [{ name, strength }]            applied checkpoint → KSampler
+//   controlnet: { name, image, strength }       image = a filename already
+//                                               uploaded to ComfyUI's input dir
+function buildWorkflow({ prompt, negative, width, height, seed, steps, cfg, ckpt, sampler, scheduler, loras, controlnet }) {
+  const g = {};
+  g['4'] = { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: ckpt } };
+  let modelRef = ['4', 0];
+  let clipRef = ['4', 1];
+  const vaeRef = ['4', 2];
+
+  // LoRA chain: each LoraLoader takes the previous model/clip and outputs new ones.
+  let nextId = 20;
+  for (const lora of loras || []) {
+    if (!lora || !lora.name) continue;
+    const id = String(nextId++);
+    const strength = clampNum(lora.strength, 1, -4, 4);
+    g[id] = {
+      class_type: 'LoraLoader',
+      inputs: { lora_name: lora.name, strength_model: strength, strength_clip: strength, model: modelRef, clip: clipRef },
+    };
+    modelRef = [id, 0];
+    clipRef = [id, 1];
+  }
+
+  g['5'] = { class_type: 'EmptyLatentImage', inputs: { width, height, batch_size: 1 } };
+  g['6'] = { class_type: 'CLIPTextEncode', inputs: { text: prompt, clip: clipRef } };
+  g['7'] = { class_type: 'CLIPTextEncode', inputs: { text: negative, clip: clipRef } };
+  let posRef = ['6', 0];
+  let negRef = ['7', 0];
+
+  // ControlNet: guide generation with a reference image (e.g. a line drawing).
+  if (controlnet && controlnet.name && controlnet.image) {
+    g['30'] = { class_type: 'LoadImage', inputs: { image: controlnet.image } };
+    g['31'] = { class_type: 'ControlNetLoader', inputs: { control_net_name: controlnet.name } };
+    g['32'] = {
+      class_type: 'ControlNetApplyAdvanced',
       inputs: {
-        seed,
-        steps,
-        cfg,
-        sampler_name: sampler || 'euler',
-        scheduler: scheduler || 'normal',
-        denoise: 1,
-        model: ['4', 0],
-        positive: ['6', 0],
-        negative: ['7', 0],
-        latent_image: ['5', 0],
+        strength: clampNum(controlnet.strength, 0.8, 0, 2),
+        start_percent: 0,
+        end_percent: 1,
+        positive: posRef,
+        negative: negRef,
+        control: ['31', 0],
+        image: ['30', 0],
       },
+    };
+    posRef = ['32', 0];
+    negRef = ['32', 1];
+  }
+
+  g['3'] = {
+    class_type: 'KSampler',
+    inputs: {
+      seed,
+      steps,
+      cfg,
+      sampler_name: sampler || 'euler',
+      scheduler: scheduler || 'normal',
+      denoise: 1,
+      model: modelRef,
+      positive: posRef,
+      negative: negRef,
+      latent_image: ['5', 0],
     },
-    4: { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: ckpt } },
-    5: { class_type: 'EmptyLatentImage', inputs: { width, height, batch_size: 1 } },
-    6: { class_type: 'CLIPTextEncode', inputs: { text: prompt, clip: ['4', 1] } },
-    7: { class_type: 'CLIPTextEncode', inputs: { text: negative, clip: ['4', 1] } },
-    8: { class_type: 'VAEDecode', inputs: { samples: ['3', 0], vae: ['4', 2] } },
-    9: { class_type: 'SaveImage', inputs: { filename_prefix: 'PuzzleForge', images: ['8', 0] } },
   };
+  g['8'] = { class_type: 'VAEDecode', inputs: { samples: ['3', 0], vae: vaeRef } };
+  g['9'] = { class_type: 'SaveImage', inputs: { filename_prefix: 'PuzzleForge', images: ['8', 0] } };
+  return g;
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -140,6 +218,19 @@ async function generate(opts = {}) {
 
   const preset = WORKFLOWS[opts.style] || WORKFLOWS.coloring;
   const seed = opts.seed != null ? Number(opts.seed) : Math.floor(Math.random() * 1e15);
+
+  // Normalize LoRAs (accept [{name,strength}] or ["name"]).
+  const loras = (Array.isArray(opts.loras) ? opts.loras : [])
+    .map((l) => (typeof l === 'string' ? { name: l } : l))
+    .filter((l) => l && l.name);
+
+  // ControlNet: upload the reference image first so a LoadImage node can use it.
+  let controlnet = null;
+  if (opts.controlnet && opts.controlnet.name && opts.controlnet.image) {
+    const uploaded = await uploadImage(opts.controlnet.image);
+    controlnet = { name: opts.controlnet.name, image: uploaded, strength: opts.controlnet.strength };
+  }
+
   const workflow =
     opts.workflow ||
     buildWorkflow({
@@ -153,6 +244,8 @@ async function generate(opts = {}) {
       ckpt: opts.ckpt || DEFAULT_CKPT,
       sampler: preset.sampler,
       scheduler: preset.scheduler,
+      loras,
+      controlnet,
     });
 
   const clientId = crypto.randomUUID();
@@ -256,4 +349,14 @@ function comfyError(data) {
   return null;
 }
 
-module.exports = { status, listCheckpoints, generate, buildWorkflow, WORKFLOWS, BASE_URL };
+module.exports = {
+  status,
+  listCheckpoints,
+  listLoras,
+  listControlnets,
+  uploadImage,
+  generate,
+  buildWorkflow,
+  WORKFLOWS,
+  BASE_URL,
+};

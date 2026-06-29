@@ -22,9 +22,20 @@
     toColoring: $('toColoring'),
     previewImg: $('previewImg'),
     emptyState: $('emptyState'),
+    advanced: $('advanced'),
+    loraWrap: $('loraWrap'),
+    lora: $('lora'),
+    loraStrength: $('loraStrength'),
+    loraStrengthVal: $('loraStrengthVal'),
+    cnetWrap: $('cnetWrap'),
+    cnet: $('cnet'),
+    cnetImage: $('cnetImage'),
+    cnetStrength: $('cnetStrength'),
+    cnetStrengthVal: $('cnetStrengthVal'),
   };
 
   let currentImage = null; // last generated PNG data URL
+  let cnetRef = null; // ControlNet reference image as a data URL
 
   function setStatus(text, kind) {
     el.status.textContent = text || '';
@@ -69,6 +80,10 @@
         cfg: Number(el.cfg.value),
       };
       if (el.seed.value.trim() !== '') body.seed = Number(el.seed.value);
+      if (el.lora.value) body.loras = [{ name: el.lora.value, strength: Number(el.loraStrength.value) }];
+      if (el.cnet.value && cnetRef) {
+        body.controlnet = { name: el.cnet.value, image: cnetRef, strength: Number(el.cnetStrength.value) };
+      }
 
       const res = await fetch('/api/comfy/generate', {
         method: 'POST',
@@ -141,6 +156,25 @@
         o.textContent = wf.label;
         el.style.appendChild(o);
       }
+
+      // LoRA / ControlNet — only shown when the server reports any installed.
+      const loras = data.loras || [];
+      const cnets = data.controlnets || [];
+      for (const name of loras) {
+        const o = document.createElement('option');
+        o.value = name;
+        o.textContent = name;
+        el.lora.appendChild(o);
+      }
+      for (const name of cnets) {
+        const o = document.createElement('option');
+        o.value = name;
+        o.textContent = name;
+        el.cnet.appendChild(o);
+      }
+      if (loras.length) el.loraWrap.classList.remove('hidden');
+      if (cnets.length) el.cnetWrap.classList.remove('hidden');
+      if (loras.length || cnets.length) el.advanced.classList.remove('hidden');
     } catch (_) {
       const o = document.createElement('option');
       o.value = 'coloring';
@@ -158,6 +192,15 @@
     el.download.addEventListener('click', download);
     el.toCbn.addEventListener('click', () => handoff('cbn'));
     el.toColoring.addEventListener('click', () => handoff('coloring'));
+    el.loraStrength.addEventListener('input', () => { el.loraStrengthVal.textContent = Number(el.loraStrength.value).toFixed(2); });
+    el.cnetStrength.addEventListener('input', () => { el.cnetStrengthVal.textContent = Number(el.cnetStrength.value).toFixed(2); });
+    el.cnetImage.addEventListener('change', (ev) => {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) { cnetRef = null; return; }
+      const reader = new FileReader();
+      reader.onload = () => { cnetRef = reader.result; };
+      reader.readAsDataURL(file);
+    });
   }
 
   init();
