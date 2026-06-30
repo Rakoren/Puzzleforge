@@ -78,8 +78,10 @@ visually — no JSON by hand:
 - **No repeated words** — keep every theme word to a single puzzle across the book
 - **Kids-book activity pages** (no answer key): **Coloring Page** (procedural
   mandala / shape-pattern / bubble-letter art), **Drawing Page** (framed blank
-  with a prompt), and **Blank (bleed guard)** pages to place after coloring
-  pages so marker ink doesn't bleed through
+  with a prompt), and **Blank (bleed guard)** pages. Bleed-guarding is
+  leaf-aware: each coloring/drawing page is placed on a recto (odd) page with a
+  blank verso behind it, so marker ink can't bleed onto a puzzle on the back of
+  the same sheet
 - **Between puzzles, insert** — automatically drop a drawing and/or blank page
   into every gap between puzzles (20 puzzles → 19 of each)
 - **Breather pages** (adult) — a calm page between puzzle *sets*: a fun fact

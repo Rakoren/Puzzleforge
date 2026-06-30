@@ -241,8 +241,15 @@ function miniAnswer(puzzle, blockWidth) {
       return miniCrossword(puzzle, blockWidth);
     case 'nonogram':
       return miniNonogram(puzzle, blockWidth);
-    case 'trivia':
-      return `<ol class="trivia-ans" style="margin:0;padding-left:18px;font-size:${Math.max(9, Math.round(blockWidth / 26))}px">${(puzzle.solution.answers || []).map((a) => `<li>${esc(a)}</li>`).join('')}</ol>`;
+    case 'trivia': {
+      // Numbers rendered inline (not as <ol> markers) so two-digit numbers like
+      // "10." can't overflow the list padding and get clipped.
+      const fs = Math.max(9, Math.round(blockWidth / 26));
+      const lis = (puzzle.solution.answers || [])
+        .map((a, i) => `<li style="margin:0 0 3px 0"><b>${i + 1}.</b> ${esc(a)}</li>`)
+        .join('');
+      return `<ol class="trivia-ans" style="margin:0;padding:0;list-style:none;font-size:${fs}px">${lis}</ol>`;
+    }
     default:
       return `<div class="generic">(no compact answer view for ${esc(puzzle.type)})</div>`;
   }

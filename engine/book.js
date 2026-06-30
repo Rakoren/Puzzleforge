@@ -210,15 +210,27 @@ function puzzleWords(puzzle) {
 // blank page so ink doesn't bleed onto the next printed page.
 const DRAWABLE_TYPES = new Set(['coloring', 'drawing']);
 
-// Insert a blank bleed-guard page after each drawable page (unless one already
-// follows). Returns a new array.
-function addBleedGuards(pages) {
+// Bleed-guard placement that respects the physical leaf. In a printed book a
+// sheet has two sides — page p (recto, odd) and p+1 (verso, even) are the same
+// leaf — so marker ink on a drawing/coloring page bleeds through to the OTHER
+// side of that leaf, not merely the next page in reading order. To keep that
+// back side blank we put every drawable on a recto (odd) page and a blank on its
+// verso. `startAbs` is the absolute PDF page number of the first content page
+// (after the title + front matter).
+function addBleedGuards(pages, startAbs) {
+  const blank = () => generate({ type: 'bleedguard', label: '' });
   const out = [];
+  let abs = startAbs;
   for (let i = 0; i < pages.length; i++) {
-    out.push(pages[i]);
-    if (DRAWABLE_TYPES.has(pages[i].type)) {
+    const pg = pages[i];
+    if (DRAWABLE_TYPES.has(pg.type)) {
+      if (abs % 2 === 0) { out.push(blank()); abs++; } // push the drawable onto a recto
+      out.push(pg); abs++;
       const next = pages[i + 1];
-      if (!next || next.type !== 'bleedguard') out.push(generate({ type: 'bleedguard', label: '' }));
+      if (!next || next.type !== 'bleedguard') { out.push(blank()); abs++; } // blank verso = blank back
+    } else {
+      out.push(pg);
+      abs++;
     }
   }
   return out;
@@ -349,17 +361,18 @@ function buildBook(config, opts, seed, rand) {
     });
   }
 
-  // Optional filler pages inserted after puzzles (kids fillers / inserts).
-  let ordered = interleavePuzzles(sequence, config);
-  // Back every coloring/drawing page with a blank page so markers don't bleed
-  // through to the next printed page (on by default).
-  if (config.bleedGuard !== false) ordered = addBleedGuards(ordered);
-
   // Front matter (copyright / "belongs to" / intro) sits between the title page
   // and the puzzles; offset content page numbers past it. Back matter (about /
   // more books) is rendered after the answer key.
   const frontMatter = buildFrontMatter(config);
   const backMatter = buildBackMatter(config);
+
+  // Optional filler pages inserted after puzzles (kids fillers / inserts).
+  let ordered = interleavePuzzles(sequence, config);
+  // Keep the back of every coloring/drawing leaf blank so markers don't bleed
+  // through (on by default). Needs the first content page's absolute number
+  // (title page = 1, then front matter) to reason about recto/verso.
+  if (config.bleedGuard !== false) ordered = addBleedGuards(ordered, 2 + frontMatter.length);
 
   // Page assignment: title page (1) + front matter, then one page per content
   // page, then the answer key (computed by the matter template at render time;
