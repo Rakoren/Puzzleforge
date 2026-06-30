@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PuzzleForge — Image Tools</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <div>
+        <h1>PuzzleForge</h1>
+        <p class="tagline">Image Tools — photo → printable page</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Puzzle Maker</a>
+      <a href="book.html">Book Builder</a>
+      <a href="themes.html">AI Themes</a>
+      <a href="imagetools.html" class="active">Image Tools</a>
+      <a href="cover.html">Cover Builder</a>
+      <a href="aiart.html">AI Art</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="panel config" aria-label="Image settings">
+      <div class="tabs tools-tabs" role="tablist" id="toolTabs">
+        <button class="tab active" data-tool="coloring" role="tab">Coloring Page</button>
+        <button class="tab" data-tool="cbn" role="tab">Color by Number</button>
+        <button class="tab" data-tool="dots" role="tab">Dot to Dot</button>
+      </div>
+
+      <!-- Coloring Page -->
+      <div id="tool-coloring">
+        <h2>1 · Upload a photo</h2>
+        <label class="field">
+          <span>Image</span>
+          <input id="image" type="file" accept="image/*">
+        </label>
+        <p class="hint">Works best on clear subjects with defined edges (animals, objects, simple
+          scenes). Busy backgrounds add clutter — crop tight first for the cleanest result.</p>
+
+        <h2>2 · Adjust</h2>
+        <label class="field">
+          <span>Detail (<span id="detailVal">6</span>)</span>
+          <input id="detail" type="range" min="1" max="10" value="6">
+        </label>
+        <label class="field">
+          <span>Line thickness (<span id="thickVal">2</span>)</span>
+          <input id="thickness" type="range" min="1" max="4" value="2">
+        </label>
+        <div class="row">
+          <label class="field">
+            <span>Page size</span>
+            <select id="trimSize"></select>
+          </label>
+          <label class="field">
+            <span>Title (optional)</span>
+            <input id="title" type="text" placeholder="e.g. My Cat">
+          </label>
+        </div>
+        <div class="actions">
+          <button id="apply" class="primary" disabled>Update preview</button>
+        </div>
+        <p class="status" id="status"></p>
+
+        <h2>3 · Download</h2>
+        <div class="actions">
+          <button id="downloadPdf" class="primary" disabled>Download coloring page (PDF)</button>
+        </div>
+        <p class="hint">Tip: lower the detail for younger kids (fewer, bolder lines); raise it to
+          keep more of the picture.</p>
+      </div>
+
+      <!-- Color by Number -->
+      <div id="tool-cbn" class="hidden">
+        <h2>1 · Upload a photo</h2>
+        <label class="field">
+          <span>Image</span>
+          <input id="cbnImage" type="file" accept="image/*">
+        </label>
+        <p class="hint">Bold, simple pictures work best. The photo is reduced to a few flat colors;
+          each region gets a number that matches the color key.</p>
+
+        <h2>2 · Adjust</h2>
+        <label class="field">
+          <span>Colors (<span id="colorsVal">12</span>)</span>
+          <input id="colors" type="range" min="4" max="24" value="12">
+        </label>
+        <label class="field">
+          <span>Cleanup (<span id="smoothVal">3</span>)</span>
+          <input id="smoothing" type="range" min="0" max="5" value="3">
+        </label>
+        <div class="row">
+          <label class="field">
+            <span>Page size</span>
+            <select id="cbnTrim"></select>
+          </label>
+          <label class="field">
+            <span>Title (optional)</span>
+            <input id="cbnTitle" type="text" placeholder="e.g. Garden">
+          </label>
+        </div>
+        <label class="checkbox"><input id="cbnReference" type="checkbox"> Include a small color guide on the page</label>
+        <div class="actions" style="margin-top:10px">
+          <button id="cbnApply" class="primary" disabled>Update preview</button>
+        </div>
+        <p class="status" id="cbnStatus"></p>
+
+        <h2>3 · Download</h2>
+        <div class="actions">
+          <button id="cbnDownload" class="primary" disabled>Download color-by-number (PDF)</button>
+        </div>
+        <p class="hint">Fewer colors and higher cleanup make larger, tidier regions for young kids;
+          more colors and lower cleanup keep detail for older ones. Flat, bold pictures
+          (or AI-generated art) give the cleanest pages — busy photos stay noisy.</p>
+      </div>
+
+      <!-- Dot to Dot -->
+      <div id="tool-dots" class="hidden">
+        <h2>1 · Upload a photo</h2>
+        <label class="field">
+          <span>Image</span>
+          <input id="dotsImage" type="file" accept="image/*">
+        </label>
+        <p class="hint">Best with a single bold subject on a plain background (the silhouette is
+          traced into a ring of dots). The subject is detected automatically.</p>
+
+        <h2>2 · Adjust</h2>
+        <label class="field">
+          <span>Dots (<span id="dotsVal">40</span>)</span>
+          <input id="dots" type="range" min="12" max="120" value="40">
+        </label>
+        <div class="row">
+          <label class="field">
+            <span>Page size</span>
+            <select id="dotsTrim"></select>
+          </label>
+          <label class="field">
+            <span>Title (optional)</span>
+            <input id="dotsTitle" type="text" placeholder="e.g. Mystery Shape">
+          </label>
+        </div>
+        <label class="checkbox"><input id="dotsReference" type="checkbox"> Show a faint guide silhouette</label>
+        <div class="actions" style="margin-top:10px">
+          <button id="dotsApply" class="primary" disabled>Update preview</button>
+        </div>
+        <p class="status" id="dotsStatus"></p>
+
+        <h2>3 · Download</h2>
+        <div class="actions">
+          <button id="dotsDownload" class="primary" disabled>Download dot-to-dot (PDF)</button>
+        </div>
+        <p class="hint">Fewer dots are easier for young kids; more dots capture the shape better.
+          Turn the guide silhouette off for a real puzzle, on for tracing practice.</p>
+      </div>
+    </section>
+
+    <section class="panel preview" aria-label="Preview">
+      <div class="preview-head">
+        <h2>Preview</h2>
+      </div>
+      <div class="preview-frame img-preview">
+        <img id="previewImg" alt="Coloring page preview" hidden>
+        <div id="cbnPreview" class="cbn-preview hidden"></div>
+        <div id="dotsPreview" class="cbn-preview dots-preview hidden"></div>
+        <div class="empty" id="emptyState">
+          <p>Upload a photo to see the page here.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="imagetools.js"></script>
+</body>
+</html>

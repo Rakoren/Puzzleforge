@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PuzzleForge — AI Theme Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <div>
+        <h1>PuzzleForge</h1>
+        <p class="tagline">AI Theme Generator — turn any topic into a word list</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Puzzle Maker</a>
+      <a href="book.html">Book Builder</a>
+      <a href="themes.html" class="active">AI Themes</a>
+      <a href="imagetools.html">Image Tools</a>
+      <a href="cover.html">Cover Builder</a>
+      <a href="aiart.html">AI Art</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="panel config" aria-label="Theme generator">
+      <h2>1 · Describe a topic</h2>
+      <p class="banner hidden" id="unavailable">
+        The AI theme generator needs an Anthropic API key. Set
+        <code>ANTHROPIC_API_KEY</code> in the server environment and restart to enable it.
+      </p>
+
+      <label class="field">
+        <span>Topic or subject</span>
+        <input id="topic" type="text" placeholder="e.g. dinosaurs, ancient Egypt, the solar system" maxlength="80">
+      </label>
+      <label class="field">
+        <span>Words per level (Easy / Medium / Hard)</span>
+        <input id="perTier" type="number" min="8" max="40" value="24">
+      </label>
+      <p class="hint">Claude writes the words and kid-friendly clues. Everything is run through
+        the same safety filter as the built-in themes before you see it.</p>
+
+      <h2>2 · Generate</h2>
+      <div class="actions">
+        <button id="generate" class="primary">✨ Generate theme</button>
+      </div>
+      <p class="status" id="status"></p>
+
+      <div id="result" class="hidden">
+        <h2>3 · Review</h2>
+        <div class="tool">
+          <div class="tool-head">
+            <strong id="rLabel">—</strong>
+            <span class="tool-desc" id="rMeta"></span>
+          </div>
+          <div class="tagrow" id="rTags"></div>
+        </div>
+
+        <details class="clue-editor" id="wordsDetails">
+          <summary>Words by level</summary>
+          <div id="tierSamples"></div>
+        </details>
+
+        <h2>4 · Save to library</h2>
+        <p class="hint">Saving adds this theme to the picker in the Puzzle Maker and Book Builder.</p>
+        <div class="actions">
+          <button id="save" class="primary">Save theme</button>
+          <button id="discard" class="ghost">Discard &amp; start over</button>
+        </div>
+        <p class="status" id="saveStatus"></p>
+      </div>
+
+      <h2 style="margin-top:22px;">Or generate a whole category</h2>
+      <p class="hint">Turn a broad topic into several related themes at once (e.g. “Gaming” →
+        Tabletop RPGs, Retro Arcade, Game Genres…), all sharing one category so you can pick
+        “All &lt;category&gt;” in the Book Builder.</p>
+      <label class="field">
+        <span>Broad topic</span>
+        <input id="catTopic" type="text" placeholder="e.g. gaming, the ocean, world history" maxlength="80">
+      </label>
+      <label class="field">
+        <span>How many sub-themes</span>
+        <input id="catCount" type="number" min="2" max="6" value="4">
+      </label>
+      <div class="actions">
+        <button id="catGenerate" class="primary">✨ Generate category</button>
+      </div>
+      <p class="status" id="catStatus"></p>
+      <div id="catResult" class="hidden">
+        <div id="catList"></div>
+        <div class="actions">
+          <button id="catSave" class="primary">Save all themes</button>
+          <button id="catDiscard" class="ghost">Discard</button>
+        </div>
+        <p class="status" id="catSaveStatus"></p>
+      </div>
+    </section>
+
+    <section class="panel preview" aria-label="How it works">
+      <div class="preview-head">
+        <h2>How it works</h2>
+      </div>
+      <div class="explainer">
+        <ol>
+          <li><strong>Pick a topic.</strong> Anything concrete works best — an animal group, a
+            place, a hobby, a school subject.</li>
+          <li><strong>Generate.</strong> Claude builds three difficulty levels of real words,
+            each with a short clue, so the same theme works for easy kids' puzzles and harder
+            adult ones.</li>
+          <li><strong>Review.</strong> Check the words and counts. The offensive-word filter has
+            already removed anything inappropriate.</li>
+          <li><strong>Save.</strong> The theme joins your library and shows up everywhere you pick
+            a theme — word searches, crosswords, scrambles, and full books.</li>
+        </ol>
+        <p class="hint">Generated themes are saved as ordinary theme files, so you can edit or
+          remove them later just like the built-in ones.</p>
+      </div>
+
+      <div class="preview-head" style="margin-top:18px;">
+        <h2>Manage themes</h2>
+      </div>
+      <p class="hint">“Edit” removes individual words or facts. “Clean” re-runs the safety /
+        duplicate / length filter. “Delete” removes the theme permanently.</p>
+      <div id="manageList" class="manage-list"></div>
+
+      <div id="themeEditor" class="theme-editor hidden">
+        <div class="preview-head">
+          <h2 id="editorTitle">Edit theme</h2>
+          <button id="editorClose" class="iconbtn" type="button">Done</button>
+        </div>
+        <p class="hint">Click a word or fact to remove it. Changes save immediately.</p>
+        <div id="editorBody"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="themes.js"></script>
+</body>
+</html>

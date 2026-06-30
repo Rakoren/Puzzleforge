@@ -1,19 +1,28 @@
 {
-  "name": "themed-wordsearch",
-  "version": "1.0.0",
-  "description": "Small CLI to generate themed wordsearch puzzles",
+  "name": "puzzleforge-engine",
+  "version": "0.1.0",
+  "description": "Puzzle generation engine and print-ready PDF export pipeline for KDP publishing and teacher tools.",
   "main": "index.js",
+  "type": "commonjs",
   "bin": {
-    "wordsearch": "index.js"
+    "puzzleforge": "cli/index.js"
   },
   "scripts": {
-    "start": "node index.js",
-    "web": "node web-server.js",
-    "web:3001": "powershell -NoProfile -Command \"$env:PORT=3001; node web-server.js\"",
-    "publish": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force docs | Out-Null; Copy-Item -Path web\\* -Destination docs -Recurse -Force; git add -A; git diff --cached --quiet; if ($LASTEXITCODE -ne 0) { git commit -m 'Update site' }; git push\""
+    "test": "node --test tests/*.test.js",
+    "cli": "node cli/index.js"
   },
-  "keywords": ["wordsearch","puzzle","cli"],
-  "author": "",
-  "license": "MIT"
+  "keywords": [
+    "puzzle",
+    "wordsearch",
+    "kdp",
+    "pdf",
+    "generator"
+  ],
+  "author": "Rakoren",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "bad-words": "^3.0.4",
+    "puppeteer-core": "^22.0.0"
+  }
 }
-

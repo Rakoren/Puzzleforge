@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PuzzleForge — Puzzle Maker for Teachers</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <div>
+        <h1>PuzzleForge</h1>
+        <p class="tagline">Free puzzle maker for teachers — no account needed</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html" class="active">Puzzle Maker</a>
+      <a href="book.html">Book Builder</a>
+      <a href="themes.html">AI Themes</a>
+      <a href="imagetools.html">Image Tools</a>
+      <a href="cover.html">Cover Builder</a>
+      <a href="aiart.html">AI Art</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="panel config" aria-label="Puzzle settings">
+      <h2>1 · Choose a puzzle</h2>
+
+      <label class="field">
+        <span>Puzzle type</span>
+        <select id="type"></select>
+      </label>
+
+      <fieldset class="words-source" id="wordsSource">
+        <legend>Words</legend>
+        <label class="radio">
+          <input type="radio" name="source" value="theme" checked> Built-in theme
+        </label>
+        <label class="radio">
+          <input type="radio" name="source" value="custom"> My own word list
+        </label>
+
+        <label class="field" id="themeField">
+          <span>Theme</span>
+          <input id="themeFilter" class="theme-filter" type="search" placeholder="Search themes or tags…" autocomplete="off">
+          <select id="theme" size="1"></select>
+        </label>
+
+        <label class="field hidden" id="customField">
+          <span>Your words (comma or new line separated)</span>
+          <textarea id="customWords" rows="5" placeholder="cat, dog, fox, bear, lion"></textarea>
+        </label>
+      </fieldset>
+
+      <details class="clue-editor hidden" id="clueEditor">
+        <summary>Edit clues (crossword)</summary>
+        <p class="hint">Write your own clues to match your lesson. Load the words, edit, then generate.</p>
+        <button id="loadClues" class="ghost" type="button">Load words &amp; clues</button>
+        <div id="clueList" class="clue-list"></div>
+      </details>
+
+      <div class="row">
+        <label class="field">
+          <span>Difficulty</span>
+          <select id="difficulty">
+            <option value="1">1 — Easy</option>
+            <option value="2">2 — Medium</option>
+            <option value="3">3 — Hard</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Page size</span>
+          <select id="trimSize"></select>
+        </label>
+      </div>
+
+      <div class="row">
+        <label class="field">
+          <span>Audience</span>
+          <select id="audience">
+            <option value="kids">Kids</option>
+            <option value="adult">Adult</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Grid size (optional)</span>
+          <input id="size" type="number" min="5" max="30" placeholder="auto">
+        </label>
+      </div>
+
+      <div class="row">
+        <label class="field">
+          <span>Text size</span>
+          <select id="fontScale">
+            <option value="1">Normal</option>
+            <option value="1.25">Large print</option>
+            <option value="1.5">Extra large</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Font</span>
+          <select id="fontFamily">
+            <option value="sans">Sans (Arial)</option>
+            <option value="serif">Serif (Georgia)</option>
+            <option value="rounded">Rounded</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="row">
+        <label class="field">
+          <span>Page border</span>
+          <select id="border"></select>
+        </label>
+        <label class="field">
+          <span>Border color</span>
+          <input id="borderColor" type="color" value="#333333">
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Title (optional)</span>
+        <input id="title" type="text" placeholder="e.g. Animal Word Search">
+      </label>
+
+      <h2>2 · Generate</h2>
+      <div class="actions">
+        <button id="generate" class="primary">Generate puzzle</button>
+        <button id="regenerate" class="ghost" disabled title="Re-roll the grid, keep your settings">↻ Re-roll</button>
+      </div>
+      <p class="status" id="status"></p>
+
+      <h2>3 · Save &amp; print</h2>
+      <div class="actions">
+        <button id="downloadPdf" class="primary" disabled>Download PDF</button>
+        <label class="checkbox"><input type="checkbox" id="withAnswers"> include answer key</label>
+      </div>
+      <div class="actions">
+        <button id="downloadRecipe" class="ghost" disabled>Save recipe (.json)</button>
+        <label class="upload ghost">
+          Upload recipe
+          <input id="uploadRecipe" type="file" accept="application/json" hidden>
+        </label>
+      </div>
+      <p class="hint">A <strong>recipe</strong> saves your settings (words, title, difficulty) so you can
+        regenerate or share the puzzle later. The grid re-rolls; your words stay.</p>
+
+      <h2>4 · Teacher tools</h2>
+      <div class="tool">
+        <div class="tool-head">
+          <strong>Differentiation set</strong>
+          <span class="tool-desc">The same puzzle at Easy, Medium &amp; Hard — one PDF.</span>
+        </div>
+        <button id="diffSet" class="ghost" disabled>Download 3 levels (PDF)</button>
+      </div>
+      <div class="tool">
+        <div class="tool-head">
+          <strong>Class set</strong>
+          <span class="tool-desc">Many re-rolled copies so students can’t copy each other.</span>
+        </div>
+        <div class="actions">
+          <label class="inline">Copies
+            <input id="copies" type="number" min="2" max="30" value="5">
+          </label>
+          <label class="inline">Answers
+            <select id="setAnswers">
+              <option value="none">None</option>
+              <option value="end">Key at end</option>
+              <option value="each">After each</option>
+            </select>
+          </label>
+        </div>
+        <button id="classSet" class="ghost" disabled>Download class set (PDF)</button>
+      </div>
+    </section>
+
+    <section class="panel preview" aria-label="Preview">
+      <div class="preview-head">
+        <h2>Preview</h2>
+        <div class="tabs">
+          <button class="tab active" data-view="puzzle">Puzzle</button>
+          <button class="tab" data-view="answer">Answer key</button>
+        </div>
+      </div>
+      <div class="preview-frame">
+        <iframe id="previewFrame" title="Puzzle preview"></iframe>
+        <div class="empty" id="emptyState">
+          <p>Configure a puzzle and press <strong>Generate</strong> to see it here.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
