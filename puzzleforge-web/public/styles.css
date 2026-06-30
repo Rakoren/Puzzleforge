@@ -280,7 +280,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .stage-inner { position: relative; background: #fff; transform-origin: top left; }
 .pf-grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background: repeating-linear-gradient(0deg,#eef0f6 0 1px,transparent 1px 24px),repeating-linear-gradient(90deg,#eef0f6 0 1px,transparent 1px 24px); }
-.pf-node { position: absolute; top: 0; left: 0; transform-origin: top left; cursor: move; }
+.pf-flow { position: relative; z-index: 1; width: 100%; }
+.pf-piece { position: relative; transform-origin: top left; cursor: move; }
+.pf-piece:hover { outline: 1px dashed #c9d4ff; }
+.pf-node { position: absolute; top: 0; left: 0; transform-origin: top left; cursor: move; z-index: 2; }
 .pf-node:hover { outline: 1px dashed #c9d4ff; }
 .pf-textbox { min-width: 20px; }
 .pf-sel-layer { position: absolute; inset: 0; pointer-events: none; z-index: 997; }

@@ -14,24 +14,33 @@
 const { getModule } = require('../generators/registry');
 const { getLayout } = require('../layouts');
 
-// Pull one element (by tag + class) out of a body string; returns { html, rest }.
-function pull(body, tag, cls) {
-  const re = new RegExp(`<(${tag})\\b[^>]*class="[^"]*\\b${cls}\\b[^"]*"[^>]*>[\\s\\S]*?</\\1>`, 'i');
-  const m = body.match(re);
-  if (!m) return { html: null, rest: body };
-  return { html: m[0], rest: body.replace(m[0], '') };
+// Find the index just past the close tag matching the open tag at `from`,
+// accounting for nested same-name tags.
+function findClose(s, tag, from) {
+  const open = new RegExp('<' + tag + '(\\s[^>]*)?>', 'gi');
+  const close = new RegExp('</' + tag + '>', 'gi');
+  let depth = 1, idx = from;
+  while (depth > 0) {
+    close.lastIndex = idx; open.lastIndex = idx;
+    const c = close.exec(s); if (!c) return s.length;
+    open.lastIndex = idx; const o = open.exec(s);
+    if (o && o.index < c.index) { depth++; idx = o.index + o[0].length; }
+    else { depth--; idx = c.index + c[0].length; }
+  }
+  return idx;
 }
-function pullTag(body, tag) {
-  const re = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?</${tag}>`, 'i');
-  const m = body.match(re);
-  if (!m) return { html: null, rest: body };
-  return { html: m[0], rest: body.replace(m[0], '') };
+
+function classify(tag, html) {
+  if (tag === 'h1' || tag === 'h2') return 'title';
+  if (/class="[^"]*\binstructions\b/.test(html)) return 'instructions';
+  if (/class="[^"]*\b(clues|wordlist)\b/.test(html)) return 'wordlist';
+  return 'grid';
 }
 
 /**
- * Render a puzzle and split it into named pieces.
+ * Render a puzzle and split it into named pieces **in original DOM order**, so
+ * recomposing them unchanged reproduces the original layout exactly.
  * @returns {{ style: string, components: Array<{kind,html}> }}
- *   kinds: 'grid' (the puzzle body), 'title', 'instructions', 'wordlist'.
  */
 function splitPuzzle(puzzle, layout, opts = {}) {
   const mod = getModule(puzzle.type);
@@ -42,24 +51,22 @@ function splitPuzzle(puzzle, layout, opts = {}) {
   let sm;
   while ((sm = styleRe.exec(doc)) !== null) styles.push(sm[1]);
   const bodyMatch = doc.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  let body = bodyMatch ? bodyMatch[1] : doc;
+  const body = bodyMatch ? bodyMatch[1] : doc;
 
-  const title = pullTag(body, 'h1');
-  body = title.rest;
-  const instr = pull(body, '(?:div|p)', 'instructions');
-  body = instr.rest;
-  const wl = pull(body, 'div', 'wordlist');
-  body = wl.rest;
-  const clues = pull(body, 'div', 'clues');
-  body = clues.rest;
-
+  // Walk the body's top-level elements in order.
   const components = [];
-  // grid (the remaining body) goes first so it sits behind the labels by default.
-  if (body.trim()) components.push({ kind: 'grid', html: `<div class="pf-grid">${body.trim()}</div>` });
-  if (title.html) components.push({ kind: 'title', html: title.html });
-  if (instr.html) components.push({ kind: 'instructions', html: instr.html });
-  if (wl.html) components.push({ kind: 'wordlist', html: wl.html });
-  if (clues.html) components.push({ kind: 'wordlist', html: clues.html });
+  const openRe = /<([a-zA-Z0-9]+)(\s[^>]*)?>/g;
+  let i = 0;
+  while (i < body.length) {
+    openRe.lastIndex = i;
+    const m = openRe.exec(body);
+    if (!m) break;
+    const tag = m[1].toLowerCase();
+    const end = findClose(body, tag, openRe.lastIndex);
+    const html = body.slice(m.index, end).trim();
+    if (html) components.push({ kind: classify(tag, html), html });
+    i = end;
+  }
 
   return { style: styles.join('\n'), components };
 }
@@ -67,53 +74,45 @@ function splitPuzzle(puzzle, layout, opts = {}) {
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const num = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
 
-// Default stacked placement when a piece has no saved position (fallback only;
-// the editor measures and supplies real positions).
-function defaultPlacement(kind, layout, i) {
-  const w = layout.usableWidth;
-  if (kind === 'title') return { x: 0, y: 0, w, scale: 1, rot: 0 };
-  if (kind === 'instructions') return { x: 0, y: 44, w, scale: 1, rot: 0 };
-  if (kind === 'grid') return { x: 0, y: 90, w, scale: 1, rot: 0 };
-  return { x: 0, y: layout.usableHeight - 160, w, scale: 1, rot: 0 };
+// Per-piece transform from its saved delta (dx, dy, scale, rot). Empty when the
+// piece is unmoved, so the page renders identically to the original layout.
+function pieceTransform(p) {
+  if (!p) return '';
+  const dx = num(p.dx, 0), dy = num(p.dy, 0), s = num(p.scale, 1), r = num(p.rot, 0);
+  if (!dx && !dy && s === 1 && !r) return '';
+  return `transform:translate(${dx}px,${dy}px) rotate(${r}deg) scale(${s});transform-origin:top left;`;
 }
-
-function placedDiv(html, p) {
-  const tf = `transform: translate(${num(p.x, 0)}px, ${num(p.y, 0)}px) rotate(${num(p.rot, 0)}deg) scale(${num(p.scale, 1)});`;
-  const width = p.w ? `width:${num(p.w, layoutWidthGuess)}px;` : '';
-  return `<div class="pf-el" style="${tf}${width}">${html}</div>`;
-}
-let layoutWidthGuess = 600;
 
 /**
- * Compose a print-ready page from placed puzzle pieces + free elements.
- * @param {object} puzzle
- * @param {object} layout  resolved layout (getLayout)
- * @param {object} pageLayout { comp: {kind:{x,y,scale,rot,w,hidden}}, elements:[...] }
- * @param {object} [opts] { answerKey }
- * @returns {string} full HTML doc
+ * Compose a print-ready page from the puzzle's pieces (in their original flow,
+ * each movable via a transform delta) plus free text / image elements.
+ *
+ * With no edits, the pieces render in normal flow exactly like the original
+ * puzzle — same centering, same single-page fit — because we only add a wrapper
+ * and apply a transform when a piece has actually been moved.
+ *
+ * @param {object} pageLayout { comp: { key: { dx,dy,scale,rot,hidden } }, elements:[...] }
  */
 function composePage(puzzle, layout, pageLayout, opts = {}) {
   const { style, components } = splitPuzzle(puzzle, layout, opts);
-  layoutWidthGuess = layout.usableWidth;
   const comp = (pageLayout && pageLayout.comp) || {};
   const elements = (pageLayout && Array.isArray(pageLayout.elements)) ? pageLayout.elements : [];
 
-  // Track repeated kinds (e.g. two wordlist columns) by index.
   const kindSeen = {};
   const pieces = components
     .map((c) => {
-      const n = kindSeen[c.kind] = (kindSeen[c.kind] || 0) + 1;
+      const n = (kindSeen[c.kind] = (kindSeen[c.kind] || 0) + 1);
       const key = n > 1 ? `${c.kind}${n}` : c.kind;
-      const p = comp[key] || comp[c.kind] || defaultPlacement(c.kind, layout);
+      const p = comp[key] || comp[c.kind] || {};
       if (p.hidden) return '';
-      return placedDiv(c.html, p);
+      const tf = pieceTransform(p);
+      return `<div class="pf-piece" data-pf="${key}"${tf ? ` style="${tf}"` : ''}>${c.html}</div>`;
     })
     .join('\n');
 
   const freebies = elements
     .sort((a, b) => num(a.z, 0) - num(b.z, 0))
     .map((e) => {
-      const p = { x: e.x, y: e.y, scale: e.scale, rot: e.rot };
       if (e.kind === 'text') {
         const css =
           `font-size:${num(e.fontSize, 24)}px;color:${/^#[0-9a-fA-F]{3,8}$/.test(e.color || '') ? e.color : '#222'};` +
@@ -137,8 +136,8 @@ function composePage(puzzle, layout, pageLayout, opts = {}) {
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body { font-family: ${layout.fontFamily}; color: #000; position: relative; width: ${layout.usableWidth}px; min-height: ${layout.usableHeight}px; }
+  .pf-piece { position: relative; }
   .pf-el { position: absolute; top: 0; left: 0; transform-origin: top left; }
-  .pf-grid table, .pf-grid svg { margin: 0 !important; }
   ${style}
 </style></head>
 <body>
