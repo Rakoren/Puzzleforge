@@ -55,9 +55,18 @@
           <label class="field"><span>Font size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
           <label class="field"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
         </div>
-        <label class="field" id="alignField"><span>Align</span>
+        <label class="field" id="alignField"><span>Text align</span>
           <select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
         </label>
+        <span class="checkbox-label">Align on page</span>
+        <div class="align-grid">
+          <button class="iconbtn" data-align="left" title="Left edge">⇤</button>
+          <button class="iconbtn" data-align="centerh" title="Center horizontally">⇆</button>
+          <button class="iconbtn" data-align="right" title="Right edge">⇥</button>
+          <button class="iconbtn" data-align="top" title="Top edge">⤒</button>
+          <button class="iconbtn" data-align="middle" title="Middle vertically">⇅</button>
+          <button class="iconbtn" data-align="bottom" title="Bottom edge">⤓</button>
+        </div>
         <div class="actions">
           <button id="forward" class="ghost">Forward</button>
           <button id="backward" class="ghost">Back</button>
@@ -78,9 +87,10 @@
         <button id="reroll" class="ghost">Reroll puzzle</button>
         <button id="resetLayout" class="ghost">Reset layout</button>
       </div>
-      <p class="hint">Reroll lays out a fresh version of this page's puzzle (same type, difficulty,
-        words). Your text, clip art, and piece positions stay. Export composites everything at
-        print resolution.</p>
+      <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Snap &amp; alignment guides</label>
+      <p class="hint">Drag a piece to move it; pink guides snap it to the page center, edges, and
+        other pieces. Arrow keys nudge (Shift = 10px). Reroll keeps your layout. Export composites
+        everything at print resolution.</p>
     </aside>
   </main>
 

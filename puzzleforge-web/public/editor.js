@@ -14,6 +14,7 @@
     forward: $('forward'), backward: $('backward'), resetPos: $('resetPos'),
     hideObj: $('hideObj'), deleteObj: $('deleteObj'),
     border: $('border'), reroll: $('reroll'), resetLayout: $('resetLayout'),
+    snapToggle: $('snapToggle'),
     save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
   };
 
@@ -139,9 +140,39 @@
     pm.comps.forEach((c) => { if (!c.hidden) el.stageInner.appendChild(makeNode('comp', c, c.html)); });
     pm.elements.sort((a, b) => num(a.z, 0) - num(b.z, 0)).forEach((e) => el.stageInner.appendChild(makeNode('el', e, elHtml(e))));
 
+    vGuide = document.createElement('div'); vGuide.className = 'pf-guide pf-guide-v'; vGuide.style.display = 'none';
+    hGuide = document.createElement('div'); hGuide.className = 'pf-guide pf-guide-h'; hGuide.style.display = 'none';
+    el.stageInner.appendChild(vGuide); el.stageInner.appendChild(hGuide);
+
     if (!pm.measured) { measureDefaults(pm); pm.measured = true; applyAll(); }
     selectNone();
   }
+
+  // Bounding box of a node in page coordinates (scale applied; transform-origin
+  // is top-left so x/y are the box's top-left).
+  function bbox(ref) {
+    const n = ref._node, s = num(ref.scale, 1);
+    const w = n.offsetWidth * s, h = n.offsetHeight * s;
+    return { l: ref.x, t: ref.y, r: ref.x + w, b: ref.y + h, cx: ref.x + w / 2, cy: ref.y + h / 2, w, h };
+  }
+  // Snap target lines: page edges + center, and every other piece's edges + center.
+  function snapTargets(exclRef) {
+    const xs = [0, dims.usableWidth / 2, dims.usableWidth];
+    const ys = [0, dims.usableHeight / 2, dims.usableHeight];
+    const all = [...pageModels[cur].comps.filter((c) => !c.hidden), ...pageModels[cur].elements];
+    for (const r of all) {
+      if (r === exclRef || !r._node) continue;
+      const b = bbox(r);
+      xs.push(b.l, b.cx, b.r); ys.push(b.t, b.cy, b.b);
+    }
+    return { xs, ys };
+  }
+  function showGuide(g, axis, v) {
+    g.style.display = '';
+    if (axis === 'x') g.style.left = v + 'px';
+    else g.style.top = v + 'px';
+  }
+  function hideGuides() { if (vGuide) vGuide.style.display = 'none'; if (hGuide) hGuide.style.display = 'none'; }
 
   function elHtml(e) {
     if (e.kind === 'image') return `<img src="${e.src}" style="width:${num(e.width, 160)}px;display:block;pointer-events:none;" alt="">`;
@@ -184,7 +215,7 @@
   }
 
   // --- selection ---
-  let selBox = null;
+  let selBox = null, vGuide = null, hGuide = null;
   function selectNone() { sel = null; if (selBox) selBox.remove(); selBox = null; syncControls(); }
   function select(type, ref) {
     sel = { type, ref };
@@ -224,12 +255,42 @@
     const r = stageRect();
     const startX = ev.clientX, startY = ev.clientY, ox = num(ref.x, 0), oy = num(ref.y, 0);
     const move = (e) => {
-      ref.x = ox + (e.clientX - startX) / displayScale;
-      ref.y = oy + (e.clientY - startY) / displayScale;
+      let nx = ox + (e.clientX - startX) / displayScale;
+      let ny = oy + (e.clientY - startY) / displayScale;
+      if (el.snapToggle.checked) {
+        const s = num(ref.scale, 1), w = ref._node.offsetWidth * s, h = ref._node.offsetHeight * s;
+        const t = snapTargets(ref), d = 7 / displayScale;
+        let bx = null;
+        for (const off of [0, w / 2, w]) for (const tx of t.xs) { const dd = tx - (nx + off); if (Math.abs(dd) < d && (!bx || Math.abs(dd) < Math.abs(bx.d))) bx = { d: dd, v: tx }; }
+        if (bx) { nx += bx.d; showGuide(vGuide, 'x', bx.v); } else vGuide.style.display = 'none';
+        let by = null;
+        for (const off of [0, h / 2, h]) for (const ty of t.ys) { const dd = ty - (ny + off); if (Math.abs(dd) < d && (!by || Math.abs(dd) < Math.abs(by.d))) by = { d: dd, v: ty }; }
+        if (by) { ny += by.d; showGuide(hGuide, 'y', by.v); } else hGuide.style.display = 'none';
+      }
+      ref.x = nx; ref.y = ny;
       applyTransform(ref); positionSelectBox();
     };
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    const up = () => { hideGuides(); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }
+
+  // Align the selected object to the page (usable area).
+  function alignSel(kind) {
+    if (!sel) return;
+    const ref = sel.ref, s = num(ref.scale, 1);
+    const w = ref._node.offsetWidth * s, h = ref._node.offsetHeight * s;
+    if (kind === 'left') ref.x = 0;
+    else if (kind === 'centerh') ref.x = Math.round((dims.usableWidth - w) / 2);
+    else if (kind === 'right') ref.x = dims.usableWidth - w;
+    else if (kind === 'top') ref.y = 0;
+    else if (kind === 'middle') ref.y = Math.round((dims.usableHeight - h) / 2);
+    else if (kind === 'bottom') ref.y = dims.usableHeight - h;
+    applyTransform(ref); positionSelectBox();
+  }
+  function nudge(dx, dy) {
+    if (!sel) return;
+    sel.ref.x = num(sel.ref.x, 0) + dx; sel.ref.y = num(sel.ref.y, 0) + dy;
+    applyTransform(sel.ref); positionSelectBox();
   }
   function startResize(ev, ref) {
     ev.preventDefault();
@@ -394,8 +455,20 @@
     el.save.addEventListener('click', save);
     el.exportPdf.addEventListener('click', exportPdf);
     el.loadRecipe.addEventListener('change', onLoadRecipe);
+    document.querySelectorAll('.align-grid .iconbtn').forEach((b) => b.addEventListener('click', () => alignSel(b.dataset.align)));
     el.stageInner.addEventListener('pointerdown', (e) => { if (e.target === el.stageInner) selectNone(); });
     window.addEventListener('resize', () => { computeScale(); positionSelectBox(); });
+    window.addEventListener('keydown', (e) => {
+      if (!sel || el.main.hidden) return;
+      const tag = (document.activeElement && document.activeElement.tagName) || '';
+      if (/INPUT|SELECT|TEXTAREA/.test(tag) || (document.activeElement && document.activeElement.isContentEditable)) return;
+      const step = e.shiftKey ? 10 : 1;
+      if (e.key === 'ArrowLeft') { nudge(-step, 0); e.preventDefault(); }
+      else if (e.key === 'ArrowRight') { nudge(step, 0); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { nudge(0, -step); e.preventDefault(); }
+      else if (e.key === 'ArrowDown') { nudge(0, step); e.preventDefault(); }
+      else if ((e.key === 'Delete' || e.key === 'Backspace') && sel.type === 'el') { deleteSel(); e.preventDefault(); }
+    });
 
     let handoff = null;
     try { const raw = localStorage.getItem('pf_editor'); if (raw) { handoff = JSON.parse(raw); localStorage.removeItem('pf_editor'); } } catch (_) { /* ignore */ }

@@ -1029,11 +1029,16 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - ✅ Text box placement (move/resize/recolor/align, double-click to edit)
 - ✅ Clipart upload → place on page (AI Art PNGs work)
 - ✅ Per-page border override; hide pieces; reset layout
+- ✅ Alignment tools (Publisher-style): smart snapping guides (page center/edges/
+  other pieces), align-on-page buttons (L/C/R · T/M/B), arrow-key nudge, snap toggle
 - ✅ Export — engine composes placed pieces + elements per page
   (`pageState[i].layout`) via the normal book pipeline; vector-sharp at 300 DPI
-- 🔲 Piece rotation, undo/redo, snapping/alignment guides
+- 🔲 Piece rotation, undo/redo, multi-select + distribute, rulers/zoom
 - 🔲 Page reorder / add / remove in the sidebar (select-only for now)
 - 🔲 Filler page swap inline
+- 🔲 **Switchable editor "skins"** (future) — the layout model (`pageState`) is
+  decoupled from the editor chrome, so a future setting could re-skin the editor
+  to look/behave like MS Publisher, InDesign, Canva, etc. over the same data
 - **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner
 - **ComfyUI visibility** — WebSocket progress display, live latent preview, workflow debug panel
 - **ComfyUI prompt helper** — Claude-powered prompt optimizer, context-aware per preset, positive + negative prompt output, "explain changes" toggle
