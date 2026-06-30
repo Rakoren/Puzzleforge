@@ -1029,11 +1029,13 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - ✅ Text box placement (move/resize/recolor/align, double-click to edit)
 - ✅ Clipart upload → place on page (AI Art PNGs work)
 - ✅ Per-page border override; hide pieces; reset layout
-- ✅ Alignment tools (Publisher-style): smart snapping guides (page center/edges/
-  other pieces), align-on-page buttons (L/C/R · T/M/B), arrow-key nudge, snap toggle
+- ✅ Desktop-publishing toolset: undo/redo (Ctrl+Z/Y), zoom + rulers, numeric
+  X/Y/size/angle panel, rotation, smart snapping guides + snap-to-grid, multi-select
+  (shift-click), align (page or to-each-other) + distribute, arrange (front/back),
+  flip H/V, lock, duplicate/copy/paste, arrow-key nudge
 - ✅ Export — engine composes placed pieces + elements per page
   (`pageState[i].layout`) via the normal book pipeline; vector-sharp at 300 DPI
-- 🔲 Piece rotation, undo/redo, multi-select + distribute, rulers/zoom
+- 🔲 Marquee (rubber-band) select, grouping, draggable ruler guides, rotation handle
 - 🔲 Page reorder / add / remove in the sidebar (select-only for now)
 - 🔲 Filler page swap inline
 - 🔲 **Switchable editor "skins"** (future) — the layout model (`pageState`) is

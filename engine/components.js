@@ -124,7 +124,8 @@ function composePage(puzzle, layout, pageLayout, opts = {}) {
       }
       if (e.kind === 'image' && typeof e.src === 'string' && e.src.startsWith('data:')) {
         const w = num(e.width, 160);
-        return `<div class="pf-el" style="transform: translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)});"><img src="${e.src}" style="width:${w}px;display:block;"></div>`;
+        const flip = e.flipH || e.flipV ? `transform:scale(${e.flipH ? -1 : 1},${e.flipV ? -1 : 1});` : '';
+        return `<div class="pf-el" style="transform: translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)});"><img src="${e.src}" style="width:${w}px;display:block;${flip}"></div>`;
       }
       return '';
     })

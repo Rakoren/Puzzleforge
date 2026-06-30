@@ -210,10 +210,13 @@ list — plus any text boxes and clip art you add:
 - **Move / resize every piece** — drag to position, drag the ○ handle to scale.
   Pieces stay as crisp HTML (CSS transforms, no rasterizing), so grid lines and
   text remain vector-sharp at print resolution. Hide pieces you don't want.
-- **Alignment tools (Publisher-style)** — smart pink **snapping guides** while
-  dragging (snap to the page center, edges, and other pieces), **align-on-page**
-  buttons (left / center / right / top / middle / bottom), and **arrow-key
-  nudging** (Shift = 10px). Snapping can be toggled off.
+- **Desktop-publishing toolset** — **undo/redo** (Ctrl+Z/Y), **zoom + rulers**,
+  a numeric **X / Y / size% / angle** panel, smart pink **snapping guides** (page
+  center, edges, other pieces) and a **snap-to-grid** option, **align** (to page
+  or, with multiple selected, to each other) + **distribute**, **multi-select**
+  (Shift-click), **arrange** (to front/back, forward/back), **flip H/V**, **lock**,
+  **duplicate / copy / paste** (Ctrl+D/C/V), **rotation**, and **arrow-key nudging**
+  (Shift = 10px).
 - **Add text** (double-click to edit; font size / color / align) and **add clip
   art** (upload; AI Art PNGs work) — move, resize, layer
 - **Reroll** a single puzzle (fresh layout, same type/difficulty/words); your

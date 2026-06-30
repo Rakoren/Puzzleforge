@@ -20,6 +20,14 @@
       <a href="editor.html" class="active">Page Editor</a>
     </nav>
     <div class="editor-actions">
+      <button id="undo" class="iconbtn" title="Undo (Ctrl+Z)">↶</button>
+      <button id="redo" class="iconbtn" title="Redo (Ctrl+Y)">↷</button>
+      <span class="zoombar">
+        <button id="zoomOut" class="iconbtn" title="Zoom out">−</button>
+        <span id="zoomLabel" class="zoom-label">100%</span>
+        <button id="zoomIn" class="iconbtn" title="Zoom in">+</button>
+        <button id="zoomFit" class="iconbtn" title="Fit">⤢</button>
+      </span>
       <button id="save" class="ghost">Save recipe</button>
       <button id="exportPdf" class="primary">Export PDF</button>
     </div>
@@ -34,11 +42,14 @@
     </aside>
 
     <section class="editor-stage" aria-label="Canvas">
-      <div class="stage-outer" id="stageOuter">
-        <div class="stage-inner" id="stageInner"></div>
+      <div class="ruler-corner"></div>
+      <div class="ruler ruler-top" id="rulerTop"></div>
+      <div class="ruler ruler-left" id="rulerLeft"></div>
+      <div class="stage-scroll" id="stageScroll">
+        <div class="stage-outer" id="stageOuter">
+          <div class="stage-inner" id="stageInner"></div>
+        </div>
       </div>
-      <p class="hint stage-hint">Drag a piece to move it. Drag the ○ handle to resize. Double-click a
-        text box to edit. Click empty space to deselect.</p>
     </section>
 
     <aside class="editor-tools" aria-label="Tools">
@@ -49,8 +60,14 @@
       </div>
 
       <h2>Selected</h2>
-      <div id="selNone" class="hint">Nothing selected.</div>
+      <div id="selNone" class="hint">Nothing selected. Shift-click to select multiple.</div>
       <div id="selControls" class="hidden">
+        <div id="measurePanel" class="measure">
+          <label class="m"><span>X</span><input id="mX" type="number"></label>
+          <label class="m"><span>Y</span><input id="mY" type="number"></label>
+          <label class="m"><span>Size %</span><input id="mScale" type="number" min="15" max="800"></label>
+          <label class="m"><span>Angle°</span><input id="mRot" type="number" min="-180" max="180"></label>
+        </div>
         <div class="row" id="textProps">
           <label class="field"><span>Font size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
           <label class="field"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
@@ -58,21 +75,36 @@
         <label class="field" id="alignField"><span>Text align</span>
           <select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
         </label>
-        <span class="checkbox-label">Align on page</span>
+
+        <span class="checkbox-label" id="alignLabel">Align (to page, or to each other if multiple)</span>
         <div class="align-grid">
-          <button class="iconbtn" data-align="left" title="Left edge">⇤</button>
-          <button class="iconbtn" data-align="centerh" title="Center horizontally">⇆</button>
-          <button class="iconbtn" data-align="right" title="Right edge">⇥</button>
-          <button class="iconbtn" data-align="top" title="Top edge">⤒</button>
-          <button class="iconbtn" data-align="middle" title="Middle vertically">⇅</button>
-          <button class="iconbtn" data-align="bottom" title="Bottom edge">⤓</button>
+          <button class="iconbtn" data-align="left" title="Left">⇤</button>
+          <button class="iconbtn" data-align="centerh" title="Center across">⇆</button>
+          <button class="iconbtn" data-align="right" title="Right">⇥</button>
+          <button class="iconbtn" data-align="top" title="Top">⤒</button>
+          <button class="iconbtn" data-align="middle" title="Middle down">⇅</button>
+          <button class="iconbtn" data-align="bottom" title="Bottom">⤓</button>
         </div>
         <div class="actions">
+          <button id="distH" class="ghost" title="Distribute horizontally">⇿ Distribute</button>
+          <button id="distV" class="ghost" title="Distribute vertically">⇳ Distribute</button>
+        </div>
+
+        <span class="checkbox-label">Arrange</span>
+        <div class="actions">
+          <button id="toFront" class="ghost">To front</button>
           <button id="forward" class="ghost">Forward</button>
           <button id="backward" class="ghost">Back</button>
-          <button id="resetPos" class="ghost">Reset size</button>
+          <button id="toBack" class="ghost">To back</button>
         </div>
         <div class="actions">
+          <button id="flipH" class="ghost">Flip H</button>
+          <button id="flipV" class="ghost">Flip V</button>
+          <button id="lockObj" class="ghost">Lock</button>
+        </div>
+        <div class="actions">
+          <button id="dupObj" class="ghost">Duplicate</button>
+          <button id="resetPos" class="ghost">Reset size</button>
           <button id="hideObj" class="ghost">Hide piece</button>
           <button id="deleteObj" class="ghost del">Delete</button>
         </div>
@@ -83,13 +115,14 @@
         <span>Border override</span>
         <select id="border"><option value="">(book default)</option></select>
       </label>
+      <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Snap &amp; alignment guides</label>
+      <label class="checkbox"><input type="checkbox" id="gridToggle"> Show grid &amp; snap to it</label>
       <div class="actions">
         <button id="reroll" class="ghost">Reroll puzzle</button>
         <button id="resetLayout" class="ghost">Reset layout</button>
       </div>
-      <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Snap &amp; alignment guides</label>
-      <p class="hint">Drag a piece to move it; pink guides snap it to the page center, edges, and
-        other pieces. Arrow keys nudge (Shift = 10px). Reroll keeps your layout. Export composites
+      <p class="hint">Drag to move; ○ handle resizes; ◆ handle above rotates. Arrow keys nudge
+        (Shift = 10px). Ctrl+Z/Y undo/redo, Ctrl+C/V/D copy/paste/duplicate. Export composites
         everything at print resolution.</p>
     </aside>
   </main>
