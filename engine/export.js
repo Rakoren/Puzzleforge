@@ -16,6 +16,7 @@ const path = require('path');
 const { getModule, isActivityType } = require('../generators/registry');
 const { getLayout } = require('../layouts');
 const { frameSvg } = require('./decor');
+const { composePage } = require('./components');
 const {
   renderTitlePage,
   renderCopyrightPage,
@@ -315,8 +316,15 @@ function renderBookHtml(book) {
     const st = pg.state || {};
     const border = st.border !== undefined ? st.border : book.border;
     const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
-    const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
-    docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay }));
+    if (st.layout) {
+      // Page Editor custom layout: compose the puzzle's pieces + free elements.
+      let doc = composePage(puzzle, layout, st.layout);
+      if (border && border !== 'none') doc = applyBorder(doc, layout, border, borderColor);
+      docs.push(doc);
+    } else {
+      const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
+      docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay }));
+    }
     // Number every page except the blank bleed-guards, which stay clean.
     footers.push(numbered && puzzle.type !== 'bleedguard' ? `${prefix}${++n}` : null);
   }

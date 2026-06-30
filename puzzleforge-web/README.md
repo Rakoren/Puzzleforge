@@ -201,21 +201,25 @@ barcode keep-out area.
 
 ### Page Editor (publisher, desktop)
 
-An opt-in layout editor reached from the Book Builder's **Open in Editor** button
-(the fast Generate → Export path is unchanged). It overlays a **Fabric.js**
-decoration layer on each puzzle page:
+An opt-in freeform layout editor reached from the Book Builder's **Open in
+Editor** button (the fast Generate → Export path is unchanged). Each puzzle page
+is **split into movable, resizable pieces** — grid, title, instructions, word
+list — plus any text boxes and clip art you add:
 
 - **Page list** sidebar — click to select a page
-- **Add text** and **add clip art** (upload; AI Art images work too) — move,
-  resize, rotate, layer, recolor, resize fonts
-- **Reroll** a single puzzle (fresh layout, same type/difficulty/words) without
-  touching the rest of the book — powered by seeded generation
-- **Per-page border override**
-- **Save recipe** (v2, with the decoration layer) and **Export PDF** — the
-  decoration layer is serialized to SVG and composited over the puzzle at print
-  resolution through the normal book pipeline (`pageState[i].canvasState.svg`)
+- **Move / resize every piece** — drag to position, drag the ○ handle to scale.
+  Pieces stay as crisp HTML (CSS transforms, no rasterizing), so grid lines and
+  text remain vector-sharp at print resolution. Hide pieces you don't want.
+- **Add text** (double-click to edit; font size / color / align) and **add clip
+  art** (upload; AI Art PNGs work) — move, resize, layer
+- **Reroll** a single puzzle (fresh layout, same type/difficulty/words); your
+  piece positions, text, and clip art stay put — powered by seeded generation
+- **Per-page border override**, **Reset layout**
+- **Save recipe** (v2, with the full page layout) and **Export PDF** — the engine
+  composes the placed pieces + elements into each page (`pageState[i].layout`)
+  through the normal book pipeline
 
-Fabric.js is vendored at `public/vendor/fabric.min.js` (works offline).
+The split/compose lives in `engine/components.js` (`splitPuzzle` / `composePage`).
 
 ### AI Theme Generator
 

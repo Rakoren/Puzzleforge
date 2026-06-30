@@ -10,6 +10,7 @@
 const { generate } = require('./engine/generate');
 const { assembleBook } = require('./engine/book');
 const { runChecklist } = require('./engine/checklist');
+const { splitPuzzle, composePage } = require('./engine/components');
 const kdp = require('./engine/kdp');
 const recipe = require('./engine/recipe');
 const {
@@ -44,6 +45,8 @@ module.exports = {
   generate,
   assembleBook,
   runChecklist,
+  splitPuzzle,
+  composePage,
   royaltyEstimate: kdp.royaltyEstimate,
   printingCostUSD: kdp.printingCostUSD,
   normalizeMetadata: kdp.normalizeMetadata,

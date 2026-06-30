@@ -396,14 +396,18 @@ app.post('/api/book/editor', (req, res) => {
       bookId = cacheBook(book);
     }
     const layout = pf.getLayout(book.trimSize, { audience: book.audience });
-    const pages = book.pages.map((pg, index) => ({
-      index,
-      type: pg.puzzle.type,
-      title: pg.puzzle.title || pg.puzzle.type,
-      activity: pf.isActivityType(pg.puzzle.type),
-      html: pageHtml(book, pg.puzzle, pg.state),
-      state: pg.state || null,
-    }));
+    const pages = book.pages.map((pg, index) => {
+      const split = pf.splitPuzzle(pg.puzzle, layout);
+      return {
+        index,
+        type: pg.puzzle.type,
+        title: pg.puzzle.title || pg.puzzle.type,
+        activity: pf.isActivityType(pg.puzzle.type),
+        style: split.style,
+        components: split.components,
+        state: pg.state || null,
+      };
+    });
     res.json({
       bookId,
       seed: book.seed,
@@ -458,7 +462,9 @@ app.post('/api/book/reroll', (req, res) => {
     const pi = book.puzzles.indexOf(p);
     pg.puzzle = np;
     if (pi >= 0) book.puzzles[pi] = np;
-    res.json({ index: body.index, type: np.type, title: np.title, html: pageHtml(book, np, pg.state), seed });
+    const layout = pf.getLayout(book.trimSize, { audience: book.audience });
+    const split = pf.splitPuzzle(np, layout);
+    res.json({ index: body.index, type: np.type, title: np.title, style: split.style, components: split.components, seed });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

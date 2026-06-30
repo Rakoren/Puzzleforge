@@ -1,55 +1,93 @@
-/* PuzzleForge — Page Editor (Fabric.js decoration layer over puzzle pages). */
+/* PuzzleForge — Page Editor. Freeform layout: move/resize the puzzle's pieces
+ * (grid, title, instructions, word list) plus text and clip art. Pieces stay as
+ * crisp HTML positioned with CSS transforms; export composites them at print
+ * resolution through the book pipeline. */
 (function () {
   'use strict';
-
   const $ = (id) => document.getElementById(id);
   const el = {
     status: $('status'), main: $('editorMain'), empty: $('emptyState'),
-    pageList: $('pageList'), bg: $('bg'), deco: $('deco'), stageWrap: $('stageWrap'),
+    pageList: $('pageList'), stageOuter: $('stageOuter'), stageInner: $('stageInner'),
     addText: $('addText'), addImage: $('addImage'),
-    fontSize: $('fontSize'), objColor: $('objColor'),
-    forward: $('forward'), backward: $('backward'), deleteObj: $('deleteObj'),
-    border: $('border'), reroll: $('reroll'),
+    selNone: $('selNone'), selControls: $('selControls'), textProps: $('textProps'), alignField: $('alignField'),
+    fontSize: $('fontSize'), objColor: $('objColor'), align: $('align'),
+    forward: $('forward'), backward: $('backward'), resetPos: $('resetPos'),
+    hideObj: $('hideObj'), deleteObj: $('deleteObj'),
+    border: $('border'), reroll: $('reroll'), resetLayout: $('resetLayout'),
     save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
   };
 
-  let bookId = null;
-  let bookConfig = null;
-  let seed = null;
+  let bookId = null, bookConfig = null, seed = null;
   let dims = { usableWidth: 636, usableHeight: 816 };
-  let pages = []; // [{ index, type, title, activity, html, state }]
-  let pageStates = []; // [{ border?, borderColor?, canvasState?:{fabric,svg} }]
-  let cur = -1;
-  let scale = 1;
-  let canvas = null; // fabric canvas
+  let pageModels = []; // per page: { style, comps:[...], elements:[...], measured }
+  let cur = -1, displayScale = 1, uid = 1;
+  let sel = null; // { type:'comp'|'el', ref }
 
-  function setStatus(t, k) { el.status.textContent = t || ''; el.status.className = 'status editor-status' + (k ? ' ' + k : ''); }
+  const setStatus = (t, k) => { el.status.textContent = t || ''; el.status.className = 'status editor-status' + (k ? ' ' + k : ''); };
 
-  // --- load ---
+  // --- scope a puzzle's CSS to the stage so it can't leak into the editor UI ---
+  function scopeCss(css, scope) {
+    css = css.replace(/@page[^{]*\{[^}]*\}/gi, '');
+    let out = '';
+    const re = /([^{}]+)\{([^}]*)\}/g; let m;
+    while ((m = re.exec(css)) !== null) {
+      const decl = m[2].trim(); if (!decl) continue;
+      const sels = m[1].split(',').map((s) => s.trim()).filter(Boolean).map((s) => {
+        if (s === '*') return scope + ' *';
+        if (s === 'html' || s === 'body') return scope;
+        if (/^(html|body)\b/.test(s)) return s.replace(/^(html|body)\b/, scope);
+        return scope + ' ' + s;
+      });
+      out += sels.join(', ') + '{' + decl + '}\n';
+    }
+    return out;
+  }
+
+  // --- model helpers ---
+  function buildComps(components) {
+    const seen = {};
+    return components.map((c) => {
+      const n = (seen[c.kind] = (seen[c.kind] || 0) + 1);
+      const key = n > 1 ? c.kind + n : c.kind;
+      return { kind: c.kind, key, html: c.html, x: 0, y: 0, scale: 1, rot: 0, hidden: false };
+    });
+  }
+
+  function modelFromPage(p) {
+    const comps = buildComps(p.components || []);
+    const elements = [];
+    let measured = false;
+    const saved = p.state && p.state.layout;
+    if (saved) {
+      const cm = saved.comp || {};
+      comps.forEach((c) => {
+        const s = cm[c.key];
+        if (s) { c.x = num(s.x, 0); c.y = num(s.y, 0); c.scale = num(s.scale, 1); c.rot = num(s.rot, 0); c.hidden = !!s.hidden; }
+      });
+      (saved.elements || []).forEach((e) => elements.push({ ...e, id: e.id || uid++ }));
+      measured = true; // saved positions are authoritative
+    }
+    return { style: p.style || '', comps, elements, measured };
+  }
+
+  const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
+
+  // --- open ---
   async function openBook(payload) {
     setStatus('Opening book in the editor…', 'busy');
     try {
-      const res = await fetch('/api/book/editor', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
-      });
+      const res = await fetch('/api/book/editor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not open the book');
-      bookId = data.bookId;
-      seed = data.seed;
-      dims = data.dims;
-      pages = data.pages || [];
-      pageStates = pages.map((p) => (p.state && typeof p.state === 'object' ? p.state : {}));
-      el.empty.hidden = true;
-      el.main.hidden = false;
+      bookId = data.bookId; seed = data.seed; dims = data.dims;
+      pageModels = (data.pages || []).map(modelFromPage);
+      el.empty.hidden = true; el.main.hidden = false;
       await loadBorderStyles();
-      buildPageList();
+      buildPageList(data.pages);
       computeScale();
-      initCanvas();
       selectPage(0);
-      setStatus(`Editing “${data.title}” — ${pages.length} pages.`, 'ok');
-    } catch (err) {
-      setStatus(err.message, 'err');
-    }
+      setStatus(`Editing “${data.title}” — ${pageModels.length} pages.`, 'ok');
+    } catch (err) { setStatus(err.message, 'err'); }
   }
 
   async function loadBorderStyles() {
@@ -57,14 +95,14 @@
     try {
       const meta = await (await fetch('/api/meta')).json();
       for (const b of meta.borderStyles || []) {
-        const o = document.createElement('option');
-        o.value = b.id; o.textContent = b.label;
-        el.border.appendChild(o);
+        const o = document.createElement('option'); o.value = b.id; o.textContent = b.label; el.border.appendChild(o);
       }
     } catch (_) { /* leave default */ }
   }
 
-  function buildPageList() {
+  let pageMeta = [];
+  function buildPageList(pages) {
+    pageMeta = pages;
     el.pageList.innerHTML = '';
     pages.forEach((p, i) => {
       const li = document.createElement('li');
@@ -75,202 +113,266 @@
     });
   }
   const labelFor = (p) => ({ bleedguard: 'Blank (bleed guard)', breather: 'Breather' }[p.type] || p.title || p.type);
+  function highlightPage() { [...el.pageList.children].forEach((li, i) => li.classList.toggle('active', i === cur)); }
 
-  function highlightPage() {
-    [...el.pageList.children].forEach((li, i) => li.classList.toggle('active', i === cur));
-  }
-
-  // --- canvas / stage sizing ---
+  // --- stage sizing ---
   function computeScale() {
-    const availW = Math.min(window.innerWidth - 520, 900);
-    const availH = window.innerHeight - 170;
-    scale = Math.min(availW / dims.usableWidth, availH / dims.usableHeight, 1);
-    if (!Number.isFinite(scale) || scale <= 0) scale = 0.6;
-    const dw = Math.round(dims.usableWidth * scale);
-    const dh = Math.round(dims.usableHeight * scale);
-    el.stageWrap.style.width = dw + 'px';
-    el.stageWrap.style.height = dh + 'px';
-    // Background iframe: render at usable px, scaled down to fit.
-    el.bg.style.width = dims.usableWidth + 'px';
-    el.bg.style.height = dims.usableHeight + 'px';
-    el.bg.style.transform = `scale(${scale})`;
-    el.bg.style.transformOrigin = 'top left';
+    const availW = Math.min(window.innerWidth - 540, 980);
+    const availH = window.innerHeight - 220;
+    displayScale = Math.min(availW / dims.usableWidth, availH / dims.usableHeight, 1.2);
+    if (!Number.isFinite(displayScale) || displayScale <= 0) displayScale = 0.6;
+    el.stageInner.style.width = dims.usableWidth + 'px';
+    el.stageInner.style.height = dims.usableHeight + 'px';
+    el.stageInner.style.transform = `scale(${displayScale})`;
+    el.stageOuter.style.width = Math.round(dims.usableWidth * displayScale) + 'px';
+    el.stageOuter.style.height = Math.round(dims.usableHeight * displayScale) + 'px';
   }
 
-  function initCanvas() {
-    const dw = Math.round(dims.usableWidth * scale);
-    const dh = Math.round(dims.usableHeight * scale);
-    canvas = new fabric.Canvas(el.deco, { width: dw, height: dh });
-    canvas.setZoom(scale); // object coords stay in usable px; display is scaled
-    canvas.on('selection:created', syncSelected);
-    canvas.on('selection:updated', syncSelected);
+  // --- render a page ---
+  function renderPage() {
+    const pm = pageModels[cur];
+    el.stageInner.innerHTML = '';
+    const style = document.createElement('style');
+    style.textContent = scopeCss(pm.style, '#stageInner');
+    el.stageInner.appendChild(style);
+
+    pm.comps.forEach((c) => { if (!c.hidden) el.stageInner.appendChild(makeNode('comp', c, c.html)); });
+    pm.elements.sort((a, b) => num(a.z, 0) - num(b.z, 0)).forEach((e) => el.stageInner.appendChild(makeNode('el', e, elHtml(e))));
+
+    if (!pm.measured) { measureDefaults(pm); pm.measured = true; applyAll(); }
+    selectNone();
   }
 
-  function syncSelected() {
-    const o = canvas.getActiveObject();
-    if (!o) return;
-    if (o.fontSize) el.fontSize.value = Math.round(o.fontSize);
-    if (o.fill && typeof o.fill === 'string' && o.fill[0] === '#') el.objColor.value = o.fill;
+  function elHtml(e) {
+    if (e.kind === 'image') return `<img src="${e.src}" style="width:${num(e.width, 160)}px;display:block;pointer-events:none;" alt="">`;
+    const color = /^#[0-9a-fA-F]{3,8}$/.test(e.color || '') ? e.color : '#222';
+    const fam = e.fontFamily === 'serif' ? 'Georgia, serif' : 'Arial, Helvetica, sans-serif';
+    return `<div class="pf-textbox" style="font-size:${num(e.fontSize, 24)}px;color:${color};font-family:${fam};text-align:${e.align || 'left'};width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:1.25;">${escapeHtml(e.text || '')}</div>`;
+  }
+  const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  function makeNode(type, ref, html) {
+    const node = document.createElement('div');
+    node.className = 'pf-node';
+    node.dataset.type = type;
+    node.innerHTML = html;
+    ref._node = node;
+    node._ref = ref; node._type = type;
+    applyTransform(ref);
+    node.addEventListener('pointerdown', (ev) => onPointerDown(ev, type, ref));
+    if (type === 'el' && ref.kind === 'text') node.addEventListener('dblclick', () => editText(ref));
+    return node;
   }
 
-  // --- page selection ---
-  function saveCurrent() {
-    if (cur < 0 || !canvas) return;
-    const objs = canvas.getObjects();
-    const st = pageStates[cur] || (pageStates[cur] = {});
-    if (objs.length) st.canvasState = { fabric: canvas.toJSON(), svg: serializeSvg() };
-    else delete st.canvasState;
+  function applyTransform(ref) {
+    if (!ref._node) return;
+    ref._node.style.transform = `translate(${num(ref.x, 0)}px, ${num(ref.y, 0)}px) rotate(${num(ref.rot, 0)}deg) scale(${num(ref.scale, 1)})`;
   }
+  function applyAll() { pageModels[cur].comps.forEach(applyTransform); pageModels[cur].elements.forEach(applyTransform); positionSelectBox(); }
 
-  async function selectPage(i) {
-    if (i === cur) return;
-    saveCurrent();
-    cur = i;
-    highlightPage();
-    el.bg.srcdoc = pages[i].html;
-    // border select reflects this page's override
-    el.border.value = pageStates[i] && pageStates[i].border != null ? pageStates[i].border : '';
-    // reset fabric layer and load any saved decorations
-    canvas.clear();
-    const cs = pageStates[i] && pageStates[i].canvasState;
-    if (cs && cs.fabric) {
-      canvas.loadFromJSON(cs.fabric, () => { canvas.renderAll(); });
-    } else {
-      canvas.renderAll();
-    }
-  }
-
-  // Serialize the decoration layer to an SVG in usable-px coordinates (identity
-  // viewport), so it overlays the page's usable area 1:1 at export.
-  function serializeSvg() {
-    const vt = canvas.viewportTransform;
-    const w = canvas.width;
-    const h = canvas.height;
-    canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
-    canvas.setWidth(dims.usableWidth);
-    canvas.setHeight(dims.usableHeight);
-    const svg = canvas.toSVG();
-    canvas.setWidth(w);
-    canvas.setHeight(h);
-    canvas.viewportTransform = vt;
-    canvas.requestRenderAll();
-    return svg;
-  }
-
-  // --- editing actions ---
-  function addText() {
-    const t = new fabric.IText('Your text', {
-      left: dims.usableWidth / 2, top: dims.usableHeight / 2, originX: 'center', originY: 'center',
-      fontSize: Number(el.fontSize.value) || 24, fill: el.objColor.value,
-      fontFamily: 'Arial, Helvetica, sans-serif',
+  // Default centered/stacked placement so an un-touched page resembles the original.
+  function measureDefaults(pm) {
+    const order = { title: 0, instructions: 1, grid: 2, wordlist: 3, wordlist2: 4 };
+    const sorted = pm.comps.slice().sort((a, b) => (order[a.key] ?? 9) - (order[b.key] ?? 9));
+    let y = 0;
+    sorted.forEach((c) => {
+      const w = c._node.offsetWidth, h = c._node.offsetHeight;
+      c.x = Math.max(0, Math.round((dims.usableWidth - w) / 2));
+      c.y = Math.round(y);
+      y += h + 10;
     });
-    canvas.add(t).setActiveObject(t);
-    canvas.requestRenderAll();
   }
 
+  // --- selection ---
+  let selBox = null;
+  function selectNone() { sel = null; if (selBox) selBox.remove(); selBox = null; syncControls(); }
+  function select(type, ref) {
+    sel = { type, ref };
+    if (!selBox) { selBox = document.createElement('div'); selBox.className = 'pf-selbox'; }
+    el.stageInner.appendChild(selBox);
+    const handle = document.createElement('div'); handle.className = 'pf-handle';
+    handle.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); startResize(ev, ref); });
+    selBox.innerHTML = ''; selBox.appendChild(handle);
+    positionSelectBox(); syncControls();
+  }
+  function positionSelectBox() {
+    if (!selBox || !sel || !sel.ref._node) return;
+    const n = sel.ref._node;
+    selBox.style.transform = `translate(${num(sel.ref.x, 0)}px, ${num(sel.ref.y, 0)}px)`;
+    selBox.style.width = n.offsetWidth * num(sel.ref.scale, 1) + 'px';
+    selBox.style.height = n.offsetHeight * num(sel.ref.scale, 1) + 'px';
+  }
+
+  function syncControls() {
+    const has = !!sel;
+    el.selNone.classList.toggle('hidden', has);
+    el.selControls.classList.toggle('hidden', !has);
+    if (!has) return;
+    const isText = sel.type === 'el' && sel.ref.kind === 'text';
+    el.textProps.style.display = isText ? '' : 'none';
+    el.alignField.style.display = isText ? '' : 'none';
+    el.hideObj.style.display = sel.type === 'comp' ? '' : 'none';
+    el.deleteObj.style.display = sel.type === 'el' ? '' : 'none';
+    if (isText) { el.fontSize.value = num(sel.ref.fontSize, 24); el.objColor.value = sel.ref.color || '#222222'; el.align.value = sel.ref.align || 'left'; }
+  }
+
+  // --- drag / resize ---
+  function stageRect() { return el.stageInner.getBoundingClientRect(); }
+  function onPointerDown(ev, type, ref) {
+    ev.preventDefault();
+    select(type, ref);
+    const r = stageRect();
+    const startX = ev.clientX, startY = ev.clientY, ox = num(ref.x, 0), oy = num(ref.y, 0);
+    const move = (e) => {
+      ref.x = ox + (e.clientX - startX) / displayScale;
+      ref.y = oy + (e.clientY - startY) / displayScale;
+      applyTransform(ref); positionSelectBox();
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }
+  function startResize(ev, ref) {
+    ev.preventDefault();
+    const naturalH = ref._node.offsetHeight || 1;
+    const r = stageRect();
+    const move = (e) => {
+      const pageY = (e.clientY - r.top) / displayScale;
+      ref.scale = Math.max(0.15, Math.min(8, (pageY - num(ref.y, 0)) / naturalH));
+      applyTransform(ref); positionSelectBox();
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }
+
+  // --- page switching ---
+  function selectPage(i) {
+    if (i === cur) return;
+    cur = i; highlightPage();
+    const st = pageMeta[i] && pageMeta[i].state;
+    el.border.value = st && st.layout == null && st.border != null ? st.border : (pageModels[i]._border || '');
+    renderPage();
+  }
+
+  // --- actions ---
+  function addText() {
+    const e = { id: uid++, kind: 'text', x: dims.usableWidth / 2 - 100, y: dims.usableHeight / 2, scale: 1, rot: 0, z: 100, text: 'Your text', fontSize: 28, color: '#222222', align: 'left', w: 240 };
+    pageModels[cur].elements.push(e);
+    el.stageInner.appendChild(makeNode('el', e, elHtml(e)));
+    select('el', e);
+  }
   function addImageFile(file) {
     const reader = new FileReader();
     reader.onload = () => {
-      fabric.Image.fromURL(reader.result, (img) => {
-        const max = dims.usableWidth * 0.4;
-        if (img.width > max) img.scale(max / img.width);
-        img.set({ left: dims.usableWidth / 2, top: dims.usableHeight / 2, originX: 'center', originY: 'center' });
-        canvas.add(img).setActiveObject(img);
-        canvas.requestRenderAll();
-      });
+      const e = { id: uid++, kind: 'image', x: dims.usableWidth / 2 - 80, y: dims.usableHeight / 2 - 80, scale: 1, rot: 0, z: 100, src: reader.result, width: 160 };
+      pageModels[cur].elements.push(e);
+      el.stageInner.appendChild(makeNode('el', e, elHtml(e)));
+      select('el', e);
     };
     reader.readAsDataURL(file);
   }
+  function editText(ref) {
+    const box = ref._node.querySelector('.pf-textbox');
+    box.setAttribute('contenteditable', 'true');
+    box.focus();
+    const done = () => {
+      box.removeAttribute('contenteditable');
+      ref.text = box.innerText;
+      box.removeEventListener('blur', done);
+    };
+    box.addEventListener('blur', done);
+  }
+  function applyTextProp(prop, val) {
+    if (!sel || sel.ref.kind !== 'text') return;
+    sel.ref[prop] = val;
+    sel.ref._node.innerHTML = elHtml(sel.ref);
+    positionSelectBox();
+  }
+  function deleteSel() {
+    if (!sel || sel.type !== 'el') return;
+    const arr = pageModels[cur].elements;
+    const i = arr.indexOf(sel.ref); if (i >= 0) arr.splice(i, 1);
+    sel.ref._node.remove(); selectNone();
+  }
+  function hideComp() {
+    if (!sel || sel.type !== 'comp') return;
+    sel.ref.hidden = true; sel.ref._node.remove(); selectNone();
+  }
+  function bumpZ(dir) {
+    if (!sel || sel.type !== 'el') return;
+    sel.ref.z = num(sel.ref.z, 100) + dir * 10;
+    renderPage(); // re-sort
+    select('el', sel.ref);
+  }
+  function resetSize() { if (sel) { sel.ref.scale = 1; sel.ref.rot = 0; applyTransform(sel.ref); positionSelectBox(); } }
+  function resetLayout() {
+    const pm = pageModels[cur];
+    pm.comps.forEach((c) => { c.hidden = false; c.scale = 1; c.rot = 0; });
+    pm.elements = [];
+    pm.measured = false;
+    renderPage();
+  }
 
-  function applyFont() {
-    const o = canvas.getActiveObject();
-    if (o && o.set) { o.set('fontSize', Number(el.fontSize.value) || 24); canvas.requestRenderAll(); }
-  }
-  function applyColor() {
-    const o = canvas.getActiveObject();
-    if (o && o.set) { o.set('fill', el.objColor.value); canvas.requestRenderAll(); }
-  }
-  function deleteSelected() {
-    const objs = canvas.getActiveObjects();
-    objs.forEach((o) => canvas.remove(o));
-    canvas.discardActiveObject().requestRenderAll();
-  }
-  function forward() { const o = canvas.getActiveObject(); if (o) { o.bringForward(); canvas.requestRenderAll(); } }
-  function backward() { const o = canvas.getActiveObject(); if (o) { o.sendBackwards(); canvas.requestRenderAll(); } }
-
-  async function setBorder() {
-    const v = el.border.value;
-    const st = pageStates[cur] || (pageStates[cur] = {});
-    if (v === '') delete st.border; else st.border = v;
-    // Re-render the background with the override.
-    try {
-      const res = await fetch('/api/book/page-html', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId, index: cur, state: st }),
-      });
-      const data = await res.json();
-      if (res.ok) { pages[cur].html = data.html; el.bg.srcdoc = data.html; }
-    } catch (_) { /* leave background */ }
+  function setBorder() {
+    pageModels[cur]._border = el.border.value;
   }
 
   async function reroll() {
-    el.reroll.disabled = true;
-    setStatus('Rerolling…', 'busy');
+    el.reroll.disabled = true; setStatus('Rerolling…', 'busy');
     try {
-      const res = await fetch('/api/book/reroll', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookId, index: cur }),
-      });
+      const res = await fetch('/api/book/reroll', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookId, index: cur }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Reroll failed');
-      pages[cur].html = data.html;
-      el.bg.srcdoc = data.html;
+      const pm = pageModels[cur];
+      const fresh = buildComps(data.components || []);
+      // keep existing positions by key; replace html
+      const byKey = {}; pm.comps.forEach((c) => (byKey[c.key] = c));
+      pm.style = data.style || pm.style;
+      pm.comps = fresh.map((f) => { const old = byKey[f.key]; return old ? { ...f, x: old.x, y: old.y, scale: old.scale, rot: old.rot, hidden: old.hidden } : f; });
+      pm.measured = pm.comps.every((c) => byKey[c.key]); // if any new kind, re-measure
+      renderPage();
       setStatus('Rerolled.', 'ok');
-    } catch (err) {
-      setStatus(err.message, 'err');
-    } finally {
-      el.reroll.disabled = false;
-    }
+    } catch (err) { setStatus(err.message, 'err'); }
+    finally { el.reroll.disabled = false; }
   }
 
-  // --- save / export ---
+  // --- serialize / save / export ---
+  function pageState(i) {
+    const pm = pageModels[i];
+    const comp = {};
+    pm.comps.forEach((c) => { comp[c.key] = { x: Math.round(c.x), y: Math.round(c.y), scale: round2(c.scale), rot: round2(c.rot), hidden: c.hidden }; });
+    const elements = pm.elements.map((e) => ({ kind: e.kind, x: Math.round(e.x), y: Math.round(e.y), scale: round2(e.scale), rot: round2(e.rot), z: e.z, text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w, src: e.src, width: e.width }));
+    const st = { layout: { comp, elements } };
+    if (pm._border) st.border = pm._border;
+    return st;
+  }
+  const round2 = (n) => Math.round(num(n, 0) * 100) / 100;
+  function allPageState() { return pageModels.map((_, i) => pageState(i)); }
+
   function buildRecipe() {
-    saveCurrent();
     const book = { ...(bookConfig || {}) };
     delete book.seed; delete book.pageState; delete book.puzzleforgeBook;
-    return { recipeVersion: 2, kind: 'book', book, seed, pageState: pageStates };
+    return { recipeVersion: 2, kind: 'book', book, seed, pageState: allPageState() };
   }
-
   function save() {
-    const recipe = buildRecipe();
-    const name = ((bookConfig && bookConfig.title) || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
-    const blob = new Blob([JSON.stringify(recipe, null, 2)], { type: 'application/json' });
-    downloadBlob(blob, name + '-book.json');
-    setStatus('Recipe saved (with decorations).', 'ok');
+    const name = slug((bookConfig && bookConfig.title) || 'book');
+    downloadBlob(new Blob([JSON.stringify(buildRecipe(), null, 2)], { type: 'application/json' }), name + '-book.json');
+    setStatus('Recipe saved (with layout).', 'ok');
   }
-
   async function exportPdf() {
-    saveCurrent();
-    setStatus('Rendering PDF with decorations…', 'busy');
-    el.exportPdf.disabled = true;
+    setStatus('Rendering PDF…', 'busy'); el.exportPdf.disabled = true;
     try {
-      const body = bookId ? { bookId, pageState: pageStates } : { config: bookConfig, pageState: pageStates };
+      const body = bookId ? { bookId, pageState: allPageState() } : { config: bookConfig, pageState: allPageState() };
       const res = await fetch('/api/book/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Export failed'); }
-      const name = ((bookConfig && bookConfig.title) || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
-      downloadBlob(await res.blob(), name + '.pdf');
+      downloadBlob(await res.blob(), slug((bookConfig && bookConfig.title) || 'book') + '.pdf');
       setStatus('PDF exported.', 'ok');
-    } catch (err) {
-      setStatus(err.message, 'err');
-    } finally {
-      el.exportPdf.disabled = false;
-    }
+    } catch (err) { setStatus(err.message, 'err'); }
+    finally { el.exportPdf.disabled = false; }
   }
-
+  const slug = (s) => (s || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
   function downloadBlob(blob, name) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = name;
-    document.body.appendChild(a); a.click(); a.remove();
+    const url = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
@@ -278,41 +380,32 @@
   function init() {
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
-    el.fontSize.addEventListener('input', applyFont);
-    el.objColor.addEventListener('input', applyColor);
-    el.deleteObj.addEventListener('click', deleteSelected);
-    el.forward.addEventListener('click', forward);
-    el.backward.addEventListener('click', backward);
+    el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));
+    el.objColor.addEventListener('input', () => applyTextProp('color', el.objColor.value));
+    el.align.addEventListener('change', () => applyTextProp('align', el.align.value));
+    el.forward.addEventListener('click', () => bumpZ(1));
+    el.backward.addEventListener('click', () => bumpZ(-1));
+    el.resetPos.addEventListener('click', resetSize);
+    el.hideObj.addEventListener('click', hideComp);
+    el.deleteObj.addEventListener('click', deleteSel);
     el.border.addEventListener('change', setBorder);
     el.reroll.addEventListener('click', reroll);
+    el.resetLayout.addEventListener('click', resetLayout);
     el.save.addEventListener('click', save);
     el.exportPdf.addEventListener('click', exportPdf);
     el.loadRecipe.addEventListener('change', onLoadRecipe);
-    window.addEventListener('keydown', (e) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && canvas && canvas.getActiveObject() && document.activeElement === document.body) {
-        e.preventDefault(); deleteSelected();
-      }
-    });
+    el.stageInner.addEventListener('pointerdown', (e) => { if (e.target === el.stageInner) selectNone(); });
+    window.addEventListener('resize', () => { computeScale(); positionSelectBox(); });
 
-    // Hand-off from the Book Builder.
     let handoff = null;
-    try {
-      const raw = localStorage.getItem('pf_editor');
-      if (raw) { handoff = JSON.parse(raw); localStorage.removeItem('pf_editor'); }
-    } catch (_) { /* ignore */ }
-
+    try { const raw = localStorage.getItem('pf_editor'); if (raw) { handoff = JSON.parse(raw); localStorage.removeItem('pf_editor'); } } catch (_) { /* ignore */ }
     if (handoff && (handoff.config || handoff.bookId)) {
       bookConfig = handoff.config || null;
       openBook(handoff.bookId ? { bookId: handoff.bookId, config: handoff.config } : { config: handoff.config });
-    } else {
-      el.empty.hidden = false;
-      setStatus('Open a book from the Book Builder, or load a recipe.', '');
-    }
+    } else { el.empty.hidden = false; setStatus('Open a book from the Book Builder, or load a recipe.', ''); }
   }
-
   function onLoadRecipe(ev) {
-    const file = ev.target.files && ev.target.files[0];
-    if (!file) return;
+    const file = ev.target.files && ev.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -322,9 +415,7 @@
         if (v2.seed != null) bookConfig.seed = v2.seed;
         if (Array.isArray(v2.pageState) && v2.pageState.length) bookConfig.pageState = v2.pageState;
         openBook({ config: bookConfig });
-      } catch (_) {
-        setStatus('That file is not a valid book recipe.', 'err');
-      }
+      } catch (_) { setStatus('That file is not a valid book recipe.', 'err'); }
       ev.target.value = '';
     };
     reader.readAsText(file);

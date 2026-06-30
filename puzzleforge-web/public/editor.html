@@ -34,10 +34,11 @@
     </aside>
 
     <section class="editor-stage" aria-label="Canvas">
-      <div class="stage-wrap" id="stageWrap">
-        <iframe id="bg" class="stage-bg" title="Page background"></iframe>
-        <canvas id="deco" class="stage-deco"></canvas>
+      <div class="stage-outer" id="stageOuter">
+        <div class="stage-inner" id="stageInner"></div>
       </div>
+      <p class="hint stage-hint">Drag a piece to move it. Drag the ○ handle to resize. Double-click a
+        text box to edit. Click empty space to deselect.</p>
     </section>
 
     <aside class="editor-tools" aria-label="Tools">
@@ -48,16 +49,24 @@
       </div>
 
       <h2>Selected</h2>
-      <div class="row">
-        <label class="field"><span>Font size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
-        <label class="field"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
-      </div>
-      <div class="actions">
-        <button id="forward" class="ghost">Bring forward</button>
-        <button id="backward" class="ghost">Send back</button>
-      </div>
-      <div class="actions">
-        <button id="deleteObj" class="ghost del">Delete selected</button>
+      <div id="selNone" class="hint">Nothing selected.</div>
+      <div id="selControls" class="hidden">
+        <div class="row" id="textProps">
+          <label class="field"><span>Font size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
+          <label class="field"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
+        </div>
+        <label class="field" id="alignField"><span>Align</span>
+          <select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+        </label>
+        <div class="actions">
+          <button id="forward" class="ghost">Forward</button>
+          <button id="backward" class="ghost">Back</button>
+          <button id="resetPos" class="ghost">Reset size</button>
+        </div>
+        <div class="actions">
+          <button id="hideObj" class="ghost">Hide piece</button>
+          <button id="deleteObj" class="ghost del">Delete</button>
+        </div>
       </div>
 
       <h2>This page</h2>
@@ -67,10 +76,11 @@
       </label>
       <div class="actions">
         <button id="reroll" class="ghost">Reroll puzzle</button>
+        <button id="resetLayout" class="ghost">Reset layout</button>
       </div>
       <p class="hint">Reroll lays out a fresh version of this page's puzzle (same type, difficulty,
-        and words). Your text and clip art stay put. Export composites the decoration layer over
-        the puzzle at print resolution.</p>
+        words). Your text, clip art, and piece positions stay. Export composites everything at
+        print resolution.</p>
     </aside>
   </main>
 
@@ -79,7 +89,6 @@
       <label class="upload ghost">load a book recipe<input id="loadRecipe" type="file" accept="application/json" hidden></label>.</p>
   </div>
 
-  <script src="vendor/fabric.min.js"></script>
   <script src="editor.js"></script>
 </body>
 </html>

@@ -1020,17 +1020,20 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 
 ### 🟡 Phase 9 — Page Editor + QR Basics (Publisher Only)
 - ✅ Recipe format v2 (prerequisite) — done; seeded generators give full reproduction
-- ✅ Fabric.js canvas editor (`editor.html/js`) — opt-in "Open in Editor" from the
-  Book Builder, decoration layer over each puzzle page, vendored Fabric 5.5.2
-- ✅ Per-page reroll for individual puzzles (seeded; same type/difficulty/words)
-- ✅ Text box placement (move/resize/rotate/recolor)
+- ✅ Freeform page editor (`editor.html/js`) — opt-in "Open in Editor" from the
+  Book Builder. Each puzzle is **split into movable/resizable pieces** (grid,
+  title, instructions, word list) via `engine/components.js`; pieces stay crisp
+  HTML positioned with CSS transforms (no rasterizing). Plus add text / clip art.
+- ✅ Per-page reroll for individual puzzles (seeded; same type/difficulty/words);
+  piece positions + decorations preserved
+- ✅ Text box placement (move/resize/recolor/align, double-click to edit)
 - ✅ Clipart upload → place on page (AI Art PNGs work)
-- ✅ Per-page border override (live preview)
-- ✅ Export from editor — decoration layer → SVG composited over the puzzle at
-  print resolution via the normal book pipeline (`pageState[i].canvasState.svg`)
+- ✅ Per-page border override; hide pieces; reset layout
+- ✅ Export — engine composes placed pieces + elements per page
+  (`pageState[i].layout`) via the normal book pipeline; vector-sharp at 300 DPI
+- 🔲 Piece rotation, undo/redo, snapping/alignment guides
 - 🔲 Page reorder / add / remove in the sidebar (select-only for now)
 - 🔲 Filler page swap inline
-- 🔲 Built-in undo/redo, snapping, alignment guides
 - **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner
 - **ComfyUI visibility** — WebSocket progress display, live latent preview, workflow debug panel
 - **ComfyUI prompt helper** — Claude-powered prompt optimizer, context-aware per preset, positive + negative prompt output, "explain changes" toggle
