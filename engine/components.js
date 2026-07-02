@@ -38,14 +38,12 @@ function classify(tag, html) {
 }
 
 /**
- * Render a puzzle and split it into named pieces **in original DOM order**, so
- * recomposing them unchanged reproduces the original layout exactly.
+ * Split any rendered page document into named pieces **in original DOM order**,
+ * so recomposing them unchanged reproduces the original layout exactly. Works
+ * for puzzle pages and for front/back matter pages alike.
  * @returns {{ style: string, components: Array<{kind,html}> }}
  */
-function splitPuzzle(puzzle, layout, opts = {}) {
-  const mod = getModule(puzzle.type);
-  const doc = mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
-
+function splitHtml(doc) {
   const styles = [];
   const styleRe = /<style[^>]*>([\s\S]*?)<\/style>/gi;
   let sm;
@@ -69,6 +67,15 @@ function splitPuzzle(puzzle, layout, opts = {}) {
   }
 
   return { style: styles.join('\n'), components };
+}
+
+/**
+ * Render a puzzle and split it into named pieces (see splitHtml).
+ * @returns {{ style: string, components: Array<{kind,html}> }}
+ */
+function splitPuzzle(puzzle, layout, opts = {}) {
+  const mod = getModule(puzzle.type);
+  return splitHtml(mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) }));
 }
 
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -95,6 +102,16 @@ function pieceTransform(p) {
  */
 function composePage(puzzle, layout, pageLayout, opts = {}) {
   const { style, components } = splitPuzzle(puzzle, layout, opts);
+  return composeParts(style, components, layout, pageLayout);
+}
+
+/**
+ * Compose a print-ready page from an already-split page (style + ordered
+ * components) plus free text / image elements. Used for both puzzle pages
+ * (via composePage) and front/back matter pages the publisher has edited.
+ * @param {object} pageLayout { comp: { key: { dx,dy,scale,rot,hidden } }, elements:[...] }
+ */
+function composeParts(style, components, layout, pageLayout) {
   const comp = (pageLayout && pageLayout.comp) || {};
   const elements = (pageLayout && Array.isArray(pageLayout.elements)) ? pageLayout.elements : [];
 
@@ -146,4 +163,4 @@ ${freebies}
 </body></html>`;
 }
 
-module.exports = { splitPuzzle, composePage };
+module.exports = { splitPuzzle, splitHtml, composePage, composeParts };

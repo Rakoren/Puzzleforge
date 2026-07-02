@@ -63,33 +63,40 @@
     if (state && state.border) m._border = state.border;
     return m;
   }
-  function modelFromPage(p, i) {
+  function modelFromPage(p) {
     const m = {
-      src: i, blank: false, type: p.type || '', title: p.title || p.type || '', activity: !!p.activity,
+      role: p.role || 'content', matterKind: p.matterKind || null, src: p.src != null ? p.src : null,
+      blank: false, type: p.type || '', title: p.title || p.type || '', activity: !!p.activity,
       style: p.style || '', comps: buildComps(p.components || []), elements: [], _border: '', undo: [], redo: [],
     };
     return restoreState(m, p.state);
   }
   // Rebuild pageModels from a saved page plan (final order, blanks, per-page
-  // state), sourcing real pages fresh from the server's original page list.
+  // state), sourcing real pages fresh from the server's original leaf list.
   function applyPlan(plan) {
+    const findSrc = (e) => {
+      if (e.role === 'frontmatter' || e.role === 'backmatter') return srcPages.find((sp) => sp.role === e.role && sp.matterKind === e.matterKind);
+      if (e.role === 'title' || e.role === 'answerkey') return srcPages.find((sp) => sp.role === e.role);
+      if (e.role === 'content' || (!e.role && e.src != null)) return srcPages.find((sp) => sp.role === 'content' && sp.src === e.src);
+      return null;
+    };
     const rebuilt = plan.map((entry) => {
-      if (entry && entry.blank) return restoreState(blankModel(), entry.state);
-      const src = srcPages[entry && entry.src];
-      if (!src) return null;
-      return restoreState(modelFromPage(src, entry.src), entry.state);
+      if (!entry) return null;
+      if (entry.blank || entry.role === 'blank') return restoreState(blankModel(), entry.state);
+      const sp = findSrc(entry); if (!sp) return null;
+      return restoreState(modelFromPage(sp), entry.state);
     }).filter(Boolean);
     if (rebuilt.length) pageModels = rebuilt;
   }
   // A user-inserted blank page (empty; can carry text/image overlays).
   function blankModel() {
-    return { src: null, blank: true, type: 'bleedguard', title: 'Blank', activity: true, style: '', comps: [], elements: [], _border: '', undo: [], redo: [] };
+    return { role: 'blank', matterKind: null, src: null, blank: true, type: 'bleedguard', title: 'Blank', activity: true, style: '', comps: [], elements: [], _border: '', undo: [], redo: [] };
   }
-  // Deep-copy a page model for duplication (keeps its src so export reuses the
-  // same generated puzzle; fresh element ids so overlays are independent).
+  // Deep-copy a page model for duplication (keeps its role/src so export reuses
+  // the same source; fresh element ids so overlays are independent).
   function clonePageModel(pm) {
     return {
-      src: pm.src, blank: pm.blank, type: pm.type, title: pm.title, activity: pm.activity,
+      role: pm.role, matterKind: pm.matterKind, src: pm.src, blank: pm.blank, type: pm.type, title: pm.title, activity: pm.activity,
       style: pm.style,
       comps: pm.comps.map((c) => ({ group: 'piece', kind: c.kind, key: c.key, html: c.html, dx: c.dx, dy: c.dy, scale: c.scale, rot: c.rot, hidden: c.hidden, locked: c.locked, baseX: 0, baseY: 0, baseW: 0, baseH: 0 })),
       elements: pm.elements.map((e) => { const { _node, ...r } = e; return { ...r, id: uid++ }; }),
@@ -104,7 +111,7 @@
       const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Could not open the book');
       bookId = data.bookId; seed = data.seed; dims = data.dims;
       srcPages = data.pages || [];
-      pageModels = srcPages.map((p, i) => modelFromPage(p, i));
+      pageModels = srcPages.map(modelFromPage);
       if (pendingPlan) { applyPlan(pendingPlan); pendingPlan = null; }
       el.empty.hidden = true; el.main.hidden = false;
       await loadBorderStyles(); buildPageList(); cur = 0; zoom = fitScale(); renderPage();
@@ -375,7 +382,7 @@
   function setBorder() { pageModels[cur]._border = el.border.value; }
   async function reroll() {
     const pm = pageModels[cur];
-    if (!pm || pm.blank || pm.src == null) { setStatus('Blank pages have no puzzle to reroll.', 'err'); return; }
+    if (!pm || pm.role !== 'content' || pm.src == null) { setStatus('Only puzzle pages can be rerolled.', 'err'); return; }
     if (pm.activity) { setStatus('Activity pages have no puzzle to reroll.', 'err'); return; }
     el.reroll.disabled = true; setStatus('Rerolling…', 'busy');
     try {
@@ -398,7 +405,13 @@
   }
   // Per-page arrangement for export/recipe: keeps the final page order, marks
   // inserted blanks, and references each real page's original book index (src).
-  const buildPagePlan = () => pageModels.map((pm) => (pm.blank ? { blank: true, state: pageStateOf(pm) } : { src: pm.src, state: pageStateOf(pm) }));
+  const buildPagePlan = () => pageModels.map((pm) => {
+    const state = pageStateOf(pm);
+    if (pm.blank) return { role: 'blank', state };
+    if (pm.role === 'content') return { role: 'content', src: pm.src, state };
+    if (pm.role === 'frontmatter' || pm.role === 'backmatter') return { role: pm.role, matterKind: pm.matterKind, state };
+    return { role: pm.role, state }; // title, answerkey
+  });
   function buildRecipe() { const book = { ...(bookConfig || {}) }; delete book.seed; delete book.pageState; delete book.puzzleforgeBook; return { recipeVersion: 2, kind: 'book', book, seed, pagePlan: buildPagePlan() }; }
   function save() { downloadBlob(new Blob([JSON.stringify(buildRecipe(), null, 2)], { type: 'application/json' }), slug((bookConfig && bookConfig.title) || 'book') + '-book.json'); setStatus('Recipe saved (with layout).', 'ok'); }
   async function exportPdf() {

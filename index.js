@@ -10,7 +10,7 @@
 const { generate } = require('./engine/generate');
 const { assembleBook } = require('./engine/book');
 const { runChecklist } = require('./engine/checklist');
-const { splitPuzzle, composePage } = require('./engine/components');
+const { splitPuzzle, splitHtml, composePage } = require('./engine/components');
 const kdp = require('./engine/kdp');
 const recipe = require('./engine/recipe');
 const {
@@ -24,6 +24,8 @@ const {
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,
+  defaultLeaves,
+  renderMatterDoc,
 } = require('./engine/export');
 const { getLayout, listTrimSizes } = require('./layouts');
 const {
@@ -46,7 +48,10 @@ module.exports = {
   assembleBook,
   runChecklist,
   splitPuzzle,
+  splitHtml,
   composePage,
+  defaultLeaves,
+  renderMatterDoc,
   royaltyEstimate: kdp.royaltyEstimate,
   printingCostUSD: kdp.printingCostUSD,
   normalizeMetadata: kdp.normalizeMetadata,

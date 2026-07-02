@@ -16,7 +16,7 @@ const path = require('path');
 const { getModule, isActivityType } = require('../generators/registry');
 const { getLayout } = require('../layouts');
 const { frameSvg } = require('./decor');
-const { composePage } = require('./components');
+const { composePage, splitHtml, composeParts } = require('./components');
 const {
   renderTitlePage,
   renderCopyrightPage,
@@ -292,53 +292,83 @@ async function exportPuzzlePdf(puzzle, opts = {}) {
  * @param {object} book book object from engine/book.js
  * @returns {string} combined HTML
  */
-function renderBookHtml(book) {
+/**
+ * The full book as an ordered list of "leaves" (every physical page): title,
+ * front matter, content pages, answer key, back matter. The Page Editor uses
+ * this to show and rearrange ALL pages, and the exporter renders from it — so a
+ * custom leaf order (reordered / inserted blanks / deleted) round-trips exactly.
+ * @returns {Array<{role, matter?, matterKind?, puzzle?, state?, src?}>}
+ */
+function defaultLeaves(book) {
+  const leaves = [{ role: 'title' }];
+  for (const fm of book.frontMatter || []) {
+    if (fm.kind === 'copyright' || fm.kind === 'belongsTo' || fm.kind === 'intro') {
+      leaves.push({ role: 'frontmatter', matter: fm, matterKind: fm.kind });
+    }
+  }
+  book.pages.forEach((pg, i) => leaves.push({ role: 'content', puzzle: pg.puzzle, state: pg.state, src: i }));
+  if (book.answerKey && book.meta.puzzleCount > 0) leaves.push({ role: 'answerkey' });
+  for (const bm of book.backMatter || []) {
+    if (bm.kind === 'about' || bm.kind === 'morebooks') {
+      leaves.push({ role: 'backmatter', matter: bm, matterKind: bm.kind });
+    }
+  }
+  return leaves;
+}
+
+// Render a matter/title/answer-key leaf's base HTML document.
+function renderMatterDoc(book, layout, leaf) {
+  if (leaf.role === 'title') return renderTitlePage(book, layout);
+  if (leaf.role === 'answerkey') return renderAnswerKey(book, layout);
+  const fm = leaf.matter || {};
+  switch (fm.kind) {
+    case 'copyright': return renderCopyrightPage(book, layout, fm);
+    case 'belongsTo': return renderBelongsToPage(book, layout);
+    case 'intro': return renderIntroPage(book, layout, fm);
+    case 'about': return renderAboutPage(book, layout, fm);
+    case 'morebooks': return renderMoreBooksPage(book, layout, fm);
+    default: return renderTitlePage(book, layout);
+  }
+}
+
+// Render one leaf (any page role) to a print-ready HTML document, honoring a
+// per-page state (Page Editor layout overrides + border).
+function renderLeafDoc(book, layout, styleOpts, leaf) {
+  const st = leaf.state || {};
+  const border = st.border !== undefined ? st.border : book.border;
+  const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
+  const withBorder = (doc) => (border && border !== 'none') ? applyBorder(doc, layout, border, borderColor) : doc;
+
+  if (leaf.role === 'content') {
+    const puzzle = leaf.puzzle;
+    if (st.layout) return withBorder(composePage(puzzle, layout, st.layout));
+    const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
+    return renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay });
+  }
+  // Title / front matter / answer key / back matter.
+  let doc = renderMatterDoc(book, layout, leaf);
+  if (st.layout) { const { style, components } = splitHtml(doc); doc = composeParts(style, components, layout, st.layout); }
+  return withBorder(doc);
+}
+
+// Whether a leaf carries a printed page number (content puzzles + answer key).
+function leafNumbered(leaf) {
+  return (leaf.role === 'content' && leaf.puzzle && leaf.puzzle.type !== 'bleedguard') || leaf.role === 'answerkey';
+}
+
+function renderBookHtml(book, leaves) {
   const styleOpts = { audience: book.audience, textScale: book.fontScale, fontFamily: book.fontFamily };
   const layout = getLayout(book.trimSize, styleOpts);
   const numbered = book.pageNumbers === true;
-  const docs = [renderTitlePage(book, layout)];
-  const footers = [null]; // title page is unnumbered
-
-  for (const fm of book.frontMatter || []) {
-    if (fm.kind === 'copyright') docs.push(renderCopyrightPage(book, layout, fm));
-    else if (fm.kind === 'belongsTo') docs.push(renderBelongsToPage(book, layout));
-    else if (fm.kind === 'intro') docs.push(renderIntroPage(book, layout, fm));
-    else continue;
-    footers.push(null); // front matter is unnumbered
-  }
-
-  // Body page numbers start at 1 on the first puzzle page (front matter excluded).
+  const list = Array.isArray(leaves) ? leaves : defaultLeaves(book);
   const prefix = book.footerText ? `${escFooter(book.footerText)} · ` : '';
-  let n = 0;
-  for (const pg of book.pages) {
-    const puzzle = pg.puzzle;
-    // Per-page state (recipe v2) can override the book-level border.
-    const st = pg.state || {};
-    const border = st.border !== undefined ? st.border : book.border;
-    const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
-    if (st.layout) {
-      // Page Editor custom layout: compose the puzzle's pieces + free elements.
-      let doc = composePage(puzzle, layout, st.layout);
-      if (border && border !== 'none') doc = applyBorder(doc, layout, border, borderColor);
-      docs.push(doc);
-    } else {
-      const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
-      docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay }));
-    }
-    // Number every page except the blank bleed-guards, which stay clean.
-    footers.push(numbered && puzzle.type !== 'bleedguard' ? `${prefix}${++n}` : null);
-  }
-  if (book.answerKey && book.meta.puzzleCount > 0) {
-    docs.push(renderAnswerKey(book, layout));
-    footers.push(numbered ? `${prefix}${++n}` : null);
-  }
 
-  // Back matter (about / more books) after the answer key — unnumbered.
-  for (const bm of book.backMatter || []) {
-    if (bm.kind === 'about') docs.push(renderAboutPage(book, layout, bm));
-    else if (bm.kind === 'morebooks') docs.push(renderMoreBooksPage(book, layout, bm));
-    else continue;
-    footers.push(null);
+  const docs = [];
+  const footers = [];
+  let n = 0;
+  for (const leaf of list) {
+    docs.push(renderLeafDoc(book, layout, styleOpts, leaf));
+    footers.push(numbered && leafNumbered(leaf) ? `${prefix}${++n}` : null);
   }
 
   return numbered
@@ -356,16 +386,16 @@ function escFooter(s) {
 /**
  * Export a full book to a print-ready PDF.
  * @param {object} book book object from engine/book.js
- * @param {object} opts { outPath (required), executablePath? }
+ * @param {object} opts { outPath (required), executablePath?, leaves? }
+ *   `leaves` overrides the default page order (Page Editor page plan).
  * @returns {Promise<{ outPath, pages, trimSize }>}
  */
 async function exportBookPdf(book, opts = {}) {
   if (!opts.outPath) throw new Error('export: opts.outPath is required');
-  const html = renderBookHtml(book);
+  const leaves = Array.isArray(opts.leaves) ? opts.leaves : defaultLeaves(book);
+  const html = renderBookHtml(book, leaves);
   await htmlToPdf(html, opts.outPath, opts.executablePath);
-  // pages = title + puzzles + (answer key may span multiple, counted as >=1)
-  const pages = 1 + book.pages.length + (book.answerKey ? 1 : 0);
-  return { outPath: opts.outPath, pages, trimSize: book.trimSize };
+  return { outPath: opts.outPath, pages: leaves.length, trimSize: book.trimSize };
 }
 
 /**
@@ -438,4 +468,6 @@ module.exports = {
   coverDimensions,
   combinePages,
   findChromium,
+  defaultLeaves,
+  renderMatterDoc,
 };

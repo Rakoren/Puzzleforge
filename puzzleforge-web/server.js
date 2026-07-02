@@ -315,10 +315,11 @@ app.post('/api/book/pdf', async (req, res) => {
     // The Page Editor sends live per-page state (decorations + per-page border)
     // to apply onto the cached (possibly rerolled) book before rendering. A
     // pagePlan additionally reorders / inserts blanks / deletes / duplicates.
-    if (Array.isArray(body.pagePlan)) book = applyPagePlan(book, body.pagePlan);
+    let leaves;
+    if (Array.isArray(body.pagePlan)) { const r = pagePlanRender(book, body.pagePlan); book = r.view; leaves = r.leaves; }
     else applyPageState(book, body.pageState);
     const outPath = path.join(os.tmpdir(), `pf-book-${crypto.randomUUID()}.pdf`);
-    await pf.exportBookPdf(book, { outPath });
+    await pf.exportBookPdf(book, { outPath, leaves });
     const pdf = fs.readFileSync(outPath);
     fs.unlink(outPath, () => {});
     const base = (book.title || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
@@ -369,36 +370,68 @@ function applyPageState(book, pageState) {
   });
 }
 
-// Build a render-ready book VIEW from an editor "page plan": the final page
-// order, with inserted blanks, deletions, and duplicates. Each entry is either
-// { blank:true, state } (a fresh blank page) or { src, state } (reuse the
-// original content page at index `src`, carrying its own per-page state). Page
-// numbers and answer-key metadata are recomputed to match the new arrangement.
-// Returns a shallow copy so the cached book keeps its original page order (the
-// client's `src` indices always reference that pristine order).
-function applyPagePlan(book, plan) {
-  if (!Array.isArray(plan) || !book || !Array.isArray(book.pages)) return book;
-  const orig = book.pages;
-  const fmCount = (book.frontMatter && book.frontMatter.length) || 0;
-  let page = 1 + fmCount; // title page + front matter precede the first content page
-  const pages = [];
-  for (const entry of plan) {
-    if (!entry || typeof entry !== 'object') continue;
-    let puzzle;
-    if (entry.blank) {
-      puzzle = pf.generate({ type: 'bleedguard', label: '' });
-    } else {
-      const src = orig[entry.src];
-      if (!src) continue;
-      puzzle = src.puzzle;
+// Turn an editor "page plan" into an engine leaf list + a matching book VIEW.
+// The plan is the final order of ALL pages (title, front matter, puzzles,
+// answer key, back matter) with inserted blanks, deletions, duplicates, and
+// per-page edit state. Each entry names a role:
+//   { role:'content', src, state }   reuse cached content page `src`
+//   { role:'blank', state }          fresh blank page
+//   { role:'title'|'answerkey', state }
+//   { role:'frontmatter'|'backmatter', matterKind, state }
+// Returns { view, leaves }: `leaves` drives page order/rendering; `view` is a
+// shallow book copy whose `.pages` are the plan's content pages (so the answer
+// key + page counts reflect the arrangement). The cached book is never mutated.
+// Human label for a non-content (title / matter / answer key) leaf.
+function leafTitle(leaf) {
+  if (leaf.role === 'title') return 'Title Page';
+  if (leaf.role === 'answerkey') return 'Answer Key';
+  return {
+    copyright: 'Copyright', belongsTo: 'This Book Belongs To', intro: 'Introduction',
+    about: 'About the Author', morebooks: 'More Books',
+  }[leaf.matterKind] || leaf.matterKind || 'Page';
+}
+
+function pagePlanRender(book, plan) {
+  if (!Array.isArray(plan) || !book || !Array.isArray(book.pages)) return { view: book, leaves: undefined };
+  const frontByKind = {};
+  (book.frontMatter || []).forEach((fm) => { frontByKind[fm.kind] = fm; });
+  const backByKind = {};
+  (book.backMatter || []).forEach((bm) => { backByKind[bm.kind] = bm; });
+
+  const leaves = [];
+  for (const e of plan) {
+    if (!e || typeof e !== 'object') continue;
+    const state = e.state && typeof e.state === 'object' ? e.state : null;
+    if (e.role === 'content') {
+      const pg = book.pages[e.src]; if (!pg) continue;
+      leaves.push({ role: 'content', puzzle: pg.puzzle, state, src: e.src });
+    } else if (e.role === 'blank') {
+      leaves.push({ role: 'content', puzzle: pf.generate({ type: 'bleedguard', label: '' }), state });
+    } else if (e.role === 'title') {
+      leaves.push({ role: 'title', state });
+    } else if (e.role === 'answerkey') {
+      leaves.push({ role: 'answerkey', state });
+    } else if (e.role === 'frontmatter') {
+      const fm = frontByKind[e.matterKind]; if (!fm) continue;
+      leaves.push({ role: 'frontmatter', matter: fm, matterKind: fm.kind, state });
+    } else if (e.role === 'backmatter') {
+      const bm = backByKind[e.matterKind]; if (!bm) continue;
+      leaves.push({ role: 'backmatter', matter: bm, matterKind: bm.kind, state });
     }
-    page += 1;
-    pages.push({ puzzle, pageNumber: page, state: entry.state && typeof entry.state === 'object' ? entry.state : null });
   }
-  if (!pages.length) return book;
+  if (!leaves.length) return { view: book, leaves: undefined };
+
+  // Printed page numbers (content puzzles + answer key), by position.
+  let n = 0;
+  const pages = [];
+  for (const leaf of leaves) {
+    const numbered = (leaf.role === 'content' && leaf.puzzle.type !== 'bleedguard') || leaf.role === 'answerkey';
+    if (numbered) n += 1;
+    if (leaf.role === 'content') pages.push({ puzzle: leaf.puzzle, pageNumber: n, state: leaf.state });
+  }
   const byType = {};
   for (const p of pages) byType[p.puzzle.type] = (byType[p.puzzle.type] || 0) + 1;
-  return {
+  const view = {
     ...book,
     pages,
     puzzles: pages.map((p) => p.puzzle),
@@ -409,6 +442,7 @@ function applyPagePlan(book, plan) {
       byType,
     },
   };
+  return { view, leaves };
 }
 
 // Render one content page's puzzle HTML (single-page doc) at the book's trim,
@@ -440,16 +474,28 @@ app.post('/api/book/editor', (req, res) => {
       bookId = cacheBook(book);
     }
     const layout = pf.getLayout(book.trimSize, { audience: book.audience });
-    const pages = book.pages.map((pg, index) => {
-      const split = pf.splitPuzzle(pg.puzzle, layout);
+    // Every physical page (title, front matter, puzzles, answer key, back
+    // matter) as an editable, splittable leaf — so the editor shows the whole
+    // book, not only the puzzles.
+    const pages = pf.defaultLeaves(book).map((leaf, index) => {
+      let split, type, title, activity, src = null;
+      if (leaf.role === 'content') {
+        split = pf.splitPuzzle(leaf.puzzle, layout);
+        type = leaf.puzzle.type;
+        title = leaf.puzzle.title || leaf.puzzle.type;
+        activity = pf.isActivityType(leaf.puzzle.type);
+        src = leaf.src;
+      } else {
+        split = pf.splitHtml(pf.renderMatterDoc(book, layout, leaf));
+        type = leaf.role === 'title' ? 'title' : leaf.role === 'answerkey' ? 'answerkey' : leaf.matterKind;
+        title = leafTitle(leaf);
+        activity = true; // matter pages carry no puzzle to reroll
+      }
       return {
-        index,
-        type: pg.puzzle.type,
-        title: pg.puzzle.title || pg.puzzle.type,
-        activity: pf.isActivityType(pg.puzzle.type),
-        style: split.style,
-        components: split.components,
-        state: pg.state || null,
+        index, role: leaf.role, matterKind: leaf.matterKind || null, src,
+        type, title, activity,
+        style: split.style, components: split.components,
+        state: leaf.state || null,
       };
     });
     res.json({
