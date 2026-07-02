@@ -384,7 +384,7 @@ function applyPageState(book, pageState) {
 // Human label for a non-content (title / matter / answer key) leaf.
 function leafTitle(leaf) {
   if (leaf.role === 'title') return 'Title Page';
-  if (leaf.role === 'answerkey') return 'Answer Key';
+  if (leaf.role === 'answerkey') return leaf.akIndex ? `Answer Key (${leaf.akIndex + 1})` : 'Answer Key';
   return {
     copyright: 'Copyright', belongsTo: 'This Book Belongs To', intro: 'Introduction',
     about: 'About the Author', morebooks: 'More Books',
@@ -410,7 +410,7 @@ function pagePlanRender(book, plan) {
     } else if (e.role === 'title') {
       leaves.push({ role: 'title', state });
     } else if (e.role === 'answerkey') {
-      leaves.push({ role: 'answerkey', state });
+      leaves.push({ role: 'answerkey', akIndex: e.akIndex || 0, state });
     } else if (e.role === 'frontmatter') {
       const fm = frontByKind[e.matterKind]; if (!fm) continue;
       leaves.push({ role: 'frontmatter', matter: fm, matterKind: fm.kind, state });
@@ -493,6 +493,7 @@ app.post('/api/book/editor', (req, res) => {
       }
       return {
         index, role: leaf.role, matterKind: leaf.matterKind || null, src,
+        akIndex: leaf.akIndex != null ? leaf.akIndex : null,
         type, title, activity,
         style: split.style, components: split.components,
         state: leaf.state || null,

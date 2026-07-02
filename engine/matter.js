@@ -285,30 +285,98 @@ function blocksPerRow(type) {
   return 2; // wordsearch, numbersearch, maze, crossword, nonogram
 }
 
-/** Back-of-book answer-key section. Overflow paginates naturally in print. */
-function renderAnswerKey(book, layout) {
-  const gap = 16;
-  const style = `
-  h1.key-title { font-size: ${Math.round(layout.fontSize * 1.8)}px; text-align: center; margin: 0 0 18px 0; }
-  .key-grid { display: flex; flex-wrap: wrap; gap: ${gap}px; align-items: flex-start; }
-  .key-block { break-inside: avoid; }
-  .key-block .label { font-size: ${Math.round(layout.fontSize * 0.9)}px; margin: 0 0 4px 0; font-weight: 700; }`;
+// Estimate an answer block's rendered height (grid/text + its label), so the
+// key can be split into real pages without a browser to measure with.
+function estBlockHeight(puzzle, blockWidth, layout) {
+  const d = puzzle.data || {};
+  const labelH = Math.round(layout.fontSize * 0.9) + 10;
+  let grid = 60;
+  switch (puzzle.type) {
+    case 'wordsearch':
+    case 'numbersearch': { const size = d.size || 15; grid = size * Math.floor(blockWidth / size); break; }
+    case 'sudoku': { const size = d.size || 9; grid = size * Math.floor(blockWidth / size); break; }
+    case 'maze': { const w = d.width || 10, h = d.height || 10; grid = h * Math.max(5, Math.floor(blockWidth / w)); break; }
+    case 'crossword': { const w = d.width || 10, h = d.height || 10; grid = h * Math.max(8, Math.floor(blockWidth / w)); break; }
+    case 'nonogram': { const w = d.width || 10, h = d.height || 10; grid = h * Math.max(4, Math.floor(blockWidth / w)); break; }
+    case 'cryptogram': { const fs = Math.max(9, Math.round(blockWidth / 22)); const len = (puzzle.solution.plaintext || '').length; const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.62))); grid = Math.ceil(len / perLine) * Math.round(fs * 1.5); break; }
+    case 'wordscramble':
+    case 'krisskross': { const fs = layout.fontSize; const txt = (puzzle.solution.words || []).join(', '); const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.56))); grid = Math.ceil((txt.length || 1) / perLine) * Math.round(fs * 1.5); break; }
+    case 'trivia': { const fs = Math.max(9, Math.round(blockWidth / 26)); grid = (puzzle.solution.answers || []).length * Math.round(fs * 1.6); break; }
+    default: grid = 80;
+  }
+  return Math.ceil(grid) + labelH + 8;
+}
 
+const KEY_GAP = 16;
+const KEY_ROW_GAP = 16;
+
+// Pack the book's answer blocks into pages. Blocks flow into rows of up to
+// blocksPerRow(type) (grouped by matching row width); rows fill a page until the
+// usable height is reached, then a new page starts. Returns an array of pages,
+// each an array of rows ({ items:[{html,h}], h }).
+function packAnswerKey(book, layout) {
   const blocks = book.pages
     .filter(({ puzzle }) => hasAnswer(puzzle.type))
     .map(({ puzzle, pageNumber }, i) => {
       const perRow = blocksPerRow(puzzle.type);
-      const blockWidth = Math.floor((layout.usableWidth - gap * (perRow - 1)) / perRow);
+      const blockWidth = Math.floor((layout.usableWidth - KEY_GAP * (perRow - 1)) / perRow);
       const label = `${i + 1}. ${esc(puzzle.title)} (p.${pageNumber})`;
-      return `<div class="key-block" style="width:${blockWidth}px">
-        <p class="label">${label}</p>
-        ${miniAnswer(puzzle, blockWidth)}
-      </div>`;
-    })
-    .join('');
+      const html = `<div class="key-block" style="width:${blockWidth}px"><p class="label">${label}</p>${miniAnswer(puzzle, blockWidth)}</div>`;
+      return { html, h: estBlockHeight(puzzle, blockWidth, layout), perRow };
+    });
 
-  const body = `<h1 class="key-title">Answer Key</h1><div class="key-grid">${blocks}</div>`;
-  return pageShell(layout, style, body);
+  const rows = [];
+  let cur = null;
+  for (const b of blocks) {
+    if (!cur || cur.perRow !== b.perRow || cur.items.length >= b.perRow) { cur = { perRow: b.perRow, items: [], h: 0 }; rows.push(cur); }
+    cur.items.push(b); cur.h = Math.max(cur.h, b.h);
+  }
+
+  const titleH = Math.round(layout.fontSize * 1.8) + 26;
+  const budget = layout.usableHeight - titleH;
+  const pages = [];
+  let curRows = [], curH = 0;
+  for (const r of rows) {
+    const add = r.h + (curRows.length ? KEY_ROW_GAP : 0);
+    if (curRows.length && curH + add > budget) { pages.push(curRows); curRows = []; curH = 0; }
+    curRows.push(r); curH += r.h + (curRows.length > 1 ? KEY_ROW_GAP : 0);
+  }
+  if (curRows.length) pages.push(curRows);
+  return pages;
+}
+
+function keyPageStyle(layout) {
+  return `
+  h1.key-title { font-size: ${Math.round(layout.fontSize * 1.8)}px; text-align: center; margin: 0 0 18px 0; }
+  .key-row { display: flex; gap: ${KEY_GAP}px; align-items: flex-start; margin-bottom: ${KEY_ROW_GAP}px; }
+  .key-block { break-inside: avoid; }
+  .key-block .label { font-size: ${Math.round(layout.fontSize * 0.9)}px; margin: 0 0 4px 0; font-weight: 700; }`;
+}
+
+/**
+ * Back-of-book answer key, paginated into as many pages as needed so nothing
+ * overflows the trim. Returns an array of standalone page documents.
+ */
+function answerKeyPages(book, layout) {
+  const pages = packAnswerKey(book, layout);
+  if (!pages.length) return [pageShell(layout, keyPageStyle(layout), `<h1 class="key-title">Answer Key</h1>`)];
+  return pages.map((rows, i) => {
+    const suffix = pages.length > 1 ? ` (${i + 1} of ${pages.length})` : '';
+    const body = `<h1 class="key-title">Answer Key${suffix}</h1>` +
+      rows.map((r) => `<div class="key-row">${r.items.map((it) => it.html).join('')}</div>`).join('');
+    return pageShell(layout, keyPageStyle(layout), body);
+  });
+}
+
+/** Number of physical pages the answer key spans. */
+function answerKeyPageCount(book, layout) {
+  const n = packAnswerKey(book, layout).length;
+  return n || 1;
+}
+
+/** Back-of-book answer key — first page (kept for API compatibility). */
+function renderAnswerKey(book, layout) {
+  return answerKeyPages(book, layout)[0];
 }
 
 module.exports = {
@@ -319,5 +387,7 @@ module.exports = {
   renderAboutPage,
   renderMoreBooksPage,
   renderAnswerKey,
+  answerKeyPages,
+  answerKeyPageCount,
   pageShell,
 };

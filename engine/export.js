@@ -25,6 +25,8 @@ const {
   renderAboutPage,
   renderMoreBooksPage,
   renderAnswerKey,
+  answerKeyPages,
+  answerKeyPageCount,
 } = require('./matter');
 const { renderCoverHtml, coverDimensions } = require('./cover');
 
@@ -307,7 +309,12 @@ function defaultLeaves(book) {
     }
   }
   book.pages.forEach((pg, i) => leaves.push({ role: 'content', puzzle: pg.puzzle, state: pg.state, src: i }));
-  if (book.answerKey && book.meta.puzzleCount > 0) leaves.push({ role: 'answerkey' });
+  if (book.answerKey && book.meta.puzzleCount > 0) {
+    // The answer key can span several pages; give each its own leaf.
+    const layout = getLayout(book.trimSize, { audience: book.audience, textScale: book.fontScale, fontFamily: book.fontFamily });
+    const n = answerKeyPageCount(book, layout);
+    for (let k = 0; k < n; k++) leaves.push({ role: 'answerkey', akIndex: k });
+  }
   for (const bm of book.backMatter || []) {
     if (bm.kind === 'about' || bm.kind === 'morebooks') {
       leaves.push({ role: 'backmatter', matter: bm, matterKind: bm.kind });
@@ -319,7 +326,7 @@ function defaultLeaves(book) {
 // Render a matter/title/answer-key leaf's base HTML document.
 function renderMatterDoc(book, layout, leaf) {
   if (leaf.role === 'title') return renderTitlePage(book, layout);
-  if (leaf.role === 'answerkey') return renderAnswerKey(book, layout);
+  if (leaf.role === 'answerkey') { const pages = answerKeyPages(book, layout); return pages[leaf.akIndex || 0] || pages[pages.length - 1]; }
   const fm = leaf.matter || {};
   switch (fm.kind) {
     case 'copyright': return renderCopyrightPage(book, layout, fm);

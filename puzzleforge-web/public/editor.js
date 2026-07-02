@@ -71,6 +71,7 @@
   function modelFromPage(p) {
     const m = {
       role: p.role || 'content', matterKind: p.matterKind || null, src: p.src != null ? p.src : null,
+      akIndex: p.akIndex != null ? p.akIndex : null,
       blank: false, type: p.type || '', title: p.title || p.type || '', activity: !!p.activity,
       style: p.style || '', comps: buildComps(p.components || []), elements: [], _border: '', undo: [], redo: [],
     };
@@ -81,7 +82,8 @@
   function applyPlan(plan) {
     const findSrc = (e) => {
       if (e.role === 'frontmatter' || e.role === 'backmatter') return srcPages.find((sp) => sp.role === e.role && sp.matterKind === e.matterKind);
-      if (e.role === 'title' || e.role === 'answerkey') return srcPages.find((sp) => sp.role === e.role);
+      if (e.role === 'answerkey') return srcPages.find((sp) => sp.role === 'answerkey' && (sp.akIndex || 0) === (e.akIndex || 0)) || srcPages.find((sp) => sp.role === 'answerkey');
+      if (e.role === 'title') return srcPages.find((sp) => sp.role === 'title');
       if (e.role === 'content' || (!e.role && e.src != null)) return srcPages.find((sp) => sp.role === 'content' && sp.src === e.src);
       return null;
     };
@@ -95,13 +97,13 @@
   }
   // A user-inserted blank page (empty; can carry text/image overlays).
   function blankModel() {
-    return { role: 'blank', matterKind: null, src: null, blank: true, type: 'bleedguard', title: 'Blank', activity: true, style: '', comps: [], elements: [], _border: '', undo: [], redo: [] };
+    return { role: 'blank', matterKind: null, src: null, akIndex: null, blank: true, type: 'bleedguard', title: 'Blank', activity: true, style: '', comps: [], elements: [], _border: '', undo: [], redo: [] };
   }
   // Deep-copy a page model for duplication (keeps its role/src so export reuses
   // the same source; fresh element ids so overlays are independent).
   function clonePageModel(pm) {
     return {
-      role: pm.role, matterKind: pm.matterKind, src: pm.src, blank: pm.blank, type: pm.type, title: pm.title, activity: pm.activity,
+      role: pm.role, matterKind: pm.matterKind, src: pm.src, akIndex: pm.akIndex, blank: pm.blank, type: pm.type, title: pm.title, activity: pm.activity,
       style: pm.style,
       comps: pm.comps.map((c) => ({ group: 'piece', kind: c.kind, key: c.key, html: c.html, dx: c.dx, dy: c.dy, scale: c.scale, rot: c.rot, hidden: c.hidden, locked: c.locked, baseX: 0, baseY: 0, baseW: 0, baseH: 0 })),
       elements: pm.elements.map((e) => { const { _node, ...r } = e; return { ...r, id: uid++ }; }),
@@ -476,7 +478,8 @@
     if (pm.blank) return { role: 'blank', state };
     if (pm.role === 'content') return { role: 'content', src: pm.src, state };
     if (pm.role === 'frontmatter' || pm.role === 'backmatter') return { role: pm.role, matterKind: pm.matterKind, state };
-    return { role: pm.role, state }; // title, answerkey
+    if (pm.role === 'answerkey') return { role: 'answerkey', akIndex: pm.akIndex || 0, state };
+    return { role: pm.role, state }; // title
   });
   function buildRecipe() { const book = { ...(bookConfig || {}) }; delete book.seed; delete book.pageState; delete book.puzzleforgeBook; return { recipeVersion: 2, kind: 'book', book, seed, pagePlan: buildPagePlan() }; }
   function save() { downloadBlob(new Blob([JSON.stringify(buildRecipe(), null, 2)], { type: 'application/json' }), slug((bookConfig && bookConfig.title) || 'book') + '-book.json'); setStatus('Recipe saved (with layout).', 'ok'); }
