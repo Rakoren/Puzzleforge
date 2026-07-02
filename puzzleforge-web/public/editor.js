@@ -8,7 +8,7 @@
   const $ = (id) => document.getElementById(id);
   const PX_PER_IN = 96, GRID = 24;
   const el = {
-    status: $('status'), main: $('editorMain'), empty: $('emptyState'), pageList: $('pageList'),
+    status: $('status'), main: $('editorMain'), empty: $('emptyState'), pageList: $('pageList'), addBlank: $('addBlank'),
     stageScroll: $('stageScroll'), stageOuter: $('stageOuter'), stageInner: $('stageInner'),
     rulerTop: $('rulerTop'), rulerLeft: $('rulerLeft'),
     undo: $('undo'), redo: $('redo'), zoomOut: $('zoomOut'), zoomIn: $('zoomIn'), zoomFit: $('zoomFit'), zoomLabel: $('zoomLabel'),
@@ -25,7 +25,7 @@
     save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
   };
   let bookId = null, bookConfig = null, seed = null, dims = { usableWidth: 636, usableHeight: 816 };
-  let pageModels = [], pageMeta = [], cur = -1, uid = 1, zoom = 1;
+  let pageModels = [], srcPages = [], pendingPlan = null, cur = -1, uid = 1, zoom = 1;
   let sels = [], clipboard = [];
   let vGuide = null, hGuide = null, gridEl = null, selLayer = null, flowEl = null;
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
@@ -52,17 +52,49 @@
       return { group: 'piece', kind: c.kind, key, html: c.html, dx: 0, dy: 0, scale: 1, rot: 0, hidden: false, locked: false, baseX: 0, baseY: 0, baseW: 0, baseH: 0 };
     });
   }
-  function modelFromPage(p) {
-    const comps = buildComps(p.components || []);
-    const elements = []; let restored = false;
-    const saved = p.state && p.state.layout;
+  // Apply a saved per-page state (layout deltas + overlays + border) onto a model.
+  function restoreState(m, state) {
+    const saved = state && state.layout;
     if (saved) {
       const cm = saved.comp || {};
-      comps.forEach((c) => { const s = cm[c.key]; if (s) Object.assign(c, { dx: num(s.dx, 0), dy: num(s.dy, 0), scale: num(s.scale, 1), rot: num(s.rot, 0), hidden: !!s.hidden, locked: !!s.locked }); });
-      (saved.elements || []).forEach((e) => elements.push({ ...e, group: 'el', id: e.id || uid++ }));
-      restored = true;
+      m.comps.forEach((c) => { const s = cm[c.key]; if (s) Object.assign(c, { dx: num(s.dx, 0), dy: num(s.dy, 0), scale: num(s.scale, 1), rot: num(s.rot, 0), hidden: !!s.hidden, locked: !!s.locked }); });
+      m.elements = (saved.elements || []).map((e) => ({ ...e, group: 'el', id: e.id || uid++ }));
     }
-    return { style: p.style || '', comps, elements, _border: (saved && p.state.border) || '', undo: [], redo: [] };
+    if (state && state.border) m._border = state.border;
+    return m;
+  }
+  function modelFromPage(p, i) {
+    const m = {
+      src: i, blank: false, type: p.type || '', title: p.title || p.type || '', activity: !!p.activity,
+      style: p.style || '', comps: buildComps(p.components || []), elements: [], _border: '', undo: [], redo: [],
+    };
+    return restoreState(m, p.state);
+  }
+  // Rebuild pageModels from a saved page plan (final order, blanks, per-page
+  // state), sourcing real pages fresh from the server's original page list.
+  function applyPlan(plan) {
+    const rebuilt = plan.map((entry) => {
+      if (entry && entry.blank) return restoreState(blankModel(), entry.state);
+      const src = srcPages[entry && entry.src];
+      if (!src) return null;
+      return restoreState(modelFromPage(src, entry.src), entry.state);
+    }).filter(Boolean);
+    if (rebuilt.length) pageModels = rebuilt;
+  }
+  // A user-inserted blank page (empty; can carry text/image overlays).
+  function blankModel() {
+    return { src: null, blank: true, type: 'bleedguard', title: 'Blank', activity: true, style: '', comps: [], elements: [], _border: '', undo: [], redo: [] };
+  }
+  // Deep-copy a page model for duplication (keeps its src so export reuses the
+  // same generated puzzle; fresh element ids so overlays are independent).
+  function clonePageModel(pm) {
+    return {
+      src: pm.src, blank: pm.blank, type: pm.type, title: pm.title, activity: pm.activity,
+      style: pm.style,
+      comps: pm.comps.map((c) => ({ group: 'piece', kind: c.kind, key: c.key, html: c.html, dx: c.dx, dy: c.dy, scale: c.scale, rot: c.rot, hidden: c.hidden, locked: c.locked, baseX: 0, baseY: 0, baseW: 0, baseH: 0 })),
+      elements: pm.elements.map((e) => { const { _node, ...r } = e; return { ...r, id: uid++ }; }),
+      _border: pm._border, undo: [], redo: [],
+    };
   }
 
   async function openBook(payload) {
@@ -71,7 +103,9 @@
       const res = await fetch('/api/book/editor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Could not open the book');
       bookId = data.bookId; seed = data.seed; dims = data.dims;
-      pageModels = (data.pages || []).map(modelFromPage); pageMeta = data.pages || [];
+      srcPages = data.pages || [];
+      pageModels = srcPages.map((p, i) => modelFromPage(p, i));
+      if (pendingPlan) { applyPlan(pendingPlan); pendingPlan = null; }
       el.empty.hidden = true; el.main.hidden = false;
       await loadBorderStyles(); buildPageList(); cur = 0; zoom = fitScale(); renderPage();
       setStatus(`Editing “${data.title}” — ${pageModels.length} pages.`, 'ok');
@@ -81,12 +115,63 @@
     if (el.border.options.length > 1) return;
     try { const meta = await (await fetch('/api/meta')).json(); for (const b of meta.borderStyles || []) { const o = document.createElement('option'); o.value = b.id; o.textContent = b.label; el.border.appendChild(o); } } catch (_) { /* */ }
   }
+  let thumbSeq = 0;
+  // A scaled, non-interactive snapshot of a page — the Publisher-style page rail.
+  function paintThumb(pm) {
+    const THUMB_W = 108, sc = THUMB_W / dims.usableWidth;
+    const wrap = document.createElement('div'); wrap.className = 'thumb';
+    wrap.style.width = THUMB_W + 'px'; wrap.style.height = Math.round(dims.usableHeight * sc) + 'px';
+    const canvas = document.createElement('div'); canvas.className = 'thumb-canvas';
+    const id = 'thm' + (++thumbSeq); canvas.id = id;
+    canvas.style.width = dims.usableWidth + 'px'; canvas.style.height = dims.usableHeight + 'px'; canvas.style.transform = `scale(${sc})`;
+    if (pm.style) { const st = document.createElement('style'); st.textContent = scopeCss(pm.style, '#' + id); canvas.appendChild(st); }
+    const flow = document.createElement('div'); flow.className = 'pf-flow';
+    pm.comps.forEach((c) => { if (c.hidden) return; const n = document.createElement('div'); n.className = 'pf-piece'; n.innerHTML = c.html; if (c.dx || c.dy || c.scale !== 1 || c.rot) n.style.transform = `translate(${c.dx}px,${c.dy}px) rotate(${c.rot}deg) scale(${c.scale})`; flow.appendChild(n); });
+    canvas.appendChild(flow);
+    pm.elements.slice().sort((a, b) => num(a.z, 0) - num(b.z, 0)).forEach((e) => { const n = document.createElement('div'); n.className = 'pf-node'; n.style.transform = `translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)})`; n.innerHTML = elHtml(e); canvas.appendChild(n); });
+    wrap.appendChild(canvas);
+    return wrap;
+  }
   function buildPageList() {
     el.pageList.innerHTML = '';
-    pageMeta.forEach((p, i) => { const li = document.createElement('li'); li.className = 'page-item'; li.textContent = `${i + 1}. ${labelFor(p)}`; li.addEventListener('click', () => selectPage(i)); el.pageList.appendChild(li); });
+    pageModels.forEach((pm, i) => {
+      const li = document.createElement('li'); li.className = 'page-item';
+      const thumb = paintThumb(pm); thumb.classList.add('page-thumb'); thumb.addEventListener('click', () => selectPage(i));
+      const bar = document.createElement('div'); bar.className = 'page-bar';
+      const lbl = document.createElement('span'); lbl.className = 'page-label'; lbl.textContent = `${i + 1}. ${labelFor(pm)}`;
+      lbl.addEventListener('click', () => selectPage(i));
+      const ops = document.createElement('span'); ops.className = 'page-ops';
+      const mk = (txt, title, fn, cls) => { const b = document.createElement('button'); b.className = 'pageop' + (cls ? ' ' + cls : ''); b.textContent = txt; b.title = title; b.addEventListener('click', (ev) => { ev.stopPropagation(); fn(i); }); return b; };
+      ops.appendChild(mk('↑', 'Move up', (x) => movePage(x, -1)));
+      ops.appendChild(mk('↓', 'Move down', (x) => movePage(x, 1)));
+      ops.appendChild(mk('⧉', 'Duplicate page', duplicatePage));
+      ops.appendChild(mk('✕', 'Delete page', deletePage, 'del'));
+      bar.appendChild(lbl); bar.appendChild(ops);
+      li.appendChild(thumb); li.appendChild(bar); el.pageList.appendChild(li);
+    });
+    highlightPage();
   }
-  const labelFor = (p) => ({ bleedguard: 'Blank (bleed guard)', breather: 'Breather' }[p.type] || p.title || p.type);
-  function highlightPage() { [...el.pageList.children].forEach((li, i) => li.classList.toggle('active', i === cur)); }
+  const labelFor = (pm) => pm.blank ? 'Blank page' : ({ bleedguard: 'Blank (bleed guard)', breather: 'Breather' }[pm.type] || pm.title || pm.type);
+  function highlightPage() {
+    [...el.pageList.children].forEach((li, i) => li.classList.toggle('active', i === cur));
+    const active = el.pageList.children[cur]; if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
+  }
+
+  // --- page management ---
+  function movePage(i, dir) {
+    const j = i + dir; if (j < 0 || j >= pageModels.length) return;
+    const t = pageModels[i]; pageModels[i] = pageModels[j]; pageModels[j] = t;
+    if (cur === i) cur = j; else if (cur === j) cur = i;
+    buildPageList(); renderPage();
+  }
+  function deletePage(i) {
+    if (pageModels.length <= 1) { setStatus('A book needs at least one page.', 'err'); return; }
+    pageModels.splice(i, 1);
+    if (cur > i) cur--; else if (cur === i && cur >= pageModels.length) cur = pageModels.length - 1;
+    buildPageList(); renderPage();
+  }
+  function duplicatePage(i) { pageModels.splice(i + 1, 0, clonePageModel(pageModels[i])); cur = i + 1; buildPageList(); renderPage(); }
+  function insertBlankAfterCurrent() { const at = cur < 0 ? pageModels.length : cur + 1; pageModels.splice(at, 0, blankModel()); cur = at; buildPageList(); renderPage(); }
 
   // --- zoom / rulers ---
   function fitScale() { const aw = (el.stageScroll.clientWidth || 700) - 24, ah = window.innerHeight - 200; return Math.max(0.15, Math.min(aw / dims.usableWidth, ah / dims.usableHeight, 1.5)); }
@@ -289,9 +374,12 @@
   function resetLayout() { pushUndo(); const pm = pageModels[cur]; pm.comps.forEach((c) => { c.hidden = false; c.dx = 0; c.dy = 0; c.scale = 1; c.rot = 0; c.locked = false; }); pm.elements = []; renderPage(); }
   function setBorder() { pageModels[cur]._border = el.border.value; }
   async function reroll() {
+    const pm = pageModels[cur];
+    if (!pm || pm.blank || pm.src == null) { setStatus('Blank pages have no puzzle to reroll.', 'err'); return; }
+    if (pm.activity) { setStatus('Activity pages have no puzzle to reroll.', 'err'); return; }
     el.reroll.disabled = true; setStatus('Rerolling…', 'busy');
     try {
-      const res = await fetch('/api/book/reroll', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookId, index: cur }) });
+      const res = await fetch('/api/book/reroll', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookId, index: pm.src }) });
       const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Reroll failed');
       const pm = pageModels[cur]; const fresh = buildComps(data.components || []); const byKey = {}; pm.comps.forEach((c) => (byKey[c.key] = c));
       pm.style = data.style || pm.style; pm.comps = fresh.map((f) => { const old = byKey[f.key]; return old ? { ...f, dx: old.dx, dy: old.dy, scale: old.scale, rot: old.rot, hidden: old.hidden, locked: old.locked } : f; });
@@ -302,18 +390,20 @@
 
   // --- serialize ---
   const round2 = (n) => Math.round(num(n, 0) * 100) / 100;
-  function pageState(i) {
-    const pm = pageModels[i]; const comp = {};
+  function pageStateOf(pm) {
+    const comp = {};
     pm.comps.forEach((c) => { comp[c.key] = { dx: Math.round(c.dx), dy: Math.round(c.dy), scale: round2(c.scale), rot: round2(c.rot), hidden: c.hidden, locked: c.locked }; });
     const elements = pm.elements.map((e) => ({ kind: e.kind, x: Math.round(e.x), y: Math.round(e.y), scale: round2(e.scale), rot: round2(e.rot), z: e.z, text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w, src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV }));
     const st = { layout: { comp, elements } }; if (pm._border) st.border = pm._border; return st;
   }
-  const allPageState = () => pageModels.map((_, i) => pageState(i));
-  function buildRecipe() { const book = { ...(bookConfig || {}) }; delete book.seed; delete book.pageState; delete book.puzzleforgeBook; return { recipeVersion: 2, kind: 'book', book, seed, pageState: allPageState() }; }
+  // Per-page arrangement for export/recipe: keeps the final page order, marks
+  // inserted blanks, and references each real page's original book index (src).
+  const buildPagePlan = () => pageModels.map((pm) => (pm.blank ? { blank: true, state: pageStateOf(pm) } : { src: pm.src, state: pageStateOf(pm) }));
+  function buildRecipe() { const book = { ...(bookConfig || {}) }; delete book.seed; delete book.pageState; delete book.puzzleforgeBook; return { recipeVersion: 2, kind: 'book', book, seed, pagePlan: buildPagePlan() }; }
   function save() { downloadBlob(new Blob([JSON.stringify(buildRecipe(), null, 2)], { type: 'application/json' }), slug((bookConfig && bookConfig.title) || 'book') + '-book.json'); setStatus('Recipe saved (with layout).', 'ok'); }
   async function exportPdf() {
     setStatus('Rendering PDF…', 'busy'); el.exportPdf.disabled = true;
-    try { const body = bookId ? { bookId, pageState: allPageState() } : { config: bookConfig, pageState: allPageState() };
+    try { const body = bookId ? { bookId, pagePlan: buildPagePlan() } : { config: bookConfig, pagePlan: buildPagePlan() };
       const res = await fetch('/api/book/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Export failed'); }
       downloadBlob(await res.blob(), slug((bookConfig && bookConfig.title) || 'book') + '.pdf'); setStatus('PDF exported.', 'ok');
@@ -339,6 +429,7 @@
     el.border.addEventListener('change', setBorder);
     el.gridToggle.addEventListener('change', () => { if (gridEl) gridEl.style.display = el.gridToggle.checked ? '' : 'none'; });
     el.reroll.addEventListener('click', reroll); el.resetLayout.addEventListener('click', resetLayout);
+    el.addBlank.addEventListener('click', insertBlankAfterCurrent);
     el.undo.addEventListener('click', undo); el.redo.addEventListener('click', redo);
     el.zoomIn.addEventListener('click', () => setZoom(zoom * 1.2)); el.zoomOut.addEventListener('click', () => setZoom(zoom / 1.2)); el.zoomFit.addEventListener('click', () => setZoom(fitScale()));
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
@@ -367,7 +458,21 @@
   }
   function onLoadRecipe(ev) {
     const file = ev.target.files && ev.target.files[0]; if (!file) return; const reader = new FileReader();
-    reader.onload = () => { try { const raw = JSON.parse(reader.result); const v2 = raw && raw.recipeVersion === 2 ? raw : { book: raw, seed: null, pageState: [] }; bookConfig = { ...(v2.book || {}) }; if (v2.seed != null) bookConfig.seed = v2.seed; if (Array.isArray(v2.pageState) && v2.pageState.length) bookConfig.pageState = v2.pageState; openBook({ config: bookConfig }); } catch (_) { setStatus('That file is not a valid book recipe.', 'err'); } ev.target.value = ''; };
+    reader.onload = () => {
+      try {
+        const raw = JSON.parse(reader.result);
+        const v2 = raw && raw.recipeVersion === 2 ? raw : { book: raw, seed: null };
+        bookConfig = { ...(v2.book || {}) }; if (v2.seed != null) bookConfig.seed = v2.seed;
+        if (Array.isArray(v2.pagePlan) && v2.pagePlan.length) {
+          // Structural plan: assemble clean pages, then rebuild the arrangement.
+          pendingPlan = v2.pagePlan;
+        } else if (Array.isArray(v2.pageState) && v2.pageState.length) {
+          bookConfig.pageState = v2.pageState; // legacy recipes (order unchanged)
+        }
+        openBook({ config: bookConfig });
+      } catch (_) { setStatus('That file is not a valid book recipe.', 'err'); }
+      ev.target.value = '';
+    };
     reader.readAsText(file);
   }
   init();

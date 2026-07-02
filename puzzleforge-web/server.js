@@ -313,8 +313,10 @@ app.post('/api/book/pdf', async (req, res) => {
     let book = body.bookId && bookCache.get(body.bookId);
     if (!book) book = pf.assembleBook(body.config || {});
     // The Page Editor sends live per-page state (decorations + per-page border)
-    // to apply onto the cached (possibly rerolled) book before rendering.
-    applyPageState(book, body.pageState);
+    // to apply onto the cached (possibly rerolled) book before rendering. A
+    // pagePlan additionally reorders / inserts blanks / deletes / duplicates.
+    if (Array.isArray(body.pagePlan)) book = applyPagePlan(book, body.pagePlan);
+    else applyPageState(book, body.pageState);
     const outPath = path.join(os.tmpdir(), `pf-book-${crypto.randomUUID()}.pdf`);
     await pf.exportBookPdf(book, { outPath });
     const pdf = fs.readFileSync(outPath);
@@ -365,6 +367,48 @@ function applyPageState(book, pageState) {
   book.pages.forEach((pg, i) => {
     if (pageState[i] && typeof pageState[i] === 'object') pg.state = pageState[i];
   });
+}
+
+// Build a render-ready book VIEW from an editor "page plan": the final page
+// order, with inserted blanks, deletions, and duplicates. Each entry is either
+// { blank:true, state } (a fresh blank page) or { src, state } (reuse the
+// original content page at index `src`, carrying its own per-page state). Page
+// numbers and answer-key metadata are recomputed to match the new arrangement.
+// Returns a shallow copy so the cached book keeps its original page order (the
+// client's `src` indices always reference that pristine order).
+function applyPagePlan(book, plan) {
+  if (!Array.isArray(plan) || !book || !Array.isArray(book.pages)) return book;
+  const orig = book.pages;
+  const fmCount = (book.frontMatter && book.frontMatter.length) || 0;
+  let page = 1 + fmCount; // title page + front matter precede the first content page
+  const pages = [];
+  for (const entry of plan) {
+    if (!entry || typeof entry !== 'object') continue;
+    let puzzle;
+    if (entry.blank) {
+      puzzle = pf.generate({ type: 'bleedguard', label: '' });
+    } else {
+      const src = orig[entry.src];
+      if (!src) continue;
+      puzzle = src.puzzle;
+    }
+    page += 1;
+    pages.push({ puzzle, pageNumber: page, state: entry.state && typeof entry.state === 'object' ? entry.state : null });
+  }
+  if (!pages.length) return book;
+  const byType = {};
+  for (const p of pages) byType[p.puzzle.type] = (byType[p.puzzle.type] || 0) + 1;
+  return {
+    ...book,
+    pages,
+    puzzles: pages.map((p) => p.puzzle),
+    meta: {
+      ...book.meta,
+      pageCount: pages.length,
+      puzzleCount: pages.filter((p) => !pf.isActivityType(p.puzzle.type)).length,
+      byType,
+    },
+  };
 }
 
 // Render one content page's puzzle HTML (single-page doc) at the book's trim,
