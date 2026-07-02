@@ -26,6 +26,9 @@
     dupObj: $('dupObj'), resetPos: $('resetPos'), hideObj: $('hideObj'), deleteObj: $('deleteObj'),
     border: $('border'), snapToggle: $('snapToggle'), gridToggle: $('gridToggle'),
     reroll: $('reroll'), resetLayout: $('resetLayout'), addBlankSide: $('addBlankSide'), darkToggle: $('darkToggle'),
+    insertTpl: $('insertTpl'), insertTplSide: $('insertTplSide'), savePageTpl: $('savePageTpl'),
+    tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
+    tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
     save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
   };
   let bookId = null, bookConfig = null, seed = null, dims = { usableWidth: 636, usableHeight: 816 };
@@ -36,6 +39,7 @@
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
   const setStatus = (t, k) => { el.status.textContent = t || ''; el.status.className = 'status editor-status' + (k ? ' ' + k : ''); };
   const slug = (s) => (s || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
+  const escHtml = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   function scopeCss(css, scope) {
     css = css.replace(/@page[^{]*\{[^}]*\}/gi, ''); let out = ''; const re = /([^{}]+)\{([^}]*)\}/g; let m;
@@ -179,7 +183,7 @@
     });
     highlightPage();
   }
-  const labelFor = (pm) => pm.blank ? 'Blank page' : ({ bleedguard: 'Blank (bleed guard)', breather: 'Breather' }[pm.type] || pm.title || pm.type);
+  const labelFor = (pm) => pm.blank ? (pm.title && pm.title !== 'Blank' ? pm.title : 'Blank page') : ({ bleedguard: 'Blank (bleed guard)', breather: 'Breather' }[pm.type] || pm.title || pm.type);
   function highlightPage() {
     [...el.pageList.children].forEach((li, i) => li.classList.toggle('active', i === cur));
     const active = el.pageList.children[cur]; if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
@@ -200,6 +204,114 @@
   }
   function duplicatePage(i) { pageModels.splice(i + 1, 0, clonePageModel(pageModels[i])); cur = i + 1; buildPageList(); renderPage(); }
   function insertBlankAfterCurrent() { const at = cur < 0 ? pageModels.length : cur + 1; pageModels.splice(at, 0, blankModel()); cur = at; buildPageList(); renderPage(); }
+
+  // --- page templates -------------------------------------------------------
+  // Matter and layout pages live in the editor as templates: inserting one
+  // drops a fresh page whose content is ordinary, editable text/shape objects.
+  const tEl = (o) => ({ group: 'el', kind: 'text', scale: 1, rot: 0, z: 100, color: '#222222', align: 'left', fontSize: 24, w: 240, ...o });
+  const sEl = (o) => ({ group: 'el', kind: 'shape', scale: 1, rot: 0, z: 90, fill: 'none', stroke: '#222222', strokeW: 2, ...o });
+  const R = Math.round;
+  const BUILTIN_TPLS = [
+    { id: 'copyright', name: 'Copyright', desc: 'Legal boilerplate, bottom of page', make: (c) => {
+      const fs = Math.max(11, R(c.W / 46)); const x = R(c.W * 0.08), w = R(c.W * 0.84), y0 = R(c.H * 0.72);
+      return [
+        tEl({ text: `Copyright © ${c.year} ${c.author || c.title || 'Your Name'}`, x, y: y0, w, fontSize: fs }),
+        tEl({ text: 'All rights reserved.', x, y: y0 + R(fs * 1.8), w, fontSize: fs }),
+        tEl({ text: 'No part of this publication may be reproduced, distributed, or transmitted in any form or by any means without the prior written permission of the publisher, except for brief quotations in reviews.', x, y: y0 + R(fs * 3.8), w, fontSize: Math.max(9, R(fs * 0.86)), color: '#555555' }),
+      ];
+    } },
+    { id: 'belongsTo', name: 'This Book Belongs To', desc: 'Kids ownership page, centered', make: (c) => {
+      const fs = Math.max(20, R(c.W / 16));
+      return [
+        tEl({ text: 'This Book Belongs To', x: 0, y: R(c.H * 0.32), w: c.W, fontSize: fs, align: 'center', bold: true }),
+        sEl({ shape: 'line', x: R(c.W * 0.15), y: R(c.H * 0.46), w: R(c.W * 0.7), h: 6, stroke: '#000000', strokeW: 3, fill: 'none' }),
+        tEl({ text: '★ ★ ★', x: 0, y: R(c.H * 0.54), w: c.W, fontSize: R(fs * 0.9), align: 'center' }),
+      ];
+    } },
+    { id: 'intro', name: 'Introduction / Welcome', desc: 'Heading + a welcome paragraph', make: (c) => {
+      const h = Math.max(22, R(c.W / 14)); const x = R(c.W * 0.08), w = R(c.W * 0.84), y0 = R(c.H * 0.14);
+      return [
+        tEl({ text: 'Welcome!', x, y: y0, w, fontSize: h, bold: true }),
+        tEl({ text: 'Grab a pencil and get ready for hours of fun. Take your time — and if you get stuck, the answers are in the back. Happy puzzling!', x, y: y0 + R(h * 1.8), w, fontSize: Math.max(13, R(c.W / 40)) }),
+      ];
+    } },
+    { id: 'about', name: 'About the Author', desc: 'Heading + short bio', make: (c) => {
+      const h = Math.max(20, R(c.W / 15)); const y0 = R(c.H * 0.12);
+      return [
+        tEl({ text: 'About the Author', x: 0, y: y0, w: c.W, fontSize: h, align: 'center', bold: true }),
+        tEl({ text: `${c.author || 'Your name'} makes puzzle and activity books for all ages. Write a short, friendly bio here.`, x: R(c.W * 0.12), y: y0 + R(h * 2), w: R(c.W * 0.76), fontSize: Math.max(13, R(c.W / 40)), align: 'center' }),
+      ];
+    } },
+    { id: 'morebooks', name: 'More Books', desc: 'Cross-promo list page', make: (c) => {
+      const h = Math.max(20, R(c.W / 15)); const y0 = R(c.H * 0.14);
+      return [
+        tEl({ text: "More Books You'll Love", x: 0, y: y0, w: c.W, fontSize: h, align: 'center', bold: true }),
+        tEl({ text: '•  Title One\n•  Title Two\n•  Title Three', x: 0, y: y0 + R(h * 2.2), w: c.W, fontSize: Math.max(14, R(c.W / 34)), align: 'center' }),
+      ];
+    } },
+    { id: 'section', name: 'Section Divider', desc: 'Big centered chapter title', make: (c) => (
+      [tEl({ text: 'Chapter One', x: 0, y: R(c.H * 0.44), w: c.W, fontSize: Math.max(30, R(c.W / 9)), align: 'center', bold: true })]
+    ) },
+  ];
+
+  function openTplPicker() { if (el.main.hidden) return; renderTplPicker(); el.tplModal.hidden = false; }
+  function closeTplPicker() { el.tplModal.hidden = true; }
+  function tplCard(name, desc, onPick, onDelete) {
+    const card = document.createElement('div'); card.className = 'pf-tpl-card';
+    const pick = document.createElement('button'); pick.className = 'pf-tpl-pick';
+    pick.innerHTML = `<span class="pf-tpl-name">${escHtml(name)}</span><span class="pf-tpl-desc">${escHtml(desc)}</span>`;
+    pick.addEventListener('click', onPick); card.appendChild(pick);
+    if (onDelete) { const d = document.createElement('button'); d.className = 'pf-tpl-del'; d.textContent = '✕'; d.title = 'Delete template'; d.addEventListener('click', (e) => { e.stopPropagation(); onDelete(); }); card.appendChild(d); }
+    return card;
+  }
+  function renderTplPicker() {
+    el.tplBuiltin.innerHTML = '';
+    BUILTIN_TPLS.forEach((t) => el.tplBuiltin.appendChild(tplCard(t.name, t.desc, () => { insertBuiltinTpl(t); closeTplPicker(); })));
+    const saved = loadSavedTemplates();
+    el.tplSaved.innerHTML = '';
+    el.tplSavedEmpty.hidden = saved.length > 0;
+    el.tplSavedCount.textContent = saved.length ? `(${saved.length})` : '';
+    saved.forEach((t) => el.tplSaved.appendChild(tplCard(
+      t.name, `${t.elements.length} object${t.elements.length !== 1 ? 's' : ''}`,
+      () => { insertSavedTpl(t); closeTplPicker(); },
+      () => { deleteSavedTemplate(t.id); renderTplPicker(); }
+    )));
+  }
+  function insertBuiltinTpl(t) {
+    const ctx = { W: dims.usableWidth, H: dims.usableHeight, title: (bookConfig && bookConfig.title) || '', author: (bookConfig && bookConfig.author) || '', year: new Date().getFullYear() };
+    insertPageWithEls(t.make(ctx).map((e) => ({ ...e, id: uid++ })), t.name);
+  }
+  function insertSavedTpl(t) {
+    const sx = dims.usableWidth / (t.refW || dims.usableWidth), sy = dims.usableHeight / (t.refH || dims.usableHeight);
+    insertPageWithEls((t.elements || []).map((e) => scaleEl(e, sx, sy)), t.name);
+  }
+  function scaleEl(e, sx, sy) {
+    const { _node, ...r } = e; const o = { ...r, group: 'el', id: uid++ };
+    o.x = R(num(e.x, 0) * sx); o.y = R(num(e.y, 0) * sy);
+    if (e.kind === 'text') { if (e.w != null) o.w = R(num(e.w, 240) * sx); if (e.fontSize != null) o.fontSize = Math.max(6, R(num(e.fontSize, 24) * sx)); }
+    else if (e.kind === 'image') { if (e.width != null) o.width = R(num(e.width, 160) * sx); }
+    else if (e.kind === 'shape') { if (e.w != null) o.w = R(num(e.w, 160) * sx); if (e.h != null) o.h = R(num(e.h, 120) * sy); }
+    return o;
+  }
+  function insertPageWithEls(els, name) {
+    const m = blankModel(); m.title = name || 'Template'; m.elements = els;
+    const at = cur < 0 ? pageModels.length : cur + 1;
+    pageModels.splice(at, 0, m); cur = at; buildPageList(); renderPage();
+    setStatus(`Inserted “${name}”.`, 'ok');
+  }
+  function savePageAsTemplate() {
+    const pm = pageModels[cur];
+    if (!pm || !pm.elements || !pm.elements.length) { setStatus('Add text or shapes to this page first, then save it as a template.', 'err'); return; }
+    const name = (window.prompt('Name this template:', pm.title && pm.title !== 'Blank' ? pm.title : 'My template') || '').trim();
+    if (!name) return;
+    const tpl = { id: 't' + Date.now().toString(36), name, refW: R(dims.usableWidth), refH: R(dims.usableHeight),
+      elements: pm.elements.map((e) => { const { _node, id, ...r } = e; return r; }) };
+    const list = loadSavedTemplates(); list.push(tpl); saveSavedTemplates(list);
+    setStatus(`Saved template “${name}”. Find it under Insert → Page template.`, 'ok');
+  }
+  function loadSavedTemplates() { try { return JSON.parse(localStorage.getItem('pf_templates') || '[]'); } catch (_) { return []; } }
+  function saveSavedTemplates(l) { try { localStorage.setItem('pf_templates', JSON.stringify(l)); } catch (_) { setStatus('Could not save the template (browser storage full?).', 'err'); } }
+  function deleteSavedTemplate(id) { saveSavedTemplates(loadSavedTemplates().filter((t) => t.id !== id)); }
 
   // --- zoom / rulers ---
   function fitScale() { const aw = (el.stageScroll.clientWidth || 700) - 24, ah = window.innerHeight - 200; return Math.max(0.15, Math.min(aw / dims.usableWidth, ah / dims.usableHeight, 1.5)); }
@@ -757,6 +869,11 @@
     el.reroll.addEventListener('click', reroll); el.resetLayout.addEventListener('click', resetLayout);
     el.addBlank.addEventListener('click', insertBlankAfterCurrent);
     if (el.addBlankSide) el.addBlankSide.addEventListener('click', insertBlankAfterCurrent);
+    if (el.insertTpl) el.insertTpl.addEventListener('click', openTplPicker);
+    if (el.insertTplSide) el.insertTplSide.addEventListener('click', openTplPicker);
+    if (el.savePageTpl) el.savePageTpl.addEventListener('click', savePageAsTemplate);
+    if (el.tplClose) el.tplClose.addEventListener('click', closeTplPicker);
+    if (el.tplModal) el.tplModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeTplPicker(); });
     el.undo.addEventListener('click', undo); el.redo.addEventListener('click', redo);
     el.zoomIn.addEventListener('click', () => setZoom(zoom * 1.2)); el.zoomOut.addEventListener('click', () => setZoom(zoom / 1.2)); el.zoomFit.addEventListener('click', () => setZoom(fitScale()));
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
@@ -782,6 +899,7 @@
     else { el.empty.hidden = false; setStatus('Open a book from the Book Builder, or load a recipe.', ''); }
   }
   function onKey(e) {
+    if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
     if (el.main.hidden) return; const ae = document.activeElement, tag = (ae && ae.tagName) || '';
     if (/INPUT|SELECT|TEXTAREA/.test(tag) || (ae && ae.isContentEditable)) return;
     const ctrl = e.ctrlKey || e.metaKey;

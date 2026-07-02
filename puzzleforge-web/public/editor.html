@@ -87,6 +87,8 @@
         <div class="rgroup">
           <div class="rgroup-body">
             <button id="addBlank" class="ghost" title="Insert a blank page after the current one">＋ Blank page</button>
+            <button id="insertTpl" class="ghost" title="Insert a page from a template">＋ Page template…</button>
+            <button id="savePageTpl" class="ghost" title="Save this page's layout as a reusable template">⧉ Save as template…</button>
           </div>
           <div class="rgroup-name">Pages</div>
         </div>
@@ -242,6 +244,7 @@
       <ol id="pageList" class="page-list"></ol>
       <div class="page-add">
         <button id="addBlankSide" class="ghost" title="Insert a blank page after the current one">+ Blank page</button>
+        <button id="insertTplSide" class="ghost" title="Insert a page from a template">+ Page template…</button>
       </div>
       <p class="hint">Use ↑ ↓ to reorder, ⧉ to duplicate, ✕ to delete. Insert blank pages to
         keep coloring/drawing backs empty and lay out your adventure book by hand.</p>
@@ -264,6 +267,25 @@
       <b>Open recipe</b> above to load a saved book.</p>
     <p class="hint">Drag to move; ○ handle resizes. Arrow keys nudge (Shift = 10px).
       Ctrl+Z/Y undo/redo, Ctrl+C/V/D copy/paste/duplicate. Export composites everything at print resolution.</p>
+  </div>
+
+  <!-- Page-template picker -->
+  <div class="pf-modal" id="tplModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box" role="dialog" aria-modal="true" aria-labelledby="tplModalTitle">
+      <div class="pf-modal-head">
+        <h2 id="tplModalTitle">Insert page template</h2>
+        <button class="iconbtn" id="tplClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub">Drops a new page after the current one. Everything is editable — type over the
+        text, move it, or delete what you don't want.</p>
+      <h3 class="pf-tpl-group">Built-in</h3>
+      <div class="pf-tpl-grid" id="tplBuiltin"></div>
+      <h3 class="pf-tpl-group">Your saved templates <span id="tplSavedCount" class="pf-tpl-count"></span></h3>
+      <div class="pf-tpl-grid" id="tplSaved"></div>
+      <p class="pf-modal-sub" id="tplSavedEmpty">No saved templates yet. Build a page, then use
+        <b>Save as template…</b> to reuse it here.</p>
+    </div>
   </div>
 
   <script src="element-html.js"></script>
