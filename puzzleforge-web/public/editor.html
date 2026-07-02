@@ -76,6 +76,16 @@
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
+            <button class="iconbtn shape-btn" data-shape="rect" title="Rectangle">▭</button>
+            <button class="iconbtn shape-btn" data-shape="ellipse" title="Ellipse">◯</button>
+            <button class="iconbtn shape-btn" data-shape="triangle" title="Triangle">△</button>
+            <button class="iconbtn shape-btn" data-shape="star" title="Star">☆</button>
+            <button class="iconbtn shape-btn" data-shape="line" title="Line">─</button>
+          </div>
+          <div class="rgroup-name">Shapes</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
             <button id="addBlank" class="ghost" title="Insert a blank page after the current one">＋ Blank page</button>
           </div>
           <div class="rgroup-name">Pages</div>
@@ -85,6 +95,7 @@
             <label class="field compact"><span>Border override</span>
               <select id="border"><option value="">(book default)</option></select>
             </label>
+            <button id="borderAll" class="ghost" title="Use this border on every page">Apply to all pages</button>
           </div>
           <div class="rgroup-name">Decoration</div>
         </div>
@@ -138,6 +149,8 @@
             <div class="rgroup-body">
               <label class="m"><span>X</span><input id="mX" type="number"></label>
               <label class="m"><span>Y</span><input id="mY" type="number"></label>
+              <label class="m" id="mWField"><span>W</span><input id="mW" type="number" min="8"></label>
+              <label class="m" id="mHField"><span>H</span><input id="mH" type="number" min="4"></label>
               <label class="m"><span>Size %</span><input id="mScale" type="number" min="15" max="800"></label>
               <label class="m"><span>Angle°</span><input id="mRot" type="number" min="-180" max="180"></label>
             </div>
@@ -145,16 +158,44 @@
           </div>
           <div class="rgroup" id="textProps">
             <div class="rgroup-body">
-              <label class="m"><span>Font size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
+              <label class="m"><span>Font</span>
+                <select id="fontFamily">
+                  <option value="sans">Sans</option>
+                  <option value="serif">Serif</option>
+                  <option value="mono">Mono</option>
+                  <option value="hand">Handwritten</option>
+                </select>
+              </label>
+              <label class="m"><span>Size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
               <label class="m"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
-              <label class="m" id="alignField"><span>Text align</span>
+              <label class="m"><span>Style</span>
+                <span class="btnrow">
+                  <button id="boldBtn" class="iconbtn tstyle" title="Bold"><b>B</b></button>
+                  <button id="italicBtn" class="iconbtn tstyle" title="Italic"><i>I</i></button>
+                  <button id="underBtn" class="iconbtn tstyle" title="Underline"><u>U</u></button>
+                </span>
+              </label>
+              <label class="m" id="alignField"><span>Align</span>
                 <select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
               </label>
             </div>
             <div class="rgroup-name">Text</div>
           </div>
+          <div class="rgroup" id="shapeProps">
+            <div class="rgroup-body">
+              <label class="m"><span>Fill</span><input id="fillColor" type="color" value="#ffd43b"></label>
+              <label class="m"><span>Outline</span><input id="strokeColor" type="color" value="#222222"></label>
+              <label class="m"><span>Line px</span><input id="strokeW" type="number" min="0" max="40" value="2"></label>
+              <label class="m"><span>&nbsp;</span>
+                <label class="checkbox"><input type="checkbox" id="noFill"> No fill</label>
+              </label>
+            </div>
+            <div class="rgroup-name">Shape</div>
+          </div>
           <div class="rgroup">
             <div class="rgroup-body">
+              <button id="groupBtn" class="ghost" title="Group (Ctrl+G)">⧈ Group</button>
+              <button id="ungroupBtn" class="ghost" title="Ungroup (Ctrl+Shift+G)">⧉ Ungroup</button>
               <button id="resetPos" class="ghost">Reset size</button>
               <button id="hideObj" class="ghost">Hide piece</button>
             </div>
@@ -225,6 +266,7 @@
       Ctrl+Z/Y undo/redo, Ctrl+C/V/D copy/paste/duplicate. Export composites everything at print resolution.</p>
   </div>
 
+  <script src="element-html.js"></script>
   <script src="editor.js"></script>
 </body>
 </html>

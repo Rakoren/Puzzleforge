@@ -401,6 +401,36 @@ body.theme-dark {
 .pf-textbox { min-width: 20px; }
 .pf-sel-layer { position: absolute; inset: 0; pointer-events: none; z-index: 997; }
 .pf-selbox { position: absolute; top: 0; left: 0; transform-origin: top left; outline: 1.5px solid var(--brand); }
+/* 8-point resize handles */
+.pf-h { position: absolute; width: 10px; height: 10px; background: #fff; border: 1.5px solid var(--brand); border-radius: 2px; pointer-events: auto; }
+.pf-h[data-d=nw] { left: -6px; top: -6px; cursor: nwse-resize; }
+.pf-h[data-d=n]  { left: calc(50% - 5px); top: -6px; cursor: ns-resize; }
+.pf-h[data-d=ne] { right: -6px; top: -6px; cursor: nesw-resize; }
+.pf-h[data-d=e]  { right: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+.pf-h[data-d=se] { right: -6px; bottom: -6px; cursor: nwse-resize; }
+.pf-h[data-d=s]  { left: calc(50% - 5px); bottom: -6px; cursor: ns-resize; }
+.pf-h[data-d=sw] { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.pf-h[data-d=w]  { left: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+/* rotate handle above the selection */
+.pf-rot-stem { position: absolute; left: 50%; top: -22px; width: 1.5px; height: 22px; background: var(--brand); pointer-events: none; }
+.pf-rot { position: absolute; left: calc(50% - 7px); top: -34px; width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; border: 1.5px solid var(--brand); cursor: grab; pointer-events: auto; }
+.pf-rot:active { cursor: grabbing; }
+/* marquee (rubber-band) selection */
+.pf-marquee { position: absolute; border: 1px dashed var(--brand); background: rgba(59,91,219,.08); z-index: 996; pointer-events: none; }
+/* right-click context menu */
+.pf-ctx { position: fixed; z-index: 2000; min-width: 170px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; box-shadow: 0 8px 28px rgba(10,14,25,.22); padding: 5px; display: flex; flex-direction: column; }
+.pf-ctx button { border: none; background: transparent; text-align: left; padding: 7px 12px; font-size: 13px; color: var(--ink); border-radius: 7px; cursor: pointer; }
+.pf-ctx button:hover { background: #eef1fe; color: var(--brand); }
+.pf-ctx-sep { height: 1px; background: var(--line); margin: 4px 6px; }
+.theme-dark .pf-ctx { background: #33363c; border-color: var(--line); }
+.theme-dark .pf-ctx button:hover { background: #2f3b57; color: #cdd6ff; }
+/* B / I / U toggle buttons */
+.btnrow { display: inline-flex; gap: 3px; }
+.tstyle { width: 30px; text-align: center; }
+.tstyle.on { background: #eef1fe; border-color: var(--brand); color: var(--brand); }
+.theme-dark .tstyle.on { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
 .pf-handle { position: absolute; right: -7px; bottom: -7px; width: 14px; height: 14px; border-radius: 50%;
   background: #fff; border: 2px solid var(--brand); pointer-events: auto; cursor: nwse-resize; }
 .pf-guide { position: absolute; background: #ff2d9b; z-index: 998; pointer-events: none; }

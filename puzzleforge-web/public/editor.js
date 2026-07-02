@@ -15,7 +15,11 @@
     addText: $('addText'), addImage: $('addImage'),
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
+    mW: $('mW'), mH: $('mH'), mWField: $('mWField'), mHField: $('mHField'),
     textProps: $('textProps'), alignField: $('alignField'), fontSize: $('fontSize'), objColor: $('objColor'), align: $('align'),
+    fontFamily: $('fontFamily'), boldBtn: $('boldBtn'), italicBtn: $('italicBtn'), underBtn: $('underBtn'),
+    shapeProps: $('shapeProps'), fillColor: $('fillColor'), strokeColor: $('strokeColor'), strokeW: $('strokeW'), noFill: $('noFill'),
+    groupBtn: $('groupBtn'), ungroupBtn: $('ungroupBtn'), borderAll: $('borderAll'),
     distH: $('distH'), distV: $('distV'),
     toFront: $('toFront'), forward: $('forward'), backward: $('backward'), toBack: $('toBack'),
     flipH: $('flipH'), flipV: $('flipV'), lockObj: $('lockObj'),
@@ -31,7 +35,6 @@
   let ribbonActivate = null, ribbonPrevTab = 'home';
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
   const setStatus = (t, k) => { el.status.textContent = t || ''; el.status.className = 'status editor-status' + (k ? ' ' + k : ''); };
-  const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const slug = (s) => (s || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
 
   function scopeCss(css, scope) {
@@ -61,6 +64,7 @@
       m.comps.forEach((c) => {
         const s = cm[c.key]; if (!s) return;
         Object.assign(c, { dx: num(s.dx, 0), dy: num(s.dy, 0), scale: num(s.scale, 1), rot: num(s.rot, 0), hidden: !!s.hidden, locked: !!s.locked });
+        if (s.gid) c.gid = s.gid;
         // Restore a matter piece's measured anchor so export matches the editor.
         if (Number.isFinite(Number(s.ax))) { c.baseX = num(s.ax, 0); c.baseY = num(s.ay, 0); c.baseW = num(s.aw, 0); m._measured = true; }
       });
@@ -291,12 +295,9 @@
     return node;
   }
   function applyElTf(e) { if (e._node) e._node.style.transform = `translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)})`; }
-  function elHtml(e) {
-    if (e.kind === 'image') { const fx = `scale(${e.flipH ? -1 : 1},${e.flipV ? -1 : 1})`; return `<img src="${e.src}" style="width:${num(e.width, 160)}px;display:block;transform:${fx};pointer-events:none;" alt="">`; }
-    const color = /^#[0-9a-fA-F]{3,8}$/.test(e.color || '') ? e.color : '#222';
-    const fam = e.fontFamily === 'serif' ? 'Georgia, serif' : 'Arial, Helvetica, sans-serif';
-    return `<div class="pf-textbox" style="font-size:${num(e.fontSize, 24)}px;color:${color};font-family:${fam};text-align:${e.align || 'left'};width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:1.25;">${escapeHtml(e.text || '')}</div>`;
-  }
+  // Elements render through the engine's shared renderer (element-html.js), so
+  // what's on screen is byte-identical to what the PDF composer prints.
+  const elHtml = (e) => window.PFElements.elementHtml(e);
   function allRefs() { return [...pageModels[cur].comps.filter((c) => !c.hidden), ...pageModels[cur].elements]; }
 
   // --- unified box model (page coords) ---
@@ -322,12 +323,30 @@
   const isSel = (r) => sels.indexOf(r) >= 0;
   function setSel(a) { sels = a.slice(); syncSelUI(); drawSel(); }
   const primary = () => sels[sels.length - 1];
+  // Which resize handles an object gets: shapes resize freely on all 8;
+  // text/images resize width on the sides and scale on the corners; puzzle
+  // pieces scale on the corners only.
+  function handleDirs(ref) {
+    if (ref.kind === 'shape') return ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+    if (ref.kind === 'text' || ref.kind === 'image') return ['nw', 'ne', 'se', 'sw', 'e', 'w'];
+    return ['nw', 'ne', 'se', 'sw'];
+  }
   function drawSel() {
     if (!selLayer) return; selLayer.innerHTML = '';
     sels.forEach((ref) => {
       if (!ref._node) return; const b = box(ref);
-      const d = document.createElement('div'); d.className = 'pf-selbox'; d.style.transform = `translate(${b.x}px,${b.y}px)`; d.style.width = b.w + 'px'; d.style.height = b.h + 'px';
-      if (sels.length === 1) { const h = document.createElement('div'); h.className = 'pf-handle'; h.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); startResize(ev, ref); }); d.appendChild(h); }
+      const d = document.createElement('div'); d.className = 'pf-selbox'; d.style.transform = `translate(${b.x}px,${b.y}px) rotate(${num(ref.rot, 0)}deg)`; d.style.width = b.w + 'px'; d.style.height = b.h + 'px';
+      if (sels.length === 1 && !ref.locked) {
+        handleDirs(ref).forEach((dir) => {
+          const h = document.createElement('div'); h.className = 'pf-h'; h.dataset.d = dir;
+          h.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); startResize(ev, ref, dir); });
+          d.appendChild(h);
+        });
+        const stem = document.createElement('div'); stem.className = 'pf-rot-stem'; d.appendChild(stem);
+        const rot = document.createElement('div'); rot.className = 'pf-rot'; rot.title = 'Rotate (Shift snaps to 15°)';
+        rot.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); startRotate(ev, ref); });
+        d.appendChild(rot);
+      }
       selLayer.appendChild(d);
     });
   }
@@ -335,12 +354,30 @@
     const has = sels.length > 0; el.selNone.classList.toggle('hidden', has); el.selControls.classList.toggle('hidden', !has);
     showFormatTab(has);
     if (!has) return;
-    const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isEl = one && one.group === 'el';
-    el.measurePanel.style.display = one ? '' : 'none'; el.textProps.style.display = isText ? '' : 'none'; el.alignField.style.display = isText ? '' : 'none';
-    el.flipH.style.display = isImg ? '' : 'none'; el.flipV.style.display = isImg ? '' : 'none'; el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
+    const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isShape = one && one.kind === 'shape'; const isEl = one && one.group === 'el';
+    el.measurePanel.style.display = one ? '' : 'none'; el.textProps.style.display = isText ? '' : 'none';
+    el.shapeProps.style.display = isShape ? '' : 'none';
+    el.mWField.style.display = isEl ? '' : 'none'; el.mHField.style.display = isShape ? '' : 'none';
+    el.flipH.style.display = isImg || isShape ? '' : 'none'; el.flipV.style.display = isImg || isShape ? '' : 'none'; el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
     el.hideObj.style.display = one && !isEl ? '' : 'none'; el.distH.style.display = sels.length >= 3 ? '' : 'none'; el.distV.style.display = sels.length >= 3 ? '' : 'none';
     el.lockObj.textContent = one && one.locked ? 'Unlock' : 'Lock';
-    if (one) { const b = box(one); el.mX.value = Math.round(b.x); el.mY.value = Math.round(b.y); el.mScale.value = Math.round(num(one.scale, 1) * 100); el.mRot.value = Math.round(num(one.rot, 0)); if (isText) { el.fontSize.value = num(one.fontSize, 24); el.objColor.value = one.color || '#222222'; el.align.value = one.align || 'left'; } }
+    el.groupBtn.style.display = sels.length >= 2 ? '' : 'none';
+    el.ungroupBtn.style.display = sels.some((r) => r.gid) ? '' : 'none';
+    if (one) {
+      const b = box(one); el.mX.value = Math.round(b.x); el.mY.value = Math.round(b.y); el.mScale.value = Math.round(num(one.scale, 1) * 100); el.mRot.value = Math.round(num(one.rot, 0));
+      if (isEl) el.mW.value = Math.round(num(one.kind === 'image' ? one.width : one.w, 0));
+      if (isShape) el.mH.value = Math.round(num(one.h, 0));
+      if (isText) {
+        el.fontSize.value = num(one.fontSize, 24); el.objColor.value = one.color || '#222222'; el.align.value = one.align || 'left';
+        el.fontFamily.value = one.fontFamily || 'sans';
+        el.boldBtn.classList.toggle('on', !!one.bold); el.italicBtn.classList.toggle('on', !!one.italic); el.underBtn.classList.toggle('on', !!one.underline);
+      }
+      if (isShape) {
+        el.fillColor.value = /^#/.test(one.fill || '') ? one.fill : '#ffd43b';
+        el.strokeColor.value = /^#/.test(one.stroke || '') ? one.stroke : '#222222';
+        el.strokeW.value = num(one.strokeW, 2); el.noFill.checked = one.fill === 'none';
+      }
+    }
   }
 
   function snapTargets(excl) {
@@ -352,10 +389,20 @@
   const hideGuides = () => { if (vGuide) vGuide.style.display = 'none'; if (hGuide) hGuide.style.display = 'none'; };
 
   // --- drag / resize ---
+  // Grouped objects select and move as one (Publisher-style groups).
+  function expandGroups(list) {
+    const gids = new Set(list.map((r) => r.gid).filter(Boolean));
+    if (!gids.size) return list;
+    const out = list.slice();
+    allRefs().forEach((r) => { if (r.gid && gids.has(r.gid) && out.indexOf(r) < 0 && !r.locked) out.push(r); });
+    return out;
+  }
   function onPointerDown(ev, ref) {
-    ev.preventDefault();
+    ev.preventDefault(); hideCtx();
+    if (ev.button === 2) { if (!isSel(ref)) setSel(expandGroups([ref])); return; }
     if (ref.locked) { setSel([ref]); return; }
     if (ev.shiftKey) { if (!isSel(ref)) sels.push(ref); } else if (!isSel(ref)) sels = [ref];
+    sels = expandGroups(sels);
     syncSelUI(); drawSel();
     const group = sels.slice(); const starts = group.map((r) => { const b = box(r); return { r, x: b.x, y: b.y, w: b.w, h: b.h }; });
     const sx = ev.clientX, sy = ev.clientY; let pushed = false;
@@ -377,10 +424,57 @@
     const up = () => { hideGuides(); if (sels.length === 1) syncSelUI(); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
   }
-  function startResize(ev, ref) {
+  function startResize(ev, ref, dir) {
     ev.preventDefault(); pushUndo();
-    const b0 = box(ref); const natH = ref.group === 'piece' ? ref.baseH : ref._node.offsetHeight; const r = el.stageInner.getBoundingClientRect();
-    const move = (e) => { const py = (e.clientY - r.top) / zoom; setScale(ref, Math.max(0.15, Math.min(8, (py - b0.y) / (natH || 1)))); drawSel(); syncSelUI(); };
+    const b0 = box(ref); const r = el.stageInner.getBoundingClientRect();
+    const right = b0.x + b0.w, bottom = b0.y + b0.h;
+    const move = (e) => {
+      const px = (e.clientX - r.left) / zoom, py = (e.clientY - r.top) / zoom;
+      if (ref.kind === 'shape') {
+        // Shapes resize their intrinsic w/h; the opposite edge stays put.
+        let w = ref.w, h = ref.h;
+        if (dir.includes('e')) w = px - b0.x;
+        if (dir.includes('w')) w = right - px;
+        if (dir.includes('s')) h = py - b0.y;
+        if (dir.includes('n')) h = bottom - py;
+        ref.w = Math.max(8, Math.round(w)); ref.h = Math.max(4, Math.round(h));
+        ref._node.innerHTML = elHtml(ref);
+        const nb = box(ref);
+        moveTo(ref, dir.includes('w') ? right - nb.w : b0.x, dir.includes('n') ? bottom - nb.h : b0.y);
+      } else if ((dir === 'e' || dir === 'w') && (ref.kind === 'text' || ref.kind === 'image')) {
+        // Side handles set the text box / image width.
+        const w = Math.max(20, Math.round((dir === 'e' ? px - b0.x : right - px) / num(ref.scale, 1)));
+        if (ref.kind === 'text') ref.w = w; else ref.width = w;
+        ref._node.innerHTML = elHtml(ref);
+        const nb = box(ref);
+        moveTo(ref, dir === 'w' ? right - nb.w : b0.x, b0.y);
+      } else {
+        // Corner handles scale proportionally; the opposite corner stays put.
+        const natW = ref.group === 'piece' ? ref.baseW : ref._node.offsetWidth;
+        const natH = ref.group === 'piece' ? ref.baseH : ref._node.offsetHeight;
+        const ax = dir.includes('w') ? right : b0.x;
+        const ay = dir.includes('n') ? bottom : b0.y;
+        const s = Math.max(0.15, Math.min(8, Math.max(Math.abs(px - ax) / (natW || 1), Math.abs(py - ay) / (natH || 1))));
+        setScale(ref, s);
+        const nb = box(ref);
+        moveTo(ref, dir.includes('w') ? ax - nb.w : b0.x, dir.includes('n') ? ay - nb.h : b0.y);
+      }
+      drawSel(); syncSelUI();
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }
+  function startRotate(ev, ref) {
+    ev.preventDefault(); pushUndo();
+    const r = el.stageInner.getBoundingClientRect();
+    const b = box(ref); const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    const move = (e) => {
+      const px = (e.clientX - r.left) / zoom, py = (e.clientY - r.top) / zoom;
+      let ang = (Math.atan2(py - cy, px - cx) * 180) / Math.PI + 90;
+      if (e.shiftKey) ang = Math.round(ang / 15) * 15;
+      ang = ((ang + 180) % 360 + 360) % 360 - 180;
+      setRot(ref, Math.round(ang)); drawSel(); syncSelUI();
+    };
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
   }
@@ -414,11 +508,101 @@
     if (kind === 'front') o.z = Math.max(...zs) + 10; else if (kind === 'back') o.z = Math.min(...zs) - 10; else if (kind === 'forward') o.z = num(o.z, 100) + 15; else if (kind === 'backward') o.z = num(o.z, 100) - 15;
     renderPage(); setTimeout(() => setSel([o]), 0);
   }
-  function flip(axis) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'image') return; pushUndo(); if (axis === 'h') o.flipH = !o.flipH; else o.flipV = !o.flipV; o._node.innerHTML = elHtml(o); }
+  function flip(axis) { const o = sels.length === 1 && sels[0]; if (!o || (o.kind !== 'image' && o.kind !== 'shape')) return; pushUndo(); if (axis === 'h') o.flipH = !o.flipH; else o.flipV = !o.flipV; o._node.innerHTML = elHtml(o); }
   function toggleLock() { const o = sels.length === 1 && sels[0]; if (!o) return; pushUndo(); o.locked = !o.locked; syncSelUI(); }
 
-  function addText() { pushUndo(); const e = { group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2), scale: 1, rot: 0, z: 100, text: 'Your text', fontSize: 28, color: '#222222', align: 'left', w: 240 }; pageModels[cur].elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }
-  function addImageFile(file) { const r = new FileReader(); r.onload = () => { pushUndo(); const e = { group: 'el', id: uid++, kind: 'image', x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 80), scale: 1, rot: 0, z: 100, src: r.result, width: 160 }; pageModels[cur].elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }; r.readAsDataURL(file); }
+  function addElement(e) { pushUndo(); pageModels[cur].elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }
+  function addText() { addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2), scale: 1, rot: 0, z: 100, text: 'Your text', fontSize: 28, color: '#222222', align: 'left', w: 240 }); }
+  function addImageFile(file) { const r = new FileReader(); r.onload = () => addElement({ group: 'el', id: uid++, kind: 'image', x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 80), scale: 1, rot: 0, z: 100, src: r.result, width: 160 }); r.readAsDataURL(file); }
+  function addShape(shape) {
+    const line = shape === 'line';
+    addElement({
+      group: 'el', id: uid++, kind: 'shape', shape,
+      x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 60),
+      scale: 1, rot: 0, z: 100,
+      w: line ? 220 : 160, h: line ? 12 : 120,
+      fill: line ? 'none' : '#ffd43b', stroke: '#222222', strokeW: line ? 3 : 2,
+    });
+  }
+  function applyShapeProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'shape') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); }
+  // W/H from the measure panel: intrinsic size per kind.
+  function setElSize(prop, val) {
+    const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo();
+    if (prop === 'w') { if (o.kind === 'image') o.width = Math.max(8, val); else o.w = Math.max(8, val); }
+    else if (o.kind === 'shape') o.h = Math.max(4, val);
+    o._node.innerHTML = elHtml(o); drawSel(); syncSelUI();
+  }
+
+  // --- group / clipboard extras / select all ---
+  function groupSel() { if (sels.length < 2) return; pushUndo(); const gid = 'g' + uid++; sels.forEach((r) => { r.gid = gid; }); syncSelUI(); }
+  function ungroupSel() { if (!sels.some((r) => r.gid)) return; pushUndo(); sels.forEach((r) => { delete r.gid; }); syncSelUI(); }
+  function cutSel() { copySel(); deleteSel(); }
+  function selectAll() { setSel(allRefs().filter((r) => !r.locked)); }
+
+  // --- marquee (rubber-band) selection ---
+  function startMarquee(ev) {
+    hideCtx();
+    const r = el.stageInner.getBoundingClientRect();
+    const sx = (ev.clientX - r.left) / zoom, sy = (ev.clientY - r.top) / zoom;
+    const mq = document.createElement('div'); mq.className = 'pf-marquee'; mq.style.display = 'none';
+    el.stageInner.appendChild(mq);
+    let rect = null;
+    const move = (e) => {
+      const px = (e.clientX - r.left) / zoom, py = (e.clientY - r.top) / zoom;
+      rect = { x: Math.min(sx, px), y: Math.min(sy, py), w: Math.abs(px - sx), h: Math.abs(py - sy) };
+      if (rect.w > 3 || rect.h > 3) {
+        mq.style.display = '';
+        mq.style.left = rect.x + 'px'; mq.style.top = rect.y + 'px'; mq.style.width = rect.w + 'px'; mq.style.height = rect.h + 'px';
+      }
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+      mq.remove();
+      if (rect && (rect.w > 3 || rect.h > 3)) {
+        const hit = allRefs().filter((rf) => {
+          if (rf.locked || !rf._node) return false; const b = box(rf);
+          return b.x < rect.x + rect.w && b.x + b.w > rect.x && b.y < rect.y + rect.h && b.y + b.h > rect.y;
+        });
+        setSel(expandGroups(hit));
+      } else setSel([]);
+    };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }
+
+  // --- right-click context menu ---
+  let ctxEl = null;
+  function hideCtx() { if (ctxEl) { ctxEl.remove(); ctxEl = null; } }
+  function showCtx(ev) {
+    ev.preventDefault(); hideCtx();
+    const one = sels.length === 1 ? sels[0] : null;
+    const hasEl = sels.some((r) => r.group === 'el');
+    const items = [];
+    if (sels.length) {
+      if (hasEl) items.push({ label: 'Cut', fn: cutSel }, { label: 'Copy', fn: copySel });
+      else items.push({ label: 'Copy', fn: copySel });
+    }
+    if (clipboard.length) items.push({ label: 'Paste', fn: paste });
+    if (one && one.group === 'el') items.push({ label: 'Duplicate', fn: duplicate });
+    if (hasEl) items.push({ label: 'Delete', fn: deleteSel });
+    if (items.length) items.push('-');
+    if (one && one.group === 'el') items.push({ label: 'Bring to front', fn: () => reorder('front') }, { label: 'Send to back', fn: () => reorder('back') }, '-');
+    if (sels.length >= 2) items.push({ label: 'Group', fn: groupSel });
+    if (sels.some((r) => r.gid)) items.push({ label: 'Ungroup', fn: ungroupSel });
+    if (one) items.push({ label: one.locked ? 'Unlock' : 'Lock', fn: toggleLock });
+    if (one && one.group === 'piece') items.push({ label: 'Hide piece', fn: hideComp });
+    if (!items.length) return;
+    ctxEl = document.createElement('div'); ctxEl.className = 'pf-ctx';
+    items.forEach((it) => {
+      if (it === '-') { const s = document.createElement('div'); s.className = 'pf-ctx-sep'; ctxEl.appendChild(s); return; }
+      const b = document.createElement('button'); b.textContent = it.label;
+      b.addEventListener('click', () => { hideCtx(); it.fn(); });
+      ctxEl.appendChild(b);
+    });
+    document.body.appendChild(ctxEl);
+    const mw = ctxEl.offsetWidth, mh = ctxEl.offsetHeight;
+    ctxEl.style.left = Math.min(ev.clientX, window.innerWidth - mw - 8) + 'px';
+    ctxEl.style.top = Math.min(ev.clientY, window.innerHeight - mh - 8) + 'px';
+  }
   function editText(ref) { const bx = ref._node.querySelector('.pf-textbox'); bx.setAttribute('contenteditable', 'true'); bx.focus(); pushUndo(); const done = () => { bx.removeAttribute('contenteditable'); ref.text = bx.innerText; bx.removeEventListener('blur', done); }; bx.addEventListener('blur', done); }
   function applyTextProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'text') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); }
   function duplicate() { const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo(); const { _node, ...c } = o; c.id = uid++; c.x = num(o.x, 0) + 16; c.y = num(o.y, 0) + 16; c.z = num(o.z, 100) + 1; pageModels[cur].elements.push(c); el.stageInner.insertBefore(makeEl(c), selLayer); setSel([c]); }
@@ -463,12 +647,20 @@
       const comp = {};
       pm.comps.forEach((c) => {
         const o = { dx: Math.round(c.dx), dy: Math.round(c.dy), scale: round2(c.scale), rot: round2(c.rot), hidden: c.hidden, locked: c.locked };
+        if (c.gid) o.gid = c.gid;
         // Matter pieces carry their measured page anchor so the server can pin
         // them absolutely (it has no DOM to measure with).
         if (matter) { o.ax = Math.round(c.baseX); o.ay = Math.round(c.baseY); o.aw = Math.round(c.baseW); }
         comp[c.key] = o;
       });
-      const elements = pm.elements.map((e) => ({ kind: e.kind, x: Math.round(e.x), y: Math.round(e.y), scale: round2(e.scale), rot: round2(e.rot), z: e.z, text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w, src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV }));
+      const elements = pm.elements.map((e) => ({
+        kind: e.kind, x: Math.round(e.x), y: Math.round(e.y), scale: round2(e.scale), rot: round2(e.rot), z: e.z,
+        text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w,
+        fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline,
+        src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV,
+        shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
+        gid: e.gid,
+      }));
       st.layout = { comp, elements };
     }
     if (pm._border) st.border = pm._border;
@@ -535,11 +727,24 @@
     setupRibbon(); setupTheme();
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
+    document.querySelectorAll('.shape-btn').forEach((b) => b.addEventListener('click', () => addShape(b.dataset.shape)));
     el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));
     el.objColor.addEventListener('input', () => applyTextProp('color', el.objColor.value));
     el.align.addEventListener('change', () => applyTextProp('align', el.align.value));
+    el.fontFamily.addEventListener('change', () => applyTextProp('fontFamily', el.fontFamily.value));
+    el.boldBtn.addEventListener('click', () => { const o = sels.length === 1 && sels[0]; if (o && o.kind === 'text') { applyTextProp('bold', !o.bold); syncSelUI(); } });
+    el.italicBtn.addEventListener('click', () => { const o = sels.length === 1 && sels[0]; if (o && o.kind === 'text') { applyTextProp('italic', !o.italic); syncSelUI(); } });
+    el.underBtn.addEventListener('click', () => { const o = sels.length === 1 && sels[0]; if (o && o.kind === 'text') { applyTextProp('underline', !o.underline); syncSelUI(); } });
+    el.fillColor.addEventListener('input', () => { el.noFill.checked = false; applyShapeProp('fill', el.fillColor.value); });
+    el.strokeColor.addEventListener('input', () => applyShapeProp('stroke', el.strokeColor.value));
+    el.strokeW.addEventListener('input', () => applyShapeProp('strokeW', Math.max(0, Number(el.strokeW.value) || 0)));
+    el.noFill.addEventListener('change', () => applyShapeProp('fill', el.noFill.checked ? 'none' : el.fillColor.value));
+    el.groupBtn.addEventListener('click', groupSel); el.ungroupBtn.addEventListener('click', ungroupSel);
+    el.borderAll.addEventListener('click', () => { pageModels.forEach((pm) => { pm._border = el.border.value; }); setStatus(el.border.value ? 'Border applied to all pages.' : 'Border override cleared on all pages.', 'ok'); });
     el.mX.addEventListener('change', () => setMeasure('x', Number(el.mX.value) || 0));
     el.mY.addEventListener('change', () => setMeasure('y', Number(el.mY.value) || 0));
+    el.mW.addEventListener('change', () => setElSize('w', Number(el.mW.value) || 0));
+    el.mH.addEventListener('change', () => setElSize('h', Number(el.mH.value) || 0));
     el.mScale.addEventListener('change', () => setMeasure('scale', Math.max(0.15, (Number(el.mScale.value) || 100) / 100)));
     el.mRot.addEventListener('change', () => setMeasure('rot', Number(el.mRot.value) || 0));
     document.querySelectorAll('.align-grid .iconbtn').forEach((b) => b.addEventListener('click', () => alignSel(b.dataset.align)));
@@ -556,7 +761,19 @@
     el.zoomIn.addEventListener('click', () => setZoom(zoom * 1.2)); el.zoomOut.addEventListener('click', () => setZoom(zoom / 1.2)); el.zoomFit.addEventListener('click', () => setZoom(fitScale()));
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
     el.stageScroll.addEventListener('scroll', syncRulers);
-    el.stageInner.addEventListener('pointerdown', (e) => { if (e.target === el.stageInner || e.target === gridEl || e.target === selLayer || e.target === flowEl) setSel([]); });
+    el.stageInner.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      if (e.target === el.stageInner || e.target === gridEl || e.target === selLayer || e.target === flowEl) { setSel([]); startMarquee(e); }
+    });
+    el.stageInner.addEventListener('contextmenu', (e) => {
+      const t = e.target.closest ? e.target.closest('.pf-piece, .pf-node') : null;
+      const ref = t && t._ref;
+      if (ref && !isSel(ref)) setSel(expandGroups([ref]));
+      else if (!ref) setSel([]);
+      showCtx(e);
+    });
+    document.addEventListener('pointerdown', (e) => { if (ctxEl && !ctxEl.contains(e.target)) hideCtx(); }, true);
+    el.stageScroll.addEventListener('scroll', hideCtx);
     window.addEventListener('resize', () => applyZoom());
     window.addEventListener('keydown', onKey);
     let handoff = null;
@@ -568,11 +785,15 @@
     if (el.main.hidden) return; const ae = document.activeElement, tag = (ae && ae.tagName) || '';
     if (/INPUT|SELECT|TEXTAREA/.test(tag) || (ae && ae.isContentEditable)) return;
     const ctrl = e.ctrlKey || e.metaKey;
+    if (e.key === 'Escape') { hideCtx(); setSel([]); return; }
     if (ctrl && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
     if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+    if (ctrl && e.key.toLowerCase() === 'a') { e.preventDefault(); selectAll(); return; }
     if (ctrl && e.key.toLowerCase() === 'c') { e.preventDefault(); copySel(); return; }
+    if (ctrl && e.key.toLowerCase() === 'x') { e.preventDefault(); cutSel(); return; }
     if (ctrl && e.key.toLowerCase() === 'v') { e.preventDefault(); paste(); return; }
     if (ctrl && e.key.toLowerCase() === 'd') { e.preventDefault(); duplicate(); return; }
+    if (ctrl && e.key.toLowerCase() === 'g') { e.preventDefault(); e.shiftKey ? ungroupSel() : groupSel(); return; }
     if (!sels.length) return; const step = e.shiftKey ? 10 : 1;
     if (e.key === 'ArrowLeft') { nudge(-step, 0); e.preventDefault(); } else if (e.key === 'ArrowRight') { nudge(step, 0); e.preventDefault(); }
     else if (e.key === 'ArrowUp') { nudge(0, -step); e.preventDefault(); } else if (e.key === 'ArrowDown') { nudge(0, step); e.preventDefault(); }

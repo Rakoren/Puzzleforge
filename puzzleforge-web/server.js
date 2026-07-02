@@ -25,6 +25,11 @@ const app = express();
 // Larger limit so the Cover Builder can accept a full-bleed front image as a data URL.
 app.use(express.json({ limit: '16mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// The engine's element renderer is shared with the editor so on-screen objects
+// and exported PDF pixels match exactly.
+app.get('/element-html.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'engine', 'element-html.js'));
+});
 
 const WORD_TYPES = new Set(['wordsearch', 'wordscramble', 'crossword', 'krisskross']);
 const RECIPE_VERSION = 1;

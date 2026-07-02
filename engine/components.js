@@ -13,6 +13,7 @@
  */
 const { getModule } = require('../generators/registry');
 const { getLayout } = require('../layouts');
+const { elementHtml } = require('./element-html');
 
 // Find the index just past the close tag matching the open tag at `from`,
 // accounting for nested same-name tags.
@@ -78,7 +79,6 @@ function splitPuzzle(puzzle, layout, opts = {}) {
   return splitHtml(mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) }));
 }
 
-const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const num = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
 
 // Per-piece transform from its saved delta (dx, dy, scale, rot). Empty when the
@@ -136,23 +136,15 @@ function composeParts(style, components, layout, pageLayout) {
     })
     .join('\n');
 
+  // Inner markup comes from the SAME renderer the editor uses on screen
+  // (engine/element-html.js), so text/image/shape objects print exactly as
+  // they were drawn.
   const freebies = elements
     .sort((a, b) => num(a.z, 0) - num(b.z, 0))
     .map((e) => {
-      if (e.kind === 'text') {
-        const css =
-          `font-size:${num(e.fontSize, 24)}px;color:${/^#[0-9a-fA-F]{3,8}$/.test(e.color || '') ? e.color : '#222'};` +
-          `font-family:${e.fontFamily === 'serif' ? 'Georgia, serif' : 'Arial, Helvetica, sans-serif'};` +
-          `text-align:${['left', 'center', 'right'].includes(e.align) ? e.align : 'left'};` +
-          `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:1.25;`;
-        return `<div class="pf-el pf-text" style="transform: translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)});${css}">${esc(e.text)}</div>`;
-      }
-      if (e.kind === 'image' && typeof e.src === 'string' && e.src.startsWith('data:')) {
-        const w = num(e.width, 160);
-        const flip = e.flipH || e.flipV ? `transform:scale(${e.flipH ? -1 : 1},${e.flipV ? -1 : 1});` : '';
-        return `<div class="pf-el" style="transform: translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)});"><img src="${e.src}" style="width:${w}px;display:block;${flip}"></div>`;
-      }
-      return '';
+      const inner = elementHtml(e);
+      if (!inner) return '';
+      return `<div class="pf-el" style="transform: translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)});">${inner}</div>`;
     })
     .join('\n');
 
