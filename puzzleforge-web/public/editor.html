@@ -6,41 +6,195 @@
   <title>PuzzleForge — Page Editor</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo">▦</span>
-      <div>
-        <h1>PuzzleForge</h1>
-        <p class="tagline">Page Editor</p>
+<body class="editor-body">
+  <header class="ribbon">
+    <!-- Title strip: brand, nav, quick actions -->
+    <div class="ribbon-title">
+      <div class="brand">
+        <span class="logo">▦</span>
+        <div>
+          <h1>PuzzleForge</h1>
+          <p class="tagline">Page Editor</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="book.html">Book Builder</a>
+        <a href="editor.html" class="active">Page Editor</a>
+      </nav>
+      <div class="ribbon-qa">
+        <label class="upload ghost">Open recipe<input id="loadRecipe" type="file" accept="application/json" hidden></label>
+        <button id="save" class="ghost">Save recipe</button>
+        <button id="exportPdf" class="primary">Export PDF</button>
       </div>
     </div>
-    <nav class="nav">
-      <a href="book.html">← Book Builder</a>
-      <a href="editor.html" class="active">Page Editor</a>
-    </nav>
-    <div class="editor-actions">
-      <button id="undo" class="iconbtn" title="Undo (Ctrl+Z)">↶</button>
-      <button id="redo" class="iconbtn" title="Redo (Ctrl+Y)">↷</button>
-      <span class="zoombar">
-        <button id="zoomOut" class="iconbtn" title="Zoom out">−</button>
-        <span id="zoomLabel" class="zoom-label">100%</span>
-        <button id="zoomIn" class="iconbtn" title="Zoom in">+</button>
-        <button id="zoomFit" class="iconbtn" title="Fit">⤢</button>
-      </span>
-      <button id="save" class="ghost">Save recipe</button>
-      <button id="exportPdf" class="primary">Export PDF</button>
+
+    <!-- Tab bar -->
+    <div class="ribbon-tabs" role="tablist">
+      <button class="rtab active" data-tab="home" role="tab">Home</button>
+      <button class="rtab" data-tab="insert" role="tab">Insert</button>
+      <button class="rtab" data-tab="arrange" role="tab">Arrange</button>
+      <button class="rtab rtab-context" data-tab="format" role="tab">Format</button>
+      <button class="rtab" data-tab="view" role="tab">View</button>
+    </div>
+
+    <!-- Ribbon body: one panel per tab -->
+    <div class="ribbon-body">
+      <!-- HOME -->
+      <section class="ribbon-panel active" data-panel="home">
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="undo" class="iconbtn" title="Undo (Ctrl+Z)">↶</button>
+            <button id="redo" class="iconbtn" title="Redo (Ctrl+Y)">↷</button>
+          </div>
+          <div class="rgroup-name">Undo</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="dupObj" class="ghost">⧉ Duplicate</button>
+            <button id="lockObj" class="ghost">🔒 Lock</button>
+            <button id="deleteObj" class="ghost del">🗑 Delete</button>
+          </div>
+          <div class="rgroup-name">Object</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="reroll" class="ghost">🎲 Reroll puzzle</button>
+            <button id="resetLayout" class="ghost">⟲ Reset layout</button>
+          </div>
+          <div class="rgroup-name">Page</div>
+        </div>
+      </section>
+
+      <!-- INSERT -->
+      <section class="ribbon-panel" data-panel="insert">
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="addText" class="ghost">＋ Text</button>
+            <label class="upload ghost">＋ Image<input id="addImage" type="file" accept="image/*" hidden></label>
+          </div>
+          <div class="rgroup-name">Objects</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="addBlank" class="ghost" title="Insert a blank page after the current one">＋ Blank page</button>
+          </div>
+          <div class="rgroup-name">Pages</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body wide">
+            <label class="field compact"><span>Border override</span>
+              <select id="border"><option value="">(book default)</option></select>
+            </label>
+          </div>
+          <div class="rgroup-name">Decoration</div>
+        </div>
+      </section>
+
+      <!-- ARRANGE -->
+      <section class="ribbon-panel" data-panel="arrange">
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <div class="align-grid">
+              <button class="iconbtn" data-align="left" title="Left">⇤</button>
+              <button class="iconbtn" data-align="centerh" title="Center across">⇆</button>
+              <button class="iconbtn" data-align="right" title="Right">⇥</button>
+              <button class="iconbtn" data-align="top" title="Top">⤒</button>
+              <button class="iconbtn" data-align="middle" title="Middle">⇅</button>
+              <button class="iconbtn" data-align="bottom" title="Bottom">⤓</button>
+            </div>
+          </div>
+          <div class="rgroup-name">Align (page / selection)</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="distH" class="ghost" title="Distribute horizontally">⇿ Distribute</button>
+            <button id="distV" class="ghost" title="Distribute vertically">⇳ Distribute</button>
+          </div>
+          <div class="rgroup-name">Distribute</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="toFront" class="ghost">To front</button>
+            <button id="forward" class="ghost">Forward</button>
+            <button id="backward" class="ghost">Back</button>
+            <button id="toBack" class="ghost">To back</button>
+          </div>
+          <div class="rgroup-name">Order</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="flipH" class="ghost">Flip H</button>
+            <button id="flipV" class="ghost">Flip V</button>
+          </div>
+          <div class="rgroup-name">Rotate &amp; flip</div>
+        </div>
+      </section>
+
+      <!-- FORMAT (contextual) -->
+      <section class="ribbon-panel" data-panel="format">
+        <div id="selNone" class="rhint">Select an object on the page to format it. Shift-click to select multiple.</div>
+        <div id="selControls" class="ribbon-inline hidden">
+          <div class="rgroup" id="measurePanel">
+            <div class="rgroup-body">
+              <label class="m"><span>X</span><input id="mX" type="number"></label>
+              <label class="m"><span>Y</span><input id="mY" type="number"></label>
+              <label class="m"><span>Size %</span><input id="mScale" type="number" min="15" max="800"></label>
+              <label class="m"><span>Angle°</span><input id="mRot" type="number" min="-180" max="180"></label>
+            </div>
+            <div class="rgroup-name">Position &amp; size</div>
+          </div>
+          <div class="rgroup" id="textProps">
+            <div class="rgroup-body">
+              <label class="m"><span>Font size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
+              <label class="m"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
+              <label class="m" id="alignField"><span>Text align</span>
+                <select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+              </label>
+            </div>
+            <div class="rgroup-name">Text</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <button id="resetPos" class="ghost">Reset size</button>
+              <button id="hideObj" class="ghost">Hide piece</button>
+            </div>
+            <div class="rgroup-name">Object</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW -->
+      <section class="ribbon-panel" data-panel="view">
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <span class="zoombar">
+              <button id="zoomOut" class="iconbtn" title="Zoom out">−</button>
+              <span id="zoomLabel" class="zoom-label">100%</span>
+              <button id="zoomIn" class="iconbtn" title="Zoom in">+</button>
+              <button id="zoomFit" class="iconbtn" title="Fit">⤢</button>
+            </span>
+          </div>
+          <div class="rgroup-name">Zoom</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Snap &amp; alignment guides</label>
+            <label class="checkbox"><input type="checkbox" id="gridToggle"> Show grid &amp; snap to it</label>
+          </div>
+          <div class="rgroup-name">Show</div>
+        </div>
+      </section>
     </div>
   </header>
 
   <p class="status editor-status" id="status"></p>
 
-  <main class="editor-layout" id="editorMain" hidden>
+  <main class="editor-layout ribbon-layout" id="editorMain" hidden>
     <aside class="editor-pages" aria-label="Pages">
       <h2>Pages</h2>
       <ol id="pageList" class="page-list"></ol>
       <div class="page-add">
-        <button id="addBlank" class="ghost" title="Insert a blank page after the current one">+ Blank page</button>
+        <button id="addBlankSide" class="ghost" title="Insert a blank page after the current one">+ Blank page</button>
       </div>
       <p class="hint">Use ↑ ↓ to reorder, ⧉ to duplicate, ✕ to delete. Insert blank pages to
         keep coloring/drawing backs empty and lay out your adventure book by hand.</p>
@@ -56,85 +210,13 @@
         </div>
       </div>
     </section>
-
-    <aside class="editor-tools" aria-label="Tools">
-      <h2>Add</h2>
-      <div class="actions">
-        <button id="addText" class="ghost">+ Text</button>
-        <label class="upload ghost">+ Image<input id="addImage" type="file" accept="image/*" hidden></label>
-      </div>
-
-      <h2>Selected</h2>
-      <div id="selNone" class="hint">Nothing selected. Shift-click to select multiple.</div>
-      <div id="selControls" class="hidden">
-        <div id="measurePanel" class="measure">
-          <label class="m"><span>X</span><input id="mX" type="number"></label>
-          <label class="m"><span>Y</span><input id="mY" type="number"></label>
-          <label class="m"><span>Size %</span><input id="mScale" type="number" min="15" max="800"></label>
-          <label class="m"><span>Angle°</span><input id="mRot" type="number" min="-180" max="180"></label>
-        </div>
-        <div class="row" id="textProps">
-          <label class="field"><span>Font size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
-          <label class="field"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
-        </div>
-        <label class="field" id="alignField"><span>Text align</span>
-          <select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
-        </label>
-
-        <span class="checkbox-label" id="alignLabel">Align (to page, or to each other if multiple)</span>
-        <div class="align-grid">
-          <button class="iconbtn" data-align="left" title="Left">⇤</button>
-          <button class="iconbtn" data-align="centerh" title="Center across">⇆</button>
-          <button class="iconbtn" data-align="right" title="Right">⇥</button>
-          <button class="iconbtn" data-align="top" title="Top">⤒</button>
-          <button class="iconbtn" data-align="middle" title="Middle down">⇅</button>
-          <button class="iconbtn" data-align="bottom" title="Bottom">⤓</button>
-        </div>
-        <div class="actions">
-          <button id="distH" class="ghost" title="Distribute horizontally">⇿ Distribute</button>
-          <button id="distV" class="ghost" title="Distribute vertically">⇳ Distribute</button>
-        </div>
-
-        <span class="checkbox-label">Arrange</span>
-        <div class="actions">
-          <button id="toFront" class="ghost">To front</button>
-          <button id="forward" class="ghost">Forward</button>
-          <button id="backward" class="ghost">Back</button>
-          <button id="toBack" class="ghost">To back</button>
-        </div>
-        <div class="actions">
-          <button id="flipH" class="ghost">Flip H</button>
-          <button id="flipV" class="ghost">Flip V</button>
-          <button id="lockObj" class="ghost">Lock</button>
-        </div>
-        <div class="actions">
-          <button id="dupObj" class="ghost">Duplicate</button>
-          <button id="resetPos" class="ghost">Reset size</button>
-          <button id="hideObj" class="ghost">Hide piece</button>
-          <button id="deleteObj" class="ghost del">Delete</button>
-        </div>
-      </div>
-
-      <h2>This page</h2>
-      <label class="field">
-        <span>Border override</span>
-        <select id="border"><option value="">(book default)</option></select>
-      </label>
-      <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Snap &amp; alignment guides</label>
-      <label class="checkbox"><input type="checkbox" id="gridToggle"> Show grid &amp; snap to it</label>
-      <div class="actions">
-        <button id="reroll" class="ghost">Reroll puzzle</button>
-        <button id="resetLayout" class="ghost">Reset layout</button>
-      </div>
-      <p class="hint">Drag to move; ○ handle resizes; ◆ handle above rotates. Arrow keys nudge
-        (Shift = 10px). Ctrl+Z/Y undo/redo, Ctrl+C/V/D copy/paste/duplicate. Export composites
-        everything at print resolution.</p>
-    </aside>
   </main>
 
   <div class="editor-empty" id="emptyState">
-    <p>Open a book from the <a href="book.html">Book Builder</a> (“Open in Editor”), or
-      <label class="upload ghost">load a book recipe<input id="loadRecipe" type="file" accept="application/json" hidden></label>.</p>
+    <p>Open a book from the <a href="book.html">Book Builder</a> (“Open in Editor”), or use
+      <b>Open recipe</b> above to load a saved book.</p>
+    <p class="hint">Drag to move; ○ handle resizes. Arrow keys nudge (Shift = 10px).
+      Ctrl+Z/Y undo/redo, Ctrl+C/V/D copy/paste/duplicate. Export composites everything at print resolution.</p>
   </div>
 
   <script src="editor.js"></script>

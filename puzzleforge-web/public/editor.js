@@ -21,13 +21,14 @@
     flipH: $('flipH'), flipV: $('flipV'), lockObj: $('lockObj'),
     dupObj: $('dupObj'), resetPos: $('resetPos'), hideObj: $('hideObj'), deleteObj: $('deleteObj'),
     border: $('border'), snapToggle: $('snapToggle'), gridToggle: $('gridToggle'),
-    reroll: $('reroll'), resetLayout: $('resetLayout'),
+    reroll: $('reroll'), resetLayout: $('resetLayout'), addBlankSide: $('addBlankSide'),
     save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
   };
   let bookId = null, bookConfig = null, seed = null, dims = { usableWidth: 636, usableHeight: 816 };
   let pageModels = [], srcPages = [], pendingPlan = null, cur = -1, uid = 1, zoom = 1;
   let sels = [], clipboard = [];
   let vGuide = null, hGuide = null, gridEl = null, selLayer = null, flowEl = null;
+  let ribbonActivate = null, ribbonPrevTab = 'home';
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
   const setStatus = (t, k) => { el.status.textContent = t || ''; el.status.className = 'status editor-status' + (k ? ' ' + k : ''); };
   const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -331,7 +332,9 @@
     });
   }
   function syncSelUI() {
-    const has = sels.length > 0; el.selNone.classList.toggle('hidden', has); el.selControls.classList.toggle('hidden', !has); if (!has) return;
+    const has = sels.length > 0; el.selNone.classList.toggle('hidden', has); el.selControls.classList.toggle('hidden', !has);
+    showFormatTab(has);
+    if (!has) return;
     const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isEl = one && one.group === 'el';
     el.measurePanel.style.display = one ? '' : 'none'; el.textProps.style.display = isText ? '' : 'none'; el.alignField.style.display = isText ? '' : 'none';
     el.flipH.style.display = isImg ? '' : 'none'; el.flipV.style.display = isImg ? '' : 'none'; el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
@@ -493,7 +496,31 @@
   }
   function downloadBlob(blob, name) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
+  // --- ribbon (MS Publisher–style tabbed toolbar) ---
+  function setupRibbon() {
+    const tabs = [...document.querySelectorAll('.rtab')];
+    const panels = [...document.querySelectorAll('.ribbon-panel')];
+    if (!tabs.length) return;
+    ribbonActivate = (name) => {
+      tabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
+      panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === name));
+    };
+    tabs.forEach((t) => t.addEventListener('click', () => { if (t.dataset.tab !== 'format') ribbonPrevTab = t.dataset.tab; ribbonActivate(t.dataset.tab); }));
+  }
+  // Reveal the contextual Format tab when an object is selected (like Publisher's
+  // contextual tabs); return to the previous tab when the selection clears. Don't
+  // steal focus from the Arrange tab, where align/order tools are used with a
+  // live selection.
+  function showFormatTab(has) {
+    if (!ribbonActivate) return;
+    const active = document.querySelector('.rtab.active');
+    const cur = active ? active.dataset.tab : 'home';
+    if (has) { if (cur !== 'format' && cur !== 'arrange') { ribbonPrevTab = cur; ribbonActivate('format'); } }
+    else if (cur === 'format') { ribbonActivate(ribbonPrevTab || 'home'); }
+  }
+
   function init() {
+    setupRibbon();
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
     el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));
@@ -512,6 +539,7 @@
     el.gridToggle.addEventListener('change', () => { if (gridEl) gridEl.style.display = el.gridToggle.checked ? '' : 'none'; });
     el.reroll.addEventListener('click', reroll); el.resetLayout.addEventListener('click', resetLayout);
     el.addBlank.addEventListener('click', insertBlankAfterCurrent);
+    if (el.addBlankSide) el.addBlankSide.addEventListener('click', insertBlankAfterCurrent);
     el.undo.addEventListener('click', undo); el.redo.addEventListener('click', redo);
     el.zoomIn.addEventListener('click', () => setZoom(zoom * 1.2)); el.zoomOut.addEventListener('click', () => setZoom(zoom / 1.2)); el.zoomFit.addEventListener('click', () => setZoom(fitScale()));
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
