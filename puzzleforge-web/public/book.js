@@ -22,13 +22,8 @@
     answerKey: $('answerKey'),
     uniqueWords: $('uniqueWords'),
     shuffle: $('shuffle'),
-    copyrightPage: $('copyrightPage'),
-    belongsToPage: $('belongsToPage'),
-    intro: $('intro'),
     pageNumbers: $('pageNumbers'),
     footerText: $('footerText'),
-    about: $('about'),
-    moreBooks: $('moreBooks'),
     betweenColoring: $('betweenColoring'),
     betweenDrawing: $('betweenDrawing'),
     betweenBlank: $('betweenBlank'),
@@ -86,6 +81,11 @@
   let meta = null;
   let rows = []; // [{ type, count, difficulty }]
   let lastBookId = null;
+  // Matter (copyright / intro / about …) moved to the Page Editor. The Book
+  // Builder no longer edits it, but if an older recipe carries it we pass it
+  // through untouched so re-saving never silently strips it.
+  const MATTER_KEYS = ['copyright', 'belongsTo', 'intro', 'about', 'moreBooks'];
+  let carriedMatter = {};
   let currentSeed = null; // locked seed from a loaded recipe (reproduces structure)
   let lastSeed = null; // seed of the most recent preview (saved into the recipe)
   let pageState = []; // recipe v2 per-page overrides / canvasState (by page index)
@@ -196,9 +196,7 @@
       0
     );
     const guards = el.bleedGuard.checked ? gaps * drawableFillers + drawableRows : 0;
-    const front = (el.copyrightPage.checked ? 1 : 0) + (el.belongsToPage.checked ? 1 : 0) + (el.intro.value.trim() ? 1 : 0);
-    const back = (el.about.value.trim() ? 1 : 0) + (el.moreBooks.value.trim() ? 1 : 0);
-    const pages = 1 + front + total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0) + back;
+    const pages = 1 + total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0);
     const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
     el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (title + puzzles + answer key)`;
   }
@@ -271,6 +269,7 @@
 
   function config() {
     return {
+      ...carriedMatter, // pass through matter from a loaded recipe (not edited here)
       title: el.title.value.trim() || 'My Activity Book',
       subtitle: el.subtitle.value.trim() || null,
       author: el.author.value.trim() || null,
@@ -285,13 +284,8 @@
       answerKey: el.answerKey.checked,
       uniqueWords: el.uniqueWords.checked,
       shuffle: el.shuffle.checked,
-      copyright: el.copyrightPage.checked,
-      belongsTo: el.belongsToPage.checked,
-      intro: el.intro.value.trim() || null,
       pageNumbers: el.pageNumbers.checked,
       footerText: el.footerText.value.trim() || null,
-      about: el.about.value.trim() || null,
-      moreBooks: el.moreBooks.value.trim() || null,
       interleave: interleaveKinds(),
       interleaveAfterLast: el.afterLast.checked,
       coloringStyle: el.coloringStyle.value,
@@ -605,13 +599,12 @@
     el.answerKey.checked = cfg.answerKey !== false;
     el.uniqueWords.checked = cfg.uniqueWords === true;
     el.shuffle.checked = cfg.shuffle === true;
-    el.copyrightPage.checked = cfg.copyright !== false;
-    el.belongsToPage.checked = cfg.belongsTo === true;
-    el.intro.value = cfg.intro || '';
     el.pageNumbers.checked = cfg.pageNumbers === true;
     el.footerText.value = cfg.footerText || '';
-    el.about.value = cfg.about || '';
-    el.moreBooks.value = cfg.moreBooks || '';
+    // Preserve any matter this recipe carried (edited in the Page Editor now).
+    carriedMatter = {};
+    MATTER_KEYS.forEach((k) => { if (cfg[k] !== undefined && cfg[k] !== null) carriedMatter[k] = cfg[k]; });
+    if (Object.keys(carriedMatter).length) setStatus('Loaded. Note: copyright / intro / about pages are edited in the Page Editor now — open the book there.', 'ok');
     const inter = Array.isArray(cfg.interleave) ? cfg.interleave : [];
     el.betweenColoring.checked = inter.includes('coloring');
     el.betweenDrawing.checked = inter.includes('drawing');
@@ -744,12 +737,8 @@
       n.addEventListener('change', () => { invalidate(); updateSummary(); })
     );
     el.breatherThemed.addEventListener('change', invalidate);
-    [el.copyrightPage, el.belongsToPage].forEach((n) => n.addEventListener('change', () => { invalidate(); updateSummary(); }));
-    el.intro.addEventListener('input', () => { invalidate(); updateSummary(); });
     el.pageNumbers.addEventListener('change', invalidate);
     el.footerText.addEventListener('input', invalidate);
-    el.about.addEventListener('input', () => { invalidate(); updateSummary(); });
-    el.moreBooks.addEventListener('input', () => { invalidate(); updateSummary(); });
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.fontScale, el.fontFamily, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );
