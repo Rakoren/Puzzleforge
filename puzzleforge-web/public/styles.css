@@ -287,6 +287,12 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .ribbon .m input, .ribbon .m select { padding: 5px 6px; font-size: 13px; width: 76px; }
 .ribbon .m input[type=color] { width: 44px; height: 30px; padding: 2px; }
 .ribbon .align-grid { margin: 0; }
+.ribbon .mini { padding: 5px 6px; font-size: 12px; max-width: 96px; }
+.ribbon .mini-num { width: 52px; padding: 5px 6px; font-size: 12px; }
+.ribbon .mini-color { width: 34px; height: 28px; padding: 2px; }
+.qa-sep { width: 1px; align-self: stretch; background: var(--line); margin: 4px 4px; }
+.palign.on, .ghost.on, .fmtPainter.on { background: #eef1fe; border-color: var(--brand); color: var(--brand); }
+.theme-dark .palign.on, .theme-dark .ghost.on { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
 .ribbon .ghost { padding: 6px 10px; font-size: 12px; white-space: nowrap; }
 .ribbon .del { color: #c92a2a; border-color: #f2c2c2; }
 .ribbon .zoombar { padding: 3px 5px; }

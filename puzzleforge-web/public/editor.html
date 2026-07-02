@@ -22,6 +22,9 @@
         <a href="editor.html" class="active">Page Editor</a>
       </nav>
       <div class="ribbon-qa">
+        <button id="undo" class="iconbtn" title="Undo (Ctrl+Z)">↶</button>
+        <button id="redo" class="iconbtn" title="Redo (Ctrl+Y)">↷</button>
+        <span class="qa-sep"></span>
         <label class="upload ghost">Open recipe<input id="loadRecipe" type="file" accept="application/json" hidden></label>
         <button id="save" class="ghost">Save recipe</button>
         <button id="exportPdf" class="ghost">Export PDF</button>
@@ -44,23 +47,81 @@
       <section class="ribbon-panel active" data-panel="home">
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="undo" class="iconbtn" title="Undo (Ctrl+Z)">↶</button>
-            <button id="redo" class="iconbtn" title="Redo (Ctrl+Y)">↷</button>
+            <button id="cutBtn" class="ghost">✂ Cut</button>
+            <button id="copyBtn" class="ghost">⧉ Copy</button>
+            <button id="pasteBtn" class="ghost">📋 Paste</button>
+            <button id="fmtPainter" class="ghost" title="Format Painter — copy this object's look, then click another to apply it">🖌 Painter</button>
           </div>
-          <div class="rgroup-name">Undo</div>
+          <div class="rgroup-name">Clipboard</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <select id="fontFamily" class="mini" title="Font">
+              <option value="sans">Sans</option>
+              <option value="serif">Serif</option>
+              <option value="mono">Mono</option>
+              <option value="hand">Handwritten</option>
+            </select>
+            <input id="fontSize" class="mini-num" type="number" min="6" max="200" value="24" title="Font size">
+            <button id="fontGrow" class="iconbtn" title="Grow font">A˄</button>
+            <button id="fontShrink" class="iconbtn" title="Shrink font">A˅</button>
+            <button id="boldBtn" class="iconbtn tstyle" title="Bold"><b>B</b></button>
+            <button id="italicBtn" class="iconbtn tstyle" title="Italic"><i>I</i></button>
+            <button id="underBtn" class="iconbtn tstyle" title="Underline"><u>U</u></button>
+            <input id="objColor" class="mini-color" type="color" value="#222222" title="Text color">
+            <button id="caseBtn" class="iconbtn" title="Change case (UPPER / lower / Title)">Aa</button>
+            <button id="clearFmt" class="iconbtn" title="Clear text formatting">⌫</button>
+          </div>
+          <div class="rgroup-name">Font</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button class="iconbtn palign" data-align="left" title="Align left">⯇</button>
+            <button class="iconbtn palign" data-align="center" title="Center">≡</button>
+            <button class="iconbtn palign" data-align="right" title="Align right">⯈</button>
+            <select id="lineSpacing" class="mini" title="Line spacing">
+              <option value="1">1.0</option>
+              <option value="1.15">1.15</option>
+              <option value="1.25" selected>1.25</option>
+              <option value="1.5">1.5</option>
+              <option value="2">2.0</option>
+            </select>
+          </div>
+          <div class="rgroup-name">Paragraph</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="hAddText" class="ghost">Text Box</button>
+            <label class="upload ghost">Picture<input id="hAddImage" type="file" accept="image/*" hidden></label>
+            <button class="iconbtn shape-btn" data-shape="rect" title="Rectangle">▭</button>
+            <button class="iconbtn shape-btn" data-shape="ellipse" title="Ellipse">◯</button>
+            <button class="iconbtn shape-btn" data-shape="line" title="Line">─</button>
+          </div>
+          <div class="rgroup-name">Objects</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="hForward" class="ghost">Bring forward</button>
+            <button id="hBackward" class="ghost">Send back</button>
+            <button id="hGroup" class="ghost">Group</button>
+            <button id="hUngroup" class="ghost">Ungroup</button>
+          </div>
+          <div class="rgroup-name">Arrange</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="findReplaceBtn" class="ghost">🔍 Find &amp; Replace</button>
+            <button id="selectAllBtn" class="ghost">Select all</button>
+          </div>
+          <div class="rgroup-name">Editing</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
             <button id="dupObj" class="ghost">⧉ Duplicate</button>
-            <button id="lockObj" class="ghost">🔒 Lock</button>
             <button id="deleteObj" class="ghost del">🗑 Delete</button>
-          </div>
-          <div class="rgroup-name">Object</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <button id="reroll" class="ghost">🎲 Reroll puzzle</button>
-            <button id="resetLayout" class="ghost">⟲ Reset layout</button>
+            <button id="lockObj" class="ghost">🔒 Lock</button>
+            <button id="reroll" class="ghost">🎲 Reroll</button>
+            <button id="resetLayout" class="ghost">⟲ Reset</button>
           </div>
           <div class="rgroup-name">Page</div>
         </div>
@@ -158,31 +219,6 @@
               <label class="m"><span>Angle°</span><input id="mRot" type="number" min="-180" max="180"></label>
             </div>
             <div class="rgroup-name">Position &amp; size</div>
-          </div>
-          <div class="rgroup" id="textProps">
-            <div class="rgroup-body">
-              <label class="m"><span>Font</span>
-                <select id="fontFamily">
-                  <option value="sans">Sans</option>
-                  <option value="serif">Serif</option>
-                  <option value="mono">Mono</option>
-                  <option value="hand">Handwritten</option>
-                </select>
-              </label>
-              <label class="m"><span>Size</span><input id="fontSize" type="number" min="6" max="200" value="24"></label>
-              <label class="m"><span>Color</span><input id="objColor" type="color" value="#222222"></label>
-              <label class="m"><span>Style</span>
-                <span class="btnrow">
-                  <button id="boldBtn" class="iconbtn tstyle" title="Bold"><b>B</b></button>
-                  <button id="italicBtn" class="iconbtn tstyle" title="Italic"><i>I</i></button>
-                  <button id="underBtn" class="iconbtn tstyle" title="Underline"><u>U</u></button>
-                </span>
-              </label>
-              <label class="m" id="alignField"><span>Align</span>
-                <select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
-              </label>
-            </div>
-            <div class="rgroup-name">Text</div>
           </div>
           <div class="rgroup" id="shapeProps">
             <div class="rgroup-body">
@@ -286,6 +322,25 @@
       <div class="pf-tpl-grid" id="tplSaved"></div>
       <p class="pf-modal-sub" id="tplSavedEmpty">No saved templates yet. Build a page, then use
         <b>Save as template…</b> to reuse it here.</p>
+    </div>
+  </div>
+
+  <!-- Find & Replace -->
+  <div class="pf-modal" id="frModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box pf-fr" role="dialog" aria-modal="true" aria-labelledby="frTitle">
+      <div class="pf-modal-head">
+        <h2 id="frTitle">Find &amp; Replace</h2>
+        <button class="iconbtn" id="frClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub">Searches the text you've added (titles, matter, labels) across every page.</p>
+      <label class="field compact"><span>Find</span><input id="frFind" type="text" placeholder="text to find"></label>
+      <label class="field compact"><span>Replace with</span><input id="frReplace" type="text" placeholder="replacement (leave blank to delete)"></label>
+      <label class="checkbox"><input type="checkbox" id="frCase"> Match case</label>
+      <div class="pf-pub-footer">
+        <button id="frReplaceAll" class="primary">Replace all</button>
+        <span id="frStatus" class="pf-pub-status"></span>
+      </div>
     </div>
   </div>
 

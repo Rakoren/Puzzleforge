@@ -16,8 +16,13 @@
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
     mW: $('mW'), mH: $('mH'), mWField: $('mWField'), mHField: $('mHField'),
-    textProps: $('textProps'), alignField: $('alignField'), fontSize: $('fontSize'), objColor: $('objColor'), align: $('align'),
+    fontSize: $('fontSize'), objColor: $('objColor'),
     fontFamily: $('fontFamily'), boldBtn: $('boldBtn'), italicBtn: $('italicBtn'), underBtn: $('underBtn'),
+    fontGrow: $('fontGrow'), fontShrink: $('fontShrink'), caseBtn: $('caseBtn'), clearFmt: $('clearFmt'), lineSpacing: $('lineSpacing'),
+    cutBtn: $('cutBtn'), copyBtn: $('copyBtn'), pasteBtn: $('pasteBtn'), fmtPainter: $('fmtPainter'),
+    hAddText: $('hAddText'), hAddImage: $('hAddImage'), hForward: $('hForward'), hBackward: $('hBackward'),
+    hGroup: $('hGroup'), hUngroup: $('hUngroup'), findReplaceBtn: $('findReplaceBtn'), selectAllBtn: $('selectAllBtn'),
+    frModal: $('frModal'), frClose: $('frClose'), frFind: $('frFind'), frReplace: $('frReplace'), frCase: $('frCase'), frReplaceAll: $('frReplaceAll'), frStatus: $('frStatus'),
     shapeProps: $('shapeProps'), fillColor: $('fillColor'), strokeColor: $('strokeColor'), strokeW: $('strokeW'), noFill: $('noFill'),
     groupBtn: $('groupBtn'), ungroupBtn: $('ungroupBtn'), borderAll: $('borderAll'),
     distH: $('distH'), distV: $('distV'),
@@ -477,12 +482,23 @@
       selLayer.appendChild(d);
     });
   }
+  function syncFontUI(one) {
+    const isText = one && one.kind === 'text';
+    el.boldBtn.classList.toggle('on', isText && !!one.bold);
+    el.italicBtn.classList.toggle('on', isText && !!one.italic);
+    el.underBtn.classList.toggle('on', isText && !!one.underline);
+    document.querySelectorAll('.palign').forEach((b) => b.classList.toggle('on', isText && (one.align || 'left') === b.dataset.align));
+    if (isText) {
+      el.fontSize.value = num(one.fontSize, 24); el.objColor.value = one.color || '#222222';
+      el.fontFamily.value = one.fontFamily || 'sans'; el.lineSpacing.value = String(num(one.lineHeight, 1.25));
+    }
+  }
   function syncSelUI() {
     const has = sels.length > 0; el.selNone.classList.toggle('hidden', has); el.selControls.classList.toggle('hidden', !has);
-    showFormatTab(has);
-    if (!has) return;
     const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isShape = one && one.kind === 'shape'; const isEl = one && one.group === 'el';
-    el.measurePanel.style.display = one ? '' : 'none'; el.textProps.style.display = isText ? '' : 'none';
+    syncFontUI(one);
+    if (!has) return;
+    el.measurePanel.style.display = one ? '' : 'none';
     el.shapeProps.style.display = isShape ? '' : 'none';
     el.mWField.style.display = isEl ? '' : 'none'; el.mHField.style.display = isShape ? '' : 'none';
     el.flipH.style.display = isImg || isShape ? '' : 'none'; el.flipV.style.display = isImg || isShape ? '' : 'none'; el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
@@ -494,11 +510,6 @@
       const b = box(one); el.mX.value = Math.round(b.x); el.mY.value = Math.round(b.y); el.mScale.value = Math.round(num(one.scale, 1) * 100); el.mRot.value = Math.round(num(one.rot, 0));
       if (isEl) el.mW.value = Math.round(num(one.kind === 'image' ? one.width : one.w, 0));
       if (isShape) el.mH.value = Math.round(num(one.h, 0));
-      if (isText) {
-        el.fontSize.value = num(one.fontSize, 24); el.objColor.value = one.color || '#222222'; el.align.value = one.align || 'left';
-        el.fontFamily.value = one.fontFamily || 'sans';
-        el.boldBtn.classList.toggle('on', !!one.bold); el.italicBtn.classList.toggle('on', !!one.italic); el.underBtn.classList.toggle('on', !!one.underline);
-      }
       if (isShape) {
         el.fillColor.value = /^#/.test(one.fill || '') ? one.fill : '#ffd43b';
         el.strokeColor.value = /^#/.test(one.stroke || '') ? one.stroke : '#222222';
@@ -526,6 +537,7 @@
   }
   function onPointerDown(ev, ref) {
     ev.preventDefault(); hideCtx();
+    if (painter && ev.button !== 2 && applyPainter(ref)) { setSel([ref]); return; }
     if (ev.button === 2) { if (!isSel(ref)) setSel(expandGroups([ref])); return; }
     if (ref.locked) { setSel([ref]); return; }
     if (ev.shiftKey) { if (!isSel(ref)) sels.push(ref); } else if (!isSel(ref)) sels = [ref];
@@ -731,7 +743,60 @@
     ctxEl.style.top = Math.min(ev.clientY, window.innerHeight - mh - 8) + 'px';
   }
   function editText(ref) { const bx = ref._node.querySelector('.pf-textbox'); bx.setAttribute('contenteditable', 'true'); bx.focus(); pushUndo(); const done = () => { bx.removeAttribute('contenteditable'); ref.text = bx.innerText; bx.removeEventListener('blur', done); }; bx.addEventListener('blur', done); }
-  function applyTextProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'text') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); }
+  function applyTextProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'text') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); syncFontUI(o); }
+  const applyTextPropU = (prop, val) => { const o = sels.length === 1 && sels[0]; if (o && o.kind === 'text') { pushUndo(); applyTextProp(prop, val); } };
+  const selText = () => { const o = sels.length === 1 && sels[0]; return o && o.kind === 'text' ? o : null; };
+  // --- Home: font & paragraph tools ---
+  function fontStep(delta) { const o = selText(); if (!o) return; applyTextPropU('fontSize', Math.max(6, Math.min(200, num(o.fontSize, 24) + delta))); }
+  function changeCase() {
+    const o = selText(); if (!o) return; const t = String(o.text || '');
+    const upper = t.toUpperCase(), lower = t.toLowerCase();
+    const title = t.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    // Cycle UPPER → lower → Title; anything mixed starts the cycle at UPPER.
+    const next = t === upper ? lower : t === lower ? title : t === title ? upper : upper;
+    applyTextPropU('text', next);
+  }
+  function clearTextFmt() {
+    const o = selText(); if (!o) return; pushUndo();
+    Object.assign(o, { fontFamily: 'sans', fontSize: 24, color: '#222222', bold: false, italic: false, underline: false, align: 'left', lineHeight: 1.25 });
+    o._node.innerHTML = elHtml(o); drawSel(); syncFontUI(o);
+  }
+  // --- Format Painter: copy an object's look, apply to the next one clicked ---
+  let painter = null;
+  const TEXT_STYLE = ['fontFamily', 'fontSize', 'color', 'bold', 'italic', 'underline', 'align', 'lineHeight'];
+  const SHAPE_STYLE = ['fill', 'stroke', 'strokeW'];
+  function togglePainter() {
+    if (painter) { painter = null; el.fmtPainter.classList.remove('on'); return; }
+    const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el' || o.kind === 'image') { setStatus('Select a text box or shape first, then Format Painter.', 'err'); return; }
+    const keys = o.kind === 'text' ? TEXT_STYLE : SHAPE_STYLE;
+    painter = { kind: o.kind, style: {} }; keys.forEach((k) => { painter.style[k] = o[k]; });
+    el.fmtPainter.classList.add('on'); setStatus('Format Painter armed — click a ' + o.kind + ' to apply the look.', 'busy');
+  }
+  function applyPainter(ref) {
+    if (!painter || !ref || ref.kind !== painter.kind) return false;
+    pushUndo(); Object.assign(ref, painter.style); ref._node.innerHTML = elHtml(ref);
+    painter = null; el.fmtPainter.classList.remove('on'); setStatus('Look applied.', 'ok'); return true;
+  }
+  // --- Find & Replace (across every page's text objects) ---
+  function openFindReplace() { if (el.main.hidden) return; el.frStatus.textContent = ''; el.frModal.hidden = false; el.frFind.focus(); }
+  function closeFindReplace() { el.frModal.hidden = true; }
+  function doReplaceAll() {
+    const find = el.frFind.value; if (!find) { el.frStatus.textContent = 'Enter text to find.'; el.frStatus.className = 'pf-pub-status err'; return; }
+    const re = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), el.frCase.checked ? 'g' : 'gi');
+    const repl = el.frReplace.value;
+    let count = 0; const pagesTouched = new Set();
+    pushUndo(); // undo covers the current page; other pages update in memory
+    pageModels.forEach((pm, pi) => {
+      pm.elements.forEach((e) => {
+        if (e.kind === 'text' && typeof e.text === 'string') {
+          const m = e.text.match(re);
+          if (m) { count += m.length; e.text = e.text.replace(re, repl); pagesTouched.add(pi); }
+        }
+      });
+    });
+    if (count) { renderPage(); el.frStatus.textContent = `Replaced ${count} occurrence${count !== 1 ? 's' : ''} across ${pagesTouched.size} page${pagesTouched.size !== 1 ? 's' : ''}.`; el.frStatus.className = 'pf-pub-status ok'; }
+    else { el.frStatus.textContent = 'No matches found.'; el.frStatus.className = 'pf-pub-status'; }
+  }
   function duplicate() { const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo(); const { _node, ...c } = o; c.id = uid++; c.x = num(o.x, 0) + 16; c.y = num(o.y, 0) + 16; c.z = num(o.z, 100) + 1; pageModels[cur].elements.push(c); el.stageInner.insertBefore(makeEl(c), selLayer); setSel([c]); }
   function copySel() { clipboard = sels.filter((r) => r.group === 'el').map((r) => { const { _node, ...c } = r; return c; }); }
   function paste() { if (!clipboard.length) return; pushUndo(); const made = []; clipboard.forEach((c) => { const e = { ...c, group: 'el', id: uid++, x: num(c.x, 0) + 16, y: num(c.y, 0) + 16, z: num(c.z, 100) + 1 }; pageModels[cur].elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); made.push(e); }); setSel(made); }
@@ -783,7 +848,7 @@
       const elements = pm.elements.map((e) => ({
         kind: e.kind, x: Math.round(e.x), y: Math.round(e.y), scale: round2(e.scale), rot: round2(e.rot), z: e.z,
         text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w,
-        fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline,
+        fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline, lineHeight: e.lineHeight,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         gid: e.gid,
@@ -942,13 +1007,33 @@
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
     document.querySelectorAll('.shape-btn').forEach((b) => b.addEventListener('click', () => addShape(b.dataset.shape)));
+    // Font: live update on input, commit an undo entry on change.
     el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));
+    el.fontSize.addEventListener('change', () => { if (selText()) pushUndo(); });
     el.objColor.addEventListener('input', () => applyTextProp('color', el.objColor.value));
-    el.align.addEventListener('change', () => applyTextProp('align', el.align.value));
-    el.fontFamily.addEventListener('change', () => applyTextProp('fontFamily', el.fontFamily.value));
-    el.boldBtn.addEventListener('click', () => { const o = sels.length === 1 && sels[0]; if (o && o.kind === 'text') { applyTextProp('bold', !o.bold); syncSelUI(); } });
-    el.italicBtn.addEventListener('click', () => { const o = sels.length === 1 && sels[0]; if (o && o.kind === 'text') { applyTextProp('italic', !o.italic); syncSelUI(); } });
-    el.underBtn.addEventListener('click', () => { const o = sels.length === 1 && sels[0]; if (o && o.kind === 'text') { applyTextProp('underline', !o.underline); syncSelUI(); } });
+    el.objColor.addEventListener('change', () => { if (selText()) pushUndo(); });
+    el.fontFamily.addEventListener('change', () => applyTextPropU('fontFamily', el.fontFamily.value));
+    el.fontGrow.addEventListener('click', () => fontStep(2));
+    el.fontShrink.addEventListener('click', () => fontStep(-2));
+    el.caseBtn.addEventListener('click', changeCase);
+    el.clearFmt.addEventListener('click', clearTextFmt);
+    el.lineSpacing.addEventListener('change', () => applyTextPropU('lineHeight', Number(el.lineSpacing.value) || 1.25));
+    document.querySelectorAll('.palign').forEach((b) => b.addEventListener('click', () => applyTextPropU('align', b.dataset.align)));
+    const tstyle = (prop) => { const o = selText(); if (o) applyTextPropU(prop, !o[prop]); };
+    el.boldBtn.addEventListener('click', () => tstyle('bold'));
+    el.italicBtn.addEventListener('click', () => tstyle('italic'));
+    el.underBtn.addEventListener('click', () => tstyle('underline'));
+    // Home Clipboard / Objects / Arrange / Editing
+    el.cutBtn.addEventListener('click', cutSel); el.copyBtn.addEventListener('click', copySel); el.pasteBtn.addEventListener('click', paste);
+    el.fmtPainter.addEventListener('click', togglePainter);
+    el.hAddText.addEventListener('click', addText);
+    el.hAddImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
+    el.hForward.addEventListener('click', () => reorder('forward')); el.hBackward.addEventListener('click', () => reorder('backward'));
+    el.hGroup.addEventListener('click', groupSel); el.hUngroup.addEventListener('click', ungroupSel);
+    el.findReplaceBtn.addEventListener('click', openFindReplace); el.selectAllBtn.addEventListener('click', selectAll);
+    el.frClose.addEventListener('click', closeFindReplace);
+    el.frModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeFindReplace(); });
+    el.frReplaceAll.addEventListener('click', doReplaceAll);
     el.fillColor.addEventListener('input', () => { el.noFill.checked = false; applyShapeProp('fill', el.fillColor.value); });
     el.strokeColor.addEventListener('input', () => applyShapeProp('stroke', el.strokeColor.value));
     el.strokeW.addEventListener('input', () => applyShapeProp('strokeW', Math.max(0, Number(el.strokeW.value) || 0)));
@@ -1012,6 +1097,7 @@
   function onKey(e) {
     if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
     if (el.pubModal && !el.pubModal.hidden) { if (e.key === 'Escape') closePublish(); return; }
+    if (el.frModal && !el.frModal.hidden) { if (e.key === 'Escape') closeFindReplace(); return; }
     if (el.main.hidden) return; const ae = document.activeElement, tag = (ae && ae.tagName) || '';
     if (/INPUT|SELECT|TEXTAREA/.test(tag) || (ae && ae.isContentEditable)) return;
     const ctrl = e.ctrlKey || e.metaKey;

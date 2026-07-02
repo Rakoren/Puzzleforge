@@ -88,7 +88,7 @@
       `font-weight:${e.bold ? 700 : 400};font-style:${e.italic ? 'italic' : 'normal'};` +
       `text-decoration:${e.underline ? 'underline' : 'none'};` +
       `text-align:${['left', 'center', 'right'].includes(e.align) ? e.align : 'left'};` +
-      `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:1.25;`;
+      `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:${Math.max(0.8, Math.min(3, num(e.lineHeight, 1.25)))};`;
     return `<div class="pf-textbox" style="${css}">${esc(e.text || '')}</div>`;
   }
 
