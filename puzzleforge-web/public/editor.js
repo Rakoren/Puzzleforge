@@ -57,7 +57,12 @@
     const saved = state && state.layout;
     if (saved) {
       const cm = saved.comp || {};
-      m.comps.forEach((c) => { const s = cm[c.key]; if (s) Object.assign(c, { dx: num(s.dx, 0), dy: num(s.dy, 0), scale: num(s.scale, 1), rot: num(s.rot, 0), hidden: !!s.hidden, locked: !!s.locked }); });
+      m.comps.forEach((c) => {
+        const s = cm[c.key]; if (!s) return;
+        Object.assign(c, { dx: num(s.dx, 0), dy: num(s.dy, 0), scale: num(s.scale, 1), rot: num(s.rot, 0), hidden: !!s.hidden, locked: !!s.locked });
+        // Restore a matter piece's measured anchor so export matches the editor.
+        if (Number.isFinite(Number(s.ax))) { c.baseX = num(s.ax, 0); c.baseY = num(s.ay, 0); c.baseW = num(s.aw, 0); m._measured = true; }
+      });
       m.elements = (saved.elements || []).map((e) => ({ ...e, group: 'el', id: e.id || uid++ }));
     }
     if (state && state.border) m._border = state.border;
@@ -133,7 +138,16 @@
     canvas.style.width = dims.usableWidth + 'px'; canvas.style.height = dims.usableHeight + 'px'; canvas.style.transform = `scale(${sc})`;
     if (pm.style) { const st = document.createElement('style'); st.textContent = scopeCss(pm.style, '#' + id); canvas.appendChild(st); }
     const flow = document.createElement('div'); flow.className = 'pf-flow';
-    pm.comps.forEach((c) => { if (c.hidden) return; const n = document.createElement('div'); n.className = 'pf-piece'; n.innerHTML = c.html; if (c.dx || c.dy || c.scale !== 1 || c.rot) n.style.transform = `translate(${c.dx}px,${c.dy}px) rotate(${c.rot}deg) scale(${c.scale})`; flow.appendChild(n); });
+    if (isMatterPage(pm) && !pm._measured) {
+      // Faithful snapshot of the original matter layout (positions not yet known).
+      flow.style.minHeight = dims.usableHeight + 'px';
+      flow.innerHTML = pm.comps.filter((c) => !c.hidden).map((c) => c.html).join('');
+    } else if (isMatterPage(pm)) {
+      flow.style.minHeight = dims.usableHeight + 'px';
+      pm.comps.forEach((c) => { if (c.hidden) return; const n = document.createElement('div'); n.className = 'pf-piece'; n.innerHTML = c.html; n.style.cssText = `position:absolute;left:${c.baseX}px;top:${c.baseY}px;${c.baseW ? `width:${c.baseW}px;` : ''}transform-origin:top left;`; if (c.dx || c.dy || c.scale !== 1 || c.rot) n.style.transform = `translate(${c.dx}px,${c.dy}px) rotate(${c.rot}deg) scale(${c.scale})`; flow.appendChild(n); });
+    } else {
+      pm.comps.forEach((c) => { if (c.hidden) return; const n = document.createElement('div'); n.className = 'pf-piece'; n.innerHTML = c.html; if (c.dx || c.dy || c.scale !== 1 || c.rot) n.style.transform = `translate(${c.dx}px,${c.dy}px) rotate(${c.rot}deg) scale(${c.scale})`; flow.appendChild(n); });
+    }
     canvas.appendChild(flow);
     pm.elements.slice().sort((a, b) => num(a.z, 0) - num(b.z, 0)).forEach((e) => { const n = document.createElement('div'); n.className = 'pf-node'; n.style.transform = `translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)})`; n.innerHTML = elHtml(e); canvas.appendChild(n); });
     wrap.appendChild(canvas);
@@ -194,19 +208,53 @@
   function syncRulers() { el.rulerTop.style.backgroundPositionX = (-el.stageScroll.scrollLeft) + 'px'; el.rulerLeft.style.backgroundPositionY = (-el.stageScroll.scrollTop) + 'px'; }
   const setZoom = (z) => { zoom = Math.max(0.15, Math.min(4, z)); applyZoom(); drawSel(); };
 
+  // Matter pages (title, copyright, …) position content via the page context,
+  // so their pieces are placed ABSOLUTELY at a measured page rect rather than in
+  // document flow. Content (puzzle) pages keep the flow + delta model.
+  const isMatterPage = (pm) => !!(pm && pm.role && pm.role !== 'content' && !pm.blank);
+  function applyAbsBase(c) {
+    if (!c._node) return;
+    c._node.style.position = 'absolute'; c._node.style.left = c.baseX + 'px'; c._node.style.top = c.baseY + 'px';
+    if (c.baseW) c._node.style.width = c.baseW + 'px';
+  }
+  // One-time faithful measure of a matter page: render its original body (no
+  // per-piece wrappers) and capture each top-level element's page rectangle.
+  function measureMatterBases(pm) {
+    const meas = document.createElement('div'); meas.className = 'pf-flow';
+    meas.style.cssText = 'position:absolute;top:0;left:0;visibility:hidden;min-height:' + dims.usableHeight + 'px;width:' + dims.usableWidth + 'px;';
+    meas.innerHTML = pm.comps.map((c) => c.html).join('');
+    el.stageInner.appendChild(meas);
+    const ir = el.stageInner.getBoundingClientRect();
+    const kids = [...meas.children];
+    pm.comps.forEach((c, i) => {
+      const k = kids[i]; if (!k) return;
+      const r = k.getBoundingClientRect();
+      c.baseX = (r.left - ir.left) / zoom; c.baseY = (r.top - ir.top) / zoom; c.baseW = r.width / zoom; c.baseH = r.height / zoom;
+    });
+    el.stageInner.removeChild(meas);
+    pm._measured = true;
+  }
+
   // --- render ---
   function renderPage() {
     const pm = pageModels[cur]; highlightPage();
+    const matter = isMatterPage(pm);
     el.stageInner.innerHTML = '';
     const style = document.createElement('style'); style.textContent = scopeCss(pm.style, '#stageInner'); el.stageInner.appendChild(style);
     gridEl = document.createElement('div'); gridEl.className = 'pf-grid-overlay'; gridEl.style.display = el.gridToggle.checked ? '' : 'none'; el.stageInner.appendChild(gridEl);
 
-    // Flow pieces (original layout), in order.
+    el.border.value = pm._border || ''; applyZoom();
+    // Matter pages need their true page positions before creating pieces.
+    if (matter && pm.comps.length && !pm._measured) measureMatterBases(pm);
+
+    // Pieces: absolute (matter) or in original flow (content), in order.
     flowEl = document.createElement('div'); flowEl.className = 'pf-flow';
+    if (matter) flowEl.style.minHeight = dims.usableHeight + 'px';
     pm.comps.forEach((c) => {
-      const node = document.createElement('div'); node.className = 'pf-piece'; node.dataset.key = c.key;
+      const node = document.createElement('div'); node.className = 'pf-piece' + (matter ? ' pf-abs' : ''); node.dataset.key = c.key;
       node.innerHTML = c.html; node.style.display = c.hidden ? 'none' : '';
       c._node = node; node._ref = c; node.addEventListener('pointerdown', (ev) => onPointerDown(ev, c));
+      if (matter) applyAbsBase(c);
       flowEl.appendChild(node);
     });
     el.stageInner.appendChild(flowEl);
@@ -219,9 +267,8 @@
     selLayer = document.createElement('div'); selLayer.className = 'pf-sel-layer';
     el.stageInner.appendChild(vGuide); el.stageInner.appendChild(hGuide); el.stageInner.appendChild(selLayer);
 
-    el.border.value = pm._border || ''; applyZoom();
-    // Measure each piece's flow base (no transform yet), then apply transforms.
-    requestAnimationFrame(() => { measureBases(pm); pm.comps.forEach(applyPieceTf); sels = []; syncSelUI(); drawSel(); });
+    // Content: measure flow bases (no transform yet). Matter: bases already set.
+    requestAnimationFrame(() => { if (!matter) measureBases(pm); pm.comps.forEach(applyPieceTf); sels = []; syncSelUI(); drawSel(); });
   }
   function measureBases(pm) {
     const ir = el.stageInner.getBoundingClientRect();
@@ -397,11 +444,30 @@
 
   // --- serialize ---
   const round2 = (n) => Math.round(num(n, 0) * 100) / 100;
+  // A page with no moved/hidden pieces and no overlays renders faithfully from
+  // the original template — export it as passthrough (no layout), which is
+  // pixel-perfect and avoids any measurement drift on matter pages.
+  function isPristine(pm) {
+    if (pm.elements && pm.elements.length) return false;
+    return pm.comps.every((c) => !c.dx && !c.dy && c.scale === 1 && !c.rot && !c.hidden && !c.locked);
+  }
   function pageStateOf(pm) {
-    const comp = {};
-    pm.comps.forEach((c) => { comp[c.key] = { dx: Math.round(c.dx), dy: Math.round(c.dy), scale: round2(c.scale), rot: round2(c.rot), hidden: c.hidden, locked: c.locked }; });
-    const elements = pm.elements.map((e) => ({ kind: e.kind, x: Math.round(e.x), y: Math.round(e.y), scale: round2(e.scale), rot: round2(e.rot), z: e.z, text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w, src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV }));
-    const st = { layout: { comp, elements } }; if (pm._border) st.border = pm._border; return st;
+    const st = {};
+    if (!isPristine(pm)) {
+      const matter = isMatterPage(pm);
+      const comp = {};
+      pm.comps.forEach((c) => {
+        const o = { dx: Math.round(c.dx), dy: Math.round(c.dy), scale: round2(c.scale), rot: round2(c.rot), hidden: c.hidden, locked: c.locked };
+        // Matter pieces carry their measured page anchor so the server can pin
+        // them absolutely (it has no DOM to measure with).
+        if (matter) { o.ax = Math.round(c.baseX); o.ay = Math.round(c.baseY); o.aw = Math.round(c.baseW); }
+        comp[c.key] = o;
+      });
+      const elements = pm.elements.map((e) => ({ kind: e.kind, x: Math.round(e.x), y: Math.round(e.y), scale: round2(e.scale), rot: round2(e.rot), z: e.z, text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w, src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV }));
+      st.layout = { comp, elements };
+    }
+    if (pm._border) st.border = pm._border;
+    return st;
   }
   // Per-page arrangement for export/recipe: keeps the final page order, marks
   // inserted blanks, and references each real page's original book index (src).

@@ -123,6 +123,15 @@ function composeParts(style, components, layout, pageLayout) {
       const p = comp[key] || comp[c.kind] || {};
       if (p.hidden) return '';
       const tf = pieceTransform(p);
+      // Matter pages (title, copyright, …) position their content via the page
+      // context (absolute/flex), which a flow wrapper would break. When the
+      // editor supplies a measured anchor (ax, ay), pin the piece absolutely
+      // there so it reproduces the original placement and moves crisply.
+      if (Number.isFinite(Number(p.ax)) && Number.isFinite(Number(p.ay))) {
+        const w = num(p.aw, 0);
+        const abs = `position:absolute;left:${num(p.ax, 0)}px;top:${num(p.ay, 0)}px;${w ? `width:${w}px;` : ''}transform-origin:top left;${tf}`;
+        return `<div class="pf-piece pf-abs" data-pf="${key}" style="${abs}">${c.html}</div>`;
+      }
       return `<div class="pf-piece" data-pf="${key}"${tf ? ` style="${tf}"` : ''}>${c.html}</div>`;
     })
     .join('\n');
