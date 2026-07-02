@@ -219,6 +219,14 @@
   const sEl = (o) => ({ group: 'el', kind: 'shape', scale: 1, rot: 0, z: 90, fill: 'none', stroke: '#222222', strokeW: 2, ...o });
   const R = Math.round;
   const BUILTIN_TPLS = [
+    { id: 'title', name: 'Title Page', desc: 'Book title, subtitle & author', make: (c) => {
+      const big = Math.max(34, R(c.W / 7)); const y0 = R(c.H * 0.3);
+      const els = [tEl({ text: c.title || 'Book Title', x: 0, y: y0, w: c.W, fontSize: big, align: 'center', bold: true })];
+      let ay = y0 + R(big * 1.5);
+      if (c.subtitle) { els.push(tEl({ text: c.subtitle, x: R(c.W * 0.1), y: ay, w: R(c.W * 0.8), fontSize: Math.max(16, R(c.W / 24)), align: 'center', color: '#333333' })); ay += R(c.W / 16); }
+      els.push(tEl({ text: c.author ? `by ${c.author}` : 'by Your Name', x: 0, y: R(c.H * 0.62), w: c.W, fontSize: Math.max(16, R(c.W / 26)), align: 'center' }));
+      return els;
+    } },
     { id: 'copyright', name: 'Copyright', desc: 'Legal boilerplate, bottom of page', make: (c) => {
       const fs = Math.max(11, R(c.W / 46)); const x = R(c.W * 0.08), w = R(c.W * 0.84), y0 = R(c.H * 0.72);
       return [
@@ -285,7 +293,7 @@
     )));
   }
   function insertBuiltinTpl(t) {
-    const ctx = { W: dims.usableWidth, H: dims.usableHeight, title: (bookConfig && bookConfig.title) || '', author: (bookConfig && bookConfig.author) || '', year: new Date().getFullYear() };
+    const ctx = { W: dims.usableWidth, H: dims.usableHeight, title: (bookConfig && bookConfig.title) || '', subtitle: (bookConfig && bookConfig.subtitle) || '', author: (bookConfig && bookConfig.author) || '', year: new Date().getFullYear() };
     insertPageWithEls(t.make(ctx).map((e) => ({ ...e, id: uid++ })), t.name);
   }
   function insertSavedTpl(t) {
