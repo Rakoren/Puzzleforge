@@ -29,6 +29,11 @@
     insertTpl: $('insertTpl'), insertTplSide: $('insertTplSide'), savePageTpl: $('savePageTpl'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
+    publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
+    pubRunChecks: $('pubRunChecks'), pubCheckStatus: $('pubCheckStatus'), pubReport: $('pubReport'),
+    pubPrice: $('pubPrice'), pubPaper: $('pubPaper'), pubAge: $('pubAge'), pubDesc: $('pubDesc'),
+    pubKeywords: $('pubKeywords'), pubCategories: $('pubCategories'), pubAiText: $('pubAiText'), pubAiImages: $('pubAiImages'),
+    pubCoverBg: $('pubCoverBg'), pubCoverText: $('pubCoverText'), pubExport: $('pubExport'), pubExportStatus: $('pubExportStatus'),
     save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
   };
   let bookId = null, bookConfig = null, seed = null, dims = { usableWidth: 636, usableHeight: 816 };
@@ -36,6 +41,7 @@
   let sels = [], clipboard = [];
   let vGuide = null, hGuide = null, gridEl = null, selLayer = null, flowEl = null;
   let ribbonActivate = null, ribbonPrevTab = 'home';
+  let lastProofIssues = [];
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
   const setStatus = (t, k) => { el.status.textContent = t || ''; el.status.className = 'status editor-status' + (k ? ' ' + k : ''); };
   const slug = (s) => (s || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
@@ -800,6 +806,68 @@
   }
   function downloadBlob(blob, name) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
+  // --- Publish flow (pre-flight + KDP package) ------------------------------
+  const bookBody = () => (bookId ? { bookId, pagePlan: buildPagePlan() } : { config: bookConfig, pagePlan: buildPagePlan() });
+  function openPublish() { if (el.main.hidden) return; el.pubModal.hidden = false; }
+  function closePublish() { el.pubModal.hidden = true; }
+  function gatherMeta() {
+    return { description: el.pubDesc.value, keywords: el.pubKeywords.value, categories: el.pubCategories.value, readingAge: el.pubAge.value,
+      listPrice: el.pubPrice.value, paper: el.pubPaper.value, aiText: el.pubAiText.checked, aiImages: el.pubAiImages.checked };
+  }
+  const gatherCover = () => ({ bgColor: el.pubCoverBg.value, textColor: el.pubCoverText.value, paper: el.pubPaper.value, blurb: el.pubDesc.value });
+  const setPubStatus = (node, text, kind) => { node.textContent = text || ''; node.className = 'pf-pub-status' + (kind ? ' ' + kind : ''); };
+
+  async function runPreflight() {
+    el.pubRunChecks.disabled = true; setPubStatus(el.pubCheckStatus, 'Rendering & checking…', 'busy');
+    const body = bookBody();
+    try {
+      const [chkR, proR] = await Promise.allSettled([
+        fetch('/api/book/checklist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json()),
+        fetch('/api/book/proofread', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(async (r) => ({ ok: r.ok, data: await r.json() })),
+      ]);
+      const chk = chkR.status === 'fulfilled' ? chkR.value : { error: 'Could not render the book for checks.' };
+      let proof = { issues: [] };
+      if (proR.status === 'fulfilled') proof = proR.value.ok ? proR.value.data : { issues: [], error: proR.value.data.error };
+      else proof = { issues: [], error: 'Proofread request failed.' };
+      lastProofIssues = proof.issues || [];
+      renderReport(chk, proof);
+      setPubStatus(el.pubCheckStatus, '');
+    } catch (err) { setPubStatus(el.pubCheckStatus, err.message, 'err'); }
+    finally { el.pubRunChecks.disabled = false; }
+  }
+  function renderReport(chk, proof) {
+    el.pubReport.hidden = false;
+    const parts = [];
+    if (chk.error) parts.push(`<div class="rep-note err">Checklist error: ${escHtml(chk.error)}</div>`);
+    else {
+      const s = chk.summary || { blockers: 0, warnings: 0, passes: 0 };
+      parts.push(`<div class="rep-summary"><b>${chk.pageCount || '?'}</b> pages · <span class="rep-b">🔴 ${s.blockers}</span> <span class="rep-w">🟡 ${s.warnings}</span> <span class="rep-p">🟢 ${s.passes}</span></div>`);
+      const fails = (chk.items || []).filter((i) => i.status !== 'pass');
+      if (fails.length) parts.push('<ul class="rep-list">' + fails.map((i) => `<li class="${i.severity}"><b>${i.severity === 'blocker' ? 'Blocker' : 'Warning'}:</b> ${escHtml(i.label)} — ${escHtml(i.message)}</li>`).join('') + '</ul>');
+      else parts.push('<div class="rep-ok">All structural &amp; print-spec checks passed.</div>');
+    }
+    parts.push('<div class="rep-subhead">✍️ Proofread</div>');
+    if (proof.error) parts.push(`<div class="rep-note">Unavailable: ${escHtml(proof.error)}</div>`);
+    else if (proof.note && !(proof.issues || []).length) parts.push(`<div class="rep-note">${escHtml(proof.note)}</div>`);
+    else {
+      const iss = proof.issues || [];
+      if (iss.length) parts.push('<ul class="rep-list">' + iss.map((x) => `<li class="${x.severity === 'error' ? 'blocker' : 'warning'}"><b>p.${x.page}:</b> “${escHtml(x.original)}” → “${escHtml(x.fix)}”${x.note ? ` <span class="rep-dim">(${escHtml(x.note)})</span>` : ''}</li>`).join('') + '</ul>');
+      else parts.push('<div class="rep-ok">No spelling or grammar issues found.</div>');
+    }
+    el.pubReport.innerHTML = parts.join('');
+  }
+  async function exportPackage() {
+    el.pubExport.disabled = true; setPubStatus(el.pubExportStatus, 'Building package…', 'busy');
+    try {
+      const body = { ...bookBody(), metadata: gatherMeta(), cover: gatherCover(), proofreadIssues: lastProofIssues };
+      const res = await fetch('/api/book/package', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Export failed'); }
+      downloadBlob(await res.blob(), slug((bookConfig && bookConfig.title) || 'book') + '-kdp-package.zip');
+      setPubStatus(el.pubExportStatus, 'Package downloaded ✓', 'ok');
+    } catch (err) { setPubStatus(el.pubExportStatus, err.message, 'err'); }
+    finally { el.pubExport.disabled = false; }
+  }
+
   // --- ribbon (MS Publisher–style tabbed toolbar) ---
   function setupRibbon() {
     const tabs = [...document.querySelectorAll('.rtab')];
@@ -874,6 +942,11 @@
     if (el.savePageTpl) el.savePageTpl.addEventListener('click', savePageAsTemplate);
     if (el.tplClose) el.tplClose.addEventListener('click', closeTplPicker);
     if (el.tplModal) el.tplModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeTplPicker(); });
+    if (el.publishBtn) el.publishBtn.addEventListener('click', openPublish);
+    if (el.pubClose) el.pubClose.addEventListener('click', closePublish);
+    if (el.pubModal) el.pubModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closePublish(); });
+    if (el.pubRunChecks) el.pubRunChecks.addEventListener('click', runPreflight);
+    if (el.pubExport) el.pubExport.addEventListener('click', exportPackage);
     el.undo.addEventListener('click', undo); el.redo.addEventListener('click', redo);
     el.zoomIn.addEventListener('click', () => setZoom(zoom * 1.2)); el.zoomOut.addEventListener('click', () => setZoom(zoom / 1.2)); el.zoomFit.addEventListener('click', () => setZoom(fitScale()));
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
@@ -900,6 +973,7 @@
   }
   function onKey(e) {
     if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
+    if (el.pubModal && !el.pubModal.hidden) { if (e.key === 'Escape') closePublish(); return; }
     if (el.main.hidden) return; const ae = document.activeElement, tag = (ae && ae.tagName) || '';
     if (/INPUT|SELECT|TEXTAREA/.test(tag) || (ae && ae.isContentEditable)) return;
     const ctrl = e.ctrlKey || e.metaKey;

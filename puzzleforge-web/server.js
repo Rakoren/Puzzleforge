@@ -11,6 +11,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const archiver = require('archiver');
+const Anthropic = require('@anthropic-ai/sdk');
 
 // Import the engine as a package (file:.. dependency) with a relative fallback
 // so the app runs whether or not it has been `npm install`ed.
@@ -450,6 +451,31 @@ function pagePlanRender(book, plan) {
   return { view, leaves };
 }
 
+// Resolve a request into the FINAL book + leaf order to render. Honors the
+// editor's pagePlan (hand arrangement + templates) so pre-flight checks,
+// royalty, and the export package all reflect exactly what will print.
+function resolveBook(body) {
+  let book = body.bookId && bookCache.get(body.bookId);
+  if (!book) book = pf.assembleBook(body.config || {});
+  let leaves;
+  if (Array.isArray(body.pagePlan)) { const r = pagePlanRender(book, body.pagePlan); book = r.view; leaves = r.leaves; }
+  else if (Array.isArray(body.pageState)) applyPageState(book, body.pageState);
+  return { book, leaves };
+}
+
+// Render `book` (with optional leaf order) to a temp PDF and return its bytes +
+// page count. Caller deletes nothing — the temp file is unlinked here.
+async function renderInterior(book, leaves) {
+  const outPath = path.join(os.tmpdir(), `pf-int-${crypto.randomUUID()}.pdf`);
+  try {
+    await pf.exportBookPdf(book, { outPath, leaves });
+    const buf = fs.readFileSync(outPath);
+    return { buf, pageCount: countPdfPages(buf) };
+  } finally {
+    fs.unlink(outPath, () => {});
+  }
+}
+
 // Render one content page's puzzle HTML (single-page doc) at the book's trim,
 // honoring per-page border but NOT the decoration overlay (the editor draws
 // that live on the Fabric canvas).
@@ -570,20 +596,13 @@ app.post('/api/book/reroll', (req, res) => {
 // an accurate page count (the answer key paginates), then runs the checks.
 app.post('/api/book/checklist', async (req, res) => {
   const body = req.body || {};
-  const config = body.config || {};
-  let outPath;
   try {
-    let book = body.bookId && bookCache.get(body.bookId);
-    if (!book) book = pf.assembleBook(config);
-    outPath = path.join(os.tmpdir(), `pf-chk-${crypto.randomUUID()}.pdf`);
-    await pf.exportBookPdf(book, { outPath });
-    const pageCount = countPdfPages(fs.readFileSync(outPath));
-    const result = pf.runChecklist(book, { pageCount, specs: config.puzzles });
+    const { book, leaves } = resolveBook(body);
+    const { pageCount } = await renderInterior(book, leaves);
+    const result = pf.runChecklist(book, { pageCount, specs: (body.config || {}).puzzles });
     res.json({ ...result, pageCount });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
-  } finally {
-    if (outPath) fs.unlink(outPath, () => {});
   }
 });
 
@@ -591,22 +610,172 @@ app.post('/api/book/checklist', async (req, res) => {
 // a pageCount is supplied directly.
 app.post('/api/book/royalty', async (req, res) => {
   const body = req.body || {};
-  let outPath;
   try {
     let pageCount = Number(body.pageCount) || 0;
     if (!pageCount) {
-      let book = body.bookId && bookCache.get(body.bookId);
-      if (!book) book = pf.assembleBook(body.config || {});
-      outPath = path.join(os.tmpdir(), `pf-roy-${crypto.randomUUID()}.pdf`);
-      await pf.exportBookPdf(book, { outPath });
-      pageCount = countPdfPages(fs.readFileSync(outPath));
+      const { book, leaves } = resolveBook(body);
+      ({ pageCount } = await renderInterior(book, leaves));
     }
     const paper = body.paper === 'standard-color' || body.paper === 'premium-color' ? body.paper : 'bw';
     res.json(pf.royaltyEstimate({ pageCount, paper, listPrice: body.listPrice }));
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
-  } finally {
-    if (outPath) fs.unlink(outPath, () => {});
+  }
+});
+
+// --- Publish flow: proofread + package export ---
+
+// User-authored prose on the pages: template/matter text objects the user typed,
+// plus the book title/subtitle. Puzzle grids and clues are excluded — they're
+// generated and proofreading them just flags intentional puzzle words.
+function collectProse(book) {
+  const out = [];
+  const push = (page, text) => { const t = String(text || '').trim(); if (t.length > 1) out.push({ page, text: t }); };
+  if (book.title) push(1, book.title);
+  if (book.subtitle) push(1, book.subtitle);
+  (book.pages || []).forEach((pg, i) => {
+    const els = pg.state && pg.state.layout && pg.state.layout.elements;
+    if (Array.isArray(els)) els.forEach((e) => { if (e && e.kind === 'text') push(pg.pageNumber || i + 1, e.text); });
+  });
+  return out;
+}
+
+const PROOF_MODEL = process.env.PUZZLEFORGE_PROOF_MODEL || 'claude-opus-4-8';
+async function proofreadSnippets(snippets) {
+  const client = new Anthropic();
+  const numbered = snippets.map((s, i) => `[#${i + 1} · page ${s.page}]\n${s.text}`).join('\n\n');
+  const schema = {
+    type: 'object', additionalProperties: false,
+    properties: {
+      issues: {
+        type: 'array',
+        items: {
+          type: 'object', additionalProperties: false,
+          properties: {
+            page: { type: 'integer' },
+            severity: { type: 'string', enum: ['error', 'suggestion'] },
+            original: { type: 'string' },
+            fix: { type: 'string' },
+            note: { type: 'string' },
+          },
+          required: ['page', 'severity', 'original', 'fix', 'note'],
+        },
+      },
+    },
+    required: ['issues'],
+  };
+  const prompt = [
+    'You are proofreading the reader-facing text of a print puzzle/activity book.',
+    'Report only real problems: spelling, grammar, punctuation, and clarity. Do NOT rewrite for style,',
+    'do NOT flag intentional puzzle words, brand names, or proper nouns, and do NOT invent issues.',
+    'Severity "error" = objectively wrong (misspelling, agreement); "suggestion" = a clear readability improvement.',
+    'For each issue give the exact original phrase and a minimal corrected version. If everything is clean, return an empty list.',
+    '',
+    'Snippets (page numbers in brackets):',
+    numbered,
+  ].join('\n');
+
+  const stream = client.messages.stream({
+    model: PROOF_MODEL,
+    max_tokens: 4000,
+    messages: [{ role: 'user', content: prompt }],
+    output_config: { format: { type: 'json_schema', schema } },
+  });
+  const msg = await stream.finalMessage();
+  const text = (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  let raw; try { raw = JSON.parse(text); } catch (_) { return []; }
+  return Array.isArray(raw.issues) ? raw.issues.slice(0, 200) : [];
+}
+
+// Proofread the book's editable text (honors the editor's pagePlan).
+app.post('/api/book/proofread', async (req, res) => {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(400).json({ error: 'Proofreading needs an Anthropic API key. Set ANTHROPIC_API_KEY and restart the server.' });
+  }
+  try {
+    const { book } = resolveBook(req.body || {});
+    const snippets = collectProse(book);
+    if (!snippets.length) {
+      return res.json({ issues: [], checked: 0, note: 'No editable text to proofread yet. Add a title, intro, or copyright page (Insert → Page template), then run again.' });
+    }
+    const issues = await proofreadSnippets(snippets);
+    res.json({ issues, checked: snippets.length, model: PROOF_MODEL });
+  } catch (err) {
+    const e = err instanceof Anthropic.AuthenticationError ? 'The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.' : err.message;
+    res.status(err.status || 502).json({ error: e });
+  }
+});
+
+function renderChecklistText(chk, pageCount) {
+  const lines = [
+    'PuzzleForge — Pre-flight checklist',
+    '==================================',
+    '',
+    `Pages: ${pageCount}`,
+    `Blockers: ${chk.summary.blockers}   Warnings: ${chk.summary.warnings}   Passed: ${chk.summary.passes}`,
+    '',
+  ];
+  chk.items.forEach((it) => {
+    const tag = it.status === 'pass' ? 'PASS   ' : it.severity === 'blocker' ? 'BLOCKER' : 'WARN   ';
+    lines.push(`[${tag}] ${it.label}${it.message ? ` — ${it.message}` : ''}`);
+  });
+  return lines.join('\n') + '\n';
+}
+function renderProofreadText(issues) {
+  const lines = ['PuzzleForge — Proofread notes', '=============================', '', `${issues.length} item(s). AI-assisted — review each before accepting.`, ''];
+  issues.forEach((it, i) => {
+    lines.push(`${i + 1}. [page ${it.page || '?'}] (${it.severity || 'suggestion'})`);
+    lines.push(`   original: ${it.original || ''}`);
+    lines.push(`   fix:      ${it.fix || ''}`);
+    if (it.note) lines.push(`   note:     ${it.note}`);
+    lines.push('');
+  });
+  return lines.join('\n') + '\n';
+}
+
+// Export the finished book as one KDP upload package: interior PDF (honoring the
+// editor's arrangement), full-wrap cover PDF, build-info sheet, pre-flight
+// checklist, and (if supplied) proofread notes — zipped.
+app.post('/api/book/package', async (req, res) => {
+  const body = req.body || {};
+  const coverIn = body.cover || {};
+  const metadata = body.metadata || {};
+  try {
+    const { book, leaves } = resolveBook(body);
+    const { buf: interior, pageCount } = await renderInterior(book, leaves);
+    const paper = coverIn.paper === 'cream' ? 'cream' : 'white';
+
+    const coverConfig = {
+      trimSize: book.trimSize, pageCount, paper,
+      title: book.title, subtitle: book.subtitle, author: book.author,
+      front: { bgColor: coverIn.bgColor, textColor: coverIn.textColor, titlePosition: coverIn.titlePosition || 'center', image: coverIn.image || null },
+      back: { bgColor: coverIn.backColor || coverIn.bgColor, textColor: coverIn.textColor, blurb: coverIn.blurb || metadata.description || null },
+      spine: { bgColor: coverIn.bgColor, textColor: coverIn.textColor },
+    };
+    const coverPath = path.join(os.tmpdir(), `pf-cov-${crypto.randomUUID()}.pdf`);
+    let cover;
+    try { await pf.exportCoverPdf(coverConfig, { outPath: coverPath }); cover = fs.readFileSync(coverPath); } finally { fs.unlink(coverPath, () => {}); }
+
+    const dims = pf.coverDimensions(book.trimSize, pageCount, paper);
+    const info = buildInfoSheet({ title: book.title, subtitle: book.subtitle, author: book.author }, book, pageCount, paper, dims, metadata);
+    const chkReport = renderChecklistText(pf.runChecklist(book, { pageCount }), pageCount);
+
+    const base = (book.title || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}-kdp-package.zip"`);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.on('error', (err) => { if (!res.headersSent) res.status(500).json({ error: err.message }); });
+    archive.pipe(res);
+    archive.append(interior, { name: 'interior.pdf' });
+    archive.append(cover, { name: 'cover.pdf' });
+    archive.append(info, { name: 'build-info.txt' });
+    archive.append(chkReport, { name: 'preflight-checklist.txt' });
+    if (Array.isArray(body.proofreadIssues) && body.proofreadIssues.length) {
+      archive.append(renderProofreadText(body.proofreadIssues), { name: 'proofread-notes.txt' });
+    }
+    await archive.finalize();
+  } catch (err) {
+    if (!res.headersSent) res.status(err.status || 500).json({ error: err.message });
   }
 });
 

@@ -24,7 +24,8 @@
       <div class="ribbon-qa">
         <label class="upload ghost">Open recipe<input id="loadRecipe" type="file" accept="application/json" hidden></label>
         <button id="save" class="ghost">Save recipe</button>
-        <button id="exportPdf" class="primary">Export PDF</button>
+        <button id="exportPdf" class="ghost">Export PDF</button>
+        <button id="publishBtn" class="primary">Publish…</button>
       </div>
     </div>
 
@@ -285,6 +286,55 @@
       <div class="pf-tpl-grid" id="tplSaved"></div>
       <p class="pf-modal-sub" id="tplSavedEmpty">No saved templates yet. Build a page, then use
         <b>Save as template…</b> to reuse it here.</p>
+    </div>
+  </div>
+
+  <!-- Publish: pre-flight + KDP package export -->
+  <div class="pf-modal" id="pubModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box pf-pub" role="dialog" aria-modal="true" aria-labelledby="pubTitle">
+      <div class="pf-modal-head">
+        <h2 id="pubTitle">Publish to KDP</h2>
+        <button class="iconbtn" id="pubClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub">Runs a pre-flight check and proofread, then bundles everything KDP needs into one
+        download. Nothing here changes your book — you can export even with warnings.</p>
+
+      <div class="pf-pub-actions">
+        <button id="pubRunChecks" class="ghost">▶ Run pre-flight &amp; proofread</button>
+        <span id="pubCheckStatus" class="pf-pub-status"></span>
+      </div>
+      <div id="pubReport" class="pf-report" hidden></div>
+
+      <h3 class="pf-tpl-group">Listing details</h3>
+      <div class="pf-pub-grid">
+        <label class="field compact"><span>List price (USD)</span><input id="pubPrice" type="number" min="0" step="0.01" placeholder="e.g. 7.99"></label>
+        <label class="field compact"><span>Paper</span>
+          <select id="pubPaper"><option value="white">White</option><option value="cream">Cream</option></select>
+        </label>
+        <label class="field compact"><span>Reading age</span><input id="pubAge" type="text" placeholder="e.g. 6–10"></label>
+      </div>
+      <label class="field compact"><span>Description / blurb</span><textarea id="pubDesc" rows="3" placeholder="Back-cover blurb and KDP description…"></textarea></label>
+      <div class="pf-pub-grid">
+        <label class="field compact"><span>Keywords (comma-separated, 7 max)</span><input id="pubKeywords" type="text" placeholder="mazes, kids activity, ages 6-8, …"></label>
+        <label class="field compact"><span>Categories (comma-separated, 3 max)</span><input id="pubCategories" type="text" placeholder="Children's puzzle books, …"></label>
+      </div>
+      <div class="pf-pub-checks">
+        <label class="checkbox"><input type="checkbox" id="pubAiText"> Book uses AI-generated text (themes / clues)</label>
+        <label class="checkbox"><input type="checkbox" id="pubAiImages"> Book uses AI-generated images</label>
+      </div>
+
+      <h3 class="pf-tpl-group">Cover</h3>
+      <div class="pf-pub-grid">
+        <label class="field compact"><span>Background</span><input id="pubCoverBg" type="color" value="#2b5f6e"></label>
+        <label class="field compact"><span>Text color</span><input id="pubCoverText" type="color" value="#ffffff"></label>
+      </div>
+      <p class="pf-modal-sub">Cover uses your book title &amp; author automatically. For a custom cover, use the Cover Builder and it'll be picked up here later.</p>
+
+      <div class="pf-pub-footer">
+        <button id="pubExport" class="primary">⬇ Export KDP package (.zip)</button>
+        <span id="pubExportStatus" class="pf-pub-status"></span>
+      </div>
     </div>
   </div>
 

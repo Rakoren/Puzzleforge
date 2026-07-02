@@ -115,3 +115,25 @@ test('renderPuzzlesHtml combines a teacher set (differentiation) into one docume
   assert.equal(pages, 3);
   assert.match(html, /size: 8\.5in 11in/);
 });
+
+test('checklist adds KDP print-spec checks (gutter margin scales with page count)', () => {
+  const { runChecklist } = require('../engine/checklist');
+  const book = assembleBook({ ...CONFIG, answerKey: true });
+  const ok = runChecklist(book, { pageCount: 40 });
+  const okGutter = ok.items.find((i) => i.id === 'gutter-margin');
+  assert.equal(okGutter.status, 'pass'); // 0.75" gutter is ample at 40 pages
+  assert.ok(ok.items.find((i) => i.id === 'kdp-page-max'));
+  // A 800-page book needs 0.875"; our 0.75" gutter should fail.
+  const thick = runChecklist(book, { pageCount: 800 });
+  assert.equal(thick.items.find((i) => i.id === 'gutter-margin').status, 'fail');
+});
+
+test('checklist detects a copyright page from editor template text', () => {
+  const { runChecklist } = require('../engine/checklist');
+  const book = assembleBook({ ...CONFIG, copyright: false });
+  // simulate a template copyright page: a blank content page carrying text elements
+  book.pages.push({ puzzle: { type: 'bleedguard', data: {}, solution: {} }, pageNumber: 99,
+    state: { layout: { comp: {}, elements: [{ kind: 'text', text: 'Copyright © 2026 R. Koren' }] } } });
+  const r = runChecklist(book, { pageCount: 40 });
+  assert.equal(r.items.find((i) => i.id === 'copyright').status, 'pass');
+});

@@ -11,6 +11,20 @@
  * check reports status 'pass' (🟢).
  */
 const { isActivityType } = require('../generators/registry');
+const { getLayout } = require('../layouts');
+const { gutterMinInches, KDP_PAGE_MAX } = require('./kdp');
+
+// All user-authored text on the pages (template / matter text objects), lowercased.
+// Lets matter checks work whether copyright came from a Book Builder field or an
+// inserted editor template.
+function pageText(book) {
+  const parts = [];
+  for (const pg of book.pages || []) {
+    const els = pg.state && pg.state.layout && pg.state.layout.elements;
+    if (Array.isArray(els)) for (const e of els) if (e && e.kind === 'text' && e.text) parts.push(String(e.text));
+  }
+  return parts.join('\n').toLowerCase();
+}
 
 const KDP_MIN_PAGES = 24;
 const DRAWABLE = new Set(['coloring', 'drawing']);
@@ -81,17 +95,35 @@ function runChecklist(book, opts = {}) {
   add('bleed-guards', 'Bleed guards placed', 'warning', guardsOk,
     'A coloring/drawing page has no blank page behind it — marker ink can bleed through. Turn on bleed guard.');
 
-  // --- Front / back matter ---
-  const hasCopyright = (book.frontMatter || []).some((m) => m.kind === 'copyright');
+  // --- Front / back matter (matter may be a Book Builder field OR an editor template) ---
+  const txt = pageText(book);
+  const hasCopyright = (book.frontMatter || []).some((m) => m.kind === 'copyright') || /copyright ©|all rights reserved/.test(txt);
   add('copyright', 'Copyright page', 'warning', hasCopyright,
-    'No copyright page. Most published books include one (front matter).');
+    'No copyright page. Most published books include one — add the Copyright template in the editor.');
 
-  add('back-matter', 'Back matter present', 'warning', (book.backMatter || []).length > 0,
+  const hasBack = (book.backMatter || []).length > 0 || /about the author|more books/.test(txt);
+  add('back-matter', 'Back matter present', 'warning', hasBack,
     'No back matter. An "about the author" or "more books" page adds polish and cross-promotion.');
 
   // --- Print readiness ---
   add('trim-consistent', 'Single trim size', 'blocker', Boolean(book.trimSize),
     'Book has no trim size set.');
+
+  add('kdp-page-max', 'Within KDP page limit', 'blocker', pages <= KDP_PAGE_MAX,
+    `KDP paperback allows at most ${KDP_PAGE_MAX} pages — this book has ${pages}. Split it into volumes.`);
+
+  // Inside (gutter) margin must grow with page count; thicker books lose more to
+  // the binding. Our trim specs use a generous 0.75", so this only trips on very
+  // thick books (700+ pages).
+  if (book.trimSize) {
+    try {
+      const layout = getLayout(book.trimSize, { audience: book.audience });
+      const gutter = layout.margins.gutter;
+      const need = gutterMinInches(pages);
+      add('gutter-margin', 'Inside (gutter) margin for page count', 'blocker', gutter >= need - 1e-9,
+        `Inside margin is ${gutter}" but a ${pages}-page book needs at least ${need}". Reduce pages or widen the gutter.`);
+    } catch (_) { /* unknown trim already flagged by trim-consistent */ }
+  }
 
   const summary = items.reduce(
     (acc, it) => {

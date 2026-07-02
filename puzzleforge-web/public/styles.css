@@ -376,6 +376,34 @@ body.theme-dark {
 .theme-dark .pf-tpl-pick:hover { background: #2f3b57; border-color: var(--brand); }
 .theme-dark .pf-tpl-del { background: #34373d; border-color: var(--line); color: var(--muted); }
 
+/* Publish modal */
+.pf-pub { width: min(640px, 100%); }
+.pf-pub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pf-pub .field.compact { margin: 0 0 10px; }
+.pf-pub textarea { width: 100%; font: inherit; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
+.pf-pub-checks { display: flex; flex-direction: column; gap: 5px; margin: 6px 0 4px; }
+.pf-pub-actions { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+.pf-pub-footer { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.pf-pub-status { font-size: 12.5px; color: var(--muted); }
+.pf-pub-status.busy { color: var(--brand); }
+.pf-pub-status.ok { color: var(--ok); }
+.pf-pub-status.err { color: #c0392b; }
+.pf-report { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; background: #fafbfd; font-size: 13px; }
+.rep-summary { font-size: 14px; margin-bottom: 8px; }
+.rep-summary b { font-variant-numeric: tabular-nums; }
+.rep-b { color: #c0392b; } .rep-w { color: #b4690e; } .rep-p { color: var(--ok); }
+.rep-subhead { font-weight: 600; margin: 12px 0 6px; }
+.rep-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.rep-list li { padding-left: 10px; border-left: 3px solid var(--line); }
+.rep-list li.blocker { border-left-color: #c0392b; }
+.rep-list li.warning { border-left-color: #e0a05a; }
+.rep-ok { color: var(--ok); }
+.rep-note { color: var(--muted); }
+.rep-note.err { color: #c0392b; }
+.rep-dim { color: var(--muted); }
+.theme-dark .pf-pub textarea, .theme-dark .pf-pub input, .theme-dark .pf-pub select { background: #1f2125; color: var(--ink); border-color: var(--line); }
+.theme-dark .pf-report { background: #26282c; border-color: var(--line); }
+
 /* Page Editor */
 .editor-actions { display: flex; gap: 6px; align-items: center; }
 .zoombar { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 9px; padding: 2px 4px; }
