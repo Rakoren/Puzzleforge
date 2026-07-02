@@ -217,17 +217,21 @@ const DRAWABLE_TYPES = new Set(['coloring', 'drawing']);
 // back side blank we put every drawable on a recto (odd) page and a blank on its
 // verso. `startAbs` is the absolute PDF page number of the first content page
 // (after the title + front matter).
-function addBleedGuards(pages, startAbs) {
+function addBleedGuards(pages, startAbs, guardLeaf) {
   const blank = () => generate({ type: 'bleedguard', label: '' });
   const out = [];
   let abs = startAbs;
+  const pushBlank = () => { out.push(blank()); abs++; };
   for (let i = 0; i < pages.length; i++) {
     const pg = pages[i];
     if (DRAWABLE_TYPES.has(pg.type)) {
-      if (abs % 2 === 0) { out.push(blank()); abs++; } // push the drawable onto a recto
+      if (abs % 2 === 0) pushBlank(); // put the drawable onto a recto (odd)
       out.push(pg); abs++;
-      const next = pages[i + 1];
-      if (!next || next.type !== 'bleedguard') { out.push(blank()); abs++; } // blank verso = blank back
+      // Consume an existing blank right after so we don't double it.
+      if (pages[i + 1] && pages[i + 1].type === 'bleedguard') i++;
+      pushBlank(); // blank verso = the drawable's blank physical back
+      // Optional: a full blank leaf so the next puzzle starts on a fresh spread.
+      if (guardLeaf) { pushBlank(); pushBlank(); }
     } else {
       out.push(pg);
       abs++;
@@ -372,7 +376,7 @@ function buildBook(config, opts, seed, rand) {
   // Keep the back of every coloring/drawing leaf blank so markers don't bleed
   // through (on by default). Needs the first content page's absolute number
   // (title page = 1, then front matter) to reason about recto/verso.
-  if (config.bleedGuard !== false) ordered = addBleedGuards(ordered, 2 + frontMatter.length);
+  if (config.bleedGuard !== false) ordered = addBleedGuards(ordered, 2 + frontMatter.length, config.guardLeaf === true);
 
   // Page assignment: title page (1) + front matter, then one page per content
   // page, then the answer key (computed by the matter template at render time;
