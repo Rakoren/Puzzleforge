@@ -21,7 +21,7 @@
     flipH: $('flipH'), flipV: $('flipV'), lockObj: $('lockObj'),
     dupObj: $('dupObj'), resetPos: $('resetPos'), hideObj: $('hideObj'), deleteObj: $('deleteObj'),
     border: $('border'), snapToggle: $('snapToggle'), gridToggle: $('gridToggle'),
-    reroll: $('reroll'), resetLayout: $('resetLayout'), addBlankSide: $('addBlankSide'),
+    reroll: $('reroll'), resetLayout: $('resetLayout'), addBlankSide: $('addBlankSide'), darkToggle: $('darkToggle'),
     save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
   };
   let bookId = null, bookConfig = null, seed = null, dims = { usableWidth: 636, usableHeight: 816 };
@@ -519,8 +519,20 @@
     else if (cur === 'format') { ribbonActivate(ribbonPrevTab || 'home'); }
   }
 
+  // --- theme (editor skin) ---
+  function applyTheme(dark) {
+    document.body.classList.toggle('theme-dark', dark);
+    try { localStorage.setItem('pf_theme', dark ? 'dark' : 'light'); } catch (_) { /* */ }
+  }
+  function setupTheme() {
+    let saved = null; try { saved = localStorage.getItem('pf_theme'); } catch (_) { /* */ }
+    const dark = saved ? saved === 'dark' : true; // default to the dark Publisher skin
+    if (el.darkToggle) { el.darkToggle.checked = dark; el.darkToggle.addEventListener('change', () => applyTheme(el.darkToggle.checked)); }
+    applyTheme(dark);
+  }
+
   function init() {
-    setupRibbon();
+    setupRibbon(); setupTheme();
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
     el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));
