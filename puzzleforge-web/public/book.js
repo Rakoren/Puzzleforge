@@ -196,9 +196,10 @@
       0
     );
     const guards = el.bleedGuard.checked ? gaps * drawableFillers + drawableRows : 0;
-    const pages = 1 + total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0);
+    // No title page here — it's added in the editor. Cover/matter pages are too.
+    const pages = total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0);
     const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
-    el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (title + puzzles + answer key)`;
+    el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (puzzles + answer key; add title & matter in the editor)`;
   }
 
   // Invalidate the cached/built book when settings change.
@@ -281,6 +282,7 @@
       borderColor: el.borderColor.value,
       difficultyCurve: el.difficultyCurve.value || undefined,
       theme: el.theme.value,
+      titlePage: false, // title page is added in the Page Editor (Title Page template)
       answerKey: el.answerKey.checked,
       uniqueWords: el.uniqueWords.checked,
       shuffle: el.shuffle.checked,

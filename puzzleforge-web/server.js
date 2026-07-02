@@ -301,7 +301,7 @@ app.post('/api/book/preview', (req, res) => {
         puzzleCount: book.meta.puzzleCount,
         byType: book.meta.byType,
         pages:
-          1 +
+          (book.titlePage === false ? 0 : 1) +
           (book.meta.frontMatterCount || 0) +
           book.pages.length +
           (book.answerKey && book.meta.puzzleCount > 0 ? 1 : 0) +

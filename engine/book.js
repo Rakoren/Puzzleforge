@@ -378,10 +378,13 @@ function buildBook(config, opts, seed, rand) {
   // (title page = 1, then front matter) to reason about recto/verso.
   if (config.bleedGuard !== false) ordered = addBleedGuards(ordered, 2 + frontMatter.length, config.guardLeaf === true);
 
-  // Page assignment: title page (1) + front matter, then one page per content
-  // page, then the answer key (computed by the matter template at render time;
-  // here we record content page numbers for cross-referencing in the key).
-  let page = 1 + frontMatter.length; // title + front matter
+  // Page assignment: (optional) title page + front matter, then one page per
+  // content page, then the answer key (computed by the matter template at render
+  // time; here we record content page numbers for cross-referencing in the key).
+  // The title page is on by default; the editor-driven flow turns it off and
+  // adds a Title Page template instead, so it must not be counted here.
+  const titlePage = config.titlePage !== false;
+  let page = (titlePage ? 1 : 0) + frontMatter.length;
   // Per-page state layer (recipe v2): overrides + reserved Fabric canvasState,
   // keyed by content-page index. Stable across reloads because the seed fixes
   // the page sequence.
@@ -402,6 +405,7 @@ function buildBook(config, opts, seed, rand) {
     trimSize,
     audience,
     answerKey,
+    titlePage, // whether an auto title page leads the book (off = template-driven)
     pageNumbers: config.pageNumbers === true, // footer page numbers on content pages
     footerText: config.footerText ? String(config.footerText).trim() : null,
     fontScale: Number(config.fontScale) || 1, // large-print text scaling

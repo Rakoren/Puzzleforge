@@ -137,3 +137,17 @@ test('checklist detects a copyright page from editor template text', () => {
   const r = runChecklist(book, { pageCount: 40 });
   assert.equal(r.items.find((i) => i.id === 'copyright').status, 'pass');
 });
+
+test('titlePage:false omits the auto title page but keeps title/author for cover & metadata', () => {
+  const on = assembleBook({ ...CONFIG });
+  assert.equal(on.titlePage, true);
+  const off = assembleBook({ ...CONFIG, titlePage: false });
+  assert.equal(off.titlePage, false);
+  assert.equal(off.title, CONFIG.title); // title field preserved
+  // Default render: title page present when on, absent when off.
+  const { defaultLeaves } = require('../engine/export');
+  assert.equal(defaultLeaves(on).filter((l) => l.role === 'title').length, 1);
+  assert.equal(defaultLeaves(off).filter((l) => l.role === 'title').length, 0);
+  // Content page numbering shifts down by one when there's no title page.
+  assert.equal(off.pages[0].pageNumber, on.pages[0].pageNumber - 1);
+});

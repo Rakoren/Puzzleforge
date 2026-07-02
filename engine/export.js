@@ -302,7 +302,7 @@ async function exportPuzzlePdf(puzzle, opts = {}) {
  * @returns {Array<{role, matter?, matterKind?, puzzle?, state?, src?}>}
  */
 function defaultLeaves(book) {
-  const leaves = [{ role: 'title' }];
+  const leaves = book.titlePage === false ? [] : [{ role: 'title' }];
   for (const fm of book.frontMatter || []) {
     if (fm.kind === 'copyright' || fm.kind === 'belongsTo' || fm.kind === 'intro') {
       leaves.push({ role: 'frontmatter', matter: fm, matterKind: fm.kind });
