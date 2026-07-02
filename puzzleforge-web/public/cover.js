@@ -29,6 +29,7 @@
     coverScale: $('coverScale'),
     coverFrame: $('coverFrame'),
     emptyState: $('emptyState'),
+    useForBook: $('useForBook'),
   };
 
   let imageData = null; // data URL of the uploaded front image
@@ -161,6 +162,30 @@
     invalidate();
   }
 
+  // Hand this cover off to the editor's Publish → KDP package.
+  function useForBook() {
+    try {
+      localStorage.setItem('pf_cover', JSON.stringify(config()));
+      setStatus('Saved. It will be used in the editor under Publish → Export KDP package.', 'ok');
+    } catch (_) {
+      setStatus('Could not save the cover (browser storage full?).', 'err');
+    }
+  }
+
+  // Prefill from the editor when it sent us here (title/author/trim/page count).
+  function applySeed() {
+    let seed = null;
+    try { const raw = localStorage.getItem('pf_cover_seed'); if (raw) { seed = JSON.parse(raw); localStorage.removeItem('pf_cover_seed'); } } catch (_) { /* */ }
+    if (!seed) return;
+    if (seed.title) el.title.value = seed.title;
+    if (seed.subtitle) el.subtitle.value = seed.subtitle;
+    if (seed.author) el.author.value = seed.author;
+    if (seed.trimSize && [...el.trimSize.options].some((o) => o.value === seed.trimSize)) el.trimSize.value = seed.trimSize;
+    if (seed.pageCount) el.pageCount.value = seed.pageCount;
+    if (seed.blurb) el.blurb.value = seed.blurb;
+    setStatus('Loaded your book’s details. Design the cover, then “Use for this book”.', 'ok');
+  }
+
   async function init() {
     try {
       const meta = await (await fetch('/api/meta')).json();
@@ -174,9 +199,11 @@
     } catch (_) {
       setStatus('Could not reach the server.', 'err');
     }
+    applySeed();
 
     el.preview.addEventListener('click', preview);
     el.downloadPdf.addEventListener('click', downloadPdf);
+    if (el.useForBook) el.useForBook.addEventListener('click', useForBook);
     el.frontImage.addEventListener('change', onImage);
     el.clearImage.addEventListener('click', clearImage);
     [

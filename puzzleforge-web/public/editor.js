@@ -34,6 +34,7 @@
     pubPrice: $('pubPrice'), pubPaper: $('pubPaper'), pubAge: $('pubAge'), pubDesc: $('pubDesc'),
     pubKeywords: $('pubKeywords'), pubCategories: $('pubCategories'), pubAiText: $('pubAiText'), pubAiImages: $('pubAiImages'),
     pubCoverBg: $('pubCoverBg'), pubCoverText: $('pubCoverText'), pubExport: $('pubExport'), pubExportStatus: $('pubExportStatus'),
+    pubCoverStatus: $('pubCoverStatus'), pubOpenCover: $('pubOpenCover'), pubClearCover: $('pubClearCover'), pubSimpleCover: $('pubSimpleCover'),
     save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
   };
   let bookId = null, bookConfig = null, seed = null, dims = { usableWidth: 636, usableHeight: 816 };
@@ -808,8 +809,31 @@
 
   // --- Publish flow (pre-flight + KDP package) ------------------------------
   const bookBody = () => (bookId ? { bookId, pagePlan: buildPagePlan() } : { config: bookConfig, pagePlan: buildPagePlan() });
-  function openPublish() { if (el.main.hidden) return; el.pubModal.hidden = false; }
+  function openPublish() { if (el.main.hidden) return; refreshCoverState(); el.pubModal.hidden = false; }
   function closePublish() { el.pubModal.hidden = true; }
+  const bookTitle = () => (bookConfig && bookConfig.title) || '';
+  function savedCover() { try { return JSON.parse(localStorage.getItem('pf_cover') || 'null'); } catch (_) { return null; } }
+  function refreshCoverState() {
+    const cover = savedCover();
+    if (cover) {
+      el.pubCoverStatus.textContent = `✓ Using your Cover Builder design${cover.title ? ` (“${cover.title}”)` : ''}. Trim & spine are matched to this book automatically.`;
+      el.pubCoverStatus.className = 'pf-cover-status ok';
+      el.pubClearCover.hidden = false; el.pubSimpleCover.hidden = true;
+    } else {
+      el.pubCoverStatus.textContent = 'No custom cover yet — a simple cover is generated from your title and the colors below. Or design one in the Cover Builder.';
+      el.pubCoverStatus.className = 'pf-cover-status';
+      el.pubClearCover.hidden = true; el.pubSimpleCover.hidden = false;
+    }
+  }
+  function openCoverBuilder() {
+    const seed = { title: bookTitle(), subtitle: (bookConfig && bookConfig.subtitle) || '', author: (bookConfig && bookConfig.author) || '',
+      trimSize: (bookConfig && bookConfig.trimSize) || '', pageCount: pageModels.length, blurb: el.pubDesc.value || '' };
+    try { localStorage.setItem('pf_cover_seed', JSON.stringify(seed)); } catch (_) { /* */ }
+    window.open('cover.html', '_blank');
+    el.pubCoverStatus.textContent = 'Design your cover in the new tab, click “Use for this book”, then come back — it’ll be picked up here.';
+    el.pubCoverStatus.className = 'pf-cover-status busy';
+  }
+  function clearCover() { try { localStorage.removeItem('pf_cover'); } catch (_) { /* */ } refreshCoverState(); }
   function gatherMeta() {
     return { description: el.pubDesc.value, keywords: el.pubKeywords.value, categories: el.pubCategories.value, readingAge: el.pubAge.value,
       listPrice: el.pubPrice.value, paper: el.pubPaper.value, aiText: el.pubAiText.checked, aiImages: el.pubAiImages.checked };
@@ -859,7 +883,9 @@
   async function exportPackage() {
     el.pubExport.disabled = true; setPubStatus(el.pubExportStatus, 'Building package…', 'busy');
     try {
-      const body = { ...bookBody(), metadata: gatherMeta(), cover: gatherCover(), proofreadIssues: lastProofIssues };
+      const body = { ...bookBody(), metadata: gatherMeta(), proofreadIssues: lastProofIssues };
+      const cover = savedCover();
+      if (cover) body.coverFull = cover; else body.cover = gatherCover();
       const res = await fetch('/api/book/package', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Export failed'); }
       downloadBlob(await res.blob(), slug((bookConfig && bookConfig.title) || 'book') + '-kdp-package.zip');
@@ -947,6 +973,10 @@
     if (el.pubModal) el.pubModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closePublish(); });
     if (el.pubRunChecks) el.pubRunChecks.addEventListener('click', runPreflight);
     if (el.pubExport) el.pubExport.addEventListener('click', exportPackage);
+    if (el.pubOpenCover) el.pubOpenCover.addEventListener('click', openCoverBuilder);
+    if (el.pubClearCover) el.pubClearCover.addEventListener('click', clearCover);
+    // Re-check for a Cover Builder hand-off when returning to this tab.
+    window.addEventListener('focus', () => { if (el.pubModal && !el.pubModal.hidden) refreshCoverState(); });
     el.undo.addEventListener('click', undo); el.redo.addEventListener('click', redo);
     el.zoomIn.addEventListener('click', () => setZoom(zoom * 1.2)); el.zoomOut.addEventListener('click', () => setZoom(zoom / 1.2)); el.zoomFit.addEventListener('click', () => setZoom(fitScale()));
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);

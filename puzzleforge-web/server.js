@@ -743,15 +743,25 @@ app.post('/api/book/package', async (req, res) => {
   try {
     const { book, leaves } = resolveBook(body);
     const { buf: interior, pageCount } = await renderInterior(book, leaves);
-    const paper = coverIn.paper === 'cream' ? 'cream' : 'white';
+    // A full Cover Builder design (via "Use for this book") takes precedence; the
+    // simple color pickers are the fallback. Either way trim size and page count
+    // are forced to the real book so the spine width is correct.
+    const coverFull = body.coverFull && typeof body.coverFull === 'object' ? body.coverFull : null;
+    const paper = metadata.paper === 'cream' || coverIn.paper === 'cream' || (coverFull && coverFull.paper === 'cream') ? 'cream' : 'white';
 
-    const coverConfig = {
-      trimSize: book.trimSize, pageCount, paper,
-      title: book.title, subtitle: book.subtitle, author: book.author,
-      front: { bgColor: coverIn.bgColor, textColor: coverIn.textColor, titlePosition: coverIn.titlePosition || 'center', image: coverIn.image || null },
-      back: { bgColor: coverIn.backColor || coverIn.bgColor, textColor: coverIn.textColor, blurb: coverIn.blurb || metadata.description || null },
-      spine: { bgColor: coverIn.bgColor, textColor: coverIn.textColor },
-    };
+    const coverConfig = coverFull
+      ? {
+        ...coverFull,
+        trimSize: book.trimSize, pageCount, paper,
+        title: coverFull.title || book.title, subtitle: coverFull.subtitle || book.subtitle, author: coverFull.author || book.author,
+      }
+      : {
+        trimSize: book.trimSize, pageCount, paper,
+        title: book.title, subtitle: book.subtitle, author: book.author,
+        front: { bgColor: coverIn.bgColor, textColor: coverIn.textColor, titlePosition: coverIn.titlePosition || 'center', image: coverIn.image || null },
+        back: { bgColor: coverIn.backColor || coverIn.bgColor, textColor: coverIn.textColor, blurb: coverIn.blurb || metadata.description || null },
+        spine: { bgColor: coverIn.bgColor, textColor: coverIn.textColor },
+      };
     const coverPath = path.join(os.tmpdir(), `pf-cov-${crypto.randomUUID()}.pdf`);
     let cover;
     try { await pf.exportCoverPdf(coverConfig, { outPath: coverPath }); cover = fs.readFileSync(coverPath); } finally { fs.unlink(coverPath, () => {}); }

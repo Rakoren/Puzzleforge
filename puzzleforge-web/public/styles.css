@@ -401,6 +401,9 @@ body.theme-dark {
 .rep-note { color: var(--muted); }
 .rep-note.err { color: #c0392b; }
 .rep-dim { color: var(--muted); }
+.pf-cover-status { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.pf-cover-status.ok { color: var(--ok); }
+.pf-cover-status.busy { color: var(--brand); }
 .theme-dark .pf-pub textarea, .theme-dark .pf-pub input, .theme-dark .pf-pub select { background: #1f2125; color: var(--ink); border-color: var(--line); }
 .theme-dark .pf-report { background: #26282c; border-color: var(--line); }
 

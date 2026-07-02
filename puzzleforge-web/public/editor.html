@@ -325,11 +325,15 @@
       </div>
 
       <h3 class="pf-tpl-group">Cover</h3>
-      <div class="pf-pub-grid">
+      <div id="pubCoverStatus" class="pf-cover-status"></div>
+      <div class="pf-pub-actions">
+        <button id="pubOpenCover" class="ghost" type="button">Open Cover Builder →</button>
+        <button id="pubClearCover" class="ghost" type="button" hidden>Use simple cover instead</button>
+      </div>
+      <div id="pubSimpleCover" class="pf-pub-grid">
         <label class="field compact"><span>Background</span><input id="pubCoverBg" type="color" value="#2b5f6e"></label>
         <label class="field compact"><span>Text color</span><input id="pubCoverText" type="color" value="#ffffff"></label>
       </div>
-      <p class="pf-modal-sub">Cover uses your book title &amp; author automatically. For a custom cover, use the Cover Builder and it'll be picked up here later.</p>
 
       <div class="pf-pub-footer">
         <button id="pubExport" class="primary">⬇ Export KDP package (.zip)</button>
