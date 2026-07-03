@@ -499,10 +499,14 @@
       if (matter) applyAbsBase(c);
       flowEl.appendChild(node);
     });
-    el.stageInner.appendChild(flowEl);
 
-    // Absolute element overlays.
-    pm.elements.sort((a, b) => num(a.z, 0) - num(b.z, 0)).forEach((e) => el.stageInner.appendChild(makeEl(e)));
+    // Free objects render in z-order, split across the puzzle: objects flagged
+    // `behind` sit UNDER the puzzle/title/word-list (backgrounds, watermarks,
+    // frames); the rest sit on top. The puzzle itself stays a protected object.
+    const ordered = pm.elements.slice().sort((a, b) => num(a.z, 0) - num(b.z, 0));
+    ordered.filter((e) => e.behind).forEach((e) => el.stageInner.appendChild(makeEl(e)));
+    el.stageInner.appendChild(flowEl);
+    ordered.filter((e) => !e.behind).forEach((e) => el.stageInner.appendChild(makeEl(e)));
 
     vGuide = document.createElement('div'); vGuide.className = 'pf-guide pf-guide-v'; vGuide.style.display = 'none';
     hGuide = document.createElement('div'); hGuide.className = 'pf-guide pf-guide-h'; hGuide.style.display = 'none';
@@ -525,7 +529,7 @@
   function applyPieceTf(c) { if (c._node) c._node.style.transform = (c.dx || c.dy || c.scale !== 1 || c.rot) ? `translate(${c.dx}px,${c.dy}px) rotate(${c.rot}deg) scale(${c.scale})` : ''; }
 
   function makeEl(e) {
-    const node = document.createElement('div'); node.className = 'pf-node'; node.innerHTML = elHtml(e);
+    const node = document.createElement('div'); node.className = 'pf-node' + (e.behind ? ' pf-behind' : ''); node.innerHTML = elHtml(e);
     e._node = node; node._ref = e; applyElTf(e);
     node.addEventListener('pointerdown', (ev) => onPointerDown(ev, e));
     if (e.kind === 'text') node.addEventListener('dblclick', () => editText(e));
@@ -758,7 +762,12 @@
   function reorder(kind) {
     const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo();
     const arr = curModel().elements; const zs = arr.map((e) => num(e.z, 100));
-    if (kind === 'front') o.z = Math.max(...zs) + 10; else if (kind === 'back') o.z = Math.min(...zs) - 10; else if (kind === 'forward') o.z = num(o.z, 100) + 15; else if (kind === 'backward') o.z = num(o.z, 100) - 15;
+    // "Send to back" drops the object behind the puzzle layer; "Bring to front"
+    // pulls it back above. Forward/backward step it within its current layer.
+    if (kind === 'front') { o.behind = false; o.z = Math.max(...zs) + 10; }
+    else if (kind === 'back') { o.behind = true; o.z = Math.min(...zs) - 10; }
+    else if (kind === 'forward') o.z = num(o.z, 100) + 15;
+    else if (kind === 'backward') o.z = num(o.z, 100) - 15;
     renderPage(); setTimeout(() => setSel([o]), 0);
   }
   function flip(axis) { const o = sels.length === 1 && sels[0]; if (!o || (o.kind !== 'image' && o.kind !== 'shape')) return; pushUndo(); if (axis === 'h') o.flipH = !o.flipH; else o.flipV = !o.flipV; o._node.innerHTML = elHtml(o); }
@@ -1146,6 +1155,7 @@
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
         borderColor: e.borderColor, borderW: e.borderW, headerFill: e.headerFill, cellPad: e.cellPad,
+        behind: e.behind || undefined, field: e.field || undefined,
         gid: e.gid,
       }));
       st.layout = { comp, elements };

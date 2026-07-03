@@ -112,6 +112,22 @@ test('table elements render as an HTML table with header styling and escaped cel
   assert.ok(!html.includes('<10>'));            // no raw HTML injection
 });
 
+test('objects flagged behind render under the puzzle pieces (export stacking)', () => {
+  const { composeParts } = require('../engine/components');
+  const { getLayout } = require('../layouts');
+  const layout = getLayout('6x9', { audience: 'adult' });
+  const components = [{ kind: 'grid', key: 'grid', html: '<div>PUZZLEGRID</div>' }];
+  const pageLayout = { comp: {}, elements: [
+    { kind: 'text', text: 'BEHINDMARK', x: 10, y: 10, behind: true, z: 1 },
+    { kind: 'text', text: 'FRONTMARK', x: 10, y: 40, z: 2 },
+  ] };
+  const html = composeParts('', components, layout, pageLayout);
+  const iBehind = html.indexOf('BEHINDMARK'), iGrid = html.indexOf('PUZZLEGRID'), iFront = html.indexOf('FRONTMARK');
+  assert.ok(iBehind >= 0 && iGrid >= 0 && iFront >= 0, 'all three present');
+  assert.ok(iBehind < iGrid, 'behind object renders before (under) the puzzle');
+  assert.ok(iGrid < iFront, 'front object renders after (over) the puzzle');
+});
+
 test('master pages inject page-number overlays with correct per-page numbers', () => {
   const book = assembleBook({
     ...CONFIG,

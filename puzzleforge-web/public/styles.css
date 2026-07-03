@@ -544,6 +544,7 @@ body.master-editing .editor-stage { outline: 2px solid var(--brand); outline-off
 .pf-piece { position: relative; transform-origin: top left; cursor: move; }
 .pf-piece:hover { outline: 1px dashed #c9d4ff; }
 .pf-node { position: absolute; top: 0; left: 0; transform-origin: top left; cursor: move; z-index: 2; }
+.pf-node.pf-behind { z-index: 0; }   /* sent behind the puzzle/title/word-list */
 .pf-node:hover { outline: 1px dashed #c9d4ff; }
 .pf-textbox { min-width: 20px; }
 .pf-sel-layer { position: absolute; inset: 0; pointer-events: none; z-index: 997; }

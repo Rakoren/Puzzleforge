@@ -138,15 +138,17 @@ function composeParts(style, components, layout, pageLayout) {
 
   // Inner markup comes from the SAME renderer the editor uses on screen
   // (engine/element-html.js), so text/image/shape objects print exactly as
-  // they were drawn.
-  const freebies = elements
-    .sort((a, b) => num(a.z, 0) - num(b.z, 0))
-    .map((e) => {
-      const inner = elementHtml(e);
-      if (!inner) return '';
-      return `<div class="pf-el" style="transform: translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)});">${inner}</div>`;
-    })
-    .join('\n');
+  // they were drawn. Objects flagged `behind` render UNDER the puzzle pieces
+  // (backgrounds/watermarks/frames); the rest render on top — matching the
+  // editor's stacking exactly.
+  const renderEl = (e) => {
+    const inner = elementHtml(e);
+    if (!inner) return '';
+    return `<div class="pf-el" style="transform: translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)});">${inner}</div>`;
+  };
+  const ordered = elements.slice().sort((a, b) => num(a.z, 0) - num(b.z, 0));
+  const behindHtml = ordered.filter((e) => e.behind).map(renderEl).join('\n');
+  const frontHtml = ordered.filter((e) => !e.behind).map(renderEl).join('\n');
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><style>
@@ -159,8 +161,9 @@ function composeParts(style, components, layout, pageLayout) {
   ${style}
 </style></head>
 <body>
+${behindHtml}
 ${pieces}
-${freebies}
+${frontHtml}
 </body></html>`;
 }
 
