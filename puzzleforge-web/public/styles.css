@@ -478,6 +478,13 @@ body.theme-dark {
 .stage-scroll { grid-area: 2 / 2; overflow: auto; max-height: 82vh; display: flex; justify-content: center; align-items: flex-start; padding: 8px; }
 .stage-outer { position: relative; background: #fff; box-shadow: 0 2px 14px rgba(0,0,0,.12); overflow: hidden; flex: 0 0 auto; }
 .stage-inner { position: relative; background: #fff; transform-origin: top left; }
+/* View → Show toggles */
+.editor-stage.no-rulers { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.editor-stage.no-rulers .ruler-corner, .editor-stage.no-rulers .ruler { display: none; }
+.editor-stage.no-rulers .stage-scroll { grid-area: 1 / 1; }
+.ribbon-layout.no-nav { grid-template-columns: 1fr !important; }
+.ribbon-layout.no-nav .editor-pages { display: none; }
+.stage-inner.show-bounds { outline: 1.5px dashed #2f9e6a; outline-offset: 0; }
 .pf-grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background: repeating-linear-gradient(0deg,#eef0f6 0 1px,transparent 1px 24px),repeating-linear-gradient(90deg,#eef0f6 0 1px,transparent 1px 24px); }
 .pf-flow { position: relative; z-index: 1; width: 100%; }

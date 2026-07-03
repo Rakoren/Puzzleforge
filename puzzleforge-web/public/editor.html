@@ -317,17 +317,33 @@
               <button id="zoomOut" class="iconbtn" title="Zoom out">−</button>
               <span id="zoomLabel" class="zoom-label">100%</span>
               <button id="zoomIn" class="iconbtn" title="Zoom in">+</button>
-              <button id="zoomFit" class="iconbtn" title="Fit">⤢</button>
+              <button id="zoomFit" class="iconbtn" title="Fit whole page">⤢</button>
             </span>
           </div>
           <div class="rgroup-name">Zoom</div>
         </div>
         <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="zoom100" class="ghost" title="Actual size (100%)">100%</button>
+            <button id="zoomWhole" class="ghost" title="Fit the whole page in view">▭ Whole Page</button>
+            <button id="zoomWidth" class="ghost" title="Fit the page to the window width">↔ Page Width</button>
+          </div>
+          <div class="rgroup-name">Fit</div>
+        </div>
+        <div class="rgroup">
           <div class="rgroup-body col">
-            <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Snap &amp; alignment guides</label>
-            <label class="checkbox"><input type="checkbox" id="gridToggle"> Show grid &amp; snap to it</label>
+            <label class="checkbox"><input type="checkbox" id="rulerToggle" checked> Rulers</label>
+            <label class="checkbox"><input type="checkbox" id="navToggle" checked> Page navigation</label>
+            <label class="checkbox"><input type="checkbox" id="boundToggle"> Boundaries</label>
           </div>
           <div class="rgroup-name">Show</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Guides &amp; snapping</label>
+            <label class="checkbox"><input type="checkbox" id="gridToggle"> Grid &amp; snap to grid</label>
+          </div>
+          <div class="rgroup-name">Guides</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body col">

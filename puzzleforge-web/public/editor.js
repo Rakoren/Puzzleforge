@@ -12,6 +12,8 @@
     stageScroll: $('stageScroll'), stageOuter: $('stageOuter'), stageInner: $('stageInner'),
     rulerTop: $('rulerTop'), rulerLeft: $('rulerLeft'),
     undo: $('undo'), redo: $('redo'), zoomOut: $('zoomOut'), zoomIn: $('zoomIn'), zoomFit: $('zoomFit'), zoomLabel: $('zoomLabel'),
+    zoom100: $('zoom100'), zoomWhole: $('zoomWhole'), zoomWidth: $('zoomWidth'),
+    rulerToggle: $('rulerToggle'), navToggle: $('navToggle'), boundToggle: $('boundToggle'), editorMain: $('editorMain'),
     addText: $('addText'), addImage: $('addImage'),
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
@@ -354,6 +356,12 @@
   }
   function syncRulers() { el.rulerTop.style.backgroundPositionX = (-el.stageScroll.scrollLeft) + 'px'; el.rulerLeft.style.backgroundPositionY = (-el.stageScroll.scrollTop) + 'px'; }
   const setZoom = (z) => { zoom = Math.max(0.15, Math.min(4, z)); applyZoom(); drawSel(); };
+  // Fit the page to the window width only (height may scroll) — Publisher's "Page Width".
+  function fitWidth() { const aw = (el.stageScroll.clientWidth || 700) - 24; return Math.max(0.15, Math.min(aw / dims.usableWidth, 4)); }
+  // View toggles: rulers, the page-rail sidebar, and the page boundary outline.
+  function toggleRulers() { el.editorMain.querySelector('.editor-stage').classList.toggle('no-rulers', !el.rulerToggle.checked); if (el.rulerToggle.checked) applyZoom(); }
+  function toggleNav() { el.editorMain.classList.toggle('no-nav', !el.navToggle.checked); applyZoom(); }
+  function toggleBounds() { el.stageInner.classList.toggle('show-bounds', el.boundToggle.checked); }
 
   // Matter pages (title, copyright, …) position content via the page context,
   // so their pieces are placed ABSOLUTELY at a measured page rect rather than in
@@ -1254,6 +1262,12 @@
     window.addEventListener('focus', () => { if (el.pubModal && !el.pubModal.hidden) refreshCoverState(); });
     el.undo.addEventListener('click', undo); el.redo.addEventListener('click', redo);
     el.zoomIn.addEventListener('click', () => setZoom(zoom * 1.2)); el.zoomOut.addEventListener('click', () => setZoom(zoom / 1.2)); el.zoomFit.addEventListener('click', () => setZoom(fitScale()));
+    if (el.zoom100) el.zoom100.addEventListener('click', () => setZoom(1));
+    if (el.zoomWhole) el.zoomWhole.addEventListener('click', () => setZoom(fitScale()));
+    if (el.zoomWidth) el.zoomWidth.addEventListener('click', () => setZoom(fitWidth()));
+    if (el.rulerToggle) el.rulerToggle.addEventListener('change', toggleRulers);
+    if (el.navToggle) el.navToggle.addEventListener('change', toggleNav);
+    if (el.boundToggle) el.boundToggle.addEventListener('change', toggleBounds);
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
     el.stageScroll.addEventListener('scroll', syncRulers);
     el.stageInner.addEventListener('pointerdown', (e) => {
