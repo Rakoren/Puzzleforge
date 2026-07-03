@@ -41,6 +41,15 @@
       <p>No saved books yet.</p>
       <p class="hint">Build one in the <a href="book.html">Book Builder</a> and open it in the editor — it’ll show up here.</p>
     </div>
+
+    <section id="teamSection" hidden>
+      <div class="lib-head lib-teamhead">
+        <h2>Team library <span id="teamStatus" class="lib-team-status"></span></h2>
+      </div>
+      <p class="lib-note">Books shared with everyone on your workspace server. Use <b>Share to team</b> in the editor (Mailings tab) to add one here.</p>
+      <div id="teamGrid" class="lib-grid"></div>
+      <div id="teamEmpty" class="lib-empty" hidden>No shared books yet.</div>
+    </section>
   </main>
 
   <script src="library.js"></script>
@@ -127,7 +136,52 @@
         };
         r.readAsText(f);
       });
+      // --- Team library ---
+      const teamSection = document.getElementById('teamSection');
+      const teamGrid = document.getElementById('teamGrid');
+      const teamEmpty = document.getElementById('teamEmpty');
+      const teamStatus = document.getElementById('teamStatus');
+      function openTeamBook(meta) {
+        PFWorkspace.getBook(meta.id).then((full) => {
+          if (!full || !full.recipe) { alert('That shared book could not be loaded.'); return; }
+          try { localStorage.setItem('pf_editor', JSON.stringify({ recipe: full.recipe, workspaceId: meta.id })); } catch (_) {}
+          location.href = 'editor.html';
+        }).catch(() => alert('Could not reach the workspace server.'));
+      }
+      function teamCard(meta) {
+        const el = document.createElement('div'); el.className = 'lib-card';
+        el.style.setProperty('--tint', tint(meta.title));
+        const line = [meta.pages != null ? meta.pages + ' pages' : null, meta.trimSize ? meta.trimSize.replace('x', '×') + '"' : null,
+          'by ' + (meta.updatedBy || 'someone'), ago(meta.updatedAt)].filter(Boolean).join(' · ');
+        el.innerHTML = `<div class="lib-spine"></div><div class="lib-body">` +
+          `<h3 title="${esc(meta.title)}">${esc(meta.title)}</h3>` +
+          (meta.subtitle ? `<p class="lib-sub">${esc(meta.subtitle)}</p>` : '') +
+          `<p class="lib-meta">${esc(line)}</p><div class="lib-card-actions">` +
+          `<button class="primary" data-a="open">Open</button>` +
+          `<button class="ghost del" data-a="rm">Remove from team</button></div></div>`;
+        el.querySelector('[data-a=open]').onclick = () => openTeamBook(meta);
+        el.querySelector('[data-a=rm]').onclick = async () => {
+          if (!confirm(`Remove “${meta.title}” from the team library? (Your own copy stays in My Books.)`)) return;
+          try { await PFWorkspace.removeBook(meta.id); renderTeam(); } catch (_) { alert('Could not reach the workspace server.'); }
+        };
+        return el;
+      }
+      async function renderTeam() {
+        const st = await PFWorkspace.status();
+        if (!st.enabled) { teamSection.hidden = true; return; }
+        teamSection.hidden = false;
+        teamStatus.textContent = `· ${st.members} member${st.members === 1 ? '' : 's'}`;
+        let books = [];
+        try { books = await PFWorkspace.books(); } catch (_) { teamStatus.textContent = '· needs a token'; }
+        teamGrid.innerHTML = '';
+        teamEmpty.hidden = books.length > 0;
+        books.forEach((b) => teamGrid.appendChild(teamCard(b)));
+      }
+      // Live-refresh the team library when anyone shares/removes a book.
+      try { PFWorkspace.subscribe((evt) => { if (evt.type === 'book') renderTeam(); }); } catch (_) {}
+
       render();
+      renderTeam();
     })();
   </script>
 </body>

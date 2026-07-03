@@ -32,6 +32,11 @@ app.get('/element-html.js', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'engine', 'element-html.js'));
 });
 
+// Self-hosted LAN team workspace: shared roster, shared book library, live
+// comments. Zero external services — persists to ./data. Optional token auth
+// via PUZZLEFORGE_WORKSPACE_TOKEN.
+app.use('/api/workspace', require('./workspace').router);
+
 const WORD_TYPES = new Set(['wordsearch', 'wordscramble', 'crossword', 'krisskross']);
 const RECIPE_VERSION = 1;
 

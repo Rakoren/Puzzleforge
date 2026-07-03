@@ -654,3 +654,7 @@ a.primary.lib-btn { background: var(--brand); color: #fff; border: 1px solid var
 .lib-card-actions button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
 .lib-card-actions button.del { color: #c92a2a; border-color: #f2c2c2; }
 .lib-empty { text-align: center; color: var(--muted); padding: 60px 20px; }
+
+/* Team library section */
+.lib-teamhead { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 18px; }
+.lib-team-status { font-size: 13px; color: var(--muted); font-weight: 400; }

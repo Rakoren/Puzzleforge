@@ -49,6 +49,7 @@
     helpArticles: $('helpArticles'), helpToSupport: $('helpToSupport'),
     supportModal: $('supportModal'), supportClose: $('supportClose'), supType: $('supType'), supTitle: $('supTitle'),
     supBody: $('supBody'), supIncludeCtx: $('supIncludeCtx'), supSubmit: $('supSubmit'), supBrowse: $('supBrowse'), supStatus: $('supStatus'),
+    shareTeamBtn: $('shareTeamBtn'), wsStatus: $('wsStatus'),
     teamBtn: $('teamBtn'), inviteBtn: $('inviteBtn'), mailRecipient: $('mailRecipient'), emailBookBtn: $('emailBookBtn'),
     linkBtn: $('linkBtn'), mailStage: $('mailStage'), assignBtn: $('assignBtn'), notesBtn: $('notesBtn'),
     teamModal: $('teamModal'), teamClose: $('teamClose'), teamName: $('teamName'), teamEmail: $('teamEmail'),
@@ -68,6 +69,9 @@
   let bookId = null, bookConfig = null, seed = null, dims = { usableWidth: 636, usableHeight: 816 };
   // Autosave to the My Books library (IndexedDB, this browser).
   let currentLibId = null, bookOpen = false, lastSavedJson = null;
+  // Team workspace (self-hosted LAN server): whether it's reachable, and this
+  // book's shared id once it has been shared.
+  let wsEnabled = false, workspaceId = null, wsSub = null;
   let pageModels = [], srcPages = [], pendingPlan = null, cur = -1, uid = 1, zoom = 1;
   let sels = [], clipboard = [];
   let vGuide = null, hGuide = null, gridEl = null, selLayer = null, flowEl = null;
@@ -1409,6 +1413,13 @@
     { cat: 'Troubleshooting', q: 'Export produces a blank or failed PDF',
       a: 'PDF export needs Chromium available to the server. If it can’t be found, the server logs a message with how to point it at a Chromium binary. Re-run once that’s set.' },
 
+    { cat: 'Team', q: 'How does the team workspace work?',
+      a: 'PuzzleForge includes a self-hosted <b>workspace server</b> — no accounts host, no monthly bill. Run the app on one machine and have teammates on the same network open <code>http://&lt;that-machine’s-IP&gt;:&lt;port&gt;</code> in their browser. Everyone then shares one <b>team roster</b>, a <b>Team library</b> of books, and <b>live comments</b>.' },
+    { cat: 'Team', q: 'How do I share a book with my team?',
+      a: 'Open the book, go to the <b>Mailings</b> tab, and click <b>☁ Share to team</b>. It appears under <b>My Books → Team library</b> for everyone on the workspace, who can open it. Re-sharing updates the same team copy.' },
+    { cat: 'Team', q: 'Where are team comments and the roster stored?',
+      a: 'On the machine running the server, in a local <code>data/</code> folder (plain files — easy to back up). Add a <code>PUZZLEFORGE_WORKSPACE_TOKEN</code> environment variable to require a shared token; leave it unset to trust your local network.' },
+
     { cat: 'Shortcuts', q: 'Keyboard shortcuts',
       a: '<b>Ctrl+Z / Ctrl+Y</b> undo / redo · <b>Ctrl+C / Ctrl+V</b> copy / paste · <b>Ctrl+D</b> duplicate · <b>Delete</b> remove selected · <b>Arrow keys</b> nudge 1px (<b>Shift</b> = 10px) · drag to move, ○ handle to resize.' },
   ];
@@ -1523,20 +1534,33 @@
       row.appendChild(acts); el.teamList.appendChild(row);
     });
   }
-  function openTeam(focusAdd) { if (!el.teamModal) return; renderTeamList(); el.teamModal.hidden = false; if (focusAdd) setTimeout(() => el.teamName.focus(), 30); }
+  function openTeam(focusAdd) { if (!el.teamModal) return; renderTeamList(); if (wsEnabled) syncTeamFromServer(); el.teamModal.hidden = false; if (focusAdd) setTimeout(() => el.teamName.focus(), 30); }
   function closeTeam() { if (el.teamModal) el.teamModal.hidden = true; }
-  function addMember() {
-    const name = el.teamName.value.trim(); const email = el.teamEmail.value.trim();
-    if (!name) { setStatus('Give the team member a name.', 'err'); el.teamName.focus(); return; }
-    team.push({ id: 't' + Date.now().toString(36), name, email, role: el.teamRole.value });
-    saveTeam(); el.teamName.value = ''; el.teamEmail.value = '';
-    renderTeamList(); renderRecipients();
-    setStatus(`Added ${name} (${el.teamRole.value}) to the team.`, 'ok');
+  // When a workspace is running, the roster is shared: read/write the server.
+  async function syncTeamFromServer() {
+    if (!wsEnabled || !window.PFWorkspace) return;
+    try { const members = await PFWorkspace.members(); team = members.map((m) => ({ id: m.id, name: m.name, email: m.email, role: m.role })); renderTeamList(); renderRecipients(); } catch (_) { /* */ }
   }
-  function removeMember(id) {
+  async function addMember() {
+    const name = el.teamName.value.trim(); const email = el.teamEmail.value.trim(); const role = el.teamRole.value;
+    if (!name) { setStatus('Give the team member a name.', 'err'); el.teamName.focus(); return; }
+    if (wsEnabled && window.PFWorkspace) {
+      try { const m = await PFWorkspace.addMember({ name, email, role }); team.push({ id: m.id, name: m.name, email: m.email, role: m.role }); }
+      catch (_) { setStatus('Could not add to the shared roster — is the workspace running?', 'err'); return; }
+    } else {
+      team.push({ id: 't' + Date.now().toString(36), name, email, role });
+      saveTeam();
+    }
+    el.teamName.value = ''; el.teamEmail.value = '';
+    renderTeamList(); renderRecipients();
+    setStatus(`Added ${name} (${role}) to the team${wsEnabled ? ' — shared with everyone' : ''}.`, 'ok');
+  }
+  async function removeMember(id) {
+    if (wsEnabled && window.PFWorkspace) { try { await PFWorkspace.removeMember(id); } catch (_) { /* */ } }
     team = team.filter((m) => m.id !== id);
     if (teamState.assigneeId === id) { teamState.assigneeId = null; saveTeamState(); }
-    saveTeam(); renderTeamList(); renderRecipients();
+    if (!wsEnabled) saveTeam();
+    renderTeamList(); renderRecipients();
   }
   async function copyLink(m) {
     const url = personalizedLink(m);
@@ -1571,18 +1595,37 @@
   }
   function shareAction(fn) { const m = selectedMember(); if (!m) { setStatus('Pick a team member in the Recipient list first.', 'err'); return; } fn(m); }
   // Handoff notes
-  function openNotes() { if (!el.notesModal) return; renderNotes(); el.notesModal.hidden = false; setTimeout(() => el.noteText.focus(), 30); }
+  const usingWorkspaceNotes = () => wsEnabled && !!workspaceId;
+  function openNotes() {
+    if (!el.notesModal) return;
+    if (el.notesSub) el.notesSub.textContent = usingWorkspaceNotes()
+      ? 'Live team comments — everyone on your workspace sees these and updates appear in real time.'
+      : 'Notes travel with this book so the next person has context. Saved with your recipe on Save. Share to team to make them live.';
+    renderNotes(); el.notesModal.hidden = false; setTimeout(() => el.noteText.focus(), 30);
+  }
   function closeNotes() { if (el.notesModal) el.notesModal.hidden = true; }
-  function renderNotes() {
+  function renderNoteList(notes) {
     if (!el.notesList) return;
-    if (!teamState.notes.length) { el.notesList.innerHTML = '<p class="pf-modal-sub">No notes yet. Post the first handoff note below.</p>'; return; }
-    el.notesList.innerHTML = teamState.notes.map((n) => {
+    if (!notes.length) { el.notesList.innerHTML = '<p class="pf-modal-sub">No notes yet. Post the first handoff note below.</p>'; return; }
+    el.notesList.innerHTML = notes.map((n) => {
+      const when = n.when || (n.createdAt ? new Date(n.createdAt).toLocaleString() : '');
       const badge = `<span class="pf-role" style="background:${ROLE_COLORS[n.role] || '#868e96'}">${escHtml(n.role)}</span>`;
-      return `<div class="pf-note"><div class="pf-note-head">${badge} <b>${escHtml(n.author)}</b> <span class="pf-dim">${escHtml(n.when)}</span></div><div class="pf-note-body">${escHtml(n.text)}</div></div>`;
+      return `<div class="pf-note"><div class="pf-note-head">${badge} <b>${escHtml(n.author)}</b> <span class="pf-dim">${escHtml(when)}</span></div><div class="pf-note-body">${escHtml(n.text)}</div></div>`;
     }).join('');
   }
-  function addNote() {
+  async function renderNotes() {
+    if (!el.notesList) return;
+    if (!usingWorkspaceNotes()) { renderNoteList(teamState.notes); return; }
+    try { renderNoteList(await PFWorkspace.comments(workspaceId)); }
+    catch (_) { el.notesList.innerHTML = '<p class="rep-note err">Could not load team comments — is the workspace server running?</p>'; }
+  }
+  async function addNote() {
     const text = el.noteText.value.trim(); if (!text) return;
+    if (usingWorkspaceNotes()) {
+      try { await PFWorkspace.addComment(workspaceId, { author: me.name, role: me.role, text }); el.noteText.value = ''; renderNotes(); }
+      catch (_) { setStatus('Could not post the comment to the workspace.', 'err'); }
+      return;
+    }
     teamState.notes.push({ author: me.name, role: me.role, when: new Date().toLocaleString(), text });
     saveTeamState(); el.noteText.value = ''; renderNotes();
   }
@@ -1594,6 +1637,46 @@
         inviteGreeting = `Welcome, ${me.name} — you're here as ${me.role}. Your handoff notes will be signed with your name.`;
         setStatus(inviteGreeting, 'ok'); }
     } catch (_) { /* ignore malformed invite */ }
+  }
+
+  // --- Team workspace (self-hosted LAN server) --------------------------
+  function setWsStatus() {
+    if (!el.wsStatus) return;
+    if (!wsEnabled) { el.wsStatus.textContent = 'Workspace off'; }
+    else if (workspaceId) { el.wsStatus.textContent = '✓ Shared with team'; }
+    else { el.wsStatus.textContent = 'Not shared yet'; }
+  }
+  async function initWorkspace() {
+    if (!window.PFWorkspace) return;
+    const st = await PFWorkspace.status();
+    wsEnabled = !!st.enabled;
+    setWsStatus();
+    if (wsEnabled) subscribeWorkspace();
+  }
+  function subscribeWorkspace() {
+    if (wsSub || !window.PFWorkspace) return;
+    try {
+      wsSub = PFWorkspace.subscribe((evt) => {
+        // Live-refresh shared comments when someone else posts on this book.
+        if (evt.type === 'comment' && evt.bookId === workspaceId && el.notesModal && !el.notesModal.hidden) renderNotes();
+        // Keep the shared roster fresh when a teammate adds/removes someone.
+        if (evt.type === 'member' && el.teamModal && !el.teamModal.hidden) syncTeamFromServer();
+      });
+    } catch (_) { /* */ }
+  }
+  async function shareToTeam() {
+    if (!wsEnabled) { setStatus('No team workspace is running. Start the PuzzleForge server on your LAN to share.', 'err'); return; }
+    if (!bookOpen) return;
+    const id = workspaceId || currentLibId || (window.PFLibrary && PFLibrary.newId()) || ('bk_' + Date.now().toString(36));
+    setStatus('Sharing to the team workspace…', 'busy');
+    try {
+      await PFWorkspace.shareBook(id, buildRecipe(), me.name);
+      workspaceId = id; setWsStatus();
+      setStatus('Shared with the team — everyone on the workspace can now open it from My Books → Team library.', 'ok');
+    } catch (err) {
+      if (err.needsToken) setStatus('This workspace needs a token. Add it in My Books, then try again.', 'err');
+      else setStatus('Could not reach the workspace server: ' + err.message, 'err');
+    }
   }
 
   async function runPreflight() {
@@ -1805,8 +1888,10 @@
     if (el.notesClose) el.notesClose.addEventListener('click', closeNotes);
     if (el.notesModal) el.notesModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeNotes(); });
     if (el.noteAdd) el.noteAdd.addEventListener('click', addNote);
+    if (el.shareTeamBtn) el.shareTeamBtn.addEventListener('click', shareToTeam);
     renderRecipients();
     parseInvite();
+    initWorkspace();
     populateInsertMenus();
     if (el.wordArt) el.wordArt.addEventListener('change', () => { const i = Number(el.wordArt.value); if (WORDART[i]) addWordArt(WORDART[i]); el.wordArt.value = ''; });
     if (el.symbolPick) el.symbolPick.addEventListener('change', () => { addSymbol(el.symbolPick.value); el.symbolPick.value = ''; });
@@ -1849,7 +1934,7 @@
     window.addEventListener('keydown', onKey);
     let handoff = null;
     try { const raw = localStorage.getItem('pf_editor'); if (raw) { handoff = JSON.parse(raw); localStorage.removeItem('pf_editor'); } } catch (_) { /* */ }
-    if (handoff && handoff.recipe) { currentLibId = handoff.libId || null; loadRecipeObject(handoff.recipe); }
+    if (handoff && handoff.recipe) { currentLibId = handoff.libId || null; workspaceId = handoff.workspaceId || null; loadRecipeObject(handoff.recipe); }
     else if (handoff && (handoff.config || handoff.bookId)) { bookConfig = handoff.config || null; openBook(handoff.bookId ? { bookId: handoff.bookId, config: handoff.config } : { config: handoff.config }); }
     else { el.empty.hidden = false; setStatus('Open a book from the Book Builder, or load a recipe.', ''); }
     // Best-effort flush of pending changes when leaving the page.

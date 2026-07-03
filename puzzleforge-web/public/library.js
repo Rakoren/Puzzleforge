@@ -74,4 +74,36 @@
   }
 
   window.PFLibrary = { list, get, put, remove, newId, metaFromRecipe };
+
+  // --- Team workspace client (talks to the self-hosted LAN server) ---------
+  const WS = '/api/workspace';
+  const token = () => { try { return localStorage.getItem('pf_ws_token') || ''; } catch (_) { return ''; } };
+  function headers(json) { const h = {}; if (json) h['Content-Type'] = 'application/json'; const t = token(); if (t) h['x-pf-workspace'] = t; return h; }
+  async function ws(method, url, body) {
+    const r = await fetch(WS + url, { method, headers: headers(!!body), body: body ? JSON.stringify(body) : undefined });
+    if (r.status === 401) { const e = new Error('This workspace needs a token.'); e.needsToken = true; throw e; }
+    if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) || {}).error || 'Workspace error');
+    return r.json();
+  }
+  window.PFWorkspace = {
+    status: () => fetch(WS + '/status').then((r) => (r.ok ? r.json() : { enabled: false })).catch(() => ({ enabled: false })),
+    members: () => ws('GET', '/members'),
+    addMember: (m) => ws('POST', '/members', m),
+    removeMember: (id) => ws('DELETE', '/members/' + id),
+    books: () => ws('GET', '/books'),
+    getBook: (id) => ws('GET', '/books/' + id),
+    shareBook: (id, recipe, by) => ws('PUT', '/books/' + id, { recipe, by }),
+    removeBook: (id) => ws('DELETE', '/books/' + id),
+    comments: (id) => ws('GET', '/books/' + id + '/comments'),
+    addComment: (id, c) => ws('POST', '/books/' + id + '/comments', c),
+    setToken: (t) => { try { localStorage.setItem('pf_ws_token', t || ''); } catch (_) {} },
+    subscribe: (onEvt) => {
+      const t = token();
+      let es;
+      try { es = new EventSource(WS + '/events' + (t ? '?token=' + encodeURIComponent(t) : '')); }
+      catch (_) { return { close() {} }; }
+      es.onmessage = (e) => { try { onEvt(JSON.parse(e.data)); } catch (_) {} };
+      return es;
+    },
+  };
 })();
