@@ -528,7 +528,7 @@ body.theme-dark {
 .stage-inner.show-bounds { outline: 1.5px dashed #2f9e6a; outline-offset: 0; }
 
 /* Master pages */
-.master-banner { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 14px; margin: 0 16px 6px; border-radius: 10px; background: #eef1fe; border: 1px solid var(--brand); color: #33407a; font-size: 13px; }
+.master-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 14px; margin: 8px 16px 0; border-radius: 10px; background: #eef1fe; border: 1px solid var(--brand); color: #33407a; font-size: 13px; }
 .theme-dark .master-banner { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
 .pf-master-ov { pointer-events: none; }                 /* master overlay is non-interactive on normal pages */
 body:not(.master-editing) .pf-master-ov { opacity: .82; }

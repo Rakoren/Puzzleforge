@@ -479,6 +479,11 @@
 
   <p class="status editor-status" id="status"></p>
 
+  <div id="masterBanner" class="master-banner" hidden>
+    <span>✎ <b>Editing the Master Page</b> — objects here repeat on every page in scope. The <b>#️⃣</b> field becomes each page's number.</span>
+    <button id="exitMasterBtn" class="primary">Done editing master</button>
+  </div>
+
   <main class="editor-layout ribbon-layout" id="editorMain" hidden>
     <aside class="editor-pages" aria-label="Pages">
       <h2>Pages</h2>
@@ -491,10 +496,6 @@
         keep coloring/drawing backs empty and lay out your adventure book by hand.</p>
     </aside>
 
-    <div id="masterBanner" class="master-banner" hidden>
-      <span>✎ <b>Editing the Master Page</b> — objects here repeat on every page in scope. The <b>#️⃣</b> field becomes each page's number.</span>
-      <button id="exitMasterBtn" class="primary">Done editing master</button>
-    </div>
     <section class="editor-stage" aria-label="Canvas">
       <div class="ruler-corner"></div>
       <div class="ruler ruler-top" id="rulerTop"></div>
