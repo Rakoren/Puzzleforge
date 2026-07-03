@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PuzzleForge — AI Theme Generator</title>
+  <title>PuzzleForge — Themes</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,13 +12,13 @@
       <span class="logo">▦</span>
       <div>
         <h1>PuzzleForge</h1>
-        <p class="tagline">AI Theme Generator — turn any topic into a word list</p>
+        <p class="tagline">Themes — generate with AI or build a word list by hand</p>
       </div>
     </div>
     <nav class="nav">
       <a href="index.html">Puzzle Maker</a>
       <a href="book.html">Book Builder</a>
-      <a href="themes.html" class="active">AI Themes</a>
+      <a href="themes.html" class="active">Themes</a>
       <a href="imagetools.html">Image Tools</a>
       <a href="cover.html">Cover Builder</a>
       <a href="aiart.html">AI Art</a>
@@ -27,6 +27,12 @@
 
   <main class="layout">
     <section class="panel config" aria-label="Theme generator">
+      <div class="tabs modegen" style="margin-bottom:16px;">
+        <button class="tab active" id="modeAi" type="button">✨ AI generate</button>
+        <button class="tab" id="modeManual" type="button">✍️ Build by hand</button>
+      </div>
+
+      <div id="aiView">
       <h2>1 · Describe a topic</h2>
       <p class="banner hidden" id="unavailable">
         The AI theme generator needs an Anthropic API key. Set
@@ -98,6 +104,52 @@
         </div>
         <p class="status" id="catSaveStatus"></p>
       </div>
+      </div><!-- /aiView -->
+
+      <div id="manualView" class="hidden">
+        <h2>1 · Theme details</h2>
+        <p class="hint">Build a theme yourself — no AI, no API key needed. It’s saved to the same
+          library and appears in the Puzzle Maker and Book Builder pickers.</p>
+        <label class="field">
+          <span>Theme name</span>
+          <input id="mName" type="text" placeholder="e.g. Dinosaurs" maxlength="60">
+        </label>
+        <div class="row">
+          <label class="field"><span>Category</span>
+            <input id="mCategory" type="text" list="mCatList" placeholder="e.g. Nature" maxlength="40">
+            <datalist id="mCatList"></datalist>
+          </label>
+          <label class="field"><span>Tags (comma-separated)</span>
+            <input id="mTags" type="text" placeholder="dinosaurs, prehistoric">
+          </label>
+        </div>
+
+        <h2>2 · Words by level</h2>
+        <p class="hint">One word per line. Add an optional clue after a <code>|</code> —
+          e.g. <code>REX | The king dinosaur</code>. On save, words are upper-cased, filtered for
+          length &amp; safety, and de-duplicated across levels.</p>
+        <label class="field"><span>Easy (Level 1)</span>
+          <textarea id="mTier1" rows="6" placeholder="EGG&#10;PIE | A baked dish with a crust"></textarea>
+        </label>
+        <label class="field"><span>Medium (Level 2)</span>
+          <textarea id="mTier2" rows="6"></textarea>
+        </label>
+        <label class="field"><span>Harder (Level 3)</span>
+          <textarea id="mTier3" rows="6"></textarea>
+        </label>
+        <p class="hint" id="mCount">0 words</p>
+
+        <h2>3 · Fun facts <span class="tool-desc">(optional)</span></h2>
+        <p class="hint">One fact per line — shown on breather pages when this theme is used.</p>
+        <textarea id="mFacts" rows="4" placeholder="A T-Rex tooth could be over 20 cm long."></textarea>
+
+        <h2>4 · Save to library</h2>
+        <div class="actions">
+          <button id="mSave" class="primary">Save theme</button>
+          <button id="mClear" class="ghost">Clear</button>
+        </div>
+        <p class="status" id="mStatus"></p>
+      </div><!-- /manualView -->
     </section>
 
     <section class="panel preview" aria-label="How it works">

@@ -31,6 +31,10 @@
     catSave: $('catSave'),
     catDiscard: $('catDiscard'),
     catSaveStatus: $('catSaveStatus'),
+    modeAi: $('modeAi'), modeManual: $('modeManual'), aiView: $('aiView'), manualView: $('manualView'),
+    mName: $('mName'), mCategory: $('mCategory'), mCatList: $('mCatList'), mTags: $('mTags'),
+    mTier1: $('mTier1'), mTier2: $('mTier2'), mTier3: $('mTier3'), mCount: $('mCount'),
+    mFacts: $('mFacts'), mSave: $('mSave'), mClear: $('mClear'), mStatus: $('mStatus'),
   };
 
   let current = null; // the generated theme object awaiting save
@@ -156,6 +160,7 @@
       el.manageList.textContent = 'Could not load themes.';
       return;
     }
+    fillCategoryList(themes);
     el.manageList.innerHTML = '';
     const byCat = {};
     for (const th of themes) (byCat[th.category] = byCat[th.category] || []).push(th);
@@ -429,6 +434,68 @@
     el.editorBody.innerHTML = '';
   }
 
+  // --- Manual (non-AI) theme builder ---------------------------------------
+  function setMode(mode) {
+    const manual = mode === 'manual';
+    el.aiView.classList.toggle('hidden', manual);
+    el.manualView.classList.toggle('hidden', !manual);
+    el.modeAi.classList.toggle('active', !manual);
+    el.modeManual.classList.toggle('active', manual);
+  }
+  // Parse a tier textarea: one entry per line, "WORD" or "WORD | clue".
+  function parseTier(text) {
+    return String(text || '').split('\n').map((line) => {
+      const raw = line.trim(); if (!raw) return null;
+      const bar = raw.indexOf('|');
+      const word = (bar >= 0 ? raw.slice(0, bar) : raw).trim();
+      const clue = bar >= 0 ? raw.slice(bar + 1).trim() : '';
+      if (!word) return null;
+      return clue ? { word, clue } : { word };
+    }).filter(Boolean);
+  }
+  function manualTiers() { return { 1: parseTier(el.mTier1.value), 2: parseTier(el.mTier2.value), 3: parseTier(el.mTier3.value) }; }
+  function updateManualCount() {
+    const t = manualTiers();
+    const n = t[1].length + t[2].length + t[3].length;
+    el.mCount.textContent = `${n} word${n === 1 ? '' : 's'} (${t[1].length} easy · ${t[2].length} medium · ${t[3].length} harder)`;
+  }
+  function clearManual() {
+    ['mName', 'mCategory', 'mTags', 'mTier1', 'mTier2', 'mTier3', 'mFacts'].forEach((k) => { el[k].value = ''; });
+    updateManualCount(); setStatus(el.mStatus, '');
+  }
+  async function saveManual() {
+    const label = el.mName.value.trim();
+    if (!label) { setStatus(el.mStatus, 'Give the theme a name.', 'err'); el.mName.focus(); return; }
+    const tiers = manualTiers();
+    if (!(tiers[1].length + tiers[2].length + tiers[3].length)) { setStatus(el.mStatus, 'Add at least one word.', 'err'); return; }
+    const theme = {
+      label,
+      category: el.mCategory.value.trim() || 'Other',
+      tags: el.mTags.value.split(',').map((s) => s.trim()).filter(Boolean),
+      tiers,
+      facts: el.mFacts.value.split('\n').map((s) => s.trim()).filter(Boolean),
+    };
+    el.mSave.disabled = true; setStatus(el.mStatus, 'Saving…', 'busy');
+    try {
+      const res = await fetch('/api/theme/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save the theme.');
+      const r = data.report || {};
+      const kept = r.total != null ? r.total : '?';
+      const extra = r.dropped ? ` (${r.dropped} dropped — duplicates, too short/long, or filtered)` : '';
+      loadThemeList();
+      clearManual();   // clears the form (and the status) …
+      setStatus(el.mStatus, `Saved “${label}” with ${kept} word${kept === 1 ? '' : 's'}${extra}. It's now in the pickers.`, 'ok');   // … so set the message last
+    } catch (err) { setStatus(el.mStatus, err.message, 'err'); }
+    finally { el.mSave.disabled = false; }
+  }
+  // Offer existing categories as suggestions in the manual builder.
+  function fillCategoryList(themes) {
+    if (!el.mCatList) return;
+    const cats = [...new Set((themes || []).map((t) => t.category).filter(Boolean))].sort();
+    el.mCatList.innerHTML = cats.map((c) => `<option value="${c.replace(/"/g, '&quot;')}"></option>`).join('');
+  }
+
   async function init() {
     try {
       const res = await fetch('/api/theme/status');
@@ -455,6 +522,12 @@
     el.catGenerate.addEventListener('click', categoryGenerate);
     el.catSave.addEventListener('click', categorySaveAll);
     el.catDiscard.addEventListener('click', categoryDiscard);
+    // Manual builder (works with or without an API key)
+    el.modeAi.addEventListener('click', () => setMode('ai'));
+    el.modeManual.addEventListener('click', () => setMode('manual'));
+    el.mSave.addEventListener('click', saveManual);
+    el.mClear.addEventListener('click', clearManual);
+    [el.mTier1, el.mTier2, el.mTier3].forEach((t) => t.addEventListener('input', updateManualCount));
     loadThemeList();
   }
 
