@@ -363,6 +363,37 @@ function leafNumbered(leaf) {
   return (leaf.role === 'content' && leaf.puzzle && leaf.puzzle.type !== 'bleedguard') || leaf.role === 'answerkey';
 }
 
+// --- Master pages ---------------------------------------------------------
+// A master is an overlay of free elements (page-number fields, running
+// headers/footers, decorative frames) applied to a range of physical pages.
+// It renders through the SAME element pipeline as page objects, so the editor
+// overlay and this export stay pixel-identical.
+function masterPageNo(master, i) {
+  const skip = Math.max(0, Number(master.skipFirst) || 0);
+  if (i < skip) return null;
+  return i - skip + (Number.isFinite(Number(master.startAt)) ? Number(master.startAt) : 1);
+}
+function masterAppliesTo(master, i) {
+  const n = masterPageNo(master, i);
+  if (n == null) return false;
+  if (master.applyTo === 'odd') return n % 2 === 1;
+  if (master.applyTo === 'even') return n % 2 === 0;
+  return true;
+}
+// Return a leaf with the master's elements merged into its layout (page-number
+// fields resolved to this page's number). Leaves the leaf untouched when the
+// master doesn't apply.
+function withMaster(leaf, i, master) {
+  if (!master || master.enabled === false || !Array.isArray(master.elements) || !master.elements.length) return leaf;
+  if (!masterAppliesTo(master, i)) return leaf;
+  const no = masterPageNo(master, i);
+  const extra = master.elements.map((e) => (e && e.field === 'pageNumber' ? { ...e, text: String(no) } : e));
+  const st = leaf.state ? { ...leaf.state } : {};
+  const layout = st.layout ? { ...st.layout } : { comp: {}, elements: [] };
+  layout.elements = [...(layout.elements || []), ...extra];
+  return { ...leaf, state: { ...st, layout } };
+}
+
 function renderBookHtml(book, leaves) {
   const styleOpts = { audience: book.audience, textScale: book.fontScale, fontFamily: book.fontFamily };
   const layout = getLayout(book.trimSize, styleOpts);
@@ -373,10 +404,11 @@ function renderBookHtml(book, leaves) {
   const docs = [];
   const footers = [];
   let n = 0;
-  for (const leaf of list) {
-    docs.push(renderLeafDoc(book, layout, styleOpts, leaf));
+  list.forEach((leaf, i) => {
+    const withOverlay = book.master ? withMaster(leaf, i, book.master) : leaf;
+    docs.push(renderLeafDoc(book, layout, styleOpts, withOverlay));
     footers.push(numbered && leafNumbered(leaf) ? `${prefix}${++n}` : null);
-  }
+  });
 
   return numbered
     ? combinePages(docs, { footers, pageHeight: layout.usableHeight })

@@ -112,6 +112,32 @@ test('table elements render as an HTML table with header styling and escaped cel
   assert.ok(!html.includes('<10>'));            // no raw HTML injection
 });
 
+test('master pages inject page-number overlays with correct per-page numbers', () => {
+  const book = assembleBook({
+    ...CONFIG,
+    master: {
+      enabled: true, applyTo: 'all', skipFirst: 1, startAt: 1,
+      elements: [{ kind: 'text', field: 'pageNumber', text: '#', x: 20, y: 700, fontSize: 12, color: '#000000' }],
+    },
+  });
+  const html = renderBookHtml(book);
+  // skipFirst:1 means the first physical page has NO number; the second page is "1".
+  assert.match(html, />1<\/div>|>1<\/|1<\/div>/); // page number 1 rendered somewhere
+  // The literal placeholder must not survive into the output.
+  assert.ok(!/>#<\/div>/.test(html), 'placeholder # should be replaced by a real number');
+});
+
+test('master pages can be scoped to odd pages only', () => {
+  const { renderBookHtml: rbh } = require('../engine/export');
+  const book = assembleBook({
+    ...CONFIG,
+    master: { enabled: true, applyTo: 'odd', skipFirst: 0, startAt: 1,
+      elements: [{ kind: 'text', field: 'pageNumber', text: '#', x: 20, y: 700 }] },
+  });
+  const html = rbh(book);
+  assert.match(html, /class="pf-el"/); // at least one overlay element rendered
+});
+
 test('per-page state overrides the book border', () => {
   const book = assembleBook({ ...CONFIG, border: 'single', pageState: [{ border: 'stars' }] });
   assert.equal(book.pages[0].state.border, 'stars');

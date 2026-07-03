@@ -210,6 +210,24 @@
           </div>
           <div class="rgroup-name">Schemes (frame + accent colors)</div>
         </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <label class="checkbox"><input type="checkbox" id="masterEnabled" checked> Show master on pages</label>
+            <button id="editMasterBtn" class="ghost" title="Edit the master overlay (page numbers, headers, frames)">✎ Edit Master Page</button>
+            <button id="insertPageNo" class="ghost" title="Add an auto page-number field to the master">#️⃣ Page Number field</button>
+          </div>
+          <div class="rgroup-name">Master page</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <label class="m"><span>Applies to</span>
+              <select id="masterApplyTo"><option value="all">All pages</option><option value="odd">Odd only</option><option value="even">Even only</option></select>
+            </label>
+            <label class="m"><span>Skip first</span><input id="masterSkip" type="number" min="0" max="20" value="1" title="Pages at the start with no master (e.g. title/front matter)"></label>
+            <label class="m"><span>Start at</span><input id="masterStart" type="number" min="0" max="9999" value="1"></label>
+          </div>
+          <div class="rgroup-name">Master scope</div>
+        </div>
       </section>
 
       <!-- ARRANGE -->
@@ -452,6 +470,10 @@
         keep coloring/drawing backs empty and lay out your adventure book by hand.</p>
     </aside>
 
+    <div id="masterBanner" class="master-banner" hidden>
+      <span>✎ <b>Editing the Master Page</b> — objects here repeat on every page in scope. The <b>#️⃣</b> field becomes each page's number.</span>
+      <button id="exitMasterBtn" class="primary">Done editing master</button>
+    </div>
     <section class="editor-stage" aria-label="Canvas">
       <div class="ruler-corner"></div>
       <div class="ruler ruler-top" id="rulerTop"></div>

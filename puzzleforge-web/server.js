@@ -318,6 +318,7 @@ app.post('/api/book/pdf', async (req, res) => {
   try {
     let book = body.bookId && bookCache.get(body.bookId);
     if (!book) book = pf.assembleBook(body.config || {});
+    if (body.master !== undefined) book.master = body.master;
     // The Page Editor sends live per-page state (decorations + per-page border)
     // to apply onto the cached (possibly rerolled) book before rendering. A
     // pagePlan additionally reorders / inserts blanks / deletes / duplicates.
@@ -457,6 +458,9 @@ function pagePlanRender(book, plan) {
 function resolveBook(body) {
   let book = body.bookId && bookCache.get(body.bookId);
   if (!book) book = pf.assembleBook(body.config || {});
+  // The editor sends the live master-page overlay separately so it applies even
+  // to a cached book (bookId) whose config predates the master.
+  if (body.master !== undefined) book.master = body.master;
   let leaves;
   if (Array.isArray(body.pagePlan)) { const r = pagePlanRender(book, body.pagePlan); book = r.view; leaves = r.leaves; }
   else if (Array.isArray(body.pageState)) applyPageState(book, body.pageState);

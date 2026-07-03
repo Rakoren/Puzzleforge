@@ -412,6 +412,7 @@ function buildBook(config, opts, seed, rand) {
     fontFamily: config.fontFamily || 'sans',
     border: config.border && config.border !== 'none' ? String(config.border) : null, // decorative page frame
     borderColor: config.borderColor || null,
+    master: config.master && typeof config.master === 'object' ? config.master : null, // master-page overlay (page numbers, headers, frames)
     seed, // recorded so a saved recipe reproduces the same page structure
     frontMatter, // [{ kind, ... }] rendered after the title page
     backMatter, // [{ kind, ... }] rendered after the answer key

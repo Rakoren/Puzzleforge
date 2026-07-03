@@ -526,6 +526,13 @@ body.theme-dark {
 .ribbon-layout.no-nav { grid-template-columns: 1fr !important; }
 .ribbon-layout.no-nav .editor-pages { display: none; }
 .stage-inner.show-bounds { outline: 1.5px dashed #2f9e6a; outline-offset: 0; }
+
+/* Master pages */
+.master-banner { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 14px; margin: 0 16px 6px; border-radius: 10px; background: #eef1fe; border: 1px solid var(--brand); color: #33407a; font-size: 13px; }
+.theme-dark .master-banner { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
+.pf-master-ov { pointer-events: none; }                 /* master overlay is non-interactive on normal pages */
+body:not(.master-editing) .pf-master-ov { opacity: .82; }
+body.master-editing .editor-stage { outline: 2px solid var(--brand); outline-offset: -1px; }
 .pf-grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background: repeating-linear-gradient(0deg,#eef0f6 0 1px,transparent 1px 24px),repeating-linear-gradient(90deg,#eef0f6 0 1px,transparent 1px 24px); }
 .pf-flow { position: relative; z-index: 1; width: 100%; }

@@ -39,6 +39,9 @@
     dupPage: $('dupPage'), aiArtBtn: $('aiArtBtn'), wordArt: $('wordArt'), symbolPick: $('symbolPick'), insertDate: $('insertDate'),
     trimInfo: $('trimInfo'), marginGuide: $('marginGuide'), renamePage: $('renamePage'), delPage: $('delPage'),
     movePageUp: $('movePageUp'), movePageDown: $('movePageDown'), schemeGallery: $('schemeGallery'),
+    masterEnabled: $('masterEnabled'), editMasterBtn: $('editMasterBtn'), insertPageNo: $('insertPageNo'),
+    masterApplyTo: $('masterApplyTo'), masterSkip: $('masterSkip'), masterStart: $('masterStart'),
+    masterBanner: $('masterBanner'), exitMasterBtn: $('exitMasterBtn'),
     revSpelling: $('revSpelling'), revThesaurus: $('revThesaurus'), revWordCount: $('revWordCount'), revLanguage: $('revLanguage'),
     revModal: $('revModal'), revClose: $('revClose'), revTitle: $('revTitle'), revSub: $('revSub'), revBody: $('revBody'),
     helpBtn: $('helpBtn'), supportBtn: $('supportBtn'), shortcutsBtn: $('shortcutsBtn'),
@@ -68,6 +71,12 @@
   let vGuide = null, hGuide = null, gridEl = null, selLayer = null, flowEl = null;
   let ribbonActivate = null, ribbonPrevTab = 'home';
   let lastProofIssues = [];
+  // Master page: an overlay of free elements repeated across pages. `masterMode`
+  // swaps the canvas to editing the master itself (via curModel()).
+  let master = { enabled: true, applyTo: 'all', skipFirst: 1, startAt: 1, elements: [] };
+  let masterMode = false;
+  const masterModel = { role: 'master', matterKind: null, blank: true, type: 'master', title: 'Master', comps: [], elements: master.elements, style: '', _border: '', undo: [], redo: [] };
+  const curModel = () => (masterMode ? masterModel : pageModels[cur]);
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
   const setStatus = (t, k) => { el.status.textContent = t || ''; el.status.className = 'status editor-status' + (k ? ' ' + k : ''); };
   const slug = (s) => (s || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
@@ -166,6 +175,11 @@
       if (el.trimInfo && dims) el.trimInfo.textContent = `${dims.widthIn}" × ${dims.heightIn}" trim`;
       if (el.revLanguage && bookConfig && bookConfig.language) el.revLanguage.value = bookConfig.language;
       loadTeamState();
+      if (bookConfig && bookConfig.master && typeof bookConfig.master === 'object') {
+        master = Object.assign({ enabled: true, applyTo: 'all', skipFirst: 1, startAt: 1, elements: [] }, bookConfig.master);
+        if (!Array.isArray(master.elements)) master.elements = [];
+      }
+      masterMode = false; updateMasterUI(); syncMasterScopeUI();
       await loadBorderStyles(); buildPageList(); cur = 0; zoom = fitScale(); renderPage();
       setStatus(inviteGreeting || `Editing “${data.title}” — ${pageModels.length} pages.`, 'ok');
     } catch (err) { setStatus(err.message, 'err'); }
@@ -406,7 +420,7 @@
 
   // --- render ---
   function renderPage() {
-    const pm = pageModels[cur]; highlightPage();
+    const pm = curModel(); highlightPage();
     const matter = isMatterPage(pm);
     el.stageInner.innerHTML = '';
     const style = document.createElement('style'); style.textContent = scopeCss(pm.style, '#stageInner'); el.stageInner.appendChild(style);
@@ -436,6 +450,7 @@
     selLayer = document.createElement('div'); selLayer.className = 'pf-sel-layer';
     el.stageInner.appendChild(vGuide); el.stageInner.appendChild(hGuide); el.stageInner.appendChild(selLayer);
     applyMarginGuide();
+    if (!masterMode) renderMasterOverlay();
 
     // Content: measure flow bases (no transform yet). Matter: bases already set.
     requestAnimationFrame(() => { if (!matter) measureBases(pm); pm.comps.forEach(applyPieceTf); sels = []; syncSelUI(); drawSel(); });
@@ -462,7 +477,7 @@
   // Elements render through the engine's shared renderer (element-html.js), so
   // what's on screen is byte-identical to what the PDF composer prints.
   const elHtml = (e) => window.PFElements.elementHtml(e);
-  function allRefs() { return [...pageModels[cur].comps.filter((c) => !c.hidden), ...pageModels[cur].elements]; }
+  function allRefs() { const pm = curModel(); return [...pm.comps.filter((c) => !c.hidden), ...pm.elements]; }
 
   // --- unified box model (page coords) ---
   function box(ref) {
@@ -478,10 +493,10 @@
 
   // --- history ---
   function snapshot(pm) { return JSON.stringify({ comps: pm.comps.map((c) => ({ key: c.key, dx: c.dx, dy: c.dy, scale: c.scale, rot: c.rot, hidden: c.hidden, locked: c.locked })), elements: pm.elements.map((e) => { const { _node, ...r } = e; return r; }) }); }
-  function pushUndo() { const pm = pageModels[cur]; pm.undo.push(snapshot(pm)); if (pm.undo.length > 60) pm.undo.shift(); pm.redo = []; }
+  function pushUndo() { const pm = curModel(); pm.undo.push(snapshot(pm)); if (pm.undo.length > 60) pm.undo.shift(); pm.redo = []; }
   function applySnap(pm, snap) { const s = JSON.parse(snap); const byKey = {}; pm.comps.forEach((c) => (byKey[c.key] = c)); s.comps.forEach((sc) => { const c = byKey[sc.key]; if (c) Object.assign(c, sc); }); pm.elements = s.elements.map((e) => ({ ...e, group: 'el' })); }
-  function undo() { const pm = pageModels[cur]; if (!pm.undo.length) return; pm.redo.push(snapshot(pm)); applySnap(pm, pm.undo.pop()); renderPage(); }
-  function redo() { const pm = pageModels[cur]; if (!pm.redo.length) return; pm.undo.push(snapshot(pm)); applySnap(pm, pm.redo.pop()); renderPage(); }
+  function undo() { const pm = curModel(); if (!pm.undo.length) return; pm.redo.push(snapshot(pm)); applySnap(pm, pm.undo.pop()); if (masterMode) master.elements = pm.elements; renderPage(); }
+  function redo() { const pm = curModel(); if (!pm.redo.length) return; pm.undo.push(snapshot(pm)); applySnap(pm, pm.redo.pop()); if (masterMode) master.elements = pm.elements; renderPage(); }
 
   // --- selection ---
   const isSel = (r) => sels.indexOf(r) >= 0;
@@ -683,14 +698,14 @@
   // --- arrange / object ops ---
   function reorder(kind) {
     const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo();
-    const arr = pageModels[cur].elements; const zs = arr.map((e) => num(e.z, 100));
+    const arr = curModel().elements; const zs = arr.map((e) => num(e.z, 100));
     if (kind === 'front') o.z = Math.max(...zs) + 10; else if (kind === 'back') o.z = Math.min(...zs) - 10; else if (kind === 'forward') o.z = num(o.z, 100) + 15; else if (kind === 'backward') o.z = num(o.z, 100) - 15;
     renderPage(); setTimeout(() => setSel([o]), 0);
   }
   function flip(axis) { const o = sels.length === 1 && sels[0]; if (!o || (o.kind !== 'image' && o.kind !== 'shape')) return; pushUndo(); if (axis === 'h') o.flipH = !o.flipH; else o.flipV = !o.flipV; o._node.innerHTML = elHtml(o); }
   function toggleLock() { const o = sels.length === 1 && sels[0]; if (!o) return; pushUndo(); o.locked = !o.locked; syncSelUI(); }
 
-  function addElement(e) { pushUndo(); pageModels[cur].elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }
+  function addElement(e) { pushUndo(); curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }
   function addText() { addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2), scale: 1, rot: 0, z: 100, text: 'Your text', fontSize: 28, color: '#222222', align: 'left', w: 240 }); }
   function addImageFile(file) { const r = new FileReader(); r.onload = () => addElement({ group: 'el', id: uid++, kind: 'image', x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 80), scale: 1, rot: 0, z: 100, src: r.result, width: 160 }); r.readAsDataURL(file); }
   function addShape(shape) {
@@ -741,6 +756,59 @@
     };
     const onk = (e) => { if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey)) { e.preventDefault(); td.blur(); } };
     td.addEventListener('blur', done); td.addEventListener('keydown', onk);
+  }
+
+  // --- Master pages ---
+  function masterPageNo(i) { const skip = Math.max(0, num(master.skipFirst, 0)); if (i < skip) return null; return i - skip + num(master.startAt, 1); }
+  function masterAppliesTo(i) { const n = masterPageNo(i); if (n == null) return false; if (master.applyTo === 'odd') return n % 2 === 1; if (master.applyTo === 'even') return n % 2 === 0; return true; }
+  function renderMasterOverlay() {
+    if (!master.enabled || !master.elements.length || !masterAppliesTo(cur)) return;
+    const no = masterPageNo(cur);
+    master.elements.slice().sort((a, b) => num(a.z, 0) - num(b.z, 0)).forEach((e) => {
+      const shown = e.field === 'pageNumber' ? { ...e, text: String(no) } : e;
+      const node = document.createElement('div'); node.className = 'pf-node pf-master-ov';
+      node.style.transform = `translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)})`;
+      node.innerHTML = elHtml(shown);
+      el.stageInner.insertBefore(node, vGuide);
+    });
+  }
+  function updateMasterUI() {
+    if (el.masterBanner) el.masterBanner.hidden = !masterMode;
+    if (el.editMasterBtn) { el.editMasterBtn.classList.toggle('on', masterMode); el.editMasterBtn.textContent = masterMode ? '✓ Editing Master' : '✎ Edit Master Page'; }
+    document.body.classList.toggle('master-editing', masterMode);
+  }
+  function enterMaster() {
+    if (masterMode) return;
+    masterModel.elements = master.elements;   // edit the live overlay array
+    masterMode = true; sels = []; updateMasterUI(); renderPage();
+    setStatus('Editing the Master Page — add page numbers, headers, or a frame that repeat on every page in scope.', 'ok');
+  }
+  function exitMaster() {
+    if (!masterMode) return;
+    master.elements = masterModel.elements;   // keep the source array in sync
+    masterMode = false; sels = []; updateMasterUI(); renderPage();
+    setStatus('Back to the book. The master overlay shows on every page in scope.', 'ok');
+  }
+  const toggleMaster = () => (masterMode ? exitMaster() : enterMaster());
+  function insertPageNumber() {
+    if (!masterMode) enterMaster();
+    addElement({ group: 'el', id: uid++, kind: 'text', field: 'pageNumber', text: '#',
+      x: Math.round(dims.usableWidth / 2 - 10), y: Math.round(dims.usableHeight - 40),
+      scale: 1, rot: 0, z: 200, fontSize: 13, color: '#333333', align: 'center', w: 40, fontFamily: 'sans' });
+    setStatus('Page-number field added — it becomes each page’s number. Position it where you want the number to print.', 'ok');
+  }
+  function syncMasterScopeUI() {
+    if (el.masterApplyTo) el.masterApplyTo.value = master.applyTo || 'all';
+    if (el.masterSkip) el.masterSkip.value = num(master.skipFirst, 1);
+    if (el.masterStart) el.masterStart.value = num(master.startAt, 1);
+    if (el.masterEnabled) el.masterEnabled.checked = master.enabled !== false;
+  }
+  // Sent to the server so the overlay applies on export/preview/package. Strips
+  // the live DOM node (`_node`) so the payload is JSON-serializable.
+  function masterForSend() {
+    if (!master.enabled || !master.elements.length) return null;
+    return { enabled: true, applyTo: master.applyTo || 'all', skipFirst: num(master.skipFirst, 0), startAt: num(master.startAt, 1),
+      elements: master.elements.map(({ _node, ...e }) => e) };
   }
 
   // --- Insert: WordArt, Symbol, Date, AI Art ---
@@ -962,10 +1030,10 @@
     if (count) { renderPage(); el.frStatus.textContent = `Replaced ${count} occurrence${count !== 1 ? 's' : ''} across ${pagesTouched.size} page${pagesTouched.size !== 1 ? 's' : ''}.`; el.frStatus.className = 'pf-pub-status ok'; }
     else { el.frStatus.textContent = 'No matches found.'; el.frStatus.className = 'pf-pub-status'; }
   }
-  function duplicate() { const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo(); const { _node, ...c } = o; c.id = uid++; c.x = num(o.x, 0) + 16; c.y = num(o.y, 0) + 16; c.z = num(o.z, 100) + 1; pageModels[cur].elements.push(c); el.stageInner.insertBefore(makeEl(c), selLayer); setSel([c]); }
+  function duplicate() { const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo(); const { _node, ...c } = o; c.id = uid++; c.x = num(o.x, 0) + 16; c.y = num(o.y, 0) + 16; c.z = num(o.z, 100) + 1; curModel().elements.push(c); el.stageInner.insertBefore(makeEl(c), selLayer); setSel([c]); }
   function copySel() { clipboard = sels.filter((r) => r.group === 'el').map((r) => { const { _node, ...c } = r; return c; }); }
-  function paste() { if (!clipboard.length) return; pushUndo(); const made = []; clipboard.forEach((c) => { const e = { ...c, group: 'el', id: uid++, x: num(c.x, 0) + 16, y: num(c.y, 0) + 16, z: num(c.z, 100) + 1 }; pageModels[cur].elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); made.push(e); }); setSel(made); }
-  function deleteSel() { const els = sels.filter((r) => r.group === 'el'); if (!els.length) return; pushUndo(); const arr = pageModels[cur].elements; els.forEach((r) => { const i = arr.indexOf(r); if (i >= 0) arr.splice(i, 1); if (r._node) r._node.remove(); }); setSel([]); }
+  function paste() { if (!clipboard.length) return; pushUndo(); const made = []; clipboard.forEach((c) => { const e = { ...c, group: 'el', id: uid++, x: num(c.x, 0) + 16, y: num(c.y, 0) + 16, z: num(c.z, 100) + 1 }; curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); made.push(e); }); setSel(made); }
+  function deleteSel() { const els = sels.filter((r) => r.group === 'el'); if (!els.length) return; pushUndo(); const arr = curModel().elements; els.forEach((r) => { const i = arr.indexOf(r); if (i >= 0) arr.splice(i, 1); if (r._node) r._node.remove(); }); setSel([]); }
   function hideComp() { const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'piece') return; pushUndo(); o.hidden = true; o._node.style.display = 'none'; setSel([]); }
   function resetSize() { if (!sels.length) return; pushUndo(); sels.forEach((r) => { setScale(r, 1); setRot(r, 0); }); drawSel(); syncSelUI(); }
   function nudge(dx, dy) { if (!sels.length) return; sels.forEach((r) => { if (!r.locked) { const b = box(r); moveTo(r, b.x + dx, b.y + dy); } }); drawSel(); syncSelUI(); }
@@ -986,7 +1054,7 @@
       renderPage(); setStatus('Rerolled.', 'ok');
     } catch (err) { setStatus(err.message, 'err'); } finally { el.reroll.disabled = false; }
   }
-  function selectPage(i) { if (i === cur) return; cur = i; renderPage(); }
+  function selectPage(i) { if (masterMode) exitMaster(); if (i === cur) return; cur = i; renderPage(); }
 
   // --- serialize ---
   const round2 = (n) => Math.round(num(n, 0) * 100) / 100;
@@ -1037,11 +1105,11 @@
     if (pm.role === 'answerkey') return { role: 'answerkey', akIndex: pm.akIndex || 0, state };
     return { role: pm.role, state }; // title
   });
-  function buildRecipe() { const book = { ...(bookConfig || {}) }; delete book.seed; delete book.pageState; delete book.puzzleforgeBook; return { recipeVersion: 2, kind: 'book', book, seed, pagePlan: buildPagePlan() }; }
+  function buildRecipe() { const book = { ...(bookConfig || {}) }; delete book.seed; delete book.pageState; delete book.puzzleforgeBook; const m = masterForSend(); if (m) book.master = m; else delete book.master; return { recipeVersion: 2, kind: 'book', book, seed, pagePlan: buildPagePlan() }; }
   function save() { downloadBlob(new Blob([JSON.stringify(buildRecipe(), null, 2)], { type: 'application/json' }), slug((bookConfig && bookConfig.title) || 'book') + '-book.json'); setStatus('Recipe saved (with layout).', 'ok'); }
   async function exportPdf() {
     setStatus('Rendering PDF…', 'busy'); el.exportPdf.disabled = true;
-    try { const body = bookId ? { bookId, pagePlan: buildPagePlan() } : { config: bookConfig, pagePlan: buildPagePlan() };
+    try { const body = { ...(bookId ? { bookId } : { config: bookConfig }), pagePlan: buildPagePlan(), master: masterForSend() };
       const res = await fetch('/api/book/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Export failed'); }
       downloadBlob(await res.blob(), slug((bookConfig && bookConfig.title) || 'book') + '.pdf'); setStatus('PDF exported.', 'ok');
@@ -1050,7 +1118,7 @@
   function downloadBlob(blob, name) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
   // --- Publish flow (pre-flight + KDP package) ------------------------------
-  const bookBody = () => (bookId ? { bookId, pagePlan: buildPagePlan() } : { config: bookConfig, pagePlan: buildPagePlan() });
+  const bookBody = () => ({ ...(bookId ? { bookId } : { config: bookConfig }), pagePlan: buildPagePlan(), master: masterForSend() });
   function openPublish() { if (el.main.hidden) return; refreshCoverState(); el.pubModal.hidden = false; }
   function closePublish() { el.pubModal.hidden = true; }
   const bookTitle = () => (bookConfig && bookConfig.title) || '';
@@ -1126,7 +1194,7 @@
     } catch (err) { el.revBody.innerHTML = `<div class="rep-note err">${escHtml(err.message)}</div>`; }
   }
   function replaceSelText(ref, text) {
-    if (!pageModels[cur] || pageModels[cur].elements.indexOf(ref) < 0) { setStatus('That text box is no longer on the current page.', 'err'); return; }
+    if (!curModel() || curModel().elements.indexOf(ref) < 0) { setStatus('That text box is no longer on the current page.', 'err'); return; }
     pushUndo(); ref.text = text; ref._node.innerHTML = elHtml(ref); drawSel(); syncSelUI();
     closeReview(); setStatus(`Replaced with “${text}”.`, 'ok');
   }
@@ -1535,6 +1603,14 @@
     if (el.movePageUp) el.movePageUp.addEventListener('click', () => { if (cur >= 0) movePage(cur, -1); });
     if (el.movePageDown) el.movePageDown.addEventListener('click', () => { if (cur >= 0) movePage(cur, 1); });
     if (el.marginGuide) el.marginGuide.addEventListener('change', applyMarginGuide);
+    // Master pages
+    if (el.editMasterBtn) el.editMasterBtn.addEventListener('click', toggleMaster);
+    if (el.exitMasterBtn) el.exitMasterBtn.addEventListener('click', exitMaster);
+    if (el.insertPageNo) el.insertPageNo.addEventListener('click', insertPageNumber);
+    if (el.masterEnabled) el.masterEnabled.addEventListener('change', () => { master.enabled = el.masterEnabled.checked; if (!masterMode) renderPage(); setStatus(master.enabled ? 'Master overlay shown on pages.' : 'Master overlay hidden.', 'ok'); });
+    if (el.masterApplyTo) el.masterApplyTo.addEventListener('change', () => { master.applyTo = el.masterApplyTo.value; if (!masterMode) renderPage(); });
+    if (el.masterSkip) el.masterSkip.addEventListener('change', () => { master.skipFirst = Math.max(0, Number(el.masterSkip.value) || 0); if (!masterMode) renderPage(); });
+    if (el.masterStart) el.masterStart.addEventListener('change', () => { master.startAt = Number(el.masterStart.value) || 1; if (!masterMode) renderPage(); });
     renderSchemes();
     // Review tab
     if (el.revSpelling) el.revSpelling.addEventListener('click', runSpelling);
