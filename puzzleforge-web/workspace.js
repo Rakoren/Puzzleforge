@@ -130,7 +130,7 @@ function buildRouter() {
       const meta = saveBook(req.params.id, body.recipe, body.by); broadcast({ type: 'book', id: meta.id, title: meta.title, by: meta.updatedBy }); res.json(meta);
     } catch (e) { next(e); }
   });
-  router.delete('/books/:id', (req, res) => { removeBook(req.params.id); broadcast({ type: 'book' }); res.json({ ok: true }); });
+  router.delete('/books/:id', (req, res) => { removeBook(req.params.id); broadcast({ type: 'book', id: req.params.id, removed: true }); res.json({ ok: true }); });
 
   router.get('/books/:id/comments', (req, res) => res.json(listComments(req.params.id)));
   router.post('/books/:id/comments', (req, res, next) => {

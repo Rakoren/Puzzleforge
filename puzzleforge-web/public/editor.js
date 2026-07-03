@@ -49,7 +49,7 @@
     helpArticles: $('helpArticles'), helpToSupport: $('helpToSupport'),
     supportModal: $('supportModal'), supportClose: $('supportClose'), supType: $('supType'), supTitle: $('supTitle'),
     supBody: $('supBody'), supIncludeCtx: $('supIncludeCtx'), supSubmit: $('supSubmit'), supBrowse: $('supBrowse'), supStatus: $('supStatus'),
-    shareTeamBtn: $('shareTeamBtn'), wsStatus: $('wsStatus'),
+    shareTeamBtn: $('shareTeamBtn'), saveMineBtn: $('saveMineBtn'), wsStatus: $('wsStatus'),
     teamBtn: $('teamBtn'), inviteBtn: $('inviteBtn'), mailRecipient: $('mailRecipient'), emailBookBtn: $('emailBookBtn'),
     linkBtn: $('linkBtn'), mailStage: $('mailStage'), assignBtn: $('assignBtn'), notesBtn: $('notesBtn'),
     teamModal: $('teamModal'), teamClose: $('teamClose'), teamName: $('teamName'), teamEmail: $('teamEmail'),
@@ -71,7 +71,7 @@
   let currentLibId = null, bookOpen = false, lastSavedJson = null;
   // Team workspace (self-hosted LAN server): whether it's reachable, and this
   // book's shared id once it has been shared.
-  let wsEnabled = false, workspaceId = null, wsSub = null;
+  let wsEnabled = false, workspaceId = null, wsSub = null, detached = false;
   let pageModels = [], srcPages = [], pendingPlan = null, cur = -1, uid = 1, zoom = 1;
   let sels = [], clipboard = [];
   let vGuide = null, hGuide = null, gridEl = null, selLayer = null, flowEl = null;
@@ -1237,35 +1237,59 @@
   function buildRecipe() { const book = { ...(bookConfig || {}) }; delete book.seed; delete book.pageState; delete book.puzzleforgeBook; const m = masterForSend(); if (m) book.master = m; else delete book.master; return { recipeVersion: 2, kind: 'book', book, seed, pagePlan: buildPagePlan() }; }
   function save() { downloadBlob(new Blob([JSON.stringify(buildRecipe(), null, 2)], { type: 'application/json' }), slug((bookConfig && bookConfig.title) || 'book') + '-book.json'); setStatus('Recipe saved (with layout).', 'ok'); }
 
-  // --- Autosave to the My Books library ---------------------------------
+  // --- Autosave ---------------------------------------------------------
+  // A book opened from the Team library is a TEAM book: it lives in the
+  // workspace and its edits save back there (no personal copy is made). A book
+  // from My Books (currentLibId) saves locally. A brand-new book seeds a local
+  // copy. "Save to my library" forks a team book into a personal one.
+  const isTeamBook = () => !currentLibId && !!workspaceId;
   const setSaveState = (txt, cls) => { if (el.saveState) { el.saveState.textContent = txt || ''; el.saveState.className = 'save-state' + (cls ? ' ' + cls : ''); } };
   async function persistLibrary(recipe, json) {
     if (!window.PFLibrary) return;
     if (!currentLibId) currentLibId = PFLibrary.newId();
     const meta = PFLibrary.metaFromRecipe(recipe);
-    try {
-      await PFLibrary.put({ id: currentLibId, ...meta, recipe });
-      lastSavedJson = json;
-      setSaveState('All changes saved', 'ok');
-    } catch (_) { setSaveState('Autosave failed (storage full?)', 'err'); }
+    try { await PFLibrary.put({ id: currentLibId, ...meta, recipe }); lastSavedJson = json; setSaveState('All changes saved', 'ok'); }
+    catch (_) { setSaveState('Autosave failed (storage full?)', 'err'); }
+  }
+  async function persistTeam(recipe, json) {
+    try { await PFWorkspace.shareBook(workspaceId, recipe, me.name); lastSavedJson = json; setSaveState('Saved to team', 'ok'); }
+    catch (_) { setSaveState('Team autosave failed — is the workspace up?', 'err'); }
   }
   // Cheap change detection: rebuild the recipe and compare to the last saved
   // JSON, so ANY edit is captured without wiring every mutation.
   function autosaveTick() {
-    if (!bookOpen || el.main.hidden || !window.PFLibrary) return;
+    if (!bookOpen || el.main.hidden || detached) return;
     let recipe, json;
     try { recipe = buildRecipe(); json = JSON.stringify(recipe); } catch (_) { return; }
     if (json === lastSavedJson) return;
     setSaveState('Saving…', 'busy');
-    persistLibrary(recipe, json);
+    if (isTeamBook() && wsEnabled) persistTeam(recipe, json);
+    else if (window.PFLibrary) persistLibrary(recipe, json);
   }
   function startAutosave() {
     bookOpen = true;
     let recipe = null, json = null;
     try { recipe = buildRecipe(); json = JSON.stringify(recipe); } catch (_) { /* */ }
-    if (currentLibId || !recipe) { lastSavedJson = json; setSaveState(currentLibId ? 'All changes saved' : 'Autosaves as you edit', currentLibId ? 'ok' : ''); }
-    else persistLibrary(recipe, json);   // a brand-new book → save now so it lists in My Books
+    lastSavedJson = json;
+    if (currentLibId) setSaveState('All changes saved', 'ok');
+    else if (isTeamBook()) setSaveState('Team book — edits save to the team', 'ok');
+    else if (recipe && window.PFLibrary) persistLibrary(recipe, json);   // brand-new book → seed My Books
+    else setSaveState('Autosaves as you edit', '');
     if (!startAutosave._timer) startAutosave._timer = setInterval(autosaveTick, 4000);
+  }
+  // Fork the current (team) book into a personal copy in My Books.
+  async function saveToMyLibrary() {
+    if (!bookOpen || !window.PFLibrary) return;
+    let recipe, json;
+    try { recipe = buildRecipe(); json = JSON.stringify(recipe); } catch (_) { return; }
+    const wasTeam = !!workspaceId;
+    currentLibId = PFLibrary.newId();
+    try { await PFLibrary.put({ id: currentLibId, ...PFLibrary.metaFromRecipe(recipe), recipe }); }
+    catch (_) { currentLibId = null; setStatus('Could not save to My Books (browser storage full?).', 'err'); return; }
+    if (wasTeam && wsEnabled) { try { await PFWorkspace.addComment(workspaceId, { author: me.name, role: me.role, text: `📋 ${me.name} saved a personal copy of this book.` }); } catch (_) { /* */ } }
+    workspaceId = null; detached = false; lastSavedJson = json;
+    setSaveState('All changes saved', 'ok'); setWsStatus();
+    setStatus(wasTeam ? 'Saved a personal copy to My Books — you’re now editing your own copy; the team copy is unchanged.' : 'Saved to My Books.', 'ok');
   }
   async function exportPdf() {
     setStatus('Rendering PDF…', 'busy'); el.exportPdf.disabled = true;
@@ -1642,9 +1666,12 @@
   // --- Team workspace (self-hosted LAN server) --------------------------
   function setWsStatus() {
     if (!el.wsStatus) return;
-    if (!wsEnabled) { el.wsStatus.textContent = 'Workspace off'; }
-    else if (workspaceId) { el.wsStatus.textContent = '✓ Shared with team'; }
-    else { el.wsStatus.textContent = 'Not shared yet'; }
+    if (detached) el.wsStatus.textContent = '⚠ Removed from team — save to keep';
+    else if (!wsEnabled) el.wsStatus.textContent = 'Workspace off';
+    else if (workspaceId && !currentLibId) el.wsStatus.textContent = '☁ Team book (live)';
+    else if (workspaceId) el.wsStatus.textContent = '✓ Shared with team';
+    else el.wsStatus.textContent = 'Not shared yet';
+    if (el.saveMineBtn) el.saveMineBtn.style.display = (isTeamBook() || detached) ? '' : 'none';
   }
   async function initWorkspace() {
     if (!window.PFWorkspace) return;
@@ -1661,6 +1688,12 @@
         if (evt.type === 'comment' && evt.bookId === workspaceId && el.notesModal && !el.notesModal.hidden) renderNotes();
         // Keep the shared roster fresh when a teammate adds/removes someone.
         if (evt.type === 'member' && el.teamModal && !el.teamModal.hidden) syncTeamFromServer();
+        // The owner removed this team book from the library while we have it open:
+        // stop pushing edits (a PUT would resurrect it) and prompt to keep a copy.
+        if (evt.type === 'book' && evt.removed && evt.id === workspaceId && isTeamBook()) {
+          detached = true; setWsStatus();
+          setStatus('⚠ This book was removed from the team library by the owner. Click “Save to my library” to keep your copy — otherwise your edits won’t be saved.', 'err');
+        }
       });
     } catch (_) { /* */ }
   }
@@ -1889,6 +1922,7 @@
     if (el.notesModal) el.notesModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeNotes(); });
     if (el.noteAdd) el.noteAdd.addEventListener('click', addNote);
     if (el.shareTeamBtn) el.shareTeamBtn.addEventListener('click', shareToTeam);
+    if (el.saveMineBtn) el.saveMineBtn.addEventListener('click', saveToMyLibrary);
     renderRecipients();
     parseInvite();
     initWorkspace();
