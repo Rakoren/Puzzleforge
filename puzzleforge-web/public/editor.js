@@ -32,6 +32,7 @@
     border: $('border'), snapToggle: $('snapToggle'), gridToggle: $('gridToggle'),
     reroll: $('reroll'), resetLayout: $('resetLayout'), addBlankSide: $('addBlankSide'), darkToggle: $('darkToggle'),
     insertTpl: $('insertTpl'), insertTplSide: $('insertTplSide'), savePageTpl: $('savePageTpl'),
+    dupPage: $('dupPage'), aiArtBtn: $('aiArtBtn'), wordArt: $('wordArt'), symbolPick: $('symbolPick'), insertDate: $('insertDate'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
     publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
@@ -663,6 +664,36 @@
       fill: line ? 'none' : '#ffd43b', stroke: '#222222', strokeW: line ? 3 : 2,
     });
   }
+
+  // --- Insert: WordArt, Symbol, Date, AI Art ---
+  const WORDART = [
+    { name: 'Bold Outline', style: { fontSize: 56, bold: true, color: '#ffd43b', fontFamily: 'sans', textStroke: '#222222', textStrokeW: 2 } },
+    { name: 'Candy Shadow', style: { fontSize: 52, bold: true, color: '#e64980', fontFamily: 'hand', textShadow: '#00000033' } },
+    { name: 'Sky Pop', style: { fontSize: 54, bold: true, color: '#4dabf7', fontFamily: 'sans', textStroke: '#1c3d5a', textStrokeW: 1.5 } },
+    { name: 'Classic Serif', style: { fontSize: 48, bold: true, color: '#222222', fontFamily: 'serif' } },
+    { name: 'Ghost Outline', style: { fontSize: 58, bold: true, color: '#ffffff', fontFamily: 'sans', textStroke: '#222222', textStrokeW: 2 } },
+    { name: 'Sunset', style: { fontSize: 54, bold: true, color: '#ff922b', fontFamily: 'hand', textStroke: '#7a3b00', textStrokeW: 1.5, textShadow: '#00000030' } },
+  ];
+  const SYMBOLS = '★ ☆ ♥ ● ○ ◆ ■ ▲ ► ◄ ▼ → ← ↑ ↓ ⇒ ✓ ✗ ✚ ✦ ✪ ☀ ☁ ☂ ☺ ☹ ♪ ♫ ✏ ✂ ⚑ ❄ ☘ ⬤ ⬛ ⬜ 🔢 🎯'.split(' ');
+  function addWordArt(preset) {
+    if (!preset) return;
+    addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 160), y: Math.round(dims.usableHeight * 0.3),
+      scale: 1, rot: 0, z: 110, text: 'Your Title', align: 'center', w: 320, lineHeight: 1.15, ...preset.style });
+  }
+  function addSymbol(sym) {
+    if (!sym) return;
+    const o = selText();
+    if (o) { pushUndo(); o.text = (o.text || '') + sym; o._node.innerHTML = elHtml(o); drawSel(); }
+    else addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 30), y: Math.round(dims.usableHeight / 2 - 30), scale: 1, rot: 0, z: 100, text: sym, fontSize: 48, color: '#222222', align: 'center', w: 60 });
+  }
+  function insertDate() {
+    addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 90), y: Math.round(dims.usableHeight / 2), scale: 1, rot: 0, z: 100, text: new Date().toLocaleDateString(), fontSize: 22, color: '#222222', align: 'center', w: 180 });
+  }
+  function openAiArt() { window.open('aiart.html', '_blank'); }
+  function populateInsertMenus() {
+    if (el.wordArt.options.length <= 1) WORDART.forEach((w, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = w.name; el.wordArt.appendChild(o); });
+    if (el.symbolPick.options.length <= 1) SYMBOLS.forEach((s) => { const o = document.createElement('option'); o.value = s; o.textContent = s; el.symbolPick.appendChild(o); });
+  }
   function applyShapeProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'shape') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); }
   // W/H from the measure panel: intrinsic size per kind.
   function setElSize(prop, val) {
@@ -849,6 +880,7 @@
         kind: e.kind, x: Math.round(e.x), y: Math.round(e.y), scale: round2(e.scale), rot: round2(e.rot), z: e.z,
         text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w,
         fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline, lineHeight: e.lineHeight,
+        textStroke: e.textStroke, textStrokeW: e.textStrokeW, textShadow: e.textShadow,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         gid: e.gid,
@@ -1059,6 +1091,12 @@
     if (el.insertTpl) el.insertTpl.addEventListener('click', openTplPicker);
     if (el.insertTplSide) el.insertTplSide.addEventListener('click', openTplPicker);
     if (el.savePageTpl) el.savePageTpl.addEventListener('click', savePageAsTemplate);
+    if (el.dupPage) el.dupPage.addEventListener('click', () => { if (cur >= 0) duplicatePage(cur); });
+    if (el.aiArtBtn) el.aiArtBtn.addEventListener('click', openAiArt);
+    if (el.insertDate) el.insertDate.addEventListener('click', insertDate);
+    populateInsertMenus();
+    if (el.wordArt) el.wordArt.addEventListener('change', () => { const i = Number(el.wordArt.value); if (WORDART[i]) addWordArt(WORDART[i]); el.wordArt.value = ''; });
+    if (el.symbolPick) el.symbolPick.addEventListener('change', () => { addSymbol(el.symbolPick.value); el.symbolPick.value = ''; });
     if (el.tplClose) el.tplClose.addEventListener('click', closeTplPicker);
     if (el.tplModal) el.tplModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeTplPicker(); });
     if (el.publishBtn) el.publishBtn.addEventListener('click', openPublish);

@@ -88,7 +88,11 @@
       `font-weight:${e.bold ? 700 : 400};font-style:${e.italic ? 'italic' : 'normal'};` +
       `text-decoration:${e.underline ? 'underline' : 'none'};` +
       `text-align:${['left', 'center', 'right'].includes(e.align) ? e.align : 'left'};` +
-      `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:${Math.max(0.8, Math.min(3, num(e.lineHeight, 1.25)))};`;
+      `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:${Math.max(0.8, Math.min(3, num(e.lineHeight, 1.25)))};` +
+      // WordArt: outline (text-stroke) + drop shadow. Chromium renders both on
+      // screen and in the PDF, so styled titles print exactly as designed.
+      (e.textStroke ? `-webkit-text-stroke:${Math.max(0, num(e.textStrokeW, 1))}px ${color(e.textStroke, '#222')};` : '') +
+      (e.textShadow ? `text-shadow:2px 2px 0 ${color(e.textShadow, '#00000040')};` : '');
     return `<div class="pf-textbox" style="${css}">${esc(e.text || '')}</div>`;
   }
 

@@ -131,37 +131,48 @@
       <section class="ribbon-panel" data-panel="insert">
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="addText" class="ghost">＋ Text</button>
-            <label class="upload ghost">＋ Image<input id="addImage" type="file" accept="image/*" hidden></label>
-          </div>
-          <div class="rgroup-name">Objects</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <button class="iconbtn shape-btn" data-shape="rect" title="Rectangle">▭</button>
-            <button class="iconbtn shape-btn" data-shape="ellipse" title="Ellipse">◯</button>
-            <button class="iconbtn shape-btn" data-shape="triangle" title="Triangle">△</button>
-            <button class="iconbtn shape-btn" data-shape="star" title="Star">☆</button>
-            <button class="iconbtn shape-btn" data-shape="line" title="Line">─</button>
-          </div>
-          <div class="rgroup-name">Shapes</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
             <button id="addBlank" class="ghost" title="Insert a blank page after the current one">＋ Blank page</button>
             <button id="insertTpl" class="ghost" title="Insert a page from a template">＋ Page template…</button>
-            <button id="savePageTpl" class="ghost" title="Save this page's layout as a reusable template">⧉ Save as template…</button>
+            <button id="dupPage" class="ghost" title="Duplicate the current page">⧉ Duplicate page</button>
+            <button id="savePageTpl" class="ghost" title="Save this page's layout as a reusable template">Save as template…</button>
           </div>
           <div class="rgroup-name">Pages</div>
         </div>
         <div class="rgroup">
+          <div class="rgroup-body">
+            <label class="upload ghost">🖼 Picture<input id="addImage" type="file" accept="image/*" hidden></label>
+            <button id="aiArtBtn" class="ghost" title="Open the AI Art studio (ComfyUI) in a new tab">✨ AI Art</button>
+            <span class="shape-mini">
+              <button class="iconbtn shape-btn" data-shape="rect" title="Rectangle">▭</button>
+              <button class="iconbtn shape-btn" data-shape="ellipse" title="Ellipse">◯</button>
+              <button class="iconbtn shape-btn" data-shape="triangle" title="Triangle">△</button>
+              <button class="iconbtn shape-btn" data-shape="star" title="Star">☆</button>
+              <button class="iconbtn shape-btn" data-shape="line" title="Line">─</button>
+            </span>
+          </div>
+          <div class="rgroup-name">Illustrations</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="addText" class="ghost">A Text Box</button>
+            <select id="wordArt" class="mini" title="WordArt — styled title">
+              <option value="" disabled selected>WordArt…</option>
+            </select>
+            <select id="symbolPick" class="mini" title="Insert symbol">
+              <option value="" disabled selected>Ω Symbol…</option>
+            </select>
+            <button id="insertDate" class="ghost" title="Insert today's date">📅 Date</button>
+          </div>
+          <div class="rgroup-name">Text</div>
+        </div>
+        <div class="rgroup">
           <div class="rgroup-body wide">
-            <label class="field compact"><span>Border override</span>
+            <label class="field compact"><span>Page border</span>
               <select id="border"><option value="">(book default)</option></select>
             </label>
-            <button id="borderAll" class="ghost" title="Use this border on every page">Apply to all pages</button>
+            <button id="borderAll" class="ghost" title="Use this border on every page">Apply to all</button>
           </div>
-          <div class="rgroup-name">Decoration</div>
+          <div class="rgroup-name">Borders &amp; Accents</div>
         </div>
       </section>
 
