@@ -33,6 +33,8 @@
     reroll: $('reroll'), resetLayout: $('resetLayout'), addBlankSide: $('addBlankSide'), darkToggle: $('darkToggle'),
     insertTpl: $('insertTpl'), insertTplSide: $('insertTplSide'), savePageTpl: $('savePageTpl'),
     dupPage: $('dupPage'), aiArtBtn: $('aiArtBtn'), wordArt: $('wordArt'), symbolPick: $('symbolPick'), insertDate: $('insertDate'),
+    trimInfo: $('trimInfo'), marginGuide: $('marginGuide'), renamePage: $('renamePage'), delPage: $('delPage'),
+    movePageUp: $('movePageUp'), movePageDown: $('movePageDown'), schemeGallery: $('schemeGallery'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
     publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
@@ -88,6 +90,7 @@
       m.elements = (saved.elements || []).map((e) => ({ ...e, group: 'el', id: e.id || uid++ }));
     }
     if (state && state.border) m._border = state.border;
+    if (state && state.borderColor) m._borderColor = state.borderColor;
     return m;
   }
   function modelFromPage(p) {
@@ -129,7 +132,7 @@
       style: pm.style,
       comps: pm.comps.map((c) => ({ group: 'piece', kind: c.kind, key: c.key, html: c.html, dx: c.dx, dy: c.dy, scale: c.scale, rot: c.rot, hidden: c.hidden, locked: c.locked, baseX: 0, baseY: 0, baseW: 0, baseH: 0 })),
       elements: pm.elements.map((e) => { const { _node, ...r } = e; return { ...r, id: uid++ }; }),
-      _border: pm._border, undo: [], redo: [],
+      _border: pm._border, _borderColor: pm._borderColor, name: pm.name || null, undo: [], redo: [],
     };
   }
 
@@ -143,6 +146,7 @@
       pageModels = srcPages.map(modelFromPage);
       if (pendingPlan) { applyPlan(pendingPlan); pendingPlan = null; }
       el.empty.hidden = true; el.main.hidden = false;
+      if (el.trimInfo && dims) el.trimInfo.textContent = `${dims.widthIn}" × ${dims.heightIn}" trim`;
       await loadBorderStyles(); buildPageList(); cur = 0; zoom = fitScale(); renderPage();
       setStatus(`Editing “${data.title}” — ${pageModels.length} pages.`, 'ok');
     } catch (err) { setStatus(err.message, 'err'); }
@@ -196,7 +200,7 @@
     });
     highlightPage();
   }
-  const labelFor = (pm) => pm.blank ? (pm.title && pm.title !== 'Blank' ? pm.title : 'Blank page') : ({ bleedguard: 'Blank (bleed guard)', breather: 'Breather' }[pm.type] || pm.title || pm.type);
+  const labelFor = (pm) => pm.name || (pm.blank ? (pm.title && pm.title !== 'Blank' ? pm.title : 'Blank page') : ({ bleedguard: 'Blank (bleed guard)', breather: 'Breather' }[pm.type] || pm.title || pm.type));
   function highlightPage() {
     [...el.pageList.children].forEach((li, i) => li.classList.toggle('active', i === cur));
     const active = el.pageList.children[cur]; if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
@@ -406,6 +410,7 @@
     hGuide = document.createElement('div'); hGuide.className = 'pf-guide pf-guide-h'; hGuide.style.display = 'none';
     selLayer = document.createElement('div'); selLayer.className = 'pf-sel-layer';
     el.stageInner.appendChild(vGuide); el.stageInner.appendChild(hGuide); el.stageInner.appendChild(selLayer);
+    applyMarginGuide();
 
     // Content: measure flow bases (no transform yet). Matter: bases already set.
     requestAnimationFrame(() => { if (!matter) measureBases(pm); pm.comps.forEach(applyPieceTf); sels = []; syncSelUI(); drawSel(); });
@@ -661,7 +666,7 @@
       x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 60),
       scale: 1, rot: 0, z: 100,
       w: line ? 220 : 160, h: line ? 12 : 120,
-      fill: line ? 'none' : '#ffd43b', stroke: '#222222', strokeW: line ? 3 : 2,
+      fill: line ? 'none' : schemeFill(), stroke: schemeStroke(), strokeW: line ? 3 : 2,
     });
   }
 
@@ -693,6 +698,62 @@
   function populateInsertMenus() {
     if (el.wordArt.options.length <= 1) WORDART.forEach((w, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = w.name; el.wordArt.appendChild(o); });
     if (el.symbolPick.options.length <= 1) SYMBOLS.forEach((s) => { const o = document.createElement('option'); o.value = s; o.textContent = s; el.symbolPick.appendChild(o); });
+  }
+
+  // --- Page Design: color schemes ---
+  const SCHEMES = [
+    { id: 'office', name: 'Office', colors: ['#3b5bdb', '#e64980', '#f59f00', '#2b8a3e'] },
+    { id: 'ocean', name: 'Ocean', colors: ['#1864ab', '#1c7ed6', '#22b8cf', '#0ca678'] },
+    { id: 'candy', name: 'Candy', colors: ['#d6336c', '#e64980', '#f783ac', '#f59f00'] },
+    { id: 'forest', name: 'Forest', colors: ['#2b8a3e', '#37b24d', '#94d82d', '#66a80f'] },
+    { id: 'sunset', name: 'Sunset', colors: ['#e8590c', '#f76707', '#f59f00', '#e03131'] },
+    { id: 'grape', name: 'Grape', colors: ['#6741d9', '#9c36b5', '#ae3ec9', '#7048e8'] },
+    { id: 'slate', name: 'Slate', colors: ['#212529', '#495057', '#1c7ed6', '#adb5bd'] },
+    { id: 'classic', name: 'Classic', colors: ['#000000', '#444444', '#888888', '#bbbbbb'] },
+  ];
+  let activeScheme = null;
+  const schemeFill = () => (activeScheme ? activeScheme.colors[2] : '#ffd43b');
+  const schemeStroke = () => (activeScheme ? activeScheme.colors[0] : '#222222');
+  function renderSchemes() {
+    if (!el.schemeGallery || el.schemeGallery.childElementCount) return;
+    SCHEMES.forEach((s) => {
+      const chip = document.createElement('button'); chip.className = 'scheme-chip'; chip.dataset.id = s.id; chip.title = s.name;
+      chip.innerHTML = `<span class="scheme-sw">${s.colors.map((c) => `<i style="background:${c}"></i>`).join('')}</span><span class="scheme-nm">${s.name}</span>`;
+      chip.addEventListener('click', () => applyScheme(s));
+      el.schemeGallery.appendChild(chip);
+    });
+  }
+  function applyScheme(s) {
+    activeScheme = s;
+    pageModels.forEach((pm) => { pm._borderColor = s.colors[0]; });
+    // Immediate feedback: recolor whatever's selected to the scheme.
+    if (sels.length) {
+      pushUndo();
+      sels.forEach((r) => {
+        if (r.kind === 'shape') { r.fill = s.colors[2]; r.stroke = s.colors[0]; r._node.innerHTML = elHtml(r); }
+        else if (r.kind === 'text') { r.color = s.colors[0]; r._node.innerHTML = elHtml(r); }
+      });
+      drawSel(); syncSelUI();
+    }
+    [...el.schemeGallery.children].forEach((c) => c.classList.toggle('active', c.dataset.id === s.id));
+    setStatus(`“${s.name}” scheme active — new shapes and page frames use these colors (frames show on export). Selected items were recolored.`, 'ok');
+  }
+
+  // --- Page Design: rename / margin guide ---
+  function renamePagePrompt() {
+    const pm = pageModels[cur]; if (!pm) return;
+    const name = window.prompt('Name this page (shown in the page list):', pm.name || labelFor(pm));
+    if (name === null) return;
+    pm.name = name.trim() || null; buildPageList();
+  }
+  function applyMarginGuide() {
+    if (!el.stageInner) return;
+    let g = el.stageInner.querySelector('.pf-margin-guide');
+    if (el.marginGuide.checked) {
+      if (!g) { g = document.createElement('div'); g.className = 'pf-margin-guide'; el.stageInner.appendChild(g); }
+      const inset = 24; // ~0.25in keep-clear from the usable edge
+      g.style.cssText = `position:absolute;left:${inset}px;top:${inset}px;right:${inset}px;bottom:${inset}px;border:1px dashed #ff2d9b;pointer-events:none;z-index:5;`;
+    } else if (g) { g.remove(); }
   }
   function applyShapeProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'shape') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); }
   // W/H from the measure panel: intrinsic size per kind.
@@ -888,6 +949,7 @@
       st.layout = { comp, elements };
     }
     if (pm._border) st.border = pm._border;
+    if (pm._borderColor) st.borderColor = pm._borderColor;
     return st;
   }
   // Per-page arrangement for export/recipe: keeps the final page order, marks
@@ -1094,6 +1156,13 @@
     if (el.dupPage) el.dupPage.addEventListener('click', () => { if (cur >= 0) duplicatePage(cur); });
     if (el.aiArtBtn) el.aiArtBtn.addEventListener('click', openAiArt);
     if (el.insertDate) el.insertDate.addEventListener('click', insertDate);
+    // Page Design tab
+    if (el.renamePage) el.renamePage.addEventListener('click', renamePagePrompt);
+    if (el.delPage) el.delPage.addEventListener('click', () => { if (cur >= 0) deletePage(cur); });
+    if (el.movePageUp) el.movePageUp.addEventListener('click', () => { if (cur >= 0) movePage(cur, -1); });
+    if (el.movePageDown) el.movePageDown.addEventListener('click', () => { if (cur >= 0) movePage(cur, 1); });
+    if (el.marginGuide) el.marginGuide.addEventListener('change', applyMarginGuide);
+    renderSchemes();
     populateInsertMenus();
     if (el.wordArt) el.wordArt.addEventListener('change', () => { const i = Number(el.wordArt.value); if (WORDART[i]) addWordArt(WORDART[i]); el.wordArt.value = ''; });
     if (el.symbolPick) el.symbolPick.addEventListener('change', () => { addSymbol(el.symbolPick.value); el.symbolPick.value = ''; });

@@ -36,6 +36,7 @@
     <div class="ribbon-tabs" role="tablist">
       <button class="rtab active" data-tab="home" role="tab">Home</button>
       <button class="rtab" data-tab="insert" role="tab">Insert</button>
+      <button class="rtab" data-tab="design" role="tab">Page Design</button>
       <button class="rtab" data-tab="arrange" role="tab">Arrange</button>
       <button class="rtab rtab-context" data-tab="format" role="tab">Format</button>
       <button class="rtab" data-tab="view" role="tab">View</button>
@@ -173,6 +174,32 @@
             <button id="borderAll" class="ghost" title="Use this border on every page">Apply to all</button>
           </div>
           <div class="rgroup-name">Borders &amp; Accents</div>
+        </div>
+      </section>
+
+      <!-- PAGE DESIGN -->
+      <section class="ribbon-panel" data-panel="design">
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <span class="design-info" id="trimInfo">—</span>
+            <label class="checkbox"><input type="checkbox" id="marginGuide"> Show safe-margin guide</label>
+          </div>
+          <div class="rgroup-name">Page Setup</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="renamePage" class="ghost" title="Give this page a name in the page list">✎ Rename</button>
+            <button id="delPage" class="ghost del" title="Delete this page">🗑 Delete</button>
+            <button id="movePageUp" class="ghost" title="Move page up">↑ Up</button>
+            <button id="movePageDown" class="ghost" title="Move page down">↓ Down</button>
+          </div>
+          <div class="rgroup-name">Pages</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <div class="scheme-gallery" id="schemeGallery"></div>
+          </div>
+          <div class="rgroup-name">Schemes (frame + accent colors)</div>
         </div>
       </section>
 
