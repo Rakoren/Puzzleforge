@@ -38,6 +38,7 @@
       <button class="rtab" data-tab="insert" role="tab">Insert</button>
       <button class="rtab" data-tab="design" role="tab">Page Design</button>
       <button class="rtab" data-tab="arrange" role="tab">Arrange</button>
+      <button class="rtab" data-tab="mailings" role="tab">Mailings</button>
       <button class="rtab" data-tab="review" role="tab">Review</button>
       <button class="rtab rtab-context" data-tab="format" role="tab">Format</button>
       <button class="rtab" data-tab="view" role="tab">View</button>
@@ -242,6 +243,49 @@
             <button id="flipV" class="ghost">Flip V</button>
           </div>
           <div class="rgroup-name">Rotate &amp; flip</div>
+        </div>
+      </section>
+
+      <!-- MAILINGS (team & handoffs) -->
+      <section class="ribbon-panel" data-panel="mailings">
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="teamBtn" class="ghost" title="Manage your team roster">👥 Team Roster</button>
+            <button id="inviteBtn" class="ghost" title="Invite someone to the team">＋ Invite</button>
+          </div>
+          <div class="rgroup-name">Team</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <select id="mailRecipient" class="mini" title="Who share actions target"><option value="">— pick a team member —</option></select>
+          </div>
+          <div class="rgroup-name">Recipient</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="emailBookBtn" class="ghost" title="Email this book to the selected member">📧 Email Book</button>
+            <button id="linkBtn" class="ghost" title="Copy a personalized link for the selected member">🔗 Personalized Link</button>
+          </div>
+          <div class="rgroup-name">Share</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <select id="mailStage" class="mini" title="Workflow stage of this book">
+              <option value="Draft">Draft</option>
+              <option value="Writing">Writing</option>
+              <option value="Editing">Editing</option>
+              <option value="Review">Review</option>
+              <option value="Final">Final</option>
+            </select>
+            <button id="assignBtn" class="ghost" title="Assign this book to the selected member">👤 Assign to recipient</button>
+          </div>
+          <div class="rgroup-name">Workflow</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="notesBtn" class="ghost" title="Handoff notes for this book">📝 Handoff Notes</button>
+          </div>
+          <div class="rgroup-name">Notes</div>
         </div>
       </section>
 
@@ -556,6 +600,53 @@
         <button id="supSubmit" class="primary">Open GitHub issue →</button>
         <a id="supBrowse" class="linkbtn" href="#" target="_blank" rel="noopener">Browse existing issues</a>
         <span id="supStatus" class="pf-pub-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team roster -->
+  <div class="pf-modal" id="teamModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box pf-pub" role="dialog" aria-modal="true" aria-labelledby="teamTitle">
+      <div class="pf-modal-head">
+        <h2 id="teamTitle">Team Roster</h2>
+        <button class="iconbtn" id="teamClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub">Add the people you work with. Everything here is stored in this browser for now —
+        invites and handoffs open a pre-filled email you send yourself. (Real accounts &amp; shared sync come later.)</p>
+      <div class="pf-team-add">
+        <input id="teamName" type="text" placeholder="Name">
+        <input id="teamEmail" type="email" placeholder="Email">
+        <select id="teamRole">
+          <option value="Writer">Writer</option>
+          <option value="Editor">Editor</option>
+          <option value="Illustrator">Illustrator</option>
+          <option value="Reviewer">Reviewer</option>
+          <option value="Owner">Owner</option>
+        </select>
+        <button id="teamAdd" class="primary" type="button">Add</button>
+      </div>
+      <div id="teamList" class="pf-team-list"></div>
+      <p class="pf-modal-sub pf-help-note"><b>Personalized link:</b> each member gets a unique link that opens
+        PuzzleForge already identifying them — they’re greeted by name and their handoff notes are attributed to
+        their role. Send each person their own link so contributions are always tagged to the right person.</p>
+    </div>
+  </div>
+
+  <!-- Handoff notes -->
+  <div class="pf-modal" id="notesModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box pf-pub" role="dialog" aria-modal="true" aria-labelledby="notesTitle">
+      <div class="pf-modal-head">
+        <h2 id="notesTitle">Handoff Notes</h2>
+        <button class="iconbtn" id="notesClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub" id="notesSub">Notes travel with this book so the next person has context. Saved with
+        your recipe on <b>Save</b>.</p>
+      <div id="notesList" class="pf-notes-list"></div>
+      <div class="pf-notes-add">
+        <textarea id="noteText" rows="2" placeholder="Add a note for the team…"></textarea>
+        <button id="noteAdd" class="primary" type="button">Post note</button>
       </div>
     </div>
   </div>

@@ -44,6 +44,12 @@
     helpArticles: $('helpArticles'), helpToSupport: $('helpToSupport'),
     supportModal: $('supportModal'), supportClose: $('supportClose'), supType: $('supType'), supTitle: $('supTitle'),
     supBody: $('supBody'), supIncludeCtx: $('supIncludeCtx'), supSubmit: $('supSubmit'), supBrowse: $('supBrowse'), supStatus: $('supStatus'),
+    teamBtn: $('teamBtn'), inviteBtn: $('inviteBtn'), mailRecipient: $('mailRecipient'), emailBookBtn: $('emailBookBtn'),
+    linkBtn: $('linkBtn'), mailStage: $('mailStage'), assignBtn: $('assignBtn'), notesBtn: $('notesBtn'),
+    teamModal: $('teamModal'), teamClose: $('teamClose'), teamName: $('teamName'), teamEmail: $('teamEmail'),
+    teamRole: $('teamRole'), teamAdd: $('teamAdd'), teamList: $('teamList'),
+    notesModal: $('notesModal'), notesClose: $('notesClose'), notesSub: $('notesSub'), notesList: $('notesList'),
+    noteText: $('noteText'), noteAdd: $('noteAdd'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
     publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
@@ -157,8 +163,9 @@
       el.empty.hidden = true; el.main.hidden = false;
       if (el.trimInfo && dims) el.trimInfo.textContent = `${dims.widthIn}" × ${dims.heightIn}" trim`;
       if (el.revLanguage && bookConfig && bookConfig.language) el.revLanguage.value = bookConfig.language;
+      loadTeamState();
       await loadBorderStyles(); buildPageList(); cur = 0; zoom = fitScale(); renderPage();
-      setStatus(`Editing “${data.title}” — ${pageModels.length} pages.`, 'ok');
+      setStatus(inviteGreeting || `Editing “${data.title}” — ${pageModels.length} pages.`, 'ok');
     } catch (err) { setStatus(err.message, 'err'); }
   }
   async function loadBorderStyles() {
@@ -1185,6 +1192,134 @@
     el.supStatus.className = 'pf-pub-status ok';
   }
 
+  // --- Mailings tab: team roster, handoffs, personalized links, notes ---
+  // Everything is local-first (roster in this browser; invites/handoffs open a
+  // pre-filled email you send). This is the seed for real accounts + sync later.
+  const b64e = (s) => btoa(unescape(encodeURIComponent(s)));
+  const b64d = (s) => decodeURIComponent(escape(atob(s)));
+  let team = loadTeam();
+  let me = { name: 'Me', role: 'Owner' };            // who I am (may be set by an invite link)
+  let inviteGreeting = null;                          // shown after the book finishes opening
+  let teamState = { stage: 'Draft', assigneeId: null, notes: [] };
+  const ROLE_COLORS = { Writer: '#1c7ed6', Editor: '#e8590c', Illustrator: '#9c36b5', Reviewer: '#2b8a3e', Owner: '#495057', Contributor: '#868e96' };
+  function loadTeam() { try { return JSON.parse(localStorage.getItem('pf_team') || '[]'); } catch (_) { return []; } }
+  function saveTeam() { try { localStorage.setItem('pf_team', JSON.stringify(team)); } catch (_) { /* */ } }
+  function loadTeamState() {
+    // Prefer state saved with the recipe; fall back to the last active book's.
+    let st = (bookConfig && bookConfig.teamState) || null;
+    if (!st) { try { st = JSON.parse(localStorage.getItem('pf_teamstate') || 'null'); } catch (_) { st = null; } }
+    teamState = Object.assign({ stage: 'Draft', assigneeId: null, notes: [] }, st || {});
+    if (!Array.isArray(teamState.notes)) teamState.notes = [];
+    if (el.mailStage) el.mailStage.value = teamState.stage || 'Draft';
+  }
+  function saveTeamState() {
+    if (bookConfig) bookConfig.teamState = teamState;            // travels with Save (recipe)
+    try { localStorage.setItem('pf_teamstate', JSON.stringify(teamState)); } catch (_) { /* */ }
+  }
+  const memberById = (id) => team.find((m) => m.id === id) || null;
+  const selectedMember = () => memberById(el.mailRecipient && el.mailRecipient.value);
+  function personalizedLink(m) {
+    return `${location.origin}${location.pathname}?invite=${encodeURIComponent(b64e(JSON.stringify({ n: m.name, r: m.role })))}`;
+  }
+  function renderRecipients() {
+    if (!el.mailRecipient) return;
+    const keep = el.mailRecipient.value;
+    el.mailRecipient.innerHTML = '<option value="">— pick a team member —</option>' +
+      team.map((m) => `<option value="${m.id}">${escHtml(m.name)} · ${escHtml(m.role)}</option>`).join('');
+    if (keep && memberById(keep)) el.mailRecipient.value = keep;
+  }
+  function renderTeamList() {
+    if (!el.teamList) return;
+    if (!team.length) { el.teamList.innerHTML = '<p class="pf-modal-sub">No team members yet. Add someone above.</p>'; return; }
+    el.teamList.innerHTML = '';
+    team.forEach((m) => {
+      const row = document.createElement('div'); row.className = 'pf-team-row';
+      const badge = `<span class="pf-role" style="background:${ROLE_COLORS[m.role] || '#868e96'}">${escHtml(m.role)}</span>`;
+      const assigned = teamState.assigneeId === m.id ? ' <span class="pf-assigned">● assigned</span>' : '';
+      row.innerHTML = `<div class="pf-team-who">${badge} <b>${escHtml(m.name)}</b>${assigned}<br><span class="pf-dim">${escHtml(m.email || 'no email')}</span></div>`;
+      const acts = document.createElement('div'); acts.className = 'pf-team-acts';
+      const mk = (label, title, fn) => { const b = document.createElement('button'); b.className = 'ghost mini'; b.textContent = label; b.title = title; b.addEventListener('click', fn); return b; };
+      acts.appendChild(mk('Invite', 'Email an invite to join', () => inviteMember(m)));
+      acts.appendChild(mk('Email book', 'Email this book to them', () => emailBook(m)));
+      acts.appendChild(mk('Copy link', 'Copy their personalized link', () => copyLink(m)));
+      const del = mk('✕', 'Remove', () => removeMember(m.id)); del.classList.add('del');
+      acts.appendChild(del);
+      row.appendChild(acts); el.teamList.appendChild(row);
+    });
+  }
+  function openTeam(focusAdd) { if (!el.teamModal) return; renderTeamList(); el.teamModal.hidden = false; if (focusAdd) setTimeout(() => el.teamName.focus(), 30); }
+  function closeTeam() { if (el.teamModal) el.teamModal.hidden = true; }
+  function addMember() {
+    const name = el.teamName.value.trim(); const email = el.teamEmail.value.trim();
+    if (!name) { setStatus('Give the team member a name.', 'err'); el.teamName.focus(); return; }
+    team.push({ id: 't' + Date.now().toString(36), name, email, role: el.teamRole.value });
+    saveTeam(); el.teamName.value = ''; el.teamEmail.value = '';
+    renderTeamList(); renderRecipients();
+    setStatus(`Added ${name} (${el.teamRole.value}) to the team.`, 'ok');
+  }
+  function removeMember(id) {
+    team = team.filter((m) => m.id !== id);
+    if (teamState.assigneeId === id) { teamState.assigneeId = null; saveTeamState(); }
+    saveTeam(); renderTeamList(); renderRecipients();
+  }
+  async function copyLink(m) {
+    const url = personalizedLink(m);
+    try { await navigator.clipboard.writeText(url); setStatus(`Copied ${m.name}'s personalized link. Send it to them so their notes are signed as ${m.role}.`, 'ok'); }
+    catch (_) { window.prompt(`Copy ${m.name}'s personalized link:`, url); }
+  }
+  function mailto(to, subject, body) {
+    window.open(`mailto:${encodeURIComponent(to || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+  }
+  function inviteMember(m) {
+    const subject = 'Join me on PuzzleForge';
+    const body = [`Hi ${m.name},`, '', `I'd like you to help make puzzle books with me on PuzzleForge as ${m.role}.`,
+      '', 'Open your personalized link to get started:', personalizedLink(m), '', `— ${me.name}`].join('\n');
+    mailto(m.email, subject, body);
+    setStatus(`Opened an invite email for ${m.name}.`, 'ok');
+  }
+  function emailBook(m) {
+    const title = bookTitle() || 'Untitled book';
+    const stage = teamState.stage || 'Draft';
+    const subject = `PuzzleForge — “${title}” (${stage})`;
+    const body = [`Hi ${m.name},`, '', `Handing off “${title}” to you as ${m.role}. Current stage: ${stage}.`,
+      `Pages: ${pageModels.length}.`, '', 'Please find the exported PDF / recipe attached (I\'ll add it in my email app).',
+      '', 'Your link:', personalizedLink(m), '', `— ${me.name}`].join('\n');
+    mailto(m.email, subject, body);
+    setStatus(`Opened a handoff email for ${m.name}. Remember to attach your exported file.`, 'ok');
+  }
+  function assignBook() {
+    const m = selectedMember();
+    if (!m) { setStatus('Pick a team member in the Recipient list first.', 'err'); return; }
+    teamState.assigneeId = m.id; saveTeamState(); renderTeamList();
+    setStatus(`“${bookTitle() || 'This book'}” assigned to ${m.name} (${m.role}) at the ${teamState.stage} stage.`, 'ok');
+  }
+  function shareAction(fn) { const m = selectedMember(); if (!m) { setStatus('Pick a team member in the Recipient list first.', 'err'); return; } fn(m); }
+  // Handoff notes
+  function openNotes() { if (!el.notesModal) return; renderNotes(); el.notesModal.hidden = false; setTimeout(() => el.noteText.focus(), 30); }
+  function closeNotes() { if (el.notesModal) el.notesModal.hidden = true; }
+  function renderNotes() {
+    if (!el.notesList) return;
+    if (!teamState.notes.length) { el.notesList.innerHTML = '<p class="pf-modal-sub">No notes yet. Post the first handoff note below.</p>'; return; }
+    el.notesList.innerHTML = teamState.notes.map((n) => {
+      const badge = `<span class="pf-role" style="background:${ROLE_COLORS[n.role] || '#868e96'}">${escHtml(n.role)}</span>`;
+      return `<div class="pf-note"><div class="pf-note-head">${badge} <b>${escHtml(n.author)}</b> <span class="pf-dim">${escHtml(n.when)}</span></div><div class="pf-note-body">${escHtml(n.text)}</div></div>`;
+    }).join('');
+  }
+  function addNote() {
+    const text = el.noteText.value.trim(); if (!text) return;
+    teamState.notes.push({ author: me.name, role: me.role, when: new Date().toLocaleString(), text });
+    saveTeamState(); el.noteText.value = ''; renderNotes();
+  }
+  function parseInvite() {
+    try {
+      const inv = new URLSearchParams(location.search).get('invite'); if (!inv) return;
+      const d = JSON.parse(b64d(decodeURIComponent(inv)));
+      if (d && d.n) { me = { name: String(d.n).slice(0, 60), role: String(d.r || 'Contributor').slice(0, 30) };
+        inviteGreeting = `Welcome, ${me.name} — you're here as ${me.role}. Your handoff notes will be signed with your name.`;
+        setStatus(inviteGreeting, 'ok'); }
+    } catch (_) { /* ignore malformed invite */ }
+  }
+
   async function runPreflight() {
     el.pubRunChecks.disabled = true; setPubStatus(el.pubCheckStatus, 'Rendering & checking…', 'busy');
     const body = bookBody();
@@ -1361,6 +1496,23 @@
     if (el.supportClose) el.supportClose.addEventListener('click', closeSupport);
     if (el.supportModal) el.supportModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeSupport(); });
     if (el.supSubmit) el.supSubmit.addEventListener('click', submitSupport);
+    // Mailings tab
+    if (el.teamBtn) el.teamBtn.addEventListener('click', () => openTeam(false));
+    if (el.inviteBtn) el.inviteBtn.addEventListener('click', () => openTeam(true));
+    if (el.teamClose) el.teamClose.addEventListener('click', closeTeam);
+    if (el.teamModal) el.teamModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeTeam(); });
+    if (el.teamAdd) el.teamAdd.addEventListener('click', addMember);
+    if (el.teamName) el.teamName.addEventListener('keydown', (e) => { if (e.key === 'Enter') addMember(); });
+    if (el.emailBookBtn) el.emailBookBtn.addEventListener('click', () => shareAction(emailBook));
+    if (el.linkBtn) el.linkBtn.addEventListener('click', () => shareAction(copyLink));
+    if (el.assignBtn) el.assignBtn.addEventListener('click', assignBook);
+    if (el.mailStage) el.mailStage.addEventListener('change', () => { teamState.stage = el.mailStage.value; saveTeamState(); setStatus(`Workflow stage set to ${teamState.stage}.`, 'ok'); });
+    if (el.notesBtn) el.notesBtn.addEventListener('click', openNotes);
+    if (el.notesClose) el.notesClose.addEventListener('click', closeNotes);
+    if (el.notesModal) el.notesModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeNotes(); });
+    if (el.noteAdd) el.noteAdd.addEventListener('click', addNote);
+    renderRecipients();
+    parseInvite();
     populateInsertMenus();
     if (el.wordArt) el.wordArt.addEventListener('change', () => { const i = Number(el.wordArt.value); if (WORDART[i]) addWordArt(WORDART[i]); el.wordArt.value = ''; });
     if (el.symbolPick) el.symbolPick.addEventListener('change', () => { addSymbol(el.symbolPick.value); el.symbolPick.value = ''; });

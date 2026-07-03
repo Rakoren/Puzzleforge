@@ -345,6 +345,24 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .pf-help-foot { margin-top: 12px; font-size: 13px; color: var(--muted); }
 .linkbtn { background: none; border: none; color: var(--brand); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
 
+/* Mailings: team roster + handoff notes */
+.pf-team-add { display: grid; grid-template-columns: 1.2fr 1.4fr 0.9fr auto; gap: 8px; margin-bottom: 12px; }
+.pf-team-add input, .pf-team-add select { padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 13px; }
+.pf-team-list { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; }
+.pf-team-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; flex-wrap: wrap; }
+.pf-team-who { font-size: 14px; line-height: 1.35; }
+.pf-team-acts { display: flex; gap: 5px; flex-wrap: wrap; }
+.pf-role { display: inline-block; color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; vertical-align: middle; }
+.pf-assigned { color: #2b8a3e; font-size: 12px; font-weight: 600; }
+.pf-dim { color: var(--muted); font-size: 12px; }
+.pf-help-note { margin-top: 14px; padding: 10px 12px; border-left: 3px solid var(--brand); background: rgba(123,147,255,.08); border-radius: 0 6px 6px 0; }
+.pf-notes-list { display: flex; flex-direction: column; gap: 8px; max-height: 44vh; overflow-y: auto; margin-bottom: 12px; }
+.pf-note { border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px; }
+.pf-note-head { font-size: 13px; margin-bottom: 4px; }
+.pf-note-body { font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
+.pf-notes-add { display: flex; gap: 8px; align-items: flex-end; }
+.pf-notes-add textarea { flex: 1; padding: 8px; border: 1px solid var(--line); border-radius: 7px; font: inherit; resize: vertical; }
+
 .ribbon-layout { grid-template-columns: 200px 1fr !important; max-width: none !important; }
 .ribbon-layout .editor-stage { min-height: 78vh; }
 
