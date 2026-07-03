@@ -706,6 +706,50 @@ app.post('/api/book/proofread', async (req, res) => {
   }
 });
 
+// Thesaurus: synonyms for a selected word/short phrase, so the editor can offer
+// one-click replacements. Kept small — a single word/phrase in, a ranked list out.
+async function synonymsFor(word) {
+  const client = new Anthropic();
+  const schema = {
+    type: 'object', additionalProperties: false,
+    properties: {
+      synonyms: { type: 'array', items: { type: 'string' } },
+      note: { type: 'string' },
+    },
+    required: ['synonyms', 'note'],
+  };
+  const prompt = [
+    `Give up to 8 natural synonyms or close alternatives for the word or phrase: "${word}".`,
+    'Match its likely part of speech and register. Order best-first. Single words or short phrases only.',
+    'If it is a proper noun, number, or has no real synonyms, return an empty list and say why in "note" (else leave "note" empty).',
+  ].join('\n');
+  const stream = client.messages.stream({
+    model: PROOF_MODEL,
+    max_tokens: 500,
+    messages: [{ role: 'user', content: prompt }],
+    output_config: { format: { type: 'json_schema', schema } },
+  });
+  const msg = await stream.finalMessage();
+  const text = (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  let raw; try { raw = JSON.parse(text); } catch (_) { return { synonyms: [], note: '' }; }
+  return { synonyms: Array.isArray(raw.synonyms) ? raw.synonyms.slice(0, 8) : [], note: raw.note || '' };
+}
+
+app.post('/api/thesaurus', async (req, res) => {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(400).json({ error: 'The thesaurus needs an Anthropic API key. Set ANTHROPIC_API_KEY and restart the server.' });
+  }
+  const word = String((req.body && req.body.word) || '').trim();
+  if (!word) return res.status(400).json({ error: 'Select a text box (or type a word) to look up.' });
+  if (word.length > 80) return res.status(400).json({ error: 'That is too long for a thesaurus lookup — select a single word or short phrase.' });
+  try {
+    res.json(await synonymsFor(word));
+  } catch (err) {
+    const e = err instanceof Anthropic.AuthenticationError ? 'The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.' : err.message;
+    res.status(err.status || 502).json({ error: e });
+  }
+});
+
 function renderChecklistText(chk, pageCount) {
   const lines = [
     'PuzzleForge — Pre-flight checklist',
@@ -1116,6 +1160,7 @@ function buildInfoSheet(config, book, pageCount, paper, dims, meta) {
     `Author:           ${config.author || ''}`,
     md.seriesName ? `Series:           ${md.seriesName}${md.seriesNumber ? ` (book ${md.seriesNumber})` : ''}` : null,
     md.readingAge ? `Reading age:      ${md.readingAge}` : null,
+    `Language:         ${md.language}`,
     '',
     `Trim size:        ${dims.trimWidthIn} x ${dims.trimHeightIn} in`,
     `Interior pages:   ${pageCount}`,

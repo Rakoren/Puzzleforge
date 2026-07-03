@@ -110,8 +110,15 @@ function normalizeMetadata(meta = {}) {
     listPrice: meta.listPrice != null && meta.listPrice !== '' ? Number(meta.listPrice) : null,
     aiText: Boolean(meta.aiText),
     aiImages: Boolean(meta.aiImages),
+    language: LANG_NAMES[meta.language] || (meta.language ? String(meta.language) : 'English'),
   };
 }
+
+// KDP's language picker uses full names; the editor stores ISO codes.
+const LANG_NAMES = {
+  en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+  pt: 'Portuguese', nl: 'Dutch', ja: 'Japanese',
+};
 
 // KDP AI-disclosure answers, pre-filled from which AI tools the book used.
 // Puzzle grids/keys are algorithmic and never disclosed.

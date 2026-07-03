@@ -38,6 +38,7 @@
       <button class="rtab" data-tab="insert" role="tab">Insert</button>
       <button class="rtab" data-tab="design" role="tab">Page Design</button>
       <button class="rtab" data-tab="arrange" role="tab">Arrange</button>
+      <button class="rtab" data-tab="review" role="tab">Review</button>
       <button class="rtab rtab-context" data-tab="format" role="tab">Format</button>
       <button class="rtab" data-tab="view" role="tab">View</button>
     </div>
@@ -243,6 +244,33 @@
         </div>
       </section>
 
+      <!-- REVIEW -->
+      <section class="ribbon-panel" data-panel="review">
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="revSpelling" class="ghost" title="Check spelling &amp; grammar across the whole book">🔤 Spelling</button>
+            <button id="revThesaurus" class="ghost" title="Synonyms for the selected text box">📖 Thesaurus</button>
+            <button id="revWordCount" class="ghost" title="Word &amp; character counts">🔢 Word Count</button>
+          </div>
+          <div class="rgroup-name">Proofing</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <select id="revLanguage" class="mini" title="Book language (KDP metadata)">
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="it">Italian</option>
+              <option value="pt">Portuguese</option>
+              <option value="nl">Dutch</option>
+              <option value="ja">Japanese</option>
+            </select>
+          </div>
+          <div class="rgroup-name">Language</div>
+        </div>
+      </section>
+
       <!-- FORMAT (contextual) -->
       <section class="ribbon-panel" data-panel="format">
         <div id="selNone" class="rhint">Select an object on the page to format it. Shift-click to select multiple.</div>
@@ -432,6 +460,19 @@
         <button id="pubExport" class="primary">⬇ Export KDP package (.zip)</button>
         <span id="pubExportStatus" class="pf-pub-status"></span>
       </div>
+    </div>
+  </div>
+
+  <!-- Review: spelling / thesaurus / word count results -->
+  <div class="pf-modal" id="revModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box pf-pub" role="dialog" aria-modal="true" aria-labelledby="revTitle">
+      <div class="pf-modal-head">
+        <h2 id="revTitle">Review</h2>
+        <button class="iconbtn" id="revClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub" id="revSub"></p>
+      <div id="revBody" class="pf-report"></div>
     </div>
   </div>
 

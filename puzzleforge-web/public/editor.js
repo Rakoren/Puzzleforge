@@ -35,6 +35,8 @@
     dupPage: $('dupPage'), aiArtBtn: $('aiArtBtn'), wordArt: $('wordArt'), symbolPick: $('symbolPick'), insertDate: $('insertDate'),
     trimInfo: $('trimInfo'), marginGuide: $('marginGuide'), renamePage: $('renamePage'), delPage: $('delPage'),
     movePageUp: $('movePageUp'), movePageDown: $('movePageDown'), schemeGallery: $('schemeGallery'),
+    revSpelling: $('revSpelling'), revThesaurus: $('revThesaurus'), revWordCount: $('revWordCount'), revLanguage: $('revLanguage'),
+    revModal: $('revModal'), revClose: $('revClose'), revTitle: $('revTitle'), revSub: $('revSub'), revBody: $('revBody'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
     publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
@@ -147,6 +149,7 @@
       if (pendingPlan) { applyPlan(pendingPlan); pendingPlan = null; }
       el.empty.hidden = true; el.main.hidden = false;
       if (el.trimInfo && dims) el.trimInfo.textContent = `${dims.widthIn}" × ${dims.heightIn}" trim`;
+      if (el.revLanguage && bookConfig && bookConfig.language) el.revLanguage.value = bookConfig.language;
       await loadBorderStyles(); buildPageList(); cur = 0; zoom = fitScale(); renderPage();
       setStatus(`Editing “${data.title}” — ${pageModels.length} pages.`, 'ok');
     } catch (err) { setStatus(err.message, 'err'); }
@@ -1003,10 +1006,72 @@
   function clearCover() { try { localStorage.removeItem('pf_cover'); } catch (_) { /* */ } refreshCoverState(); }
   function gatherMeta() {
     return { description: el.pubDesc.value, keywords: el.pubKeywords.value, categories: el.pubCategories.value, readingAge: el.pubAge.value,
-      listPrice: el.pubPrice.value, paper: el.pubPaper.value, aiText: el.pubAiText.checked, aiImages: el.pubAiImages.checked };
+      listPrice: el.pubPrice.value, paper: el.pubPaper.value, aiText: el.pubAiText.checked, aiImages: el.pubAiImages.checked,
+      language: (bookConfig && bookConfig.language) || (el.revLanguage && el.revLanguage.value) || 'en' };
   }
   const gatherCover = () => ({ bgColor: el.pubCoverBg.value, textColor: el.pubCoverText.value, paper: el.pubPaper.value, blurb: el.pubDesc.value });
   const setPubStatus = (node, text, kind) => { node.textContent = text || ''; node.className = 'pf-pub-status' + (kind ? ' ' + kind : ''); };
+
+  // --- Review tab: spelling / thesaurus / word count / language ---
+  function openReview(title, sub) {
+    if (!el.revModal) return;
+    el.revTitle.textContent = title; el.revSub.textContent = sub || ''; el.revBody.innerHTML = '';
+    el.revModal.hidden = false;
+  }
+  function closeReview() { if (el.revModal) el.revModal.hidden = true; }
+  async function runSpelling() {
+    if (el.main.hidden) return;
+    openReview('Spelling & grammar', 'Checking every text box you’ve added (titles, matter, labels). Puzzle grids and clues are skipped.');
+    el.revBody.innerHTML = '<div class="rep-note">Proofreading…</div>';
+    try {
+      const r = await fetch('/api/book/proofread', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookBody()) });
+      const data = await r.json();
+      if (!r.ok) { el.revBody.innerHTML = `<div class="rep-note err">${escHtml(data.error || 'Proofread failed.')}</div>`; return; }
+      const iss = data.issues || [];
+      if (data.note && !iss.length) { el.revBody.innerHTML = `<div class="rep-note">${escHtml(data.note)}</div>`; return; }
+      if (!iss.length) { el.revBody.innerHTML = `<div class="rep-ok">No spelling or grammar issues found across ${data.checked} text ${data.checked === 1 ? 'box' : 'boxes'}.</div>`; return; }
+      el.revBody.innerHTML = `<div class="rep-summary">${iss.length} issue${iss.length === 1 ? '' : 's'} found · ${data.checked} text boxes checked</div><ul class="rep-list">` +
+        iss.map((x) => `<li class="${x.severity === 'error' ? 'blocker' : 'warning'}"><b>p.${x.page}:</b> “${escHtml(x.original)}” → “${escHtml(x.fix)}”${x.note ? ` <span class="rep-dim">(${escHtml(x.note)})</span>` : ''}</li>`).join('') + '</ul>';
+    } catch (err) { el.revBody.innerHTML = `<div class="rep-note err">${escHtml(err.message)}</div>`; }
+  }
+  async function runThesaurus() {
+    if (el.main.hidden) return;
+    const one = sels.length === 1 && sels[0];
+    if (!one || one.kind !== 'text') { setStatus('Select a single text box first, then click Thesaurus.', 'err'); return; }
+    const word = String(one.text || '').trim();
+    if (!word) { setStatus('That text box is empty — nothing to look up.', 'err'); return; }
+    openReview('Thesaurus', `Synonyms for “${word.length > 40 ? word.slice(0, 40) + '…' : word}”. Click one to replace the selected text box.`);
+    el.revBody.innerHTML = '<div class="rep-note">Looking up…</div>';
+    try {
+      const r = await fetch('/api/thesaurus', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ word }) });
+      const data = await r.json();
+      if (!r.ok) { el.revBody.innerHTML = `<div class="rep-note err">${escHtml(data.error || 'Lookup failed.')}</div>`; return; }
+      const syns = data.synonyms || [];
+      if (!syns.length) { el.revBody.innerHTML = `<div class="rep-note">${escHtml(data.note || 'No synonyms found for that word.')}</div>`; return; }
+      const wrap = document.createElement('div'); wrap.className = 'syn-list';
+      syns.forEach((s) => { const b = document.createElement('button'); b.className = 'syn-chip'; b.textContent = s; b.addEventListener('click', () => replaceSelText(one, s)); wrap.appendChild(b); });
+      el.revBody.innerHTML = ''; el.revBody.appendChild(wrap);
+    } catch (err) { el.revBody.innerHTML = `<div class="rep-note err">${escHtml(err.message)}</div>`; }
+  }
+  function replaceSelText(ref, text) {
+    if (!pageModels[cur] || pageModels[cur].elements.indexOf(ref) < 0) { setStatus('That text box is no longer on the current page.', 'err'); return; }
+    pushUndo(); ref.text = text; ref._node.innerHTML = elHtml(ref); drawSel(); syncSelUI();
+    closeReview(); setStatus(`Replaced with “${text}”.`, 'ok');
+  }
+  function reviewWordCount() {
+    if (el.main.hidden) return;
+    let words = 0, chars = 0, boxes = 0;
+    const add = (t) => { const s = String(t || '').trim(); if (!s) return; boxes++; chars += s.length; words += (s.match(/\S+/g) || []).length; };
+    if (bookConfig) { add(bookConfig.title); add(bookConfig.subtitle); }
+    pageModels.forEach((pm) => pm.elements.forEach((e) => { if (e.kind === 'text') add(e.text); }));
+    openReview('Word count', 'Counts the reader-facing text you’ve added. Puzzle grids, clues, and answer keys are generated and not counted.');
+    el.revBody.innerHTML = `<div class="wc-grid">
+      <div class="wc-cell"><b>${words}</b><span>words</span></div>
+      <div class="wc-cell"><b>${chars}</b><span>characters</span></div>
+      <div class="wc-cell"><b>${boxes}</b><span>text boxes</span></div>
+      <div class="wc-cell"><b>${pageModels.length}</b><span>pages</span></div>
+    </div>`;
+  }
 
   async function runPreflight() {
     el.pubRunChecks.disabled = true; setPubStatus(el.pubCheckStatus, 'Rendering & checking…', 'busy');
@@ -1163,6 +1228,16 @@
     if (el.movePageDown) el.movePageDown.addEventListener('click', () => { if (cur >= 0) movePage(cur, 1); });
     if (el.marginGuide) el.marginGuide.addEventListener('change', applyMarginGuide);
     renderSchemes();
+    // Review tab
+    if (el.revSpelling) el.revSpelling.addEventListener('click', runSpelling);
+    if (el.revThesaurus) el.revThesaurus.addEventListener('click', runThesaurus);
+    if (el.revWordCount) el.revWordCount.addEventListener('click', reviewWordCount);
+    if (el.revClose) el.revClose.addEventListener('click', closeReview);
+    if (el.revModal) el.revModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeReview(); });
+    if (el.revLanguage) el.revLanguage.addEventListener('change', () => {
+      if (bookConfig) bookConfig.language = el.revLanguage.value;
+      setStatus(`Book language set to ${el.revLanguage.options[el.revLanguage.selectedIndex].text} (used in the KDP package metadata).`, 'ok');
+    });
     populateInsertMenus();
     if (el.wordArt) el.wordArt.addEventListener('change', () => { const i = Number(el.wordArt.value); if (WORDART[i]) addWordArt(WORDART[i]); el.wordArt.value = ''; });
     if (el.symbolPick) el.symbolPick.addEventListener('change', () => { addSymbol(el.symbolPick.value); el.symbolPick.value = ''; });
