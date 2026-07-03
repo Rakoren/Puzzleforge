@@ -63,9 +63,11 @@
     pubKeywords: $('pubKeywords'), pubCategories: $('pubCategories'), pubAiText: $('pubAiText'), pubAiImages: $('pubAiImages'),
     pubCoverBg: $('pubCoverBg'), pubCoverText: $('pubCoverText'), pubExport: $('pubExport'), pubExportStatus: $('pubExportStatus'),
     pubCoverStatus: $('pubCoverStatus'), pubOpenCover: $('pubOpenCover'), pubClearCover: $('pubClearCover'), pubSimpleCover: $('pubSimpleCover'),
-    save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'),
+    save: $('save'), exportPdf: $('exportPdf'), loadRecipe: $('loadRecipe'), saveState: $('saveState'),
   };
   let bookId = null, bookConfig = null, seed = null, dims = { usableWidth: 636, usableHeight: 816 };
+  // Autosave to the My Books library (IndexedDB, this browser).
+  let currentLibId = null, bookOpen = false, lastSavedJson = null;
   let pageModels = [], srcPages = [], pendingPlan = null, cur = -1, uid = 1, zoom = 1;
   let sels = [], clipboard = [];
   let vGuide = null, hGuide = null, gridEl = null, selLayer = null, flowEl = null;
@@ -182,6 +184,7 @@
       masterMode = false; updateMasterUI(); syncMasterScopeUI();
       await loadBorderStyles(); buildPageList(); cur = 0; zoom = fitScale(); renderPage();
       setStatus(inviteGreeting || `Editing “${data.title}” — ${pageModels.length} pages.`, 'ok');
+      startAutosave();
     } catch (err) { setStatus(err.message, 'err'); }
   }
   async function loadBorderStyles() {
@@ -1229,6 +1232,37 @@
   });
   function buildRecipe() { const book = { ...(bookConfig || {}) }; delete book.seed; delete book.pageState; delete book.puzzleforgeBook; const m = masterForSend(); if (m) book.master = m; else delete book.master; return { recipeVersion: 2, kind: 'book', book, seed, pagePlan: buildPagePlan() }; }
   function save() { downloadBlob(new Blob([JSON.stringify(buildRecipe(), null, 2)], { type: 'application/json' }), slug((bookConfig && bookConfig.title) || 'book') + '-book.json'); setStatus('Recipe saved (with layout).', 'ok'); }
+
+  // --- Autosave to the My Books library ---------------------------------
+  const setSaveState = (txt, cls) => { if (el.saveState) { el.saveState.textContent = txt || ''; el.saveState.className = 'save-state' + (cls ? ' ' + cls : ''); } };
+  async function persistLibrary(recipe, json) {
+    if (!window.PFLibrary) return;
+    if (!currentLibId) currentLibId = PFLibrary.newId();
+    const meta = PFLibrary.metaFromRecipe(recipe);
+    try {
+      await PFLibrary.put({ id: currentLibId, ...meta, recipe });
+      lastSavedJson = json;
+      setSaveState('All changes saved', 'ok');
+    } catch (_) { setSaveState('Autosave failed (storage full?)', 'err'); }
+  }
+  // Cheap change detection: rebuild the recipe and compare to the last saved
+  // JSON, so ANY edit is captured without wiring every mutation.
+  function autosaveTick() {
+    if (!bookOpen || el.main.hidden || !window.PFLibrary) return;
+    let recipe, json;
+    try { recipe = buildRecipe(); json = JSON.stringify(recipe); } catch (_) { return; }
+    if (json === lastSavedJson) return;
+    setSaveState('Saving…', 'busy');
+    persistLibrary(recipe, json);
+  }
+  function startAutosave() {
+    bookOpen = true;
+    let recipe = null, json = null;
+    try { recipe = buildRecipe(); json = JSON.stringify(recipe); } catch (_) { /* */ }
+    if (currentLibId || !recipe) { lastSavedJson = json; setSaveState(currentLibId ? 'All changes saved' : 'Autosaves as you edit', currentLibId ? 'ok' : ''); }
+    else persistLibrary(recipe, json);   // a brand-new book → save now so it lists in My Books
+    if (!startAutosave._timer) startAutosave._timer = setInterval(autosaveTick, 4000);
+  }
   async function exportPdf() {
     setStatus('Rendering PDF…', 'busy'); el.exportPdf.disabled = true;
     try { const body = { ...(bookId ? { bookId } : { config: bookConfig }), pagePlan: buildPagePlan(), master: masterForSend() };
@@ -1815,8 +1849,20 @@
     window.addEventListener('keydown', onKey);
     let handoff = null;
     try { const raw = localStorage.getItem('pf_editor'); if (raw) { handoff = JSON.parse(raw); localStorage.removeItem('pf_editor'); } } catch (_) { /* */ }
-    if (handoff && (handoff.config || handoff.bookId)) { bookConfig = handoff.config || null; openBook(handoff.bookId ? { bookId: handoff.bookId, config: handoff.config } : { config: handoff.config }); }
+    if (handoff && handoff.recipe) { currentLibId = handoff.libId || null; loadRecipeObject(handoff.recipe); }
+    else if (handoff && (handoff.config || handoff.bookId)) { bookConfig = handoff.config || null; openBook(handoff.bookId ? { bookId: handoff.bookId, config: handoff.config } : { config: handoff.config }); }
     else { el.empty.hidden = false; setStatus('Open a book from the Book Builder, or load a recipe.', ''); }
+    // Best-effort flush of pending changes when leaving the page.
+    window.addEventListener('beforeunload', () => { try { autosaveTick(); } catch (_) { /* */ } });
+  }
+  // Open a full recipe object (from the library handoff or an imported file).
+  function loadRecipeObject(raw) {
+    const v2 = raw && raw.recipeVersion === 2 ? raw : { book: raw, seed: raw && raw.seed };
+    bookConfig = { ...(v2.book || {}) };
+    if (v2.seed != null) bookConfig.seed = v2.seed;
+    if (Array.isArray(v2.pagePlan) && v2.pagePlan.length) pendingPlan = v2.pagePlan;
+    else if (Array.isArray(v2.pageState) && v2.pageState.length) bookConfig.pageState = v2.pageState;
+    return openBook({ config: bookConfig });
   }
   function onKey(e) {
     if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
@@ -1844,15 +1890,8 @@
     reader.onload = () => {
       try {
         const raw = JSON.parse(reader.result);
-        const v2 = raw && raw.recipeVersion === 2 ? raw : { book: raw, seed: null };
-        bookConfig = { ...(v2.book || {}) }; if (v2.seed != null) bookConfig.seed = v2.seed;
-        if (Array.isArray(v2.pagePlan) && v2.pagePlan.length) {
-          // Structural plan: assemble clean pages, then rebuild the arrangement.
-          pendingPlan = v2.pagePlan;
-        } else if (Array.isArray(v2.pageState) && v2.pageState.length) {
-          bookConfig.pageState = v2.pageState; // legacy recipes (order unchanged)
-        }
-        openBook({ config: bookConfig });
+        currentLibId = null;           // an imported file becomes a new library book
+        loadRecipeObject(raw);
       } catch (_) { setStatus('That file is not a valid book recipe.', 'err'); }
       ev.target.value = '';
     };

@@ -628,3 +628,29 @@ body.master-editing .editor-stage { outline: 2px solid var(--brand); outline-off
   padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--ink); }
 .manage-actions .iconbtn:hover { background: #f1f3f9; }
 .manage-actions .iconbtn.del { color: #c92a2a; border-color: #f2c2c2; }
+
+/* ===== Save-state indicator + My Books library ===== */
+.save-state { font-size: 12px; color: var(--muted); margin-right: 6px; white-space: nowrap; }
+.save-state.ok { color: #2b8a3e; }
+.save-state.busy { color: var(--brand); }
+.save-state.err { color: #c92a2a; }
+
+.lib-main { max-width: 1100px; margin: 0 auto; padding: 22px 20px 60px; }
+.lib-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.lib-head h2 { margin: 0; }
+.lib-actions { display: flex; gap: 8px; align-items: center; }
+.lib-btn { padding: 8px 14px; border-radius: 8px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; cursor: pointer; }
+a.primary.lib-btn { background: var(--brand); color: #fff; border: 1px solid var(--brand); }
+.lib-note { color: var(--muted); font-size: 13px; margin: 6px 0 18px; }
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.lib-card { display: flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel, #fff); box-shadow: 0 1px 4px rgba(20,26,45,.07); }
+.lib-spine { width: 10px; background: var(--tint, #4a6cff); flex: 0 0 auto; }
+.lib-body { padding: 14px 16px; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.lib-body h3 { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-sub { margin: 0; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-meta { margin: 2px 0 10px; color: var(--muted); font-size: 12px; }
+.lib-card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.lib-card-actions button { padding: 5px 10px; font-size: 12px; border-radius: 7px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+.lib-card-actions button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+.lib-card-actions button.del { color: #c92a2a; border-color: #f2c2c2; }
+.lib-empty { text-align: center; color: var(--muted); padding: 60px 20px; }
