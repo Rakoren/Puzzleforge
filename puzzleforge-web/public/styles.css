@@ -533,6 +533,11 @@ body.theme-dark {
 .pf-master-ov { pointer-events: none; }                 /* master overlay is non-interactive on normal pages */
 body:not(.master-editing) .pf-master-ov { opacity: .82; }
 body.master-editing .editor-stage { outline: 2px solid var(--brand); outline-offset: -1px; }
+
+/* Two-page spread */
+.spread-facing { cursor: pointer; opacity: .92; }
+.spread-facing:hover { opacity: 1; outline: 2px solid var(--brand); outline-offset: -1px; }
+.spread-gutter { pointer-events: none; background: linear-gradient(90deg, rgba(0,0,0,.12), rgba(0,0,0,0) 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,.12)); }
 .pf-grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background: repeating-linear-gradient(0deg,#eef0f6 0 1px,transparent 1px 24px),repeating-linear-gradient(90deg,#eef0f6 0 1px,transparent 1px 24px); }
 .pf-flow { position: relative; z-index: 1; width: 100%; }

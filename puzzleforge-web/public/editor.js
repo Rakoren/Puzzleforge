@@ -13,7 +13,7 @@
     rulerTop: $('rulerTop'), rulerLeft: $('rulerLeft'),
     undo: $('undo'), redo: $('redo'), zoomOut: $('zoomOut'), zoomIn: $('zoomIn'), zoomFit: $('zoomFit'), zoomLabel: $('zoomLabel'),
     zoom100: $('zoom100'), zoomWhole: $('zoomWhole'), zoomWidth: $('zoomWidth'),
-    rulerToggle: $('rulerToggle'), navToggle: $('navToggle'), boundToggle: $('boundToggle'), editorMain: $('editorMain'),
+    rulerToggle: $('rulerToggle'), navToggle: $('navToggle'), boundToggle: $('boundToggle'), editorMain: $('editorMain'), spreadToggle: $('spreadToggle'),
     addText: $('addText'), addImage: $('addImage'), addTable: $('addTable'),
     tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
     tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
@@ -189,11 +189,11 @@
     try { const meta = await (await fetch('/api/meta')).json(); for (const b of meta.borderStyles || []) { const o = document.createElement('option'); o.value = b.id; o.textContent = b.label; el.border.appendChild(o); } } catch (_) { /* */ }
   }
   let thumbSeq = 0;
-  // A scaled, non-interactive snapshot of a page — the Publisher-style page rail.
-  function paintThumb(pm) {
-    const THUMB_W = 108, sc = THUMB_W / dims.usableWidth;
+  // A scaled, non-interactive snapshot of a page. Used for the page rail
+  // (small) and the two-page-spread facing page (full size, with master).
+  function paintPageCanvas(pm, pageIndex, sc, showMaster) {
     const wrap = document.createElement('div'); wrap.className = 'thumb';
-    wrap.style.width = THUMB_W + 'px'; wrap.style.height = Math.round(dims.usableHeight * sc) + 'px';
+    wrap.style.width = Math.round(dims.usableWidth * sc) + 'px'; wrap.style.height = Math.round(dims.usableHeight * sc) + 'px';
     const canvas = document.createElement('div'); canvas.className = 'thumb-canvas';
     const id = 'thm' + (++thumbSeq); canvas.id = id;
     canvas.style.width = dims.usableWidth + 'px'; canvas.style.height = dims.usableHeight + 'px'; canvas.style.transform = `scale(${sc})`;
@@ -211,9 +211,20 @@
     }
     canvas.appendChild(flow);
     pm.elements.slice().sort((a, b) => num(a.z, 0) - num(b.z, 0)).forEach((e) => { const n = document.createElement('div'); n.className = 'pf-node'; n.style.transform = `translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)})`; n.innerHTML = elHtml(e); canvas.appendChild(n); });
+    // Master overlay (page numbers, headers, frames) — same resolution as export.
+    if (showMaster && master.enabled && master.elements.length && masterAppliesTo(pageIndex)) {
+      const no = masterPageNo(pageIndex);
+      master.elements.slice().sort((a, b) => num(a.z, 0) - num(b.z, 0)).forEach((e) => {
+        const shown = e.field === 'pageNumber' ? { ...e, text: String(no) } : e;
+        const n = document.createElement('div'); n.className = 'pf-node';
+        n.style.transform = `translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)})`;
+        n.innerHTML = elHtml(shown); canvas.appendChild(n);
+      });
+    }
     wrap.appendChild(canvas);
     return wrap;
   }
+  const paintThumb = (pm) => paintPageCanvas(pm, pageModels.indexOf(pm), 108 / dims.usableWidth, false);
   function buildPageList() {
     el.pageList.innerHTML = '';
     pageModels.forEach((pm, i) => {
@@ -381,6 +392,54 @@
     el.rulerTop.style.background = `repeating-linear-gradient(90deg,#b6bccb 0 1px,transparent 1px ${inch / 4}px),repeating-linear-gradient(90deg,#7a8194 0 1px,transparent 1px ${inch}px)`;
     el.rulerLeft.style.background = `repeating-linear-gradient(0deg,#b6bccb 0 1px,transparent 1px ${inch / 4}px),repeating-linear-gradient(0deg,#7a8194 0 1px,transparent 1px ${inch}px)`;
     syncRulers();
+    if (spreadMode && !masterMode) layoutSpread(); else clearSpread();
+  }
+
+  // --- Two-page spread (View) ---
+  // Shows the active page next to its facing page (live, non-interactive) so you
+  // can check the gutter and across-the-spread layout. Recto (odd page numbers)
+  // sits on the right, like a real book opening.
+  const SPREAD_GUT = 28;
+  let spreadMode = false;
+  const activeIsLeft = (i) => i % 2 === 1;                 // even display number (i+1) = verso/left
+  function facingIndex(i) {
+    const j = i % 2 === 1 ? i + 1 : i - 1;
+    return (j >= 0 && j < pageModels.length) ? j : null;
+  }
+  function clearSpread() {
+    el.stageOuter.querySelectorAll('.spread-facing, .spread-gutter').forEach((n) => n.remove());
+    el.stageInner.style.position = ''; el.stageInner.style.left = ''; el.stageInner.style.top = '';
+  }
+  function layoutSpread() {
+    el.stageOuter.querySelectorAll('.spread-facing, .spread-gutter').forEach((n) => n.remove());
+    const pageW = dims.usableWidth, pageH = dims.usableHeight;
+    const rightX = (pageW + SPREAD_GUT) * zoom;
+    const aLeft = activeIsLeft(cur), fIdx = facingIndex(cur);
+    el.stageOuter.style.width = Math.round((2 * pageW + SPREAD_GUT) * zoom) + 'px';
+    el.stageOuter.style.height = Math.round(pageH * zoom) + 'px';
+    el.stageInner.style.position = 'absolute'; el.stageInner.style.top = '0';
+    el.stageInner.style.left = (aLeft ? 0 : rightX) + 'px';
+    if (fIdx != null && pageModels[fIdx]) {
+      const wrap = paintPageCanvas(pageModels[fIdx], fIdx, zoom, true);
+      wrap.classList.add('spread-facing');
+      wrap.style.position = 'absolute'; wrap.style.top = '0'; wrap.style.left = (aLeft ? rightX : 0) + 'px';
+      wrap.title = 'Click to edit this facing page';
+      wrap.addEventListener('click', () => selectPage(fIdx));
+      el.stageOuter.appendChild(wrap);
+    }
+    const band = document.createElement('div'); band.className = 'spread-gutter';
+    band.style.cssText = `position:absolute;top:0;height:${Math.round(pageH * zoom)}px;left:${Math.round(pageW * zoom)}px;width:${Math.round(SPREAD_GUT * zoom)}px;`;
+    el.stageOuter.appendChild(band);
+  }
+  function fitSpread() {
+    const aw = (el.stageScroll.clientWidth || 700) - 24, ah = window.innerHeight - 200;
+    return Math.max(0.12, Math.min(aw / (2 * dims.usableWidth + SPREAD_GUT), ah / dims.usableHeight, 1.5));
+  }
+  function toggleSpread() {
+    spreadMode = el.spreadToggle.checked;
+    if (spreadMode) zoom = Math.min(zoom, fitSpread());
+    renderPage();
+    setStatus(spreadMode ? 'Two-page spread — the facing page is a live preview; click it to edit it.' : 'Single-page view.', 'ok');
   }
   function syncRulers() { el.rulerTop.style.backgroundPositionX = (-el.stageScroll.scrollLeft) + 'px'; el.rulerLeft.style.backgroundPositionY = (-el.stageScroll.scrollTop) + 'px'; }
   const setZoom = (z) => { zoom = Math.max(0.15, Math.min(4, z)); applyZoom(); drawSel(); };
@@ -1672,6 +1731,7 @@
     if (el.rulerToggle) el.rulerToggle.addEventListener('change', toggleRulers);
     if (el.navToggle) el.navToggle.addEventListener('change', toggleNav);
     if (el.boundToggle) el.boundToggle.addEventListener('change', toggleBounds);
+    if (el.spreadToggle) el.spreadToggle.addEventListener('change', toggleSpread);
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
     el.stageScroll.addEventListener('scroll', syncRulers);
     el.stageInner.addEventListener('pointerdown', (e) => {
