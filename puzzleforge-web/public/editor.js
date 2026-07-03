@@ -798,6 +798,42 @@
     if (s.includes('georgia') || s.includes('times') || (s.includes('serif') && !s.includes('sans'))) return 'serif';
     return 'sans';
   };
+  // The word list is a multi-column <ul>; rebuild it as an editable TABLE that
+  // preserves the columns (plain innerText would collapse it to one column).
+  function wordlistToTable(c, pm) {
+    const node = c._node; if (!node) return false;
+    const ul = node.querySelector('ul');
+    const lis = ul ? [...ul.querySelectorAll('li')] : [];
+    const words = lis.map((li) => li.textContent.trim()).filter(Boolean);
+    if (!ul || !words.length) return false;
+    const ir = el.stageInner.getBoundingClientRect();
+    const boxOf = (n) => { const r = n.getBoundingClientRect(); return { x: (r.left - ir.left) / zoom, y: (r.top - ir.top) / zoom, w: r.width / zoom, h: r.height / zoom }; };
+    // Keep the "WORDS TO FIND" heading as its own text object above the table.
+    const h2 = node.querySelector('h2');
+    if (h2 && h2.textContent.trim()) {
+      const hb = boxOf(h2); const hcs = getComputedStyle(h2);
+      pm.elements.push({ group: 'el', id: uid++, kind: 'text', x: Math.round(hb.x), y: Math.round(hb.y), scale: 1, rot: 0, z: 80,
+        w: Math.max(60, Math.round(hb.w)), text: h2.textContent.trim(),
+        fontSize: Math.max(8, Math.round(parseFloat(hcs.fontSize))), bold: parseInt(hcs.fontWeight, 10) >= 600, italic: false,
+        align: 'center', color: rgbToHex(hcs.color), lineHeight: 1.3, fontFamily: mapFontFamily(hcs.fontFamily) });
+    }
+    // Detect the column count from the rendered layout, then fill column-major
+    // to match CSS balanced columns (down column 1, then column 2, …).
+    const colXs = [];
+    [...new Set(lis.map((li) => Math.round(boxOf(li).x)))].sort((a, z) => a - z).forEach((x) => { if (!colXs.length || x - colXs[colXs.length - 1] > 20) colXs.push(x); });
+    const cols = Math.min(Math.max(1, colXs.length), 6, words.length);
+    const rows = Math.ceil(words.length / cols);
+    const cells = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ''));
+    words.forEach((w, i) => { const col = Math.floor(i / rows), row = i % rows; if (row < rows && col < cols) cells[row][col] = w; });
+    const ub = boxOf(ul); const lcs = getComputedStyle(lis[0] || ul);
+    pm.elements.push({ group: 'el', id: uid++, kind: 'table', x: Math.round(ub.x), y: Math.round(ub.y), scale: 1, rot: 0, z: 80,
+      rows, cols, cells, colW: Array(cols).fill(Math.max(50, Math.round(ub.w / cols))), header: false,
+      borderColor: '#333333', borderW: 0, headerFill: '#eef1fe', cellPad: 4,
+      fontSize: Math.max(8, Math.round(parseFloat(lcs.fontSize))), fontFamily: mapFontFamily(lcs.fontFamily),
+      color: rgbToHex(lcs.color), align: 'center' });
+    c.hidden = true;
+    return true;
+  }
   function breakApartPuzzle() {
     const pm = pageModels[cur];
     if (!canBreakApart()) { setStatus('Open a puzzle page with a title or word list to break apart.', 'err'); return; }
@@ -805,6 +841,8 @@
     pushUndo();
     let made = 0;
     targets.forEach((c) => {
+      // Word list → editable multi-column table; everything else → text.
+      if (c.kind === 'wordlist' && wordlistToTable(c, pm)) { made += 1; return; }
       const styled = (c._node && c._node.firstElementChild) || c._node;
       const cs = styled ? getComputedStyle(styled) : null;
       const text = (c._node ? c._node.innerText : c.html.replace(/<[^>]+>/g, ' ')).replace(/\n{3,}/g, '\n\n').trim();

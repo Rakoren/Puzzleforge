@@ -36,13 +36,21 @@ function listedItems(p) {
   if (p.type === 'numbersearch') return Array.isArray(d.numbers) ? d.numbers.map(String) : [];
   return [];
 }
-// Whole-word tokens of the free text a publisher typed on the page (e.g. a
-// broken-apart word list). Upper-cased for case-insensitive matching.
+// Whole-word tokens of the free text a publisher put on the page (e.g. a
+// broken-apart word list, whether a text box OR an editable table). Upper-cased
+// for case-insensitive matching.
 function pageFreeTokens(pg) {
   const els = pg.state && pg.state.layout && pg.state.layout.elements;
   if (!Array.isArray(els)) return new Set();
-  const text = els.filter((e) => e && e.kind === 'text' && e.text).map((e) => String(e.text)).join('\n').toUpperCase();
-  return new Set(text.match(/[A-Z0-9]+/g) || []);
+  const parts = [];
+  for (const e of els) {
+    if (!e) continue;
+    if (e.kind === 'text' && e.text) parts.push(String(e.text));
+    else if (e.kind === 'table' && Array.isArray(e.cells)) {
+      for (const row of e.cells) if (Array.isArray(row)) for (const cell of row) if (cell) parts.push(String(cell));
+    }
+  }
+  return new Set(parts.join('\n').toUpperCase().match(/[A-Z0-9]+/g) || []);
 }
 // The baked word-list piece was hidden (e.g. "Break apart puzzle" replaced it
 // with editable text) — so the printed list now lives only in the free text.

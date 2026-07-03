@@ -134,6 +134,26 @@ test('checklist flags a broken-apart word list that dropped a grid word', () => 
   assert.equal(ok.status, 'pass');
 });
 
+test('checklist counts words held in a broken-apart table, not just text boxes', () => {
+  const { runChecklist } = require('../engine/checklist');
+  const book = assembleBook({ title: 'WL3', trimSize: '6x9', audience: 'adult', theme: 'animals',
+    puzzles: [{ type: 'wordsearch', count: 1, difficulty: 1 }] });
+  const pg = book.pages.find((p) => p.puzzle.type === 'wordsearch');
+  const words = pg.puzzle.data.words.slice();
+  // Word list broken apart into a TABLE (2 columns), all words present.
+  const cells = [];
+  for (let i = 0; i < words.length; i += 2) cells.push([words[i] || '', words[i + 1] || '']);
+  pg.state = { layout: { comp: { wordlist: { hidden: true } },
+    elements: [{ kind: 'table', rows: cells.length, cols: 2, cells }] } };
+  const ok = runChecklist(book).items.find((i) => i.id === 'wordlist-match');
+  assert.equal(ok.status, 'pass', 'words in a table should count as present');
+
+  // Drop one from the table → flagged.
+  cells[0][0] = '';
+  const bad = runChecklist(book).items.find((i) => i.id === 'wordlist-match');
+  assert.equal(bad.status, 'fail');
+});
+
 test('checklist does not false-positive on an untouched (baked) word list', () => {
   const { runChecklist } = require('../engine/checklist');
   const book = assembleBook({ title: 'WL2', trimSize: '6x9', audience: 'adult', theme: 'animals',
