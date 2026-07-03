@@ -112,6 +112,37 @@ test('table elements render as an HTML table with header styling and escaped cel
   assert.ok(!html.includes('<10>'));            // no raw HTML injection
 });
 
+test('checklist flags a broken-apart word list that dropped a grid word', () => {
+  const { runChecklist } = require('../engine/checklist');
+  const book = assembleBook({ title: 'WL', trimSize: '6x9', audience: 'adult', theme: 'animals',
+    puzzles: [{ type: 'wordsearch', count: 1, difficulty: 1 }] });
+  const pg = book.pages.find((p) => p.puzzle.type === 'wordsearch');
+  const words = pg.puzzle.data.words.slice();
+  const dropped = words[0];
+  // Simulate "Break apart": wordlist piece hidden, list re-typed as free text
+  // but MISSING the first word.
+  pg.state = { layout: { comp: { wordlist: { hidden: true } },
+    elements: [{ kind: 'text', text: words.slice(1).join('\n') }] } };
+  const { items } = runChecklist(book);
+  const wl = items.find((i) => i.id === 'wordlist-match');
+  assert.equal(wl.status, 'fail', 'mismatch should be flagged');
+  assert.match(wl.message, new RegExp(dropped));
+
+  // Control: list all words → passes.
+  pg.state.layout.elements[0].text = words.join('\n');
+  const ok = runChecklist(book).items.find((i) => i.id === 'wordlist-match');
+  assert.equal(ok.status, 'pass');
+});
+
+test('checklist does not false-positive on an untouched (baked) word list', () => {
+  const { runChecklist } = require('../engine/checklist');
+  const book = assembleBook({ title: 'WL2', trimSize: '6x9', audience: 'adult', theme: 'animals',
+    puzzles: [{ type: 'wordsearch', count: 1, difficulty: 1 }] });
+  // No editor state at all — the baked list is intact.
+  const wl = runChecklist(book).items.find((i) => i.id === 'wordlist-match');
+  assert.equal(wl.status, 'pass');
+});
+
 test('objects flagged behind render under the puzzle pieces (export stacking)', () => {
   const { composeParts } = require('../engine/components');
   const { getLayout } = require('../layouts');

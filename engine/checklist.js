@@ -29,6 +29,44 @@ function pageText(book) {
 const KDP_MIN_PAGES = 24;
 const DRAWABLE = new Set(['coloring', 'drawing']);
 
+// The items a grid-search puzzle asks the solver to find (its printed bank).
+function listedItems(p) {
+  const d = (p && p.data) || {};
+  if (p.type === 'wordsearch') return Array.isArray(d.words) ? d.words.map(String) : [];
+  if (p.type === 'numbersearch') return Array.isArray(d.numbers) ? d.numbers.map(String) : [];
+  return [];
+}
+// Whole-word tokens of the free text a publisher typed on the page (e.g. a
+// broken-apart word list). Upper-cased for case-insensitive matching.
+function pageFreeTokens(pg) {
+  const els = pg.state && pg.state.layout && pg.state.layout.elements;
+  if (!Array.isArray(els)) return new Set();
+  const text = els.filter((e) => e && e.kind === 'text' && e.text).map((e) => String(e.text)).join('\n').toUpperCase();
+  return new Set(text.match(/[A-Z0-9]+/g) || []);
+}
+// The baked word-list piece was hidden (e.g. "Break apart puzzle" replaced it
+// with editable text) — so the printed list now lives only in the free text.
+function wordlistHidden(pg) {
+  const comp = pg.state && pg.state.layout && pg.state.layout.comp;
+  return !!comp && Object.keys(comp).some((k) => /wordlist|clue/i.test(k) && comp[k] && comp[k].hidden);
+}
+// Pages whose grid words are no longer all printed on the page. Only fires once
+// a publisher has started editing the list as free text (break-apart / hide) —
+// an untouched baked list always matches, so this never false-positives.
+function wordlistMismatches(book) {
+  const out = [];
+  (book.pages || []).forEach((pg, i) => {
+    const items = listedItems(pg.puzzle || {});
+    if (!items.length) return;
+    const tokens = pageFreeTokens(pg);
+    const anyListed = items.some((w) => tokens.has(w.toUpperCase()));
+    if (!wordlistHidden(pg) && !anyListed) return;         // baked list intact → skip
+    const missing = items.filter((w) => !tokens.has(w.toUpperCase()));
+    if (missing.length) out.push({ page: pg.pageNumber || i + 1, missing });
+  });
+  return out;
+}
+
 // A non-activity puzzle should carry real puzzle data and a solution.
 function hasPuzzleContent(p) {
   const d = p.data || {};
@@ -72,6 +110,15 @@ function runChecklist(book, opts = {}) {
 
   add('no-empty', 'No blank puzzle pages', 'blocker', realPuzzles.every(hasPuzzleContent),
     'A puzzle page has no content — regenerate the book or that puzzle.');
+
+  // Word list must still match the grid. After "Break apart puzzle" the list is
+  // editable free text; a stray edit could drop a word that's hidden in the grid.
+  const wlMiss = wordlistMismatches(book);
+  const wlTotal = wlMiss.reduce((n, m) => n + m.missing.length, 0);
+  add('wordlist-match', 'Word list matches the grid', 'warning', wlMiss.length === 0,
+    wlMiss.length
+      ? `${wlTotal} grid word(s) are hidden in the puzzle but no longer printed on the page — e.g. page ${wlMiss[0].page}: ${wlMiss[0].missing.slice(0, 6).join(', ')}. Solvers won't be told to find them. Re-add the missing words or undo the break-apart.`
+      : '');
 
   if (book.answerKey) {
     add('key-present', 'Answer key present', 'blocker', realPuzzles.length > 0,
