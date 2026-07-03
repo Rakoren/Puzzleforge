@@ -170,6 +170,12 @@
           <div class="rgroup-name">Text</div>
         </div>
         <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="addTable" class="ghost" title="Insert a table (edit cells by double-clicking)">▦ Table</button>
+          </div>
+          <div class="rgroup-name">Tables</div>
+        </div>
+        <div class="rgroup">
           <div class="rgroup-body wide">
             <label class="field compact"><span>Page border</span>
               <select id="border"><option value="">(book default)</option></select>
@@ -341,6 +347,20 @@
               </label>
             </div>
             <div class="rgroup-name">Shape</div>
+          </div>
+          <div class="rgroup" id="tableProps">
+            <div class="rgroup-body">
+              <button id="tblAddRow" class="ghost mini" title="Add a row">＋Row</button>
+              <button id="tblDelRow" class="ghost mini" title="Remove the last row">−Row</button>
+              <button id="tblAddCol" class="ghost mini" title="Add a column">＋Col</button>
+              <button id="tblDelCol" class="ghost mini" title="Remove the last column">−Col</button>
+              <label class="m"><span>Border</span><input id="tblBorder" type="color" value="#333333"></label>
+              <label class="m"><span>Header bg</span><input id="tblHeaderFill" type="color" value="#f0f0f0"></label>
+              <label class="m"><span>&nbsp;</span>
+                <label class="checkbox"><input type="checkbox" id="tblHeader"> Header row</label>
+              </label>
+            </div>
+            <div class="rgroup-name">Table</div>
           </div>
           <div class="rgroup">
             <div class="rgroup-body">

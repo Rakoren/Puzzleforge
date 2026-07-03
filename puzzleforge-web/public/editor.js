@@ -14,7 +14,9 @@
     undo: $('undo'), redo: $('redo'), zoomOut: $('zoomOut'), zoomIn: $('zoomIn'), zoomFit: $('zoomFit'), zoomLabel: $('zoomLabel'),
     zoom100: $('zoom100'), zoomWhole: $('zoomWhole'), zoomWidth: $('zoomWidth'),
     rulerToggle: $('rulerToggle'), navToggle: $('navToggle'), boundToggle: $('boundToggle'), editorMain: $('editorMain'),
-    addText: $('addText'), addImage: $('addImage'),
+    addText: $('addText'), addImage: $('addImage'), addTable: $('addTable'),
+    tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
+    tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
     mW: $('mW'), mH: $('mH'), mWField: $('mWField'), mHField: $('mHField'),
@@ -453,6 +455,7 @@
     e._node = node; node._ref = e; applyElTf(e);
     node.addEventListener('pointerdown', (ev) => onPointerDown(ev, e));
     if (e.kind === 'text') node.addEventListener('dblclick', () => editText(e));
+    if (e.kind === 'table') node.addEventListener('dblclick', (ev) => editTableCell(e, ev));
     return node;
   }
   function applyElTf(e) { if (e._node) e._node.style.transform = `translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)})`; }
@@ -524,12 +527,13 @@
   }
   function syncSelUI() {
     const has = sels.length > 0; el.selNone.classList.toggle('hidden', has); el.selControls.classList.toggle('hidden', !has);
-    const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isShape = one && one.kind === 'shape'; const isEl = one && one.group === 'el';
+    const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isShape = one && one.kind === 'shape'; const isTable = one && one.kind === 'table'; const isEl = one && one.group === 'el';
     syncFontUI(one);
     if (!has) return;
     el.measurePanel.style.display = one ? '' : 'none';
     el.shapeProps.style.display = isShape ? '' : 'none';
-    el.mWField.style.display = isEl ? '' : 'none'; el.mHField.style.display = isShape ? '' : 'none';
+    if (el.tableProps) el.tableProps.style.display = isTable ? '' : 'none';
+    el.mWField.style.display = isEl && !isTable ? '' : 'none'; el.mHField.style.display = isShape ? '' : 'none';
     el.flipH.style.display = isImg || isShape ? '' : 'none'; el.flipV.style.display = isImg || isShape ? '' : 'none'; el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
     el.hideObj.style.display = one && !isEl ? '' : 'none'; el.distH.style.display = sels.length >= 3 ? '' : 'none'; el.distV.style.display = sels.length >= 3 ? '' : 'none';
     el.lockObj.textContent = one && one.locked ? 'Unlock' : 'Lock';
@@ -537,12 +541,17 @@
     el.ungroupBtn.style.display = sels.some((r) => r.gid) ? '' : 'none';
     if (one) {
       const b = box(one); el.mX.value = Math.round(b.x); el.mY.value = Math.round(b.y); el.mScale.value = Math.round(num(one.scale, 1) * 100); el.mRot.value = Math.round(num(one.rot, 0));
-      if (isEl) el.mW.value = Math.round(num(one.kind === 'image' ? one.width : one.w, 0));
+      if (isEl && !isTable) el.mW.value = Math.round(num(one.kind === 'image' ? one.width : one.w, 0));
       if (isShape) el.mH.value = Math.round(num(one.h, 0));
       if (isShape) {
         el.fillColor.value = /^#/.test(one.fill || '') ? one.fill : '#ffd43b';
         el.strokeColor.value = /^#/.test(one.stroke || '') ? one.stroke : '#222222';
         el.strokeW.value = num(one.strokeW, 2); el.noFill.checked = one.fill === 'none';
+      }
+      if (isTable && el.tblBorder) {
+        el.tblBorder.value = /^#/.test(one.borderColor || '') ? one.borderColor : '#333333';
+        el.tblHeaderFill.value = /^#/.test(one.headerFill || '') ? one.headerFill : '#eef1fe';
+        el.tblHeader.checked = !!one.header;
       }
     }
   }
@@ -565,6 +574,8 @@
     return out;
   }
   function onPointerDown(ev, ref) {
+    // A cell (or text box) mid-edit: let the browser place the caret, don't drag.
+    if (ev.target && ev.target.isContentEditable) return;
     ev.preventDefault(); hideCtx();
     if (painter && ev.button !== 2 && applyPainter(ref)) { setSel([ref]); return; }
     if (ev.button === 2) { if (!isSel(ref)) setSel(expandGroups([ref])); return; }
@@ -691,6 +702,45 @@
       w: line ? 220 : 160, h: line ? 12 : 120,
       fill: line ? 'none' : schemeFill(), stroke: schemeStroke(), strokeW: line ? 3 : 2,
     });
+  }
+
+  // --- Tables ---
+  function emptyCells(rows, cols) { return Array.from({ length: rows }, () => Array.from({ length: cols }, () => '')); }
+  function addTable() {
+    const rows = 3, cols = 3;
+    addElement({
+      group: 'el', id: uid++, kind: 'table',
+      x: Math.round(dims.usableWidth / 2 - 135), y: Math.round(dims.usableHeight / 2 - 60),
+      scale: 1, rot: 0, z: 100,
+      rows, cols, cells: emptyCells(rows, cols), colW: Array(cols).fill(90),
+      header: true, borderColor: schemeStroke(), borderW: 1, headerFill: '#eef1fe', cellPad: 6,
+      fontSize: 15, fontFamily: 'sans', color: '#222222', align: 'left',
+    });
+  }
+  const selTable = () => { const o = sels.length === 1 && sels[0]; return o && o.kind === 'table' ? o : null; };
+  function ensureCells(t) {
+    if (!Array.isArray(t.cells)) t.cells = [];
+    for (let r = 0; r < t.rows; r++) { if (!Array.isArray(t.cells[r])) t.cells[r] = []; for (let c = 0; c < t.cols; c++) if (t.cells[r][c] == null) t.cells[r][c] = ''; }
+  }
+  function redrawTable(t) { t._node.innerHTML = elHtml(t); requestAnimationFrame(drawSel); }
+  function tableOp(fn) { const t = selTable(); if (!t) return; pushUndo(); ensureCells(t); fn(t); ensureCells(t); redrawTable(t); syncSelUI(); }
+  function editTableCell(t, ev) {
+    const td = ev.target.closest('td'); if (!td) return;
+    const r = td.parentNode.rowIndex, c = td.cellIndex;
+    ensureCells(t);
+    td.setAttribute('contenteditable', 'true'); td.focus();
+    // Put the caret at the end of the cell.
+    const sel = window.getSelection(); const range = document.createRange(); range.selectNodeContents(td); range.collapse(false); sel.removeAllRanges(); sel.addRange(range);
+    let committed = false;
+    const done = () => {
+      if (committed) return; committed = true;
+      td.removeAttribute('contenteditable');
+      pushUndo(); t.cells[r][c] = td.innerText.replace(/\n+$/, '');
+      td.removeEventListener('blur', done); td.removeEventListener('keydown', onk);
+      redrawTable(t);
+    };
+    const onk = (e) => { if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey)) { e.preventDefault(); td.blur(); } };
+    td.addEventListener('blur', done); td.addEventListener('keydown', onk);
   }
 
   // --- Insert: WordArt, Symbol, Date, AI Art ---
@@ -967,6 +1017,8 @@
         textStroke: e.textStroke, textStrokeW: e.textStrokeW, textShadow: e.textShadow,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
+        rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
+        borderColor: e.borderColor, borderW: e.borderW, headerFill: e.headerFill, cellPad: e.cellPad,
         gid: e.gid,
       }));
       st.layout = { comp, elements };
@@ -1444,6 +1496,15 @@
     el.strokeColor.addEventListener('input', () => applyShapeProp('stroke', el.strokeColor.value));
     el.strokeW.addEventListener('input', () => applyShapeProp('strokeW', Math.max(0, Number(el.strokeW.value) || 0)));
     el.noFill.addEventListener('change', () => applyShapeProp('fill', el.noFill.checked ? 'none' : el.fillColor.value));
+    // Tables
+    if (el.addTable) el.addTable.addEventListener('click', addTable);
+    if (el.tblAddRow) el.tblAddRow.addEventListener('click', () => tableOp((t) => { t.rows++; }));
+    if (el.tblDelRow) el.tblDelRow.addEventListener('click', () => tableOp((t) => { if (t.rows > 1) { t.rows--; t.cells.pop(); } }));
+    if (el.tblAddCol) el.tblAddCol.addEventListener('click', () => tableOp((t) => { t.cols++; t.colW.push(90); }));
+    if (el.tblDelCol) el.tblDelCol.addEventListener('click', () => tableOp((t) => { if (t.cols > 1) { t.cols--; t.colW.pop(); t.cells.forEach((row) => row.pop()); } }));
+    if (el.tblBorder) el.tblBorder.addEventListener('input', () => { const t = selTable(); if (t) { t.borderColor = el.tblBorder.value; redrawTable(t); } });
+    if (el.tblHeaderFill) el.tblHeaderFill.addEventListener('input', () => { const t = selTable(); if (t) { t.headerFill = el.tblHeaderFill.value; redrawTable(t); } });
+    if (el.tblHeader) el.tblHeader.addEventListener('change', () => { const t = selTable(); if (t) { pushUndo(); t.header = el.tblHeader.checked; redrawTable(t); } });
     el.groupBtn.addEventListener('click', groupSel); el.ungroupBtn.addEventListener('click', ungroupSel);
     el.borderAll.addEventListener('click', () => { pageModels.forEach((pm) => { pm._border = el.border.value; }); setStatus(el.border.value ? 'Border applied to all pages.' : 'Border override cleared on all pages.', 'ok'); });
     el.mX.addEventListener('change', () => setMeasure('x', Number(el.mX.value) || 0));

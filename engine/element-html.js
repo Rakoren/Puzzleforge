@@ -40,6 +40,40 @@
     return pts.join(' ');
   }
 
+  // A simple data table. Rendered as an HTML <table> with inline styles so it
+  // looks identical on screen (editor) and in the PDF composer. Column widths
+  // are fixed via <colgroup> so text wraps predictably at print size.
+  function tableHtml(e) {
+    const rows = Math.max(1, Math.min(60, num(e.rows, 2)));
+    const cols = Math.max(1, Math.min(20, num(e.cols, 2)));
+    const cells = Array.isArray(e.cells) ? e.cells : [];
+    const colW = Array.isArray(e.colW) ? e.colW : [];
+    const defW = 90;
+    const bC = color(e.borderColor, '#333333');
+    const bW = Math.max(0, Math.min(8, num(e.borderW, 1)));
+    const pad = Math.max(0, Math.min(40, num(e.cellPad, 6)));
+    const header = !!e.header;
+    const hFill = color(e.headerFill, '#f0f0f0');
+    const fs = Math.max(6, num(e.fontSize, 15));
+    const fam = FONTS[e.fontFamily] || FONTS.sans;
+    const col = color(e.color, '#222222');
+    const align = ['left', 'center', 'right'].includes(e.align) ? e.align : 'left';
+    let totalW = 0, cg = '<colgroup>';
+    for (let c = 0; c < cols; c++) { const w = Math.max(16, num(colW[c], defW)); totalW += w; cg += `<col style="width:${w}px">`; }
+    cg += '</colgroup>';
+    let body = '';
+    for (let r = 0; r < rows; r++) {
+      body += '<tr>';
+      for (let c = 0; c < cols; c++) {
+        const isH = header && r === 0;
+        const cs = `border:${bW}px solid ${bC};padding:${pad}px;text-align:${align};vertical-align:top;` + (isH ? `font-weight:700;background:${hFill};` : '');
+        body += `<td style="${cs}">${esc((cells[r] && cells[r][c]) || '')}</td>`;
+      }
+      body += '</tr>';
+    }
+    return `<table style="border-collapse:collapse;table-layout:fixed;width:${totalW}px;font-family:${fam};font-size:${fs}px;color:${col};line-height:1.35;">${cg}<tbody>${body}</tbody></table>`;
+  }
+
   function shapeSvg(e) {
     const w = Math.max(8, num(e.w, 160));
     const h = Math.max(4, num(e.h, 120));
@@ -81,6 +115,7 @@
       return `<img src="${e.src}" style="width:${num(e.width, 160)}px;display:block;pointer-events:none;${fx}" alt="">`;
     }
     if (e.kind === 'shape') return shapeSvg(e);
+    if (e.kind === 'table') return tableHtml(e);
     // text
     const css =
       `font-size:${num(e.fontSize, 24)}px;color:${color(e.color, '#222')};` +

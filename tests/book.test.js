@@ -97,6 +97,21 @@ test('recipe v2 round-trips and migrates v1', () => {
   assert.equal(mig.book.title, CONFIG.title);
 });
 
+test('table elements render as an HTML table with header styling and escaped cells', () => {
+  const { elementHtml } = require('../engine/element-html');
+  const html = elementHtml({
+    kind: 'table', rows: 2, cols: 2, header: true,
+    cells: [['Name', 'Score'], ['A & B', '<10>']], colW: [80, 60],
+    borderColor: '#334455', headerFill: '#eeeeee',
+  });
+  assert.match(html, /<table[^>]*table-layout:fixed/);
+  assert.match(html, /width:140px/);            // 80 + 60
+  assert.match(html, /font-weight:700;background:#eeeeee/); // header row
+  assert.match(html, /A &amp; B/);              // escaped
+  assert.match(html, /&lt;10&gt;/);             // escaped
+  assert.ok(!html.includes('<10>'));            // no raw HTML injection
+});
+
 test('per-page state overrides the book border', () => {
   const book = assembleBook({ ...CONFIG, border: 'single', pageState: [{ border: 'stars' }] });
   assert.equal(book.pages[0].state.border, 'stars');
