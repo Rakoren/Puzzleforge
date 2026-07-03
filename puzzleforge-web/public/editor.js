@@ -25,7 +25,7 @@
     fontGrow: $('fontGrow'), fontShrink: $('fontShrink'), caseBtn: $('caseBtn'), clearFmt: $('clearFmt'), lineSpacing: $('lineSpacing'),
     cutBtn: $('cutBtn'), copyBtn: $('copyBtn'), pasteBtn: $('pasteBtn'), fmtPainter: $('fmtPainter'),
     hAddText: $('hAddText'), hAddImage: $('hAddImage'), hForward: $('hForward'), hBackward: $('hBackward'),
-    hGroup: $('hGroup'), hUngroup: $('hUngroup'), findReplaceBtn: $('findReplaceBtn'), selectAllBtn: $('selectAllBtn'),
+    hGroup: $('hGroup'), hUngroup: $('hUngroup'), findReplaceBtn: $('findReplaceBtn'), selectAllBtn: $('selectAllBtn'), breakApartBtn: $('breakApartBtn'),
     frModal: $('frModal'), frClose: $('frClose'), frFind: $('frFind'), frReplace: $('frReplace'), frCase: $('frCase'), frReplaceAll: $('frReplaceAll'), frStatus: $('frStatus'),
     shapeProps: $('shapeProps'), fillColor: $('fillColor'), strokeColor: $('strokeColor'), strokeW: $('strokeW'), noFill: $('noFill'),
     groupBtn: $('groupBtn'), ungroupBtn: $('ungroupBtn'), borderAll: $('borderAll'),
@@ -770,6 +770,58 @@
     else if (kind === 'backward') o.z = num(o.z, 100) - 15;
     renderPage(); setTimeout(() => setSel([o]), 0);
   }
+  // --- Break apart a puzzle: title / instructions / word-list pieces become
+  // ordinary editable text objects, matching their on-screen typography. The
+  // GRID stays a protected piece (integrity, reroll, and answer keys intact).
+  const BREAKABLE = ['title', 'instructions', 'wordlist'];
+  function canBreakApart() {
+    const pm = pageModels[cur];
+    return !!(pm && !isMatterPage(pm) && !masterMode && pm.comps.some((c) => !c.hidden && BREAKABLE.includes(c.kind)));
+  }
+  const rgbToHex = (rgb) => {
+    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(rgb || '');
+    if (!m) return '#222222';
+    const h = (n) => Number(n).toString(16).padStart(2, '0');
+    return '#' + h(m[1]) + h(m[2]) + h(m[3]);
+  };
+  const mapFontFamily = (ff) => {
+    const s = (ff || '').toLowerCase();
+    if (s.includes('courier') || s.includes('mono')) return 'mono';
+    if (s.includes('comic') || s.includes('cursive')) return 'hand';
+    if (s.includes('georgia') || s.includes('times') || (s.includes('serif') && !s.includes('sans'))) return 'serif';
+    return 'sans';
+  };
+  function breakApartPuzzle() {
+    const pm = pageModels[cur];
+    if (!canBreakApart()) { setStatus('Open a puzzle page with a title or word list to break apart.', 'err'); return; }
+    const targets = pm.comps.filter((c) => !c.hidden && BREAKABLE.includes(c.kind));
+    pushUndo();
+    let made = 0;
+    targets.forEach((c) => {
+      const styled = (c._node && c._node.firstElementChild) || c._node;
+      const cs = styled ? getComputedStyle(styled) : null;
+      const text = (c._node ? c._node.innerText : c.html.replace(/<[^>]+>/g, ' ')).replace(/\n{3,}/g, '\n\n').trim();
+      if (!text) { c.hidden = true; return; }
+      const b = box(c);
+      pm.elements.push({
+        group: 'el', id: uid++, kind: 'text',
+        x: Math.round(b.x), y: Math.round(b.y), scale: 1, rot: 0, z: 80,
+        w: Math.max(60, Math.round(b.w)), text,
+        fontSize: cs ? Math.max(8, Math.round(parseFloat(cs.fontSize))) : (c.kind === 'title' ? 30 : 16),
+        bold: cs ? parseInt(cs.fontWeight, 10) >= 600 : c.kind === 'title',
+        italic: cs ? cs.fontStyle === 'italic' : false,
+        align: cs && ['left', 'center', 'right'].includes(cs.textAlign) ? cs.textAlign : (c.kind === 'title' ? 'center' : 'left'),
+        color: cs ? rgbToHex(cs.color) : '#222222',
+        lineHeight: cs ? Math.min(3, Math.max(0.8, parseFloat(cs.lineHeight) / parseFloat(cs.fontSize) || 1.3)) : 1.3,
+        fontFamily: cs ? mapFontFamily(cs.fontFamily) : 'sans',
+      });
+      c.hidden = true;                       // hide the baked piece (undo restores it)
+      made += 1;
+    });
+    renderPage();
+    setStatus(`Broke apart ${made} label${made === 1 ? '' : 's'} into editable text — the puzzle grid stays protected. Undo to reverse.`, 'ok');
+  }
+
   function flip(axis) { const o = sels.length === 1 && sels[0]; if (!o || (o.kind !== 'image' && o.kind !== 'shape')) return; pushUndo(); if (axis === 'h') o.flipH = !o.flipH; else o.flipV = !o.flipV; o._node.innerHTML = elHtml(o); }
   function toggleLock() { const o = sels.length === 1 && sels[0]; if (!o) return; pushUndo(); o.locked = !o.locked; syncSelUI(); }
 
@@ -1030,6 +1082,7 @@
     if (sels.some((r) => r.gid)) items.push({ label: 'Ungroup', fn: ungroupSel });
     if (one) items.push({ label: one.locked ? 'Unlock' : 'Lock', fn: toggleLock });
     if (one && one.group === 'piece') items.push({ label: 'Hide piece', fn: hideComp });
+    if (canBreakApart()) { if (items.length && items[items.length - 1] !== '-') items.push('-'); items.push({ label: '✂ Break apart puzzle', fn: breakApartPuzzle }); }
     if (!items.length) return;
     ctxEl = document.createElement('div'); ctxEl.className = 'pf-ctx';
     items.forEach((it) => {
@@ -1626,6 +1679,7 @@
     el.hForward.addEventListener('click', () => reorder('forward')); el.hBackward.addEventListener('click', () => reorder('backward'));
     el.hGroup.addEventListener('click', groupSel); el.hUngroup.addEventListener('click', ungroupSel);
     el.findReplaceBtn.addEventListener('click', openFindReplace); el.selectAllBtn.addEventListener('click', selectAll);
+    if (el.breakApartBtn) el.breakApartBtn.addEventListener('click', breakApartPuzzle);
     el.frClose.addEventListener('click', closeFindReplace);
     el.frModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeFindReplace(); });
     el.frReplaceAll.addEventListener('click', doReplaceAll);
