@@ -39,6 +39,11 @@
     movePageUp: $('movePageUp'), movePageDown: $('movePageDown'), schemeGallery: $('schemeGallery'),
     revSpelling: $('revSpelling'), revThesaurus: $('revThesaurus'), revWordCount: $('revWordCount'), revLanguage: $('revLanguage'),
     revModal: $('revModal'), revClose: $('revClose'), revTitle: $('revTitle'), revSub: $('revSub'), revBody: $('revBody'),
+    helpBtn: $('helpBtn'), supportBtn: $('supportBtn'), shortcutsBtn: $('shortcutsBtn'),
+    helpModal: $('helpModal'), helpClose: $('helpClose'), helpSearch: $('helpSearch'), helpCats: $('helpCats'),
+    helpArticles: $('helpArticles'), helpToSupport: $('helpToSupport'),
+    supportModal: $('supportModal'), supportClose: $('supportClose'), supType: $('supType'), supTitle: $('supTitle'),
+    supBody: $('supBody'), supIncludeCtx: $('supIncludeCtx'), supSubmit: $('supSubmit'), supBrowse: $('supBrowse'), supStatus: $('supStatus'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
     publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
@@ -1081,6 +1086,105 @@
     </div>`;
   }
 
+  // --- Help tab: Help Center + Contact Support ---
+  const GH_REPO = 'https://github.com/Rakoren/Puzzleforge';
+  const HELP_ARTICLES = [
+    { cat: 'Getting Started', q: 'How do I open a book in the editor?',
+      a: 'Build a book in the <b>Book Builder</b> and click <b>Open in Editor</b>, or use <b>Open recipe</b> to load a saved <code>.json</code> book. Every page — title, matter, puzzles, and answer keys — appears in the page rail on the left.' },
+    { cat: 'Getting Started', q: 'What are the parts of the workspace?',
+      a: 'The <b>ribbon</b> (Home, Insert, Page Design, Review, View, Help) holds every tool. The <b>page rail</b> on the left lists your pages — click to open one, drag the ↑ ↓ ⧉ ✕ controls to reorder, duplicate, or delete. The <b>canvas</b> in the middle is your page; rulers frame it. Select an object to reveal the contextual <b>Format</b> tab.' },
+    { cat: 'Getting Started', q: 'How do I save my work?',
+      a: '<b>Save</b> writes a recipe file you can reopen later; it captures your page order and every text/shape/image you added. <b>Export</b> composites the whole book into a print-resolution PDF. Nothing is stored on a server — keep your recipe file safe.' },
+
+    { cat: 'Create & Format', q: 'How do I add text, shapes, and images?',
+      a: 'Use the <b>Insert</b> tab: <b>Text Box</b>, the shape buttons (rectangle, ellipse, triangle, star, line), <b>Image</b>, <b>WordArt</b> for styled titles, and <b>Symbol</b> for special characters. New objects drop onto the current page and can be dragged, resized (○ handle), and rotated.' },
+    { cat: 'Create & Format', q: 'How do I format text?',
+      a: 'Select a text box and use the <b>Home</b> tab: font, size, bold/italic/underline, color, alignment, and line spacing. <b>Format Painter</b> copies one object’s look onto another. <b>Find &amp; Replace</b> (Home) edits text across every page at once.' },
+    { cat: 'Create & Format', q: 'What is WordArt?',
+      a: '<b>Insert → WordArt</b> drops a preset styled title (outline + shadow effects). Because the editor and the PDF share one renderer, the effect prints exactly as you see it on screen.' },
+
+    { cat: 'Layout & Templates', q: 'How do I add a title page, copyright, or intro?',
+      a: 'Use <b>Insert → Page template</b>. Pick from built-in templates (Title Page, Copyright, Intro, and more) — each inserts a real, editable page. Build a page you like and use <b>Save as template…</b> to reuse it later.' },
+    { cat: 'Layout & Templates', q: 'How do I reorder, rename, or delete pages?',
+      a: 'From the <b>page rail</b> use ↑ ↓ to move, ⧉ to duplicate, ✕ to delete. The <b>Page Design</b> tab has the same controls plus <b>Rename</b>, which gives a page a friendly name in the rail.' },
+    { cat: 'Layout & Templates', q: 'How do color schemes and page frames work?',
+      a: '<b>Page Design → Schemes</b> applies a palette: it sets each page’s frame accent color, recolors your current selection, and becomes the default color for new shapes. Pair it with a border style so the frame prints.' },
+    { cat: 'Layout & Templates', q: 'How do I check my margins?',
+      a: 'Turn on <b>Page Design → Show safe-margin guide</b> for a keep-clear overlay, and <b>View → Boundaries</b> to outline the page edge. Neither prints — they’re on-screen guides only.' },
+
+    { cat: 'Print & Export', q: 'How do I export a print-ready PDF?',
+      a: 'Click <b>Export</b>. The PDF honors your book’s trim size and bleed, and composites every object at print resolution. What you see on the canvas is what prints.' },
+    { cat: 'Print & Export', q: 'How do I publish to KDP?',
+      a: 'Open <b>Publish</b>. It runs a <b>pre-flight check</b> (trim, page count, margins) and a <b>proofread</b>, then bundles everything KDP needs — <code>interior.pdf</code>, <code>cover.pdf</code>, and a <code>build-info.txt</code> sheet — into one <code>.zip</code>. You can export even with warnings for now.' },
+    { cat: 'Print & Export', q: 'How do I make a cover?',
+      a: 'From the Publish window click <b>Open Cover Builder</b>. Design your cover, click <b>Use for this book</b>, and return — the package picks it up and matches the spine width to your real page count automatically.' },
+
+    { cat: 'Troubleshooting', q: 'Spelling or Thesaurus says it needs an API key',
+      a: 'Those tools use Claude. Set the <code>ANTHROPIC_API_KEY</code> environment variable and restart the server. Word Count and everything else work without a key.' },
+    { cat: 'Troubleshooting', q: 'My object looks different in the exported PDF',
+      a: 'The editor and PDF use the same renderer, so differences usually mean a font fell back. Stick to the provided font families, and remember the safe-margin guide and boundaries are screen-only and never print.' },
+    { cat: 'Troubleshooting', q: 'Export produces a blank or failed PDF',
+      a: 'PDF export needs Chromium available to the server. If it can’t be found, the server logs a message with how to point it at a Chromium binary. Re-run once that’s set.' },
+
+    { cat: 'Shortcuts', q: 'Keyboard shortcuts',
+      a: '<b>Ctrl+Z / Ctrl+Y</b> undo / redo · <b>Ctrl+C / Ctrl+V</b> copy / paste · <b>Ctrl+D</b> duplicate · <b>Delete</b> remove selected · <b>Arrow keys</b> nudge 1px (<b>Shift</b> = 10px) · drag to move, ○ handle to resize.' },
+  ];
+  function openHelp(cat) {
+    if (!el.helpModal) return;
+    el.helpModal.hidden = false;
+    if (cat) el.helpSearch.value = '';
+    renderHelp(el.helpSearch.value.trim(), cat || null);
+    if (!cat) setTimeout(() => el.helpSearch.focus(), 30);
+  }
+  function closeHelp() { if (el.helpModal) el.helpModal.hidden = true; }
+  let helpCat = null;
+  function renderHelp(query, cat) {
+    if (cat !== undefined) helpCat = cat;
+    const q = (query || '').toLowerCase();
+    const cats = [...new Set(HELP_ARTICLES.map((a) => a.cat))];
+    // Category rail (search overrides the active category filter).
+    el.helpCats.innerHTML = '';
+    const mkCat = (name, label) => { const b = document.createElement('button'); b.className = 'pf-help-cat' + ((!q && helpCat === name) ? ' active' : ''); b.textContent = label; b.addEventListener('click', () => { el.helpSearch.value = ''; renderHelp('', name); }); return b; };
+    el.helpCats.appendChild(mkCat(null, 'All topics'));
+    cats.forEach((c) => el.helpCats.appendChild(mkCat(c, c)));
+    // Articles filtered by search, else by active category.
+    const list = HELP_ARTICLES.filter((a) => q ? (a.q + ' ' + a.a + ' ' + a.cat).toLowerCase().includes(q) : (!helpCat || a.cat === helpCat));
+    if (!list.length) { el.helpArticles.innerHTML = `<p class="pf-modal-sub">No articles match “${escHtml(query)}”. Try another word, or <b>Contact Support</b>.</p>`; return; }
+    let html = ''; let lastCat = null;
+    list.forEach((a) => {
+      if (a.cat !== lastCat) { html += `<h3 class="pf-help-group">${escHtml(a.cat)}</h3>`; lastCat = a.cat; }
+      html += `<details class="pf-help-art"${q ? ' open' : ''}><summary>${escHtml(a.q)}</summary><div class="pf-help-ans">${a.a}</div></details>`;
+    });
+    el.helpArticles.innerHTML = html;
+  }
+
+  function openSupport() {
+    if (!el.supportModal) return;
+    if (el.supBrowse) el.supBrowse.href = GH_REPO + '/issues';
+    el.supStatus.textContent = ''; el.supStatus.className = 'pf-pub-status';
+    el.supportModal.hidden = false;
+    setTimeout(() => el.supTitle.focus(), 30);
+  }
+  function closeSupport() { if (el.supportModal) el.supportModal.hidden = true; }
+  function supportContext() {
+    const trim = (bookConfig && bookConfig.trimSize) || (dims ? `${dims.widthIn}×${dims.heightIn}in` : 'unknown');
+    return ['', '', '---', `Book: ${bookTitle() || '(untitled)'} · trim ${trim} · ${pageModels.length} pages`,
+      `Browser: ${navigator.userAgent}`, `Page: ${location.href}`].join('\n');
+  }
+  function submitSupport() {
+    const title = el.supTitle.value.trim();
+    if (!title) { el.supStatus.textContent = 'Add a one-line summary first.'; el.supStatus.className = 'pf-pub-status err'; return; }
+    const type = el.supType.value;
+    const prefix = type === 'bug' ? '[Bug] ' : type === 'feature' ? '[Feature] ' : '[Question] ';
+    const label = type === 'bug' ? 'bug' : type === 'feature' ? 'enhancement' : 'question';
+    let body = el.supBody.value.trim() || '(no details provided)';
+    if (el.supIncludeCtx.checked) body += supportContext();
+    const url = `${GH_REPO}/issues/new?title=${encodeURIComponent(prefix + title)}&body=${encodeURIComponent(body)}&labels=${encodeURIComponent(label)}`;
+    window.open(url, '_blank', 'noopener');
+    el.supStatus.textContent = 'Opened a pre-filled issue on GitHub in a new tab — review and post it there.';
+    el.supStatus.className = 'pf-pub-status ok';
+  }
+
   async function runPreflight() {
     el.pubRunChecks.disabled = true; setPubStatus(el.pubCheckStatus, 'Rendering & checking…', 'busy');
     const body = bookBody();
@@ -1246,6 +1350,17 @@
       if (bookConfig) bookConfig.language = el.revLanguage.value;
       setStatus(`Book language set to ${el.revLanguage.options[el.revLanguage.selectedIndex].text} (used in the KDP package metadata).`, 'ok');
     });
+    // Help tab
+    if (el.helpBtn) el.helpBtn.addEventListener('click', () => openHelp());
+    if (el.shortcutsBtn) el.shortcutsBtn.addEventListener('click', () => openHelp('Shortcuts'));
+    if (el.helpClose) el.helpClose.addEventListener('click', closeHelp);
+    if (el.helpModal) el.helpModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeHelp(); });
+    if (el.helpSearch) el.helpSearch.addEventListener('input', () => renderHelp(el.helpSearch.value.trim()));
+    if (el.helpToSupport) el.helpToSupport.addEventListener('click', () => { closeHelp(); openSupport(); });
+    if (el.supportBtn) el.supportBtn.addEventListener('click', openSupport);
+    if (el.supportClose) el.supportClose.addEventListener('click', closeSupport);
+    if (el.supportModal) el.supportModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeSupport(); });
+    if (el.supSubmit) el.supSubmit.addEventListener('click', submitSupport);
     populateInsertMenus();
     if (el.wordArt) el.wordArt.addEventListener('change', () => { const i = Number(el.wordArt.value); if (WORDART[i]) addWordArt(WORDART[i]); el.wordArt.value = ''; });
     if (el.symbolPick) el.symbolPick.addEventListener('change', () => { addSymbol(el.symbolPick.value); el.symbolPick.value = ''; });

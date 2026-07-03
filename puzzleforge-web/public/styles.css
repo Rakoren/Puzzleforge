@@ -322,6 +322,29 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .wc-cell b { font-size: 26px; }
 .wc-cell span { font-size: 12px; color: var(--muted); }
 
+/* Help Center */
+.pf-help { width: min(820px, 94vw); max-height: 88vh; display: flex; flex-direction: column; }
+.pf-help-search { width: 100%; padding: 9px 12px; font-size: 14px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; }
+.pf-help-body { display: grid; grid-template-columns: 180px 1fr; gap: 14px; overflow: hidden; flex: 1; min-height: 0; }
+.pf-help-cats { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.pf-help-cat { text-align: left; padding: 8px 10px; border: 1px solid transparent; border-radius: 7px; background: none; cursor: pointer; font-size: 13px; color: var(--ink); }
+.pf-help-cat:hover { background: var(--panel, #f2f4f8); }
+.pf-help-cat.active { background: #eef1fe; border-color: var(--brand); color: var(--brand); font-weight: 600; }
+.theme-dark .pf-help-cat:hover { background: #34373d; }
+.theme-dark .pf-help-cat.active { background: #2f3b57; color: #cdd6ff; }
+.pf-help-articles { overflow-y: auto; padding-right: 4px; }
+.pf-help-group { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 14px 0 6px; }
+.pf-help-group:first-child { margin-top: 0; }
+.pf-help-art { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; }
+.pf-help-art > summary { padding: 10px 12px; cursor: pointer; font-weight: 600; font-size: 14px; list-style: none; }
+.pf-help-art > summary::-webkit-details-marker { display: none; }
+.pf-help-art[open] > summary { border-bottom: 1px solid var(--line); }
+.pf-help-ans { padding: 10px 12px; font-size: 14px; line-height: 1.5; color: var(--ink); }
+.pf-help-ans code { background: var(--panel, #eef0f6); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+.theme-dark .pf-help-ans code { background: #34373d; }
+.pf-help-foot { margin-top: 12px; font-size: 13px; color: var(--muted); }
+.linkbtn { background: none; border: none; color: var(--brand); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
+
 .ribbon-layout { grid-template-columns: 200px 1fr !important; max-width: none !important; }
 .ribbon-layout .editor-stage { min-height: 78vh; }
 

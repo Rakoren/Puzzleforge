@@ -41,6 +41,7 @@
       <button class="rtab" data-tab="review" role="tab">Review</button>
       <button class="rtab rtab-context" data-tab="format" role="tab">Format</button>
       <button class="rtab" data-tab="view" role="tab">View</button>
+      <button class="rtab" data-tab="help" role="tab">Help</button>
     </div>
 
     <!-- Ribbon body: one panel per tab -->
@@ -352,6 +353,24 @@
           <div class="rgroup-name">Theme</div>
         </div>
       </section>
+
+      <!-- HELP -->
+      <section class="ribbon-panel" data-panel="help">
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="helpBtn" class="ghost" title="Browse help articles">❓ Help</button>
+            <button id="supportBtn" class="ghost" title="Report a bug or suggest a feature">🛟 Contact Support</button>
+            <button id="shortcutsBtn" class="ghost" title="Keyboard shortcuts">⌨ Shortcuts</button>
+          </div>
+          <div class="rgroup-name">Help</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <span class="design-info" id="verInfo">PuzzleForge Editor</span>
+          </div>
+          <div class="rgroup-name">About</div>
+        </div>
+      </section>
     </div>
   </header>
 
@@ -489,6 +508,55 @@
       </div>
       <p class="pf-modal-sub" id="revSub"></p>
       <div id="revBody" class="pf-report"></div>
+    </div>
+  </div>
+
+  <!-- Help Center: searchable articles -->
+  <div class="pf-modal" id="helpModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box pf-help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="pf-modal-head">
+        <h2 id="helpTitle">Help Center</h2>
+        <button class="iconbtn" id="helpClose" title="Close" data-close>✕</button>
+      </div>
+      <input id="helpSearch" class="pf-help-search" type="search" placeholder="Search help… (e.g. “export”, “template”, “KDP”)" autocomplete="off">
+      <div class="pf-help-body">
+        <nav class="pf-help-cats" id="helpCats"></nav>
+        <div class="pf-help-articles" id="helpArticles"></div>
+      </div>
+      <div class="pf-help-foot">
+        Can’t find an answer? <button id="helpToSupport" class="linkbtn" type="button">Contact Support →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Support: bug report / feature suggestion → GitHub issue -->
+  <div class="pf-modal" id="supportModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box pf-pub" role="dialog" aria-modal="true" aria-labelledby="supportTitle">
+      <div class="pf-modal-head">
+        <h2 id="supportTitle">Contact Support</h2>
+        <button class="iconbtn" id="supportClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub">Report a bug or suggest a feature. Submitting opens a pre-filled issue on our
+        GitHub — you can review it before posting (a free GitHub account is needed to post).</p>
+      <div class="pf-pub-grid">
+        <label class="field compact"><span>Type</span>
+          <select id="supType">
+            <option value="bug">🐛 Bug report</option>
+            <option value="feature">💡 Feature suggestion</option>
+            <option value="question">❓ Question</option>
+          </select>
+        </label>
+        <label class="field compact"><span>Summary</span><input id="supTitle" type="text" placeholder="One-line summary"></label>
+      </div>
+      <label class="field compact"><span>Details</span><textarea id="supBody" rows="5" placeholder="What happened, what you expected, and steps to reproduce (for bugs)…"></textarea></label>
+      <label class="checkbox"><input type="checkbox" id="supIncludeCtx" checked> Include book &amp; browser details (trim size, page count, browser) — helps us debug</label>
+      <div class="pf-pub-footer">
+        <button id="supSubmit" class="primary">Open GitHub issue →</button>
+        <a id="supBrowse" class="linkbtn" href="#" target="_blank" rel="noopener">Browse existing issues</a>
+        <span id="supStatus" class="pf-pub-status"></span>
+      </div>
     </div>
   </div>
 
