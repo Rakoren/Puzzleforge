@@ -529,6 +529,7 @@ body.theme-dark {
 
 /* Master pages */
 .master-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 14px; margin: 8px 16px 0; border-radius: 10px; background: #eef1fe; border: 1px solid var(--brand); color: #33407a; font-size: 13px; }
+.master-banner[hidden] { display: none; }
 .theme-dark .master-banner { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
 .pf-master-ov { pointer-events: none; }                 /* master overlay is non-interactive on normal pages */
 body:not(.master-editing) .pf-master-ov { opacity: .82; }
@@ -658,3 +659,64 @@ a.primary.lib-btn { background: var(--brand); color: #fff; border: 1px solid var
 /* Team library section */
 .lib-teamhead { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 18px; }
 .lib-team-status { font-size: 13px; color: var(--muted); font-weight: 400; }
+
+/* ===== Touch: drag objects/handles instead of scrolling/zooming the page ===== */
+.pf-node, .pf-piece, .pf-handle { touch-action: none; }
+.pf-handle { width: 16px; height: 16px; right: -8px; bottom: -8px; }
+
+/* ===== Phone / small-screen layout ===== */
+@media (max-width: 720px) {
+  /* Shared chrome */
+  .topbar { padding: 10px 12px; gap: 8px; }
+  .brand .tagline { display: none; }
+  .brand h1 { font-size: 17px; }
+  .nav { gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; flex-wrap: nowrap; }
+  .nav a { flex: 0 0 auto; padding: 7px 11px; font-size: 13px; }
+
+  /* Form-style pages (Book Builder, Puzzle Maker, Themes, Cover, Image Tools) */
+  .layout { grid-template-columns: 1fr; padding: 12px; gap: 14px; }
+  .row { grid-template-columns: 1fr; }
+  .preview { position: static; }
+  .preview-frame, .preview-frame iframe { height: 62vh; min-height: 0; }
+
+  /* My Books */
+  .lib-main { padding: 14px 12px 48px; }
+  .lib-grid { grid-template-columns: 1fr; }
+  .lib-head { align-items: flex-start; }
+
+  /* ---- Page Editor ---- */
+  .ribbon { position: static; }   /* tall ribbon scrolls away so the canvas gets the screen */
+  .ribbon-title { flex-wrap: wrap; gap: 8px; padding: 6px 10px; }
+  .ribbon-title .brand h1 { font-size: 15px; }
+  .ribbon-title .brand .logo { width: 32px; height: 32px; font-size: 18px; }
+  .ribbon-title .nav { order: 4; }
+  .ribbon-qa { margin-left: 0; width: 100%; order: 5; flex-wrap: wrap; gap: 6px; }
+  .ribbon-qa .ghost, .ribbon-qa .primary, .ribbon-qa .upload { padding: 7px 10px; font-size: 13px; }
+  .ribbon-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0 8px; }
+  .rtab { flex: 0 0 auto; padding: 8px 12px; }
+  .ribbon-body { min-height: 0; padding: 8px; overflow-x: auto; }
+  .rgroup { padding: 2px 8px; }
+
+  /* Single column: canvas on top, pages as a horizontal filmstrip below */
+  .ribbon-layout { grid-template-columns: 1fr !important; padding: 8px; gap: 8px; }
+  .editor-stage { order: 1; grid-template-columns: 1fr; grid-template-rows: 1fr; min-height: 0 !important; padding: 4px; }
+  .editor-stage .ruler, .editor-stage .ruler-corner { display: none; }
+  .stage-scroll { grid-area: 1 / 1; max-height: 58vh; }
+  .editor-pages { order: 2; padding: 8px; }
+  .editor-pages h2, .editor-pages .hint { display: none; }
+  .page-list { display: flex; flex-direction: row; gap: 8px; max-height: none; overflow-x: auto; overflow-y: hidden; padding-bottom: 6px; }
+  .page-item { flex: 0 0 auto; width: 88px; margin-bottom: 0; }
+  .page-item .page-ops { display: none; }        /* reorder/delete live in the Page Design tab */
+  .page-item .page-label { font-size: 10px; }
+  .page-add { display: flex; gap: 6px; margin-top: 8px; }
+  .editor-status { padding: 0 12px; }
+
+  /* Master banner + modals fit the screen */
+  .master-banner { flex-wrap: wrap; gap: 6px; margin: 6px 10px 0; }
+  .pf-modal { padding: 10px; }
+  .pf-modal-box { width: 96vw; max-height: 90vh; padding: 16px; }
+  .pf-help-body { grid-template-columns: 1fr; }
+  .pf-help-cats { flex-direction: row; overflow-x: auto; gap: 4px; }
+  .pf-pub-grid, .pf-team-add, .wc-grid { grid-template-columns: 1fr; }
+  .pf-team-row { flex-direction: column; align-items: flex-start; }
+}
