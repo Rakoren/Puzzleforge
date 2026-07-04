@@ -60,7 +60,7 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (112 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (113 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)

@@ -59,3 +59,14 @@ test('a clean book has zero blockers (the gate would pass it)', () => {
   const blockers = runChecklist(book).items.filter((i) => i.status !== 'pass' && i.severity === 'blocker');
   assert.equal(blockers.length, 0, `unexpected blockers: ${blockers.map((b) => b.id).join(', ')}`);
 });
+
+test('metadata checks warn when empty and pass when filled (never block)', () => {
+  const base = { title: 'M', puzzleforgeBook: 1, trimSize: '8.5x11', audience: 'adult', answerKey: true, puzzles: [{ type: 'sudoku', count: 30, difficulty: '2' }] };
+  const bare = runChecklist(assembleBook(base));
+  assert.equal(bare.items.filter((i) => i.status !== 'pass' && i.severity === 'blocker').length, 0);
+  assert.equal(bare.items.find((i) => i.id === 'meta-description').status, 'fail');
+  const full = runChecklist(assembleBook({ ...base, metadata: { description: 'A fun book', keywords: ['a', 'b', 'c', 'd', 'e', 'f', 'g'], categories: ['x', 'y', 'z'], readingAge: 'Adult' } }));
+  for (const id of ['meta-description', 'meta-keywords', 'meta-categories']) {
+    assert.equal(full.items.find((i) => i.id === id).status, 'pass', `${id} passes when filled`);
+  }
+});

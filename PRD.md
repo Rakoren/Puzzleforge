@@ -1,7 +1,7 @@
 # PuzzleForge — Product Requirements Document
 
 **Version:** 0.3 (Active Development)
-**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace); Tier 3 puzzle types underway
+**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace); Tier 3 puzzle types (Logic Grid, Word Ladder, Word Wheel, Cipher); KDP-verified pre-flight export gate live
 **Last full docs sync:** 2026-07-04
 **Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (112 tests passing)
+### Engine (113 tests passing)
 
 **14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -785,7 +785,19 @@ Each checklist item has a **"Fix it" shortcut** that jumps directly to the relev
 
 ---
 
-### Content Quality Checks (Claude API)
+### Implementation status (verified July 2026)
+
+**Shipped** (`engine/checklist.js`, checked against KDP's published rules) and **gated on export** — "Download KDP bundle" / "Download PDF" run the checklist first and block on 🔴 blockers unless the user overrides; 🟡 warnings never block:
+
+- **Structural** — page count 24–828 · even · puzzle count matches config · no empty puzzle pages · answer key present + complete · bleed guards placed · copyright / back matter · word list matches grid · difficulty↔audience coherence + range summary.
+- **Print readiness** — single trim set · within KDP page limit · gutter (inside) margin per page-count table (`engine/kdp.js`) · images ≥ 300 DPI (`engine/imagesize.js`) · content inside the safe area.
+- **KDP listing metadata** (warnings) — description present · 7 keywords · 3 categories · reading age set (kids).
+
+**Still to come** (tracked below): the Content Quality checks (Claude API), cover-image DPI + cover-dimension checks, price-vs-breakeven, AI-disclosure completeness, per-item "Fix it" jumps, and server-side gate enforcement (today's gate is client-side — right for the local single-user tool, bypassable via direct API).
+
+---
+
+### Content Quality Checks (Claude API) — 🔲 future
 
 These checks use the Claude API to evaluate subjective quality. Run as a batch — one API call covers all text content in the book.
 

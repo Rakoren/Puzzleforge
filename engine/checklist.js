@@ -258,6 +258,23 @@ function runChecklist(book, opts = {}) {
   add('back-matter', 'Back matter present', 'warning', hasBack,
     'No back matter. An "about the author" or "more books" page adds polish and cross-promotion.');
 
+  // --- KDP listing metadata (entered at upload; warnings only — the interior
+  // file is still valid without them, but they gate discoverability/approval). ---
+  const md = book.metadata || {};
+  const listVals = (v) => (Array.isArray(v) ? v : String(v || '').split(/[\n,]+/)).map((s) => String(s).trim()).filter(Boolean);
+  add('meta-description', 'Listing description', 'warning', Boolean(String(md.description || '').trim()),
+    'No book description — KDP requires one at upload, and it drives Amazon discoverability. Add it in Listing details.');
+  const kw = listVals(md.keywords);
+  add('meta-keywords', '7 keywords filled', 'warning', kw.length >= 7,
+    `Only ${kw.length} of 7 keyword slots filled — empty slots waste free Amazon search reach.`);
+  const cats = listVals(md.categories);
+  add('meta-categories', '3 categories filled', 'warning', cats.length >= 3,
+    `Only ${cats.length} of 3 category slots filled — fill all three for better discoverability.`);
+  if (String(book.audience || '').toLowerCase() === 'kids') {
+    add('meta-reading-age', 'Reading age set (kids book)', 'warning', Boolean(String(md.readingAge || '').trim()),
+      'Kids book has no reading age — required for it to appear in age-filtered search on Amazon.');
+  }
+
   // --- Print readiness ---
   add('trim-consistent', 'Single trim size', 'blocker', Boolean(book.trimSize),
     'Book has no trim size set.');
