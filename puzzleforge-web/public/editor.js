@@ -17,6 +17,7 @@
     addText: $('addText'), addImage: $('addImage'), addTable: $('addTable'),
     tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
     tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
+    ctxTab: $('ctxTab'),
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
     mW: $('mW'), mH: $('mH'), mWField: $('mWField'), mHField: $('mHField'),
@@ -643,6 +644,7 @@
     const has = sels.length > 0; el.selNone.classList.toggle('hidden', has); el.selControls.classList.toggle('hidden', !has);
     const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isShape = one && one.kind === 'shape'; const isTable = one && one.kind === 'table'; const isEl = one && one.group === 'el';
     syncFontUI(one);
+    updateContextTab();
     if (!has) return;
     el.measurePanel.style.display = one ? '' : 'none';
     el.shapeProps.style.display = isShape ? '' : 'none';
@@ -1844,16 +1846,27 @@
     };
     tabs.forEach((t) => t.addEventListener('click', () => { if (t.dataset.tab !== 'format') ribbonPrevTab = t.dataset.tab; ribbonActivate(t.dataset.tab); }));
   }
-  // Reveal the contextual Format tab when an object is selected (like Publisher's
-  // contextual tabs); return to the previous tab when the selection clears. Don't
-  // steal focus from the Arrange tab, where align/order tools are used with a
-  // live selection.
-  function showFormatTab(has) {
-    if (!ribbonActivate) return;
+  // Contextual tab (Publisher-style): the Format tab is hidden from the strip
+  // until an object is selected, then it appears and relabels itself for the
+  // object type — Picture Format (image), Table, Text Box, or Drawing Tools
+  // (shape). It auto-activates on selection and returns to the previous tab when
+  // the selection clears. Selecting doesn't steal focus from the Arrange tab,
+  // where align/order tools are used against a live selection.
+  const CTX_LABELS = { image: 'Picture Format', table: 'Table', text: 'Text Box', shape: 'Drawing Tools' };
+  function updateContextTab() {
+    if (!ribbonActivate || !el.ctxTab) return;
+    const has = sels.length > 0;
+    const one = sels.length === 1 ? sels[0] : null;
     const active = document.querySelector('.rtab.active');
     const cur = active ? active.dataset.tab : 'home';
-    if (has) { if (cur !== 'format' && cur !== 'arrange') { ribbonPrevTab = cur; ribbonActivate('format'); } }
-    else if (cur === 'format') { ribbonActivate(ribbonPrevTab || 'home'); }
+    if (has) {
+      el.ctxTab.textContent = (one && CTX_LABELS[one.kind]) || 'Format';
+      el.ctxTab.classList.add('avail');
+      if (cur !== 'format' && cur !== 'arrange') { ribbonPrevTab = cur; ribbonActivate('format'); }
+    } else {
+      el.ctxTab.classList.remove('avail');
+      if (cur === 'format') ribbonActivate(ribbonPrevTab || 'home');
+    }
   }
 
   // --- theme (editor skin) ---

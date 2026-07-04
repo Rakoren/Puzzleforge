@@ -265,7 +265,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   color: var(--muted); cursor: pointer; border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; }
 .rtab:hover { background: #f1f3f9; color: var(--ink); }
 .rtab.active { color: var(--brand); background: var(--panel); border-color: var(--line); }
-.rtab-context { color: #b4690e; }
+/* Contextual tab (Publisher-style): hidden from the strip until the related
+   object is selected, then revealed with .avail. */
+.rtab-context { color: #b4690e; display: none; }
+.rtab-context.avail { display: inline-block; }
 .rtab-context.active { color: #b4690e; background: #fff7ee; border-color: #f0d8b8; }
 
 .ribbon-body { background: linear-gradient(#fbfbfd, #f3f4f8); min-height: 94px; padding: 8px 12px; overflow-x: auto; overflow-y: hidden; }
