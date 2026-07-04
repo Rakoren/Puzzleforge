@@ -5,24 +5,29 @@
   "main": "index.js",
   "type": "commonjs",
   "bin": {
-    "puzzleforge": "cli/index.js"
+    "puzzleforge": "cli/index.js",
+    "puzzleforge-mcp": "mcp/server.js"
   },
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "cli": "node cli/index.js"
+    "cli": "node cli/index.js",
+    "mcp": "node mcp/server.js"
   },
   "keywords": [
     "puzzle",
     "wordsearch",
     "kdp",
     "pdf",
-    "generator"
+    "generator",
+    "mcp"
   ],
   "author": "Rakoren",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "bad-words": "^3.0.4",
-    "puppeteer-core": "^22.0.0"
+    "puppeteer-core": "^22.0.0",
+    "zod": "^4.4.3"
   }
 }

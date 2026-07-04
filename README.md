@@ -132,6 +132,7 @@ themes/         word lists (word + clue + difficulty) and loader
 filters/        offensive.js (gate) + common-words.js
 config/         engine defaults (retry policy, thresholds, difficulty presets)
 cli/            single-puzzle CLI entry point
+mcp/            Model Context Protocol server (exposes the engine as tools)
 tests/          node:test suites
 ```
 
@@ -186,6 +187,39 @@ const words = require('./themes').selectWords(theme, { maxDifficulty: 2 });
 const puzzle = pf.generate({ type: 'wordsearch', theme: 'animals', words, difficulty: 1 });
 await pf.exportPdf(puzzle, { outPath: 'animals.pdf', trimSize: '8x10', answerKey: true });
 ```
+
+## MCP server
+
+PuzzleForge ships an [MCP](https://modelcontextprotocol.io) server so any MCP
+client — Claude Desktop, Cursor, or an agent — can drive the engine as tools. It
+wraps the same functions as the CLI and web app, so results are identical.
+
+```bash
+npm run mcp        # stdio transport (or: node mcp/server.js)
+```
+
+**Tools:** `list_puzzle_types`, `list_themes`, `list_trim_sizes`,
+`generate_puzzle`, `export_puzzle_pdf`, `assemble_book`, `export_book_pdf`.
+The `*_pdf` tools need a Chromium binary (set `PUPPETEER_EXECUTABLE_PATH` if it
+isn't auto-detected, or pass `executablePath`).
+
+Register it with a client, e.g. Claude Desktop's `claude_desktop_config.json`
+(or a project `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "puzzleforge": {
+      "command": "node",
+      "args": ["/absolute/path/to/puzzleforge/mcp/server.js"],
+      "env": { "PUPPETEER_EXECUTABLE_PATH": "/path/to/chrome" }
+    }
+  }
+}
+```
+
+Then ask the client things like *"generate a hard word ladder"* or *"assemble a
+50-page large-print word search book and export the PDF."*
 
 ## Tests
 
