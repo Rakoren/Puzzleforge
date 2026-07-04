@@ -268,7 +268,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .rtab-context { color: #b4690e; }
 .rtab-context.active { color: #b4690e; background: #fff7ee; border-color: #f0d8b8; }
 
-.ribbon-body { background: linear-gradient(#fbfbfd, #f3f4f8); min-height: 94px; padding: 8px 12px; overflow-x: auto; }
+.ribbon-body { background: linear-gradient(#fbfbfd, #f3f4f8); min-height: 94px; padding: 8px 12px; overflow-x: auto; overflow-y: hidden; }
 .ribbon-panel { display: none; align-items: stretch; }
 .ribbon-panel.active { display: flex; }
 .ribbon-inline { display: flex; }
@@ -535,8 +535,10 @@ body.theme-dark {
 .rdrop { position: relative; display: inline-flex; }
 .rdrop-btn { display: inline-flex; align-items: center; }
 .rdrop-caret { font-size: 10px; margin-left: 1px; }
-.rdrop-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 200; min-width: 200px;
-  background: var(--panel, #fff); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px rgba(20, 26, 45, .16); padding: 5px; }
+/* Fixed so the menu floats above the ribbon instead of being clipped by its
+   overflow (which would add an ugly scrollbar). Position is set in JS on open. */
+.rdrop-menu { position: fixed; z-index: 3000; min-width: 200px;
+  background: var(--panel, #fff); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(20, 26, 45, .20); padding: 5px; }
 .rdrop-menu[hidden] { display: none; }
 .rdrop-menu button { display: block; width: 100%; text-align: left; background: none; border: none;
   padding: 8px 12px; border-radius: 7px; font-size: 13px; color: var(--ink); cursor: pointer; white-space: nowrap; }

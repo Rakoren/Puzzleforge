@@ -276,13 +276,23 @@
   // --- Ribbon split-button dropdowns (Publisher-style) ---
   function initDropdowns() {
     const closeAll = (except) => document.querySelectorAll('.rdrop-menu').forEach((m) => { if (m !== except) { m.hidden = true; const b = m.parentElement.querySelector('.rdrop-btn'); if (b) b.setAttribute('aria-expanded', 'false'); } });
+    // Position a floating menu just under its button, kept on-screen.
+    const place = (btn, menu) => {
+      menu.hidden = false;
+      const r = btn.getBoundingClientRect(); const mw = menu.offsetWidth;
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - mw - 8));
+      menu.style.left = left + 'px'; menu.style.top = (r.bottom + 4) + 'px';
+    };
     document.querySelectorAll('.rdrop').forEach((drop) => {
       const btn = drop.querySelector('.rdrop-btn'); const menu = drop.querySelector('.rdrop-menu');
       if (!btn || !menu) return;
-      btn.addEventListener('click', (e) => { e.stopPropagation(); const open = menu.hidden; closeAll(); menu.hidden = !open; btn.setAttribute('aria-expanded', String(open)); });
+      btn.addEventListener('click', (e) => { e.stopPropagation(); const open = menu.hidden; closeAll(); if (open) { place(btn, menu); btn.setAttribute('aria-expanded', 'true'); } else { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); } });
       menu.addEventListener('click', (e) => { const it = e.target.closest('[data-act]'); if (!it) return; menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); handleDropAct(drop.id, it.dataset.act); });
     });
+    // A floating menu must close when the page shifts under it.
     document.addEventListener('click', () => closeAll());
+    window.addEventListener('resize', () => closeAll());
+    document.addEventListener('scroll', () => closeAll(), true);
   }
   function handleDropAct(dropId, act) {
     if (dropId === 'pageDrop') {
