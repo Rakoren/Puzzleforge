@@ -97,8 +97,8 @@ Implemented so far:
   **starter templates** + one-click KDP export bundle, Cover Builder, image tools
   (coloring / color-by-number / dot-to-dot), AI + manual theme generators, and a
   full **Page Editor** (MS-Publisher-style ribbon, master pages, two-page spreads,
-  tables, break-apart puzzles, My Books library + autosave, and a self-hosted LAN
-  team workspace).
+  tables, break-apart puzzles, scannable **QR codes**, My Books library +
+  autosave, and a self-hosted LAN team workspace).
 
 Not yet built (later phases): Tier 3 puzzle types (Word Ladder, Riddles, Word
 Wheel, …), QR/digital layer, and teacher-tool extras (worksheet builder, lesson

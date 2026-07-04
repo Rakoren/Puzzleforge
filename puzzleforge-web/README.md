@@ -228,8 +228,9 @@ PDF**, vector-sharp at 300 DPI.
   individually editable objects (the word list can convert to a table); the grid
   stays protected. Objects can be sent **behind** the puzzle.
 - **Free elements** — text boxes, images/clip art, **shapes** (rect / ellipse /
-  triangle / star / line + **speech & thought chat bubbles**), and **editable
-  multi-column tables**
+  triangle / star / line + **speech & thought chat bubbles**), **editable
+  multi-column tables**, and **QR codes** (link to any URL; encoded offline and
+  drawn as a crisp vector so it prints scannable at any size)
 - **Master pages** (page numbers / headers / repeating frames) and **two-page
   facing spreads**
 - **Desktop-publishing toolset** — undo/redo (Ctrl+Z/Y), zoom + rulers, numeric

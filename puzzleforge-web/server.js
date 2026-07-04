@@ -32,6 +32,13 @@ app.get('/element-html.js', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'engine', 'element-html.js'));
 });
 
+// QR encoder (qrcode-generator, MIT) served so the editor can build a QR's
+// module matrix client-side — the same library the engine uses, so an editor
+// QR matches a server-generated one.
+app.get('/qrcode-generator.js', (req, res) => {
+  res.sendFile(require.resolve('qrcode-generator'));
+});
+
 // Self-hosted LAN team workspace: shared roster, shared book library, live
 // comments. Zero external services — persists to ./data. Optional token auth
 // via PUZZLEFORGE_WORKSPACE_TOKEN.

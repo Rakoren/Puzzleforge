@@ -1083,7 +1083,7 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - 🔲 **Switchable editor "skins"** (future) — the layout model (`pageState`) is
   decoupled from the editor chrome, so a future setting could re-skin the editor
   to look/behave like MS Publisher, InDesign, Canva, etc. over the same data
-- **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner
+- **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner. *(Shipped: the QR foundation — `engine/qr.js` encodes offline via `qrcode-generator`; the shared `element-html.js` draws it as a crisp vector so it stays scannable at any print size; placeable/editable in the Page Editor as a QR element pointing at any URL, editor==PDF. Per-page hint/answer landing pages + book-level auto-QR still to come.)*
 - **ComfyUI visibility** — WebSocket progress display, live latent preview, workflow debug panel
 - **ComfyUI prompt helper** — Claude-powered prompt optimizer, context-aware per preset, positive + negative prompt output, "explain changes" toggle
 - **Publish Checklist** — pre-flight checklist with 🔴 blockers / 🟡 warnings / 🟢 passes, structural + KDP compliance checks (logic), content quality checks (Claude API), "Fix it" shortcuts per item, auto-runs on export. *(Shipped early: the structural/print logic checks — `engine/checklist.js`, "Run publish checklist" button in Book Builder, renders the book for an accurate page count. Claude content-quality checks, "Fix it" jumps, and auto-run-on-export still to come.)*

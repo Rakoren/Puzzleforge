@@ -189,8 +189,9 @@
         <div class="rgroup">
           <div class="rgroup-body">
             <button id="addTable" class="ghost" title="Insert a table (edit cells by double-clicking)">▦ Table</button>
+            <button id="addQr" class="ghost" title="Insert a QR code linking to a URL">▣ QR code</button>
           </div>
-          <div class="rgroup-name">Tables</div>
+          <div class="rgroup-name">Tables &amp; codes</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body wide">
@@ -404,6 +405,18 @@
               </label>
             </div>
             <div class="rgroup-name">Table</div>
+          </div>
+          <div class="rgroup" id="qrProps">
+            <div class="rgroup-body">
+              <label class="m qr-url"><span>Links to</span><input id="qrUrl" type="text" placeholder="https://…"></label>
+              <label class="m"><span>Level</span>
+                <select id="qrEcl" title="Error correction: higher survives more damage but is denser">
+                  <option value="L">L</option><option value="M" selected>M</option><option value="Q">Q</option><option value="H">H</option>
+                </select>
+              </label>
+              <label class="m"><span>Dark</span><input id="qrFg" type="color" value="#000000"></label>
+            </div>
+            <div class="rgroup-name">QR code</div>
           </div>
           <div class="rgroup">
             <div class="rgroup-body">
@@ -725,6 +738,7 @@
     </div>
   </div>
 
+  <script src="qrcode-generator.js"></script>
   <script src="element-html.js"></script>
   <script src="library.js"></script>
   <script src="editor.js"></script>

@@ -14,7 +14,8 @@
     undo: $('undo'), redo: $('redo'), zoomOut: $('zoomOut'), zoomIn: $('zoomIn'), zoomFit: $('zoomFit'), zoomLabel: $('zoomLabel'),
     zoom100: $('zoom100'), zoomWhole: $('zoomWhole'), zoomWidth: $('zoomWidth'),
     rulerToggle: $('rulerToggle'), navToggle: $('navToggle'), boundToggle: $('boundToggle'), editorMain: $('editorMain'), spreadToggle: $('spreadToggle'),
-    addText: $('addText'), addImage: $('addImage'), addTable: $('addTable'),
+    addText: $('addText'), addImage: $('addImage'), addTable: $('addTable'), addQr: $('addQr'),
+    qrProps: $('qrProps'), qrUrl: $('qrUrl'), qrEcl: $('qrEcl'), qrFg: $('qrFg'),
     tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
     tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
     ctxTab: $('ctxTab'),
@@ -642,13 +643,14 @@
   }
   function syncSelUI() {
     const has = sels.length > 0; el.selNone.classList.toggle('hidden', has); el.selControls.classList.toggle('hidden', !has);
-    const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isShape = one && one.kind === 'shape'; const isTable = one && one.kind === 'table'; const isEl = one && one.group === 'el';
+    const one = sels.length === 1 ? sels[0] : null; const isText = one && one.kind === 'text'; const isImg = one && one.kind === 'image'; const isShape = one && one.kind === 'shape'; const isTable = one && one.kind === 'table'; const isQr = one && one.kind === 'qr'; const isEl = one && one.group === 'el';
     syncFontUI(one);
     updateContextTab();
     if (!has) return;
     el.measurePanel.style.display = one ? '' : 'none';
     el.shapeProps.style.display = isShape ? '' : 'none';
     if (el.tableProps) el.tableProps.style.display = isTable ? '' : 'none';
+    if (el.qrProps) el.qrProps.style.display = isQr ? '' : 'none';
     el.mWField.style.display = isEl && !isTable ? '' : 'none'; el.mHField.style.display = isShape ? '' : 'none';
     el.flipH.style.display = isImg || isShape ? '' : 'none'; el.flipV.style.display = isImg || isShape ? '' : 'none'; el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
     el.hideObj.style.display = one && !isEl ? '' : 'none'; el.distH.style.display = sels.length >= 3 ? '' : 'none'; el.distV.style.display = sels.length >= 3 ? '' : 'none';
@@ -668,6 +670,11 @@
         el.tblBorder.value = /^#/.test(one.borderColor || '') ? one.borderColor : '#333333';
         el.tblHeaderFill.value = /^#/.test(one.headerFill || '') ? one.headerFill : '#eef1fe';
         el.tblHeader.checked = !!one.header;
+      }
+      if (isQr && el.qrUrl) {
+        el.qrUrl.value = one.url || '';
+        el.qrEcl.value = ['L', 'M', 'Q', 'H'].includes(one.ecl) ? one.ecl : 'M';
+        el.qrFg.value = /^#/.test(one.fg || '') ? one.fg : '#000000';
       }
     }
   }
@@ -929,6 +936,33 @@
       fontSize: 15, fontFamily: 'sans', color: '#222222', align: 'left',
     });
   }
+  // --- QR codes ---
+  // Encode a URL into a module matrix using the shared qrcode-generator lib
+  // (window.qrcode), the same encoder the engine uses — so the editor QR is
+  // byte-identical to a server-generated one.
+  function qrModules(text, ecl) {
+    try {
+      const qr = window.qrcode(0, ['L', 'M', 'Q', 'H'].includes(ecl) ? ecl : 'M');
+      qr.addData(String(text == null ? '' : text));
+      qr.make();
+      const n = qr.getModuleCount(); const mods = [];
+      for (let r = 0; r < n; r++) { const row = []; for (let c = 0; c < n; c++) row.push(qr.isDark(r, c) ? 1 : 0); mods.push(row); }
+      return mods;
+    } catch (_) { return []; }
+  }
+  function addQr() {
+    const url = window.prompt('QR code links to (URL or text):', 'https://');
+    if (url == null) return;
+    const ecl = 'M';
+    addElement({
+      group: 'el', id: uid++, kind: 'qr',
+      x: Math.round(dims.usableWidth / 2 - 70), y: Math.round(dims.usableHeight / 2 - 70),
+      scale: 1, rot: 0, z: 100, w: 140, url: url.trim(), ecl, fg: '#000000', bg: '#ffffff',
+      modules: qrModules(url.trim(), ecl),
+    });
+  }
+  const selQr = () => { const o = sels.length === 1 && sels[0]; return o && o.kind === 'qr' ? o : null; };
+  function reencodeQr(q) { q.modules = qrModules(q.url, q.ecl); q._node.innerHTML = elHtml(q); requestAnimationFrame(drawSel); }
   const selTable = () => { const o = sels.length === 1 && sels[0]; return o && o.kind === 'table' ? o : null; };
   function ensureCells(t) {
     if (!Array.isArray(t.cells)) t.cells = [];
@@ -1852,7 +1886,7 @@
   // (shape). It auto-activates on selection and returns to the previous tab when
   // the selection clears. Selecting doesn't steal focus from the Arrange tab,
   // where align/order tools are used against a live selection.
-  const CTX_LABELS = { image: 'Picture Format', table: 'Table', text: 'Text Box', shape: 'Drawing Tools' };
+  const CTX_LABELS = { image: 'Picture Format', table: 'Table', text: 'Text Box', shape: 'Drawing Tools', qr: 'QR Code' };
   function updateContextTab() {
     if (!ribbonActivate || !el.ctxTab) return;
     const has = sels.length > 0;
@@ -1927,6 +1961,11 @@
     if (el.tblBorder) el.tblBorder.addEventListener('input', () => { const t = selTable(); if (t) { t.borderColor = el.tblBorder.value; redrawTable(t); } });
     if (el.tblHeaderFill) el.tblHeaderFill.addEventListener('input', () => { const t = selTable(); if (t) { t.headerFill = el.tblHeaderFill.value; redrawTable(t); } });
     if (el.tblHeader) el.tblHeader.addEventListener('change', () => { const t = selTable(); if (t) { pushUndo(); t.header = el.tblHeader.checked; redrawTable(t); } });
+    // QR codes
+    if (el.addQr) el.addQr.addEventListener('click', addQr);
+    if (el.qrUrl) el.qrUrl.addEventListener('change', () => { const q = selQr(); if (q) { pushUndo(); q.url = el.qrUrl.value.trim(); reencodeQr(q); } });
+    if (el.qrEcl) el.qrEcl.addEventListener('change', () => { const q = selQr(); if (q) { pushUndo(); q.ecl = el.qrEcl.value; reencodeQr(q); } });
+    if (el.qrFg) el.qrFg.addEventListener('input', () => { const q = selQr(); if (q) { q.fg = el.qrFg.value; q._node.innerHTML = elHtml(q); requestAnimationFrame(drawSel); } });
     el.groupBtn.addEventListener('click', groupSel); el.ungroupBtn.addEventListener('click', ungroupSel);
     el.borderAll.addEventListener('click', () => { pageModels.forEach((pm) => { pm._border = el.border.value; }); setStatus(el.border.value ? 'Border applied to all pages.' : 'Border override cleared on all pages.', 'ok'); });
     el.mX.addEventListener('change', () => setMeasure('x', Number(el.mX.value) || 0));

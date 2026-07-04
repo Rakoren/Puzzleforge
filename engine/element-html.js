@@ -137,12 +137,39 @@
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;${fx}">${body}</svg>`;
   }
 
+  // A QR code drawn from its stored module matrix (see engine/qr.js). Pure —
+  // no encoder here — so the same matrix renders identically in the editor and
+  // the PDF. `crispEdges` keeps the modules sharp at any print size.
+  function qrSvg(e) {
+    const mods = Array.isArray(e.modules) ? e.modules : [];
+    const n = mods.length;
+    const w = Math.max(24, num(e.w, 140));
+    if (!n) {
+      // No data yet — a placeholder box so the object is still visible/selectable.
+      return `<svg width="${w}" height="${w}" viewBox="0 0 10 10" style="display:block"><rect width="10" height="10" fill="#f0f0f0" stroke="#bbb" stroke-width="0.2"/></svg>`;
+    }
+    const quiet = 4; // standard QR quiet zone
+    const dim = n + quiet * 2;
+    const fg = color(e.fg, '#000000');
+    const bg = e.bg === 'none' ? 'none' : color(e.bg, '#ffffff');
+    let rects = '';
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (mods[r][c]) rects += `<rect x="${c + quiet}" y="${r + quiet}" width="1" height="1"/>`;
+      }
+    }
+    return `<svg width="${w}" height="${w}" viewBox="0 0 ${dim} ${dim}" shape-rendering="crispEdges" style="display:block">`
+      + (bg === 'none' ? '' : `<rect width="${dim}" height="${dim}" fill="${bg}"/>`)
+      + `<g fill="${fg}">${rects}</g></svg>`;
+  }
+
   /**
    * Render a free element's inner HTML (unpositioned — the caller wraps it and
    * applies the translate/rotate/scale transform).
    */
   function elementHtml(e) {
     if (!e) return '';
+    if (e.kind === 'qr') return qrSvg(e);
     if (e.kind === 'image') {
       if (typeof e.src !== 'string' || !e.src.startsWith('data:')) return '';
       const fx = e.flipH || e.flipV ? `transform:scale(${e.flipH ? -1 : 1},${e.flipV ? -1 : 1});` : '';
