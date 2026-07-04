@@ -19,7 +19,7 @@
     openEditor: $('openEditor'),
     theme: $('theme'),
     themeFilter: $('themeFilter'),
-    answerKey: $('answerKey'),
+    answerKey: $('answerKey'), perPageDifficulty: $('perPageDifficulty'),
     uniqueWords: $('uniqueWords'),
     shuffle: $('shuffle'),
     pageNumbers: $('pageNumbers'),
@@ -211,7 +211,26 @@
     // No title page here — it's added in the editor. Cover/matter pages are too.
     const pages = total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0);
     const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
-    el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (puzzles + answer key; add title & matter in the editor)`;
+    const diff = diffRangeLabel();
+    el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages${diff ? ` · Difficulty: ${diff}` : ''} (puzzles + answer key; add title & matter in the editor)`;
+  }
+
+  // The book's difficulty range, labelled for the audience (from /api/meta).
+  const ACTIVITY_ROW = new Set(['coloring', 'drawing', 'bleedguard', 'breather']);
+  function diffRangeLabel() {
+    const kids = String(el.audience.value).toLowerCase() === 'kids';
+    const opts = (meta && meta.difficulty && (kids ? meta.difficulty.kids : meta.difficulty.adult)) || [];
+    if (!opts.length) return '';
+    const labelFor = (lv) => { const o = opts.find((x) => x.value === lv); return o ? o.label : `L${lv}`; };
+    const levels = new Set();
+    for (const r of rows) {
+      if (ACTIVITY_ROW.has(r.type)) continue;
+      String(r.difficulty || '1').split('-').forEach((x) => { const n = parseInt(x, 10); if (n >= 1 && n <= 4) levels.add(n); });
+    }
+    if (!levels.size) return '';
+    const arr = [...levels].sort();
+    const min = arr[0], max = arr[arr.length - 1];
+    return min === max ? labelFor(min) : `${labelFor(min)} to ${labelFor(max)}`;
   }
 
   // Invalidate the cached/built book when settings change.
@@ -296,6 +315,7 @@
       theme: el.theme.value,
       titlePage: false, // title page is added in the Page Editor (Title Page template)
       answerKey: el.answerKey.checked,
+      perPageDifficulty: el.perPageDifficulty.checked,
       uniqueWords: el.uniqueWords.checked,
       shuffle: el.shuffle.checked,
       pageNumbers: el.pageNumbers.checked,
@@ -614,6 +634,7 @@
     el.uniqueWords.checked = cfg.uniqueWords === true;
     el.shuffle.checked = cfg.shuffle === true;
     el.pageNumbers.checked = cfg.pageNumbers === true;
+    el.perPageDifficulty.checked = cfg.perPageDifficulty === true;
     el.footerText.value = cfg.footerText || '';
     // Preserve any matter this recipe carried (edited in the Page Editor now).
     carriedMatter = {};
@@ -756,8 +777,10 @@
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.fontScale, el.fontFamily, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );
-    // Switching audience relabels every row's difficulty (kids ages ↔ Easy…Expert).
-    el.audience.addEventListener('change', renderRows);
+    el.perPageDifficulty.addEventListener('change', invalidate);
+    // Switching audience relabels every row's difficulty (kids ages ↔ Easy…Expert)
+    // and the difficulty range in the summary.
+    el.audience.addEventListener('change', () => { renderRows(); updateSummary(); });
     setupTemplates();
   }
 

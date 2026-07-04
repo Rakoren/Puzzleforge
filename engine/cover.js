@@ -127,6 +127,7 @@ function renderCoverHtml(config = {}) {
     text-align: center; ${textShadow} }
   .front h1 { font-size: 46pt; line-height: 1.1; margin: 0; }
   .front .sub { font-size: 20pt; margin: 14pt 0 0; opacity: .95; }
+  .front .cover-diff { font-size: 15pt; font-weight: 600; margin: 12pt 0 0; letter-spacing: .3px; opacity: .95; }
   .front .author { font-size: 18pt; margin: 28pt 0 0; }
   .back .blurb { font-size: 12.5pt; line-height: 1.5; white-space: pre-wrap; max-width: 100%; }
   .back .back-author { position: absolute; bottom: ${pad}in; left: ${BLEED_IN + 0.2}in; font-size: 12pt; }
@@ -145,6 +146,7 @@ function renderCoverHtml(config = {}) {
     <div class="panel front">
       ${config.title ? `<h1>${esc(config.title)}</h1>` : ''}
       ${config.subtitle ? `<div class="sub">${esc(config.subtitle)}</div>` : ''}
+      ${config.difficulty ? `<div class="cover-diff">${esc(config.difficulty)}</div>` : ''}
       ${config.author ? `<div class="author">${esc(config.author)}</div>` : ''}
     </div>
   </div>

@@ -9,6 +9,7 @@
     paper: $('paper'),
     title: $('title'),
     subtitle: $('subtitle'),
+    difficulty: $('difficulty'),
     author: $('author'),
     frontBg: $('frontBg'),
     frontText: $('frontText'),
@@ -47,6 +48,7 @@
       paper: el.paper.value,
       title: el.title.value.trim() || null,
       subtitle: el.subtitle.value.trim() || null,
+      difficulty: el.difficulty.value.trim() || null,
       author: el.author.value.trim() || null,
       front: {
         bgColor: el.frontBg.value,

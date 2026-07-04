@@ -59,6 +59,55 @@ function difficultyLabel(level, audience, opts = {}) {
   return `${t.label} · Ages ${t.ages} · ${t.grade}`;
 }
 
+// First / last number in an age string like "8–10".
+const ageLo = (s) => (s || '').split('–')[0];
+const ageHi = (s) => (s || '').split('–')[1] || (s || '').split('–')[0];
+
+/**
+ * A human range label spanning min→max level for an audience.
+ *   adult, same    → "Hard"
+ *   adult, range   → "Easy to Hard"
+ *   kids, same     → "Growing Reader (Ages 8–10)"
+ *   kids, range    → "Beginner to Growing Reader (Ages 4–10)"
+ */
+function rangeLabel(min, max, audience) {
+  const lo = difficultyTier(min, audience);
+  const hi = difficultyTier(max, audience);
+  if (isKids(audience)) {
+    const ages = min === max ? lo.ages : `${ageLo(lo.ages)}–${ageHi(hi.ages)}`;
+    const name = min === max ? lo.label : `${lo.label} to ${hi.label}`;
+    return `${name} (Ages ${ages})`;
+  }
+  return min === max ? lo.label : `${lo.label} to ${hi.label}`;
+}
+
+/** Compact per-page badge text: adults get a 4-star rating + label; kids the tier + age. */
+function badgeText(level, audience) {
+  const lv = clampLevel(level);
+  const t = difficultyTier(lv, audience);
+  if (isKids(audience)) return `${t.label} · ${t.ages}`;
+  return `${'★'.repeat(lv)}${'☆'.repeat(4 - lv)} ${t.label}`;
+}
+
+/**
+ * Summarize a list of puzzle levels for a book: range, per-level counts, and a
+ * ready-to-print range label. Levels out of 1–4 are clamped.
+ */
+function summarizeLevels(levels, audience) {
+  const clean = (levels || []).map(clampLevel);
+  if (!clean.length) return { count: 0, levels: [], min: null, max: null, counts: {}, single: true, rangeLabel: '' };
+  const min = Math.min(...clean);
+  const max = Math.max(...clean);
+  const counts = {};
+  clean.forEach((l) => { counts[l] = (counts[l] || 0) + 1; });
+  return {
+    count: clean.length,
+    levels: [...new Set(clean)].sort((a, b) => a - b),
+    min, max, counts, single: min === max,
+    rangeLabel: rangeLabel(min, max, audience),
+  };
+}
+
 /** Option list for a UI select, one entry per level, labelled for the audience. */
 function levelOptions(audience) {
   return LEVELS.map((lv) => {
@@ -67,4 +116,8 @@ function levelOptions(audience) {
   });
 }
 
-module.exports = { LEVELS, ADULT, KIDS, KIDS_LEXILE, clampLevel, isKids, difficultyTier, difficultyLabel, levelOptions };
+module.exports = {
+  LEVELS, ADULT, KIDS, KIDS_LEXILE, clampLevel, isKids,
+  difficultyTier, difficultyLabel, levelOptions,
+  rangeLabel, badgeText, summarizeLevels,
+};

@@ -24,6 +24,7 @@
 const { generate } = require('./generate');
 const { withSeed } = require('./rng');
 const { isActivityType } = require('../generators/registry');
+const { summarizeLevels } = require('../config/difficulty');
 const themes = require('../themes');
 const breatherContent = require('../content/breathers');
 
@@ -405,6 +406,7 @@ function buildBook(config, opts, seed, rand) {
     trimSize,
     audience,
     metadata: config.metadata && typeof config.metadata === 'object' ? config.metadata : null, // KDP listing metadata (kept for pre-flight checks)
+    perPageDifficulty: config.perPageDifficulty === true, // print a difficulty label on each puzzle page
     answerKey,
     titlePage, // whether an auto title page leads the book (off = template-driven)
     pageNumbers: config.pageNumbers === true, // footer page numbers on content pages
@@ -428,6 +430,8 @@ function buildBook(config, opts, seed, rand) {
       byType,
       uniqueWords,
       difficultyCurve: curve,
+      // Difficulty spread across the real puzzles, labelled for the audience.
+      difficulty: summarizeLevels(ordered.filter((p) => !isActivityType(p.type)).map((p) => p.difficulty), audience),
       ...(usedWords ? { distinctWords: usedWords.size } : {}),
     },
   };

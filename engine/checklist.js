@@ -13,6 +13,7 @@
 const { isActivityType } = require('../generators/registry');
 const { getLayout } = require('../layouts');
 const { gutterMinInches, KDP_PAGE_MAX } = require('./kdp');
+const { difficultyTier } = require('../config/difficulty');
 
 // All user-authored text on the pages (template / matter text objects), lowercased.
 // Lets matter checks work whether copyright came from a Book Builder field or an
@@ -153,6 +154,15 @@ function runChecklist(book, opts = {}) {
   // contradicts it, so the printed/listed labels stay coherent.
   const da = difficultyAudienceIssue(book);
   add('difficulty-audience', 'Difficulty labels match audience', 'warning', !da, da || '');
+
+  // Informational: the book's difficulty range + per-level spread.
+  const ds = book.meta && book.meta.difficulty;
+  if (ds && ds.count) {
+    const dist = ds.levels
+      .map((lv) => `${difficultyTier(lv, book.audience).label} ${ds.counts[lv]}`)
+      .join(' · ');
+    add('difficulty-range', `Difficulty: ${ds.rangeLabel} — ${dist}`, 'warning', true, '');
+  }
 
   if (book.answerKey) {
     add('key-present', 'Answer key present', 'blocker', realPuzzles.length > 0,

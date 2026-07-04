@@ -71,3 +71,50 @@ test('checklist flags an audience/reading-age mismatch and passes when coherent'
   const kids = assembleBook({ ...base, audience: 'kids', metadata: { readingAge: '6-9' } });
   assert.equal(item(kids).status, 'pass');
 });
+
+test('summarizeLevels reports range, counts, and a label', () => {
+  const s = diff.summarizeLevels([1, 3, 3, 2], 'adult');
+  assert.equal(s.min, 1);
+  assert.equal(s.max, 3);
+  assert.deepEqual(s.counts, { 1: 1, 2: 1, 3: 2 });
+  assert.equal(s.rangeLabel, 'Easy to Hard');
+  assert.equal(diff.summarizeLevels([2, 2], 'adult').rangeLabel, 'Medium');
+  assert.match(diff.summarizeLevels([1, 3], 'kids').rangeLabel, /Beginner to Growing Reader \(Ages 4–10\)/);
+});
+
+test('badgeText: adult stars, kids tier + age', () => {
+  assert.equal(diff.badgeText(2, 'adult'), '★★☆☆ Medium');
+  assert.equal(diff.badgeText(4, 'adult'), '★★★★ Expert');
+  assert.equal(diff.badgeText(3, 'kids'), 'Growing Reader · 8–10');
+});
+
+test('assembled book carries a difficulty summary and can label each page', () => {
+  const { renderBookHtml } = require('../engine/export');
+  const book = assembleBook({
+    title: 'Mixed', puzzleforgeBook: 1, trimSize: '8.5x11', audience: 'adult', answerKey: false,
+    perPageDifficulty: true, puzzles: [{ type: 'sudoku', count: 1, difficulty: '1' }, { type: 'sudoku', count: 1, difficulty: '3' }], seed: 2,
+  });
+  assert.equal(book.meta.difficulty.min, 1);
+  assert.equal(book.meta.difficulty.max, 3);
+  assert.equal(book.meta.difficulty.rangeLabel, 'Easy to Hard');
+  const html = renderBookHtml(book);
+  assert.match(html, /pf-difficulty/); // per-page badge injected
+  assert.ok((html.match(/★/g) || []).length >= 4);
+});
+
+test('checklist reports the difficulty range as an info row', () => {
+  const book = assembleBook({
+    title: 'B', puzzleforgeBook: 1, trimSize: '8.5x11', audience: 'adult', answerKey: true,
+    puzzles: [{ type: 'sudoku', count: 2, difficulty: '2' }],
+  });
+  const item = runChecklist(book).items.find((i) => i.id === 'difficulty-range');
+  assert.ok(item && item.status === 'pass');
+  assert.match(item.label, /Difficulty: Medium/);
+});
+
+test('cover renders optional difficulty text on the front', () => {
+  const { renderCoverHtml } = require('../engine/cover');
+  const cover = renderCoverHtml({ trimSize: '8.5x11', pageCount: 100, title: 'X', difficulty: 'Easy to Hard · Large Print' });
+  assert.match(cover.html, /cover-diff/);
+  assert.match(cover.html, /Easy to Hard · Large Print/);
+});

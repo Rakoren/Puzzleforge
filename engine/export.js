@@ -16,6 +16,7 @@ const path = require('path');
 const { getModule, isActivityType } = require('../generators/registry');
 const { getLayout } = require('../layouts');
 const { frameSvg } = require('./decor');
+const difficulty = require('../config/difficulty');
 const { composePage, splitHtml, composeParts } = require('./components');
 const {
   renderTitlePage,
@@ -116,6 +117,23 @@ function applyOverlay(doc, layout, svg) {
     `\n  .pf-overlay > svg { width: 100%; height: 100%; display: block; overflow: visible; }\n`;
   let out = doc.replace(/<\/style>/i, `${css}</style>`);
   out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-overlay">${svg}</div>`);
+  return out;
+}
+
+// A small difficulty label pinned to the top-right of a puzzle page (clear of
+// the centered title). Injected the same way as the border/overlay so it
+// travels through combinePages.
+function applyDifficultyBadge(doc, layout, text) {
+  if (!text) return doc;
+  const fs = Math.max(9, Math.round(layout.fontSize * 0.8));
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const css =
+    `\n  body { position: relative; }` +
+    `\n  .pf-difficulty { position: absolute; top: 0; right: 0; z-index: 6; font-family: ${layout.fontFamily};` +
+    ` font-size: ${fs}px; font-weight: 600; color: #444; background: #f4f4f4; border: 1px solid #ccc;` +
+    ` border-radius: 5px; padding: 2px 8px; white-space: nowrap; }\n`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-difficulty">${esc(text)}</div>`);
   return out;
 }
 
@@ -348,9 +366,15 @@ function renderLeafDoc(book, layout, styleOpts, leaf) {
 
   if (leaf.role === 'content') {
     const puzzle = leaf.puzzle;
-    if (st.layout) return withBorder(composePage(puzzle, layout, st.layout));
     const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
-    return renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay });
+    let doc = st.layout
+      ? withBorder(composePage(puzzle, layout, st.layout))
+      : renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay });
+    // Optional per-page difficulty label (real puzzles only).
+    if (book.perPageDifficulty && !isActivityType(puzzle.type)) {
+      doc = applyDifficultyBadge(doc, layout, difficulty.badgeText(puzzle.difficulty, book.audience));
+    }
+    return doc;
   }
   // Title / front matter / answer key / back matter.
   let doc = renderMatterDoc(book, layout, leaf);

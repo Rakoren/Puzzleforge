@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (91 tests passing)
+### Engine (96 tests passing)
 
 **12 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -88,6 +88,11 @@ Internal engine levels are **1–4**; the labels shown to buyers depend on the b
 - **Audience-aware labels in the UI** — the Kids/Adult toggle swaps the label set; the internal value never changes. Teacher tool (Puzzle Maker) shows age + grade; the Book Builder shows both sets (Easy…Expert for adults, tier + age band for kids) with cross-tier ranges (e.g. Hard–Expert).
 - Kids vocabulary targets these Lexile bands: Beginner BR–200L, Early Reader 200–500L, Growing Reader 500–820L, Independent 820–1100L.
 - **Publish Checklist** flags when the audience is unset or the listing's reading age contradicts it (e.g. a Kids book tagged "Adult").
+
+**Displaying difficulty** (all off a shared descriptor — `config/difficulty.js` `summarizeLevels` + `book.meta.difficulty`; levels are known by construction, not estimated):
+- **Per-page label** — optional badge printed in the top-right of each puzzle page (adults: ★-rating + label; kids: tier + age). Toggle in the Book Builder ("Label each page with its difficulty"); injected in `engine/export.js` like the border overlay so it prints vector-sharp.
+- **Book difficulty summary** — the range + per-level spread ("Easy to Hard — Easy 4 · Medium 6 · Hard 2") shown live in the Book Builder summary and as an info row in the Publish Checklist.
+- **Cover difficulty text** — an optional line on the front cover ("Easy to Hard · Large Print") for Amazon discoverability; a field in the Cover Builder.
 
 ### Layout & Export System ✅
 

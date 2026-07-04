@@ -60,7 +60,7 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (91 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (96 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
@@ -100,9 +100,10 @@ Implemented so far:
   tables, break-apart puzzles, scannable **QR codes**, My Books library +
   autosave, and a self-hosted LAN team workspace).
 
-Not yet built (later phases): Tier 3 puzzle types (Word Ladder, Riddles, Word
-Wheel, …), QR/digital layer, and teacher-tool extras (worksheet builder, lesson
-packets). See [`PRD.md`](./PRD.md) for the full roadmap.
+Not yet built (later phases): more Tier 3 puzzle types (Riddles, Word Wheel, …),
+the QR digital layer (hosted hint/answer landing pages — the placeable QR
+foundation is done), and teacher-tool extras (worksheet builder, lesson packets).
+See [`PRD.md`](./PRD.md) for the full roadmap.
 
 ## Architecture
 
