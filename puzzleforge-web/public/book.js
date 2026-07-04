@@ -77,10 +77,18 @@
     crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz', logicgrid: 'Logic Grid', wordladder: 'Word Ladder',
     coloring: 'Coloring Page', drawing: 'Drawing Page', bleedguard: 'Blank (bleed guard)',
   };
-  const DIFFICULTIES = [
-    ['1', 'Easy'], ['2', 'Medium'], ['3', 'Hard'],
-    ['1-2', 'Easy–Med'], ['2-3', 'Med–Hard'], ['1-3', 'Mixed'],
-  ];
+  // Per-row difficulty options, labelled for the book's audience (Kids show the
+  // age band; Adult uses Easy…Expert). Internal values (1–4 and ranges) never
+  // change. Populated from /api/meta once loaded.
+  function diffOptions() {
+    const kids = String(el.audience.value).toLowerCase() === 'kids';
+    const singles = ((meta && meta.difficulty && (kids ? meta.difficulty.kids : meta.difficulty.adult)) || [])
+      .map((o) => [String(o.value), kids ? `${o.label} (${o.ages})` : o.label]);
+    const ranges = kids
+      ? [['1-2', 'Beginner–Early'], ['2-3', 'Early–Growing'], ['3-4', 'Growing–Independent'], ['1-3', 'Mixed']]
+      : [['1-2', 'Easy–Med'], ['2-3', 'Med–Hard'], ['3-4', 'Hard–Expert'], ['1-3', 'Mixed']];
+    return singles.length ? [...singles, ...ranges] : [['1', 'Easy'], ['2', 'Medium'], ['3', 'Hard']];
+  }
 
   let meta = null;
   let rows = []; // [{ type, count, difficulty }]
@@ -131,7 +139,7 @@
       count.addEventListener('input', () => { row.count = Number(count.value) || 1; invalidate(); updateSummary(); });
 
       const diff = document.createElement('select');
-      for (const [v, label] of DIFFICULTIES) {
+      for (const [v, label] of diffOptions()) {
         const o = document.createElement('option');
         o.value = v;
         o.textContent = label;
@@ -748,6 +756,8 @@
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.fontScale, el.fontFamily, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );
+    // Switching audience relabels every row's difficulty (kids ages ↔ Easy…Expert).
+    el.audience.addEventListener('change', renderRows);
     setupTemplates();
   }
 

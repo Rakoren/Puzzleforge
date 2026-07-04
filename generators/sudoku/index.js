@@ -60,7 +60,9 @@ function buildSolution(rand) {
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
   const preset = DIFFICULTY.sudoku[difficulty] || DIFFICULTY.sudoku[1];
-  const symmetric = config.symmetric !== false;
+  // Symmetry: the caller can force it, else the tier decides (Expert drops it to
+  // dig deeper).
+  const symmetric = config.symmetric != null ? config.symmetric : preset.symmetric !== false;
 
   const solution = buildSolution(rand);
   const givens = cloneGrid(solution);

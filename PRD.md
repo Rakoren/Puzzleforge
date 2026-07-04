@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (78 tests passing)
+### Engine (91 tests passing)
 
 **12 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -72,6 +72,22 @@ Planned split (future):
 - Solver-verified answer keys
 - Per-type quality thresholds
 - Non-bypassable offensive content filter (offensive-aware fill + word-aware scan — fixed false positives on legit words like RACCOON, PEACOCK)
+
+### Difficulty System ✅
+
+Internal engine levels are **1–4**; the labels shown to buyers depend on the book's **audience** (`config/difficulty.js` is the single source of truth):
+
+| Level | Adult label | Kids label | Ages | Grade |
+|---|---|---|---|---|
+| 1 | Easy | Beginner | 4–6 | Pre-K – K |
+| 2 | Medium | Early Reader | 6–8 | Grades 1–2 |
+| 3 | Hard | Growing Reader | 8–10 | Grades 3–4 |
+| 4 | **Expert** | Independent | 10–12 | Grades 5–6 |
+
+- **Expert (level 4)** added across every playable type (`config/defaults.js` presets): Word Search grows to 20×20+ (tier `minSize` floor), Sudoku digs deeper by dropping 180° symmetry (~24 givens vs ~28 at Hard; 17 is aspirational), Maze 25×33, and the rest scale count / length / vocabulary. Nonogram Expert stays 15×15 (a 20×20 unique-solution search costs ~8s/puzzle).
+- **Audience-aware labels in the UI** — the Kids/Adult toggle swaps the label set; the internal value never changes. Teacher tool (Puzzle Maker) shows age + grade; the Book Builder shows both sets (Easy…Expert for adults, tier + age band for kids) with cross-tier ranges (e.g. Hard–Expert).
+- Kids vocabulary targets these Lexile bands: Beginner BR–200L, Early Reader 200–500L, Growing Reader 500–820L, Independent 820–1100L.
+- **Publish Checklist** flags when the audience is unset or the listing's reading age contradicts it (e.g. a Kids book tagged "Adult").
 
 ### Layout & Export System ✅
 

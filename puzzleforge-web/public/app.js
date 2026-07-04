@@ -200,9 +200,10 @@
   function applyRecipe(recipe) {
     if (!recipe) return;
     if (recipe.type) el.type.value = recipe.type;
+    if (recipe.audience) el.audience.value = recipe.audience;
+    populateDifficulty(el.audience.value); // relabel before restoring the level
     if (recipe.difficulty) el.difficulty.value = String(recipe.difficulty);
     if (recipe.trimSize) el.trimSize.value = recipe.trimSize;
-    if (recipe.audience) el.audience.value = recipe.audience;
     if (recipe.fontScale) el.fontScale.value = String(recipe.fontScale);
     if (recipe.fontFamily) el.fontFamily.value = recipe.fontFamily;
     if (recipe.border) el.border.value = recipe.border;
@@ -377,7 +378,27 @@
     el.diffSet.disabled = false;
     el.classSet.disabled = false;
 
+    populateDifficulty(el.audience.value);
+    el.audience.addEventListener('change', () => populateDifficulty(el.audience.value));
+
     syncWordControls();
+  }
+
+  // Difficulty labels depend on the audience (Kids → age + grade; Adult →
+  // Easy…Expert). The internal 1–4 value never changes.
+  function populateDifficulty(audience) {
+    if (!el.difficulty || !meta.difficulty) return;
+    const kids = String(audience).toLowerCase() === 'kids';
+    const opts = kids ? meta.difficulty.kids : meta.difficulty.adult;
+    const prev = el.difficulty.value;
+    el.difficulty.innerHTML = '';
+    for (const o of opts) {
+      const opt = document.createElement('option');
+      opt.value = String(o.value);
+      opt.textContent = kids ? `${o.label} · Ages ${o.ages} · ${o.grade}` : `${o.value} — ${o.label}`;
+      el.difficulty.appendChild(opt);
+    }
+    el.difficulty.value = opts.some((o) => String(o.value) === prev) ? prev : '1';
   }
 
   // Build a theme <select> grouped by category (<optgroup>).

@@ -40,17 +40,25 @@ const DIFFICULTY = {
   //   isolated — no shared letters and a 1-cell buffer (words never touch)
   //   noCross  — no shared letters, but words may sit next to each other
   //   dense    — words may cross on shared letters (hardest to scan)
+  // `minSize` sets a floor on the grid dimension per tier (Easy 10×10 →
+  // Expert 20×20+); the generator still grows the grid if the word list needs
+  // more room.
   wordsearch: {
-    1: { directions: 'orthogonal', allowBackwards: false, minWordLen: 3, separation: 'isolated' },
-    2: { directions: 'diagonal', allowBackwards: false, minWordLen: 3, separation: 'noCross' },
-    3: { directions: 'diagonal', allowBackwards: true, minWordLen: 3, separation: 'dense' },
+    1: { directions: 'orthogonal', allowBackwards: false, minWordLen: 3, separation: 'isolated', minSize: 10 },
+    2: { directions: 'diagonal', allowBackwards: false, minWordLen: 3, separation: 'noCross', minSize: 12 },
+    3: { directions: 'diagonal', allowBackwards: true, minWordLen: 3, separation: 'dense', minSize: 15 },
+    4: { directions: 'diagonal', allowBackwards: true, minWordLen: 3, separation: 'dense', minSize: 20 },
   },
   // Sudoku givens targets per difficulty. `target` is what generation aims for;
   // `minGivens` is the validation floor (a puzzle must keep at least this many).
   sudoku: {
     1: { label: 'easy', target: 36, minGivens: 34 },
-    2: { label: 'medium', target: 30, minGivens: 27 },
+    2: { label: 'medium', target: 28, minGivens: 26 },
     3: { label: 'hard', target: 24, minGivens: 22 },
+    // Expert digs as deep as a unique solution allows (17 is the theoretical
+    // floor). Dropping the 180° symmetry lets the digger remove single cells and
+    // reach far fewer givens than the symmetric tiers.
+    4: { label: 'expert', target: 20, minGivens: 17, symmetric: false },
   },
   // Maze grid dimensions (cells) per difficulty. `braid` removes a fraction of
   // dead ends (0 = perfect maze, single solution).
@@ -58,6 +66,7 @@ const DIFFICULTY = {
     1: { label: 'easy', width: 10, height: 10 },
     2: { label: 'medium', width: 15, height: 15 },
     3: { label: 'hard', width: 20, height: 25 },
+    4: { label: 'expert', width: 25, height: 33 },
   },
   // Nonogram (picross) grid size per difficulty. `fill` is the target share of
   // filled cells in the hidden picture.
@@ -65,6 +74,10 @@ const DIFFICULTY = {
     1: { label: 'easy', size: 5, fill: 0.55 },
     2: { label: 'medium', size: 10, fill: 0.55 },
     3: { label: 'hard', size: 15, fill: 0.52 },
+    // A 20×20 nonogram is legit "expert" but its unique-solution search costs
+    // ~8s/puzzle — too slow for book assembly. Cap at the fast 15×15 with a
+    // denser fill instead.
+    4: { label: 'expert', size: 15, fill: 0.5 },
   },
   // Number Search: how many numbers, their digit length, directions, and
   // separation (mirrors word search).
@@ -72,12 +85,14 @@ const DIFFICULTY = {
     1: { count: 10, len: 3, directions: 'orthogonal', allowBackwards: false, separation: 'isolated' },
     2: { count: 12, len: 4, directions: 'diagonal', allowBackwards: false, separation: 'noCross' },
     3: { count: 14, len: 5, directions: 'diagonal', allowBackwards: true, separation: 'dense' },
+    4: { count: 16, len: 6, directions: 'diagonal', allowBackwards: true, separation: 'dense' },
   },
   // Trivia: how many questions per page and the max question difficulty drawn.
   trivia: {
     1: { count: 10, maxDifficulty: 1 },
     2: { count: 12, maxDifficulty: 2 },
     3: { count: 14, maxDifficulty: 3 },
+    4: { count: 16, maxDifficulty: 3 },
   },
   // Logic Grid: `items` is the grid size (people & values per category), `cats`
   // the number of categories (incl. the primary), `ordinal` allows one numeric
@@ -86,6 +101,9 @@ const DIFFICULTY = {
     1: { items: 4, cats: 3, ordinal: false, style: 'positive' },
     2: { items: 4, cats: 4, ordinal: true, style: 'mixed' },
     3: { items: 5, cats: 4, ordinal: true, style: 'hard' },
+    // Expert keeps the 5×4 grid (a 5th category explodes the solver) but uses
+    // the hardest clue mix.
+    4: { items: 5, cats: 4, ordinal: true, style: 'hard' },
   },
   // Word Ladder: `length` is the word length, `steps` the number of words in the
   // ladder (incl. both endpoints), and `style` how many letters are given
@@ -95,6 +113,7 @@ const DIFFICULTY = {
     1: { length: 3, steps: 4, style: 'guided' },
     2: { length: 4, steps: 5, style: 'some' },
     3: { length: 4, steps: 6, style: 'minimal' },
+    4: { length: 4, steps: 7, style: 'minimal' },
   },
 };
 

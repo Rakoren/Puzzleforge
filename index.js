@@ -42,6 +42,7 @@ const {
 const { listTypes, isActivityType } = require('./generators/registry');
 const { BORDER_STYLES } = require('./engine/decor');
 const offensive = require('./filters/offensive');
+const difficulty = require('./config/difficulty');
 
 module.exports = {
   generate,
@@ -87,4 +88,9 @@ module.exports = {
   themesDir: THEME_DIR,
   isOffensiveWord: offensive.isOffensiveWord,
   scanTextForOffensive: offensive.scanText,
+  // Difficulty labels/tiers (internal levels 1–4 → audience-specific labels).
+  difficultyLevels: difficulty.LEVELS,
+  difficultyTier: difficulty.difficultyTier,
+  difficultyLabel: difficulty.difficultyLabel,
+  difficultyOptions: difficulty.levelOptions,
 };

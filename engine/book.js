@@ -290,7 +290,7 @@ function buildBook(config, opts, seed, rand) {
   // Applied in generation order, which is the final reading order unless the
   // book is shuffled (a ramp assumes grouped order).
   const curve = DIFFICULTY_CURVES.has(config.difficultyCurve) ? config.difficultyCurve : null;
-  const flatLevel = Math.max(1, Math.min(3, Number(config.difficultyLevel) || 2));
+  const flatLevel = Math.max(1, Math.min(4, Number(config.difficultyLevel) || 2));
   const totalPuzzles = config.puzzles.reduce((sum, sp) => sum + (sp.count || 1), 0);
   let gIdx = 0;
 
@@ -404,6 +404,7 @@ function buildBook(config, opts, seed, rand) {
     author: config.author || null,
     trimSize,
     audience,
+    metadata: config.metadata && typeof config.metadata === 'object' ? config.metadata : null, // KDP listing metadata (kept for pre-flight checks)
     answerKey,
     titlePage, // whether an auto title page leads the book (off = template-driven)
     pageNumbers: config.pageNumbers === true, // footer page numbers on content pages

@@ -85,6 +85,26 @@ function hasSolution(p) {
   return Boolean(s && typeof s === 'object' && Object.keys(s).length > 0);
 }
 
+// Returns a warning message when the audience and the difficulty labeling are
+// incoherent, or null when they line up.
+function difficultyAudienceIssue(book) {
+  const audience = String(book.audience || '').toLowerCase();
+  if (audience !== 'kids' && audience !== 'adult') {
+    return 'No audience set — difficulty defaults to the Adult labels (Easy…Expert). Set Kids or Adult so buyers see the right labels (Kids show an age range).';
+  }
+  const ra = String((book.metadata && book.metadata.readingAge) || '').toLowerCase().trim();
+  if (!ra) return null;
+  const saysAdult = /adult|grown|18\s*\+/.test(ra);
+  const saysKid = /kid|child|pre-?k|grade|age/.test(ra) || /\b([2-9]|1[0-2])\b/.test(ra);
+  if (audience === 'kids' && saysAdult) {
+    return `Audience is Kids but the listing reading age says "${book.metadata.readingAge}". Kids books show age/grade difficulty labels — align the reading age or switch the audience.`;
+  }
+  if (audience === 'adult' && saysKid && !saysAdult) {
+    return `Audience is Adult but the reading age "${book.metadata.readingAge}" reads like a kids range. Adult books use Easy…Expert labels — switch to Kids or clear the reading age.`;
+  }
+  return null;
+}
+
 /**
  * @param {object} book assembled book (engine/book.js)
  * @param {object} [opts]
@@ -127,6 +147,12 @@ function runChecklist(book, opts = {}) {
     wlMiss.length
       ? `${wlTotal} grid word(s) are hidden in the puzzle but no longer printed on the page — e.g. page ${wlMiss[0].page}: ${wlMiss[0].missing.slice(0, 6).join(', ')}. Solvers won't be told to find them. Re-add the missing words or undo the break-apart.`
       : '');
+
+  // Difficulty labels are derived from the audience (Kids → age/grade, Adult →
+  // Easy…Expert). Flag when the audience is unset or the listing's reading age
+  // contradicts it, so the printed/listed labels stay coherent.
+  const da = difficultyAudienceIssue(book);
+  add('difficulty-audience', 'Difficulty labels match audience', 'warning', !da, da || '');
 
   if (book.answerKey) {
     add('key-present', 'Answer key present', 'blocker', realPuzzles.length > 0,

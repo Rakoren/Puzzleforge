@@ -62,7 +62,9 @@ function generate(config = {}, rand = Math.random) {
     );
   }
 
-  const size = config.size || autoSize(words, separation);
+  // Grid dimension: the caller's explicit size wins; otherwise auto-fit the
+  // word list but never below the tier's floor (Easy 10 → Expert 20).
+  const size = config.size || Math.max(autoSize(words, separation), preset.minSize || 0);
   const longest = words.reduce((m, w) => Math.max(m, w.length), 0);
   if (longest > size) {
     throw new Error(

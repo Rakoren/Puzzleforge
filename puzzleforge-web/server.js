@@ -124,6 +124,12 @@ app.get('/api/meta', (req, res) => {
     themes,
     trimSizes: pf.listTrimSizes(),
     borderStyles: pf.borderStyles,
+    // Audience-specific difficulty labels (internal levels 1–4).
+    difficulty: {
+      levels: pf.difficultyLevels,
+      kids: pf.difficultyOptions('kids'),
+      adult: pf.difficultyOptions('adult'),
+    },
     recipeVersion: RECIPE_VERSION,
   });
 });
