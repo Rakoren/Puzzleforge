@@ -1,7 +1,8 @@
 # PuzzleForge — Product Requirements Document
 
-**Version:** 0.2 (Active Development)
-**Status:** Publishable pipeline complete (interior + cover + KDP bundle) — content depth next
+**Version:** 0.3 (Active Development)
+**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace) — puzzle-type depth (Tier 3) next
+**Last full docs sync:** 2026-07-04
 **Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
 **Author:** Rakoren
@@ -41,9 +42,9 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (45 tests passing)
+### Engine (73 tests passing)
 
-**10 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
+**11 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
 | Puzzle Type | Status |
 |---|---|
@@ -57,6 +58,7 @@ Planned split (future):
 | Kriss-Kross | ✅ Complete |
 | Nonogram | ✅ Complete |
 | Trivia / Quiz | ✅ Complete |
+| Logic Grid | ✅ Complete — constraint-solver-proven unique solutions, natural-language clues (Tier 2 now 12/12) |
 
 **4 activity page types** (no answer key):
 - **Coloring** — seed-driven unique line art: mandala / shape-pattern / bubble-letter
@@ -116,6 +118,30 @@ Planned split (future):
 
 **One-click KDP export:**
 - Single zip: interior PDF + cover PDF (spine sized from the *actual* rendered page count) + build-info sheet
+
+**Starter book templates:**
+- "Start from a template" gallery in the Book Builder — six ready-to-publish books (Large-Print Senior Word Search, Kids Animal Activity Book, Travel Pocket Puzzles, Sudoku Workout, Brain Training Variety, Coffee Break Crosswords), each a full config (puzzle mix + trim + cover colors + KDP metadata) that drops into the builder and is editable from there. Zero-to-book on-ramp.
+
+**Page Editor (`editor.html/js`) — a full MS-Publisher-style desktop-publishing app:**
+- **Ribbon UI** — Home / Insert / Page Design / Arrange / Mailings / Review / View / Help tabs, plus **contextual tabs** that appear only when the matching object is selected (Picture Format / Table / Text Box / Drawing Tools)
+- **Break-apart puzzle** — title / instructions / word-list become individually editable objects (word list can convert to a table); the grid stays protected
+- **Free elements** — text, images, shapes (rect/ellipse/triangle/star/line + **speech/thought chat bubbles**), and **editable multi-column tables**; z-order incl. send-behind-the-puzzle
+- **Master pages** (page numbers / headers / repeating frames) and **two-page facing spreads**
+- Desktop-publishing toolset: undo/redo, zoom + rulers, numeric X/Y/size/angle, rotation, smart snapping + snap-to-grid, multi-select, align/distribute, group/ungroup, arrange, flip, lock, copy/paste, nudge
+- **Word-list consistency pre-flight** — flags mismatches between an edited word list and the grid
+- Editor == PDF parity: a shared renderer (`element-html.js`) draws every object identically on screen and in the exported PDF (vector-sharp at 300 DPI)
+
+**Book library + autosave:**
+- **My Books** dashboard (`library.html`, IndexedDB) — every project saved locally, change-detecting autosave, reopen/duplicate/delete
+
+**Self-hosted team workspace (LAN, publisher-only):**
+- `workspace.js` — a lightweight self-hosted backend (JSON-file store) for a small local team: shared roster, shared book library, live comments via Server-Sent Events, "Save to my library" fork + team notifications. No hosted accounts required (optional `PUZZLEFORGE_WORKSPACE_TOKEN`; email left as an optional SMTP hook)
+
+**Manual (non-AI) theme builder:**
+- Build a themed word list + facts by hand (tiers, category, tags) — an alternative to the AI Theme Generator
+
+**Mobile:**
+- Responsive phone/tablet layout and touch controls across the maker, builder, and editor
 
 ---
 
@@ -456,7 +482,7 @@ The teacher tool web UI is fully responsive — designed to work on phone and ta
 - Phone/tablet: planning, config, theme generation, recipe management
 - Desktop: heavy generation, PDF export, ComfyUI, page editor
 
-**The Page Editor (Phase 9) is desktop-only** — Fabric.js canvas interaction requires a pointer device. All other tools should be fully functional on mobile.
+**The Page Editor is desktop-first but now has a phone-friendly responsive view** — a reduced touch layout for review/light edits ships today; heavy layout work is still best on a pointer device. All other tools are fully functional on mobile.
 
 ### Hosting
 Vercel free tier for v1.
@@ -967,6 +993,8 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - ✅ Theme editing UI — delete, "Clean", and in-browser word/fact removal
 - ✅ Per-book style/font presets + large-print "senior" mode
 - ✅ AI category generator — one broad topic → several related themes saved under a shared category
+- ✅ Manual (non-AI) theme builder — author a tiered clued word list + facts by hand
+- ✅ Starter book templates — six ready-to-publish books in the Book Builder
 - 🔲 More built-in themes (hand-authored)
 - 🔲 (optional) edit clues / add words to an existing theme
 
@@ -977,11 +1005,12 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - Settings → Tools page to add/remove tools after onboarding
 - UI cleanup pass — tidy up nav and layout now that tool visibility is per-user controlled
 
-### 🔲 Phase 7 — More Puzzle Variety
-10. Word Ladder
-11. Spot the Difference
-12. Sudoku variants
-13. Logic Grid
+### 🟡 Phase 7 — More Puzzle Variety
+- ✅ Logic Grid — constraint-solver-verified unique solutions, natural-language clues, book + answer-key support
+- 🔲 Word Ladder
+- 🔲 Spot the Difference
+- 🔲 Sudoku variants
+- 🔲 Riddles / Brain Teasers / Word Wheel / Cipher puzzles (Tier 3)
 
 ### ✅ Phase 8 — Image-Based Tools (complete)
 14. ✅ Image-to-Coloring Page — Sharp + JS Sobel edge detector → black line art, detail
@@ -1035,9 +1064,21 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
   flip H/V, lock, duplicate/copy/paste, arrow-key nudge
 - ✅ Export — engine composes placed pieces + elements per page
   (`pageState[i].layout`) via the normal book pipeline; vector-sharp at 300 DPI
-- 🔲 Marquee (rubber-band) select, grouping, draggable ruler guides, rotation handle
-- 🔲 Page reorder / add / remove in the sidebar (select-only for now)
-- 🔲 Filler page swap inline
+- ✅ **Full MS-Publisher-style ribbon** — Home / Insert / Page Design / Arrange /
+  Mailings / Review / View / Help, plus **contextual tabs** (Picture Format /
+  Table / Text Box / Drawing Tools) that appear only when the object is selected
+- ✅ **Break-apart puzzle** — title / instructions / word-list become editable
+  objects (word list → table); the grid stays protected. Send-behind z-order.
+- ✅ **Shapes incl. speech/thought chat bubbles**, and **editable multi-column tables**
+- ✅ **Master pages** (page numbers / headers / frames) and **two-page facing spreads**
+- ✅ **Word-list consistency pre-flight** (edited list vs. grid)
+- ✅ **Editor==PDF parity** via a shared `element-html.js` renderer
+- ✅ **My Books library + change-detecting autosave** (`library.html`, IndexedDB)
+- ✅ **Self-hosted LAN team workspace** (`workspace.js`) — shared roster, shared
+  books, live comments via SSE, "Save to my library" fork + notifications
+- ✅ Grouping/ungrouping; page add / duplicate / delete / reorder in the sidebar; responsive mobile view
+- 🔲 Marquee (rubber-band) select, draggable ruler guides, on-canvas rotation handle
+- 🔲 Filler page swap inline; layers panel; multiple named master pages
 - 🔲 **Switchable editor "skins"** (future) — the layout model (`pageState`) is
   decoupled from the editor chrome, so a future setting could re-skin the editor
   to look/behave like MS Publisher, InDesign, Canva, etc. over the same data

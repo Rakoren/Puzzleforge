@@ -60,11 +60,12 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–4 complete; Phase 5 in progress.** Implemented so far:
+**Phases 1–5 complete; content depth + Page Editor ongoing (73 tests passing).**
+Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Ten puzzle types**, each with Golden Standards validation and an
+- **Eleven puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
   - **Word Search** — direction mix and word separation by difficulty
     (easy: words fully isolated; medium: no crossings; hard: dense crossings)
@@ -78,21 +79,28 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
   - **Number Search** — hidden number sequences in a digit grid (shares the
     word-search core)
   - **Trivia** — numbered quiz questions with an answer key
+  - **Logic Grid** — deduction puzzle; a constraint solver proves each clue set
+    has exactly one solution, with natural-language clues
+- Four **activity page** types (no answer key): coloring, drawing,
+  blank/bleed-guard, breather (quote/fact/divider)
 - Non-bypassable offensive-language filter (applied to words, fill, and clues)
 - Engine orchestration with a retry loop and solution verification
 - Book assembly (`engine/book.js`): multi-puzzle ordering, page assignment,
-  front matter, and a back-of-book answer key (per-page CSS scoped so mixed
+  front/back matter, and a back-of-book answer key (per-page CSS scoped so mixed
   puzzle types never collide in the combined PDF)
 - Puppeteer-based PDF export for both single puzzles and full books
 - CLI for single-puzzle and full-book generation/export
 
-- **Teacher web app** (`puzzleforge-web/`): pick a puzzle, choose a theme or
-  custom word list, live preview, and download a print-ready PDF or a reusable
-  recipe file — accountless, runs the engine server-side
+- **Web app** (`puzzleforge-web/`): Puzzle Maker (accountless), Book Builder with
+  **starter templates** + one-click KDP export bundle, Cover Builder, image tools
+  (coloring / color-by-number / dot-to-dot), AI + manual theme generators, and a
+  full **Page Editor** (MS-Publisher-style ribbon, master pages, two-page spreads,
+  tables, break-apart puzzles, My Books library + autosave, and a self-hosted LAN
+  team workspace).
 
-Not yet built (later phases): remaining Tier 2/3 types (Logic Grid, Nonogram,
-Dot-to-Dot, …) and the teacher-tool extras (worksheet builder, class sets,
-differentiation mode).
+Not yet built (later phases): Tier 3 puzzle types (Word Ladder, Riddles, Word
+Wheel, …), QR/digital layer, and teacher-tool extras (worksheet builder, lesson
+packets). See [`PRD.md`](./PRD.md) for the full roadmap.
 
 ## Architecture
 
@@ -154,6 +162,7 @@ node cli/index.js --type sudoku --difficulty 2 --answers --out sudoku.pdf
 node cli/index.js --type maze --difficulty 3 --answers --out maze.pdf
 node cli/index.js --type crossword --theme space --answers --out crossword.pdf
 node cli/index.js --type cryptogram --difficulty 2 --out cryptogram.pdf
+node cli/index.js --type logicgrid --difficulty 2 --answers --out logic.pdf
 
 # Assemble and export a full book from a config file
 node cli/index.js --book examples/animals-activity-book.json --out book.pdf
