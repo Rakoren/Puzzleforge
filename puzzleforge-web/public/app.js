@@ -448,6 +448,7 @@
       nonogram: 'Nonogram',
       numbersearch: 'Number Search',
       trivia: 'Trivia Quiz',
+      logicgrid: 'Logic Grid',
       coloring: 'Coloring Page',
       drawing: 'Drawing Page',
       bleedguard: 'Blank (bleed guard)',

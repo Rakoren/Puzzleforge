@@ -138,7 +138,7 @@ Planned split (future):
 | Number Search | ✅ |
 | Trivia / Quiz | ✅ |
 | Nonogram / Picross | ✅ |
-| Logic Grid | 🔲 Not started |
+| Logic Grid | ✅ |
 | Dot-to-Dot | 🔲 Deferred (needs image assets) |
 
 ### Tier 3 — Niche / High Value

@@ -79,6 +79,14 @@ const DIFFICULTY = {
     2: { count: 12, maxDifficulty: 2 },
     3: { count: 14, maxDifficulty: 3 },
   },
+  // Logic Grid: `items` is the grid size (people & values per category), `cats`
+  // the number of categories (incl. the primary), `ordinal` allows one numeric
+  // category for comparison clues, and `style` biases the clue mix.
+  logicgrid: {
+    1: { items: 4, cats: 3, ordinal: false, style: 'positive' },
+    2: { items: 4, cats: 4, ordinal: true, style: 'mixed' },
+    3: { items: 5, cats: 4, ordinal: true, style: 'hard' },
+  },
 };
 
 function acceptThreshold(type) {

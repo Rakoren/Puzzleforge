@@ -250,6 +250,17 @@ function miniAnswer(puzzle, blockWidth) {
         .join('');
       return `<ol class="trivia-ans" style="margin:0;padding:0;list-style:none;font-size:${fs}px">${lis}</ol>`;
     }
+    case 'logicgrid': {
+      const cats = puzzle.data.categories;
+      const rows = puzzle.solution.rows;
+      const fs = Math.max(7, Math.min(12, Math.round(blockWidth / (cats.length * 6.5))));
+      const cell = `border:0.5px solid #999;padding:1px 3px;text-align:center;font-size:${fs}px`;
+      const th = cats.map((c) => `<th style="${cell};font-weight:700;background:#eee">${esc(c.label)}</th>`).join('');
+      const body = rows
+        .map((r) => `<tr>${cats.map((c) => `<td style="${cell}">${esc(r[c.key])}</td>`).join('')}</tr>`)
+        .join('');
+      return `<table class="logic-ans" style="border-collapse:collapse;width:100%;table-layout:fixed"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table>`;
+    }
     default:
       return `<div class="generic">(no compact answer view for ${esc(puzzle.type)})</div>`;
   }
@@ -279,7 +290,7 @@ function miniCrossword(puzzle, blockWidth) {
 // How many answer blocks fit per row, by type, balancing legibility.
 function blocksPerRow(type) {
   if (type === 'sudoku') return 3;
-  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross' || type === 'trivia') {
+  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross' || type === 'trivia' || type === 'logicgrid') {
     return 1;
   }
   return 2; // wordsearch, numbersearch, maze, crossword, nonogram
@@ -302,6 +313,7 @@ function estBlockHeight(puzzle, blockWidth, layout) {
     case 'wordscramble':
     case 'krisskross': { const fs = layout.fontSize; const txt = (puzzle.solution.words || []).join(', '); const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.56))); grid = Math.ceil((txt.length || 1) / perLine) * Math.round(fs * 1.5); break; }
     case 'trivia': { const fs = Math.max(9, Math.round(blockWidth / 26)); grid = (puzzle.solution.answers || []).length * Math.round(fs * 1.6); break; }
+    case 'logicgrid': { const n = (puzzle.solution.rows || []).length; grid = (n + 1) * Math.round(layout.fontSize * 1.7); break; }
     default: grid = 80;
   }
   return Math.ceil(grid) + labelH + 8;

@@ -85,6 +85,14 @@ const trivia = {
   render: require('./trivia/renderer').render,
 };
 
+const logicgrid = {
+  type: 'logicgrid',
+  generate: require('./logicgrid').generate,
+  validate: require('./logicgrid/validator').validate,
+  solve: require('./logicgrid/solver').solve,
+  render: require('./logicgrid/renderer').render,
+};
+
 // Activity pages for kids' books — no answer, no puzzle solving.
 const coloring = {
   type: 'coloring',
@@ -129,6 +137,7 @@ const MODULES = {
   nonogram,
   numbersearch,
   trivia,
+  logicgrid,
   coloring,
   drawing,
   bleedguard,

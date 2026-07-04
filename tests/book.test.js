@@ -292,3 +292,72 @@ test('every starter template assembles into a real, renderable book', () => {
     }
   }
 });
+
+// --- Logic Grid ---------------------------------------------------------
+const { generate: engineGenerate } = require('../engine/generate');
+const logic = require('../generators/logicgrid');
+const logicSolver = require('../generators/logicgrid/solver');
+const logicValidator = require('../generators/logicgrid/validator');
+const logicRenderer = require('../generators/logicgrid/renderer');
+
+const LGLAYOUT = {
+  widthIn: 8.5, heightIn: 11, margins: { top: 0.75, outside: 0.5, bottom: 0.75, gutter: 0.75 },
+  fontFamily: 'Georgia, serif', fontSize: 14, usableWidth: 672, usableHeight: 864,
+};
+
+test('logic grid: every difficulty generates a uniquely-solvable puzzle', () => {
+  for (let d = 1; d <= 3; d++) {
+    for (let s = 1; s <= 6; s++) {
+      const p = engineGenerate({ type: 'logicgrid', difficulty: d, seed: s });
+      // validator passes (uniqueness + clue consistency + shape)
+      const v = logicValidator.validate(p);
+      assert.ok(v.valid, `d${d} s${s} valid: ${v.errors.join('; ')}`);
+      // independent solver re-derives the exact answer
+      const solved = logicSolver.solve(p);
+      assert.deepEqual(solved.missing, [], `d${d} s${s} solver: ${solved.missing.join('; ')}`);
+      // solution is a full N×categories grid
+      const N = p.data.categories[0].values.length;
+      assert.equal(p.solution.rows.length, N);
+    }
+  }
+});
+
+test('logic grid: a wrong clue is rejected by the validator', () => {
+  const p = engineGenerate({ type: 'logicgrid', difficulty: 1, seed: 3 });
+  // Flip a "same" clue into a false statement by swapping its second value.
+  const clue = p.data.clues.find((c) => c.kind === 'same');
+  const cat = p.data.categories[clue.cb];
+  clue.vb = cat.values.find((v) => String(v) !== String(clue.vb));
+  const v = logicValidator.validate(p);
+  assert.ok(!v.valid, 'validator should reject an inconsistent clue');
+});
+
+test('logic grid: reproducible from a seed (content)', () => {
+  const content = (p) => JSON.stringify({ data: p.data, solution: p.solution });
+  const a = content(engineGenerate({ type: 'logicgrid', difficulty: 3, seed: 77 }));
+  const b = content(engineGenerate({ type: 'logicgrid', difficulty: 3, seed: 77 }));
+  assert.equal(a, b);
+});
+
+test('logic grid: renders clues + a blank table (puzzle) and a filled table (key)', () => {
+  const p = engineGenerate({ type: 'logicgrid', difficulty: 2, seed: 11 });
+  const puzzleHtml = logicRenderer.render(p, LGLAYOUT, {});
+  const keyHtml = logicRenderer.render(p, LGLAYOUT, { answerKey: true });
+  assert.match(puzzleHtml, /Clues/);
+  assert.match(puzzleHtml, new RegExp(p.data.clues[0].text.slice(0, 12).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(keyHtml, /Solution/);
+  // The answer key contains the primary value AND at least one deduced value.
+  const row0 = p.solution.rows[0];
+  const attrKey = p.data.categories[1].key;
+  assert.match(keyHtml, new RegExp(String(row0[attrKey])));
+});
+
+test('logic grid: works inside an assembled book with a back-of-book key', () => {
+  const book = assembleBook({
+    title: 'Logic Sampler', puzzleforgeBook: 1, trimSize: '8.5x11', answerKey: true,
+    puzzles: [{ type: 'logicgrid', count: 2, difficulty: '1-2' }], seed: 5,
+  });
+  const html = renderBookHtml(book);
+  assert.match(html, /Clues/);
+  assert.match(html, /logic-ans/); // compact answer table in the key
+});
