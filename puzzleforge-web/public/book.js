@@ -15,6 +15,7 @@
     borderColor: $('borderColor'),
     difficultyCurve: $('difficultyCurve'),
     runChecklist: $('runChecklist'),
+    contentReview: $('contentReview'),
     checklist: $('checklist'),
     openEditor: $('openEditor'),
     theme: $('theme'),
@@ -556,6 +557,45 @@
     el.checklist.innerHTML = head + rows;
   }
 
+  // AI content review: proofread + quality findings appended below the checklist.
+  async function contentReview() {
+    el.checklist.classList.remove('hidden');
+    el.checklist.querySelectorAll('.chk-ai').forEach((n) => n.remove());
+    el.contentReview.disabled = true;
+    const busy = document.createElement('div');
+    busy.className = 'chk-busy chk-ai';
+    busy.textContent = 'AI reviewing the book’s text… (this can take a few seconds)';
+    el.checklist.appendChild(busy);
+    try {
+      const res = await fetch('/api/book/content-review', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastBookId ? { bookId: lastBookId, config: config() } : { config: config() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Content review failed');
+      renderContentReview(data);
+    } catch (err) {
+      busy.textContent = err.message;
+    } finally {
+      el.contentReview.disabled = false;
+    }
+  }
+
+  function renderContentReview(data) {
+    el.checklist.querySelectorAll('.chk-ai').forEach((n) => n.remove());
+    const wrap = document.createElement('div');
+    wrap.className = 'chk-ai';
+    const note = data.note ? ` — ${escapeHtml(data.note)}` : '';
+    const head = `<div class="chk-summary">Content quality (AI) · checked ${data.checked} snippet${data.checked === 1 ? '' : 's'} · <strong>${data.items.length}</strong> finding${data.items.length === 1 ? '' : 's'}${data.model ? ` · ${escapeHtml(data.model)}` : ''}${note}</div>`;
+    const rows = data.items.length
+      ? data.items.map((it) =>
+        `<div class="chk-row chk-fail"><span class="chk-ic">${it.severity === 'blocker' ? '🔴' : '🟡'}</span>` +
+        `<span class="chk-label">${escapeHtml(it.label)} — <span class="chk-msg">${escapeHtml(it.message)}</span></span></div>`).join('')
+      : '<div class="chk-row chk-pass"><span class="chk-ic">🟢</span><span class="chk-label">No content issues found.</span></div>';
+    wrap.innerHTML = head + rows;
+    el.checklist.appendChild(wrap);
+  }
+
   function fileBase() {
     return (el.title.value.trim() || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'book';
   }
@@ -776,6 +816,7 @@
     el.buildPdf.addEventListener('click', buildPdf);
     el.openEditor.addEventListener('click', openEditor);
     el.runChecklist.addEventListener('click', runChecklist);
+    el.contentReview.addEventListener('click', contentReview);
     el.kdpBundle.addEventListener('click', buildBundle);
     el.estimateRoyalty.addEventListener('click', estimateRoyalty);
     el.saveRecipe.addEventListener('click', saveRecipe);

@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (113 tests passing)
+### Engine (114 tests passing)
 
 **14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -792,12 +792,13 @@ Each checklist item has a **"Fix it" shortcut** that jumps directly to the relev
 - **Structural** — page count 24–828 · even · puzzle count matches config · no empty puzzle pages · answer key present + complete · bleed guards placed · copyright / back matter · word list matches grid · difficulty↔audience coherence + range summary.
 - **Print readiness** — single trim set · within KDP page limit · gutter (inside) margin per page-count table (`engine/kdp.js`) · images ≥ 300 DPI (`engine/imagesize.js`) · content inside the safe area.
 - **KDP listing metadata** (warnings) — description present · 7 keywords · 3 categories · reading age set (kids).
+- **Content quality (Claude API)** — an on-demand "AI content review" button runs one Claude pass over all reader-facing text (`engine/booktext.js` collects titles, instructions, crossword clues, trivia Q&A, blurb, matter) and returns findings: spelling/grammar errors, placeholder/ambiguous clues, generic titles, dry blurbs, reading-level mismatches. Results render in the checklist panel; reuses the editor proofread's SDK path.
 
-**Still to come** (tracked below): the Content Quality checks (Claude API), cover-image DPI + cover-dimension checks, price-vs-breakeven, AI-disclosure completeness, per-item "Fix it" jumps, and server-side gate enforcement (today's gate is client-side — right for the local single-user tool, bypassable via direct API).
+**Still to come** (tracked below): cover-image DPI + cover-dimension checks, price-vs-breakeven, AI-disclosure completeness, per-item "Fix it" jumps, folding the AI review into the export gate, and server-side gate enforcement (today's gate is client-side — right for the local single-user tool, bypassable via direct API).
 
 ---
 
-### Content Quality Checks (Claude API) — 🔲 future
+### Content Quality Checks (Claude API) — ✅ shipped (on-demand review)
 
 These checks use the Claude API to evaluate subjective quality. Run as a batch — one API call covers all text content in the book.
 

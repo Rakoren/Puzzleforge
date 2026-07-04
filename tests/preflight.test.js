@@ -70,3 +70,21 @@ test('metadata checks warn when empty and pass when filled (never block)', () =>
     assert.equal(full.items.find((i) => i.id === id).status, 'pass', `${id} passes when filled`);
   }
 });
+
+test('collectBookText gathers all reader-facing text and de-dupes', () => {
+  const { collectBookText } = require('../engine/booktext');
+  const book = assembleBook({
+    title: 'My Puzzle Book', subtitle: '50 Fun Puzzles', puzzleforgeBook: 1, trimSize: '8.5x11', audience: 'adult', theme: 'animals',
+    metadata: { description: 'A great book of puzzles.' },
+    puzzles: [{ type: 'crossword', count: 1, difficulty: '2' }, { type: 'trivia', count: 1, difficulty: '2' }, { type: 'sudoku', count: 3, difficulty: '2' }],
+    seed: 1,
+  });
+  const t = collectBookText(book);
+  const kinds = new Set(t.map((s) => s.kind));
+  for (const k of ['book-title', 'blurb', 'puzzle-title', 'instruction', 'clue', 'question', 'answer']) {
+    assert.ok(kinds.has(k), `collected a ${k}`);
+  }
+  // Ids are unique and the 3 identical sudoku instructions collapse to one.
+  assert.equal(new Set(t.map((s) => s.id)).size, t.length);
+  assert.equal(t.filter((s) => s.kind === 'instruction' && /every row, column/.test(s.text)).length, 1);
+});

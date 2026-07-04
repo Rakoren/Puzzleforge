@@ -88,6 +88,7 @@ module.exports = {
   themesDir: THEME_DIR,
   isOffensiveWord: offensive.isOffensiveWord,
   scanTextForOffensive: offensive.scanText,
+  collectBookText: require('./engine/booktext').collectBookText,
   // Difficulty labels/tiers (internal levels 1–4 → audience-specific labels).
   difficultyLevels: difficulty.LEVELS,
   difficultyTier: difficulty.difficultyTier,

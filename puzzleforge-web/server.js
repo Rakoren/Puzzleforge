@@ -728,6 +728,86 @@ app.post('/api/book/proofread', async (req, res) => {
   }
 });
 
+// Content-quality pre-flight: one Claude pass over ALL the book's reader-facing
+// text (titles, instructions, crossword clues, trivia Q&A, blurb, matter) that
+// returns checklist-style findings — spelling/grammar plus weak clues, generic
+// titles, dry blurbs, and reading-level mismatches.
+const CONTENT_CATEGORY = {
+  spelling: 'Spelling', grammar: 'Grammar', clue: 'Clue quality',
+  title: 'Title', blurb: 'Blurb / description', 'reading-level': 'Reading level',
+};
+async function reviewBookContent(snippets, audience) {
+  const client = new Anthropic();
+  const numbered = snippets.map((s) => `[#${s.id} · ${s.kind}] ${s.text}`).join('\n');
+  const schema = {
+    type: 'object', additionalProperties: false,
+    properties: {
+      findings: {
+        type: 'array',
+        items: {
+          type: 'object', additionalProperties: false,
+          properties: {
+            id: { type: 'integer' },
+            category: { type: 'string', enum: ['spelling', 'grammar', 'clue', 'title', 'blurb', 'reading-level'] },
+            severity: { type: 'string', enum: ['error', 'suggestion'] },
+            note: { type: 'string' },
+            fix: { type: 'string' },
+          },
+          required: ['id', 'category', 'severity', 'note', 'fix'],
+        },
+      },
+    },
+    required: ['findings'],
+  };
+  const prompt = [
+    'You are the quality reviewer for a print puzzle/activity book about to be published on Amazon KDP.',
+    `The book's audience is "${audience}". Review the reader-facing snippets below and report only real problems:`,
+    '- spelling / grammar: objective errors (severity "error"). Do NOT flag intentional puzzle words, brand names, or proper nouns.',
+    '- clue: a crossword clue that is a placeholder like "(5 letters)", ambiguous, or unfair (severity "suggestion").',
+    '- title: a generic puzzle or book title (e.g. "Word Search", "Sudoku — Medium") that could be more engaging (severity "suggestion").',
+    '- blurb: a back-cover/description that is dry or unconvincing (severity "suggestion").',
+    '- reading-level: instructions or clues that do not match the stated audience (severity "suggestion").',
+    'Reference each finding by its #id. Give a short note and a concrete "fix" (a corrected phrase or a better alternative). If everything is clean, return an empty list. Do not invent issues.',
+    '',
+    'Snippets:',
+    numbered,
+  ].join('\n');
+  const stream = client.messages.stream({
+    model: PROOF_MODEL,
+    max_tokens: 4000,
+    messages: [{ role: 'user', content: prompt }],
+    output_config: { format: { type: 'json_schema', schema } },
+  });
+  const msg = await stream.finalMessage();
+  const text = (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  let raw; try { raw = JSON.parse(text); } catch (_) { return []; }
+  return Array.isArray(raw.findings) ? raw.findings.slice(0, 200) : [];
+}
+
+app.post('/api/book/content-review', async (req, res) => {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(400).json({ error: 'Content review needs an Anthropic API key. Set ANTHROPIC_API_KEY and restart the server.' });
+  }
+  try {
+    const { book } = resolveBook(req.body || {});
+    const snippets = pf.collectBookText(book);
+    if (!snippets.length) return res.json({ items: [], checked: 0, note: 'No reviewable text yet — add puzzles and matter, then run again.' });
+    const byId = Object.fromEntries(snippets.map((s) => [s.id, s.text]));
+    const findings = await reviewBookContent(snippets, book.audience || 'adult');
+    const items = findings.filter((f) => byId[f.id]).map((f) => ({
+      id: `content-${f.id}-${f.category}`,
+      label: CONTENT_CATEGORY[f.category] || 'Content',
+      severity: f.severity === 'error' ? 'blocker' : 'warning',
+      status: 'fail',
+      message: `“${byId[f.id]}” — ${f.note}${f.fix ? ` → ${f.fix}` : ''}`,
+    }));
+    res.json({ items, checked: snippets.length, model: PROOF_MODEL });
+  } catch (err) {
+    const e = err instanceof Anthropic.AuthenticationError ? 'The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.' : err.message;
+    res.status(err.status || 502).json({ error: e });
+  }
+});
+
 // Thesaurus: synonyms for a selected word/short phrase, so the editor can offer
 // one-click replacements. Kept small — a single word/phrase in, a ranked list out.
 async function synonymsFor(word) {
