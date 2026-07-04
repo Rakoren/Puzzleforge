@@ -472,6 +472,7 @@
       logicgrid: 'Logic Grid',
       wordladder: 'Word Ladder',
       wordwheel: 'Word Wheel',
+      cipher: 'Cipher',
       coloring: 'Coloring Page',
       drawing: 'Drawing Page',
       bleedguard: 'Blank (bleed guard)',

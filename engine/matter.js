@@ -234,6 +234,8 @@ function miniAnswer(puzzle, blockWidth) {
       return miniMaze(puzzle, blockWidth);
     case 'cryptogram':
       return `<div class="crypt-ans" style="font-size:${Math.max(9, Math.round(blockWidth / 22))}px">${esc(puzzle.solution.plaintext)}</div>`;
+    case 'cipher':
+      return `<div class="cipher-ans" style="font-size:${Math.max(9, Math.round(blockWidth / 24))}px">${esc(puzzle.solution.plaintext)}</div>`;
     case 'wordscramble':
     case 'krisskross':
       return `<div class="word-ans">${(puzzle.solution.words || []).map(esc).join(', ')}</div>`;
@@ -303,7 +305,7 @@ function miniCrossword(puzzle, blockWidth) {
 // How many answer blocks fit per row, by type, balancing legibility.
 function blocksPerRow(type) {
   if (type === 'sudoku') return 3;
-  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross' || type === 'trivia' || type === 'logicgrid') {
+  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross' || type === 'trivia' || type === 'logicgrid' || type === 'cipher') {
     return 1;
   }
   return 2; // wordsearch, numbersearch, maze, crossword, nonogram
@@ -323,6 +325,7 @@ function estBlockHeight(puzzle, blockWidth, layout) {
     case 'crossword': { const w = d.width || 10, h = d.height || 10; grid = h * Math.max(8, Math.floor(blockWidth / w)); break; }
     case 'nonogram': { const w = d.width || 10, h = d.height || 10; grid = h * Math.max(4, Math.floor(blockWidth / w)); break; }
     case 'cryptogram': { const fs = Math.max(9, Math.round(blockWidth / 22)); const len = (puzzle.solution.plaintext || '').length; const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.62))); grid = Math.ceil(len / perLine) * Math.round(fs * 1.5); break; }
+    case 'cipher': { const fs = Math.max(9, Math.round(blockWidth / 24)); const len = (puzzle.solution.plaintext || '').length; const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.62))); grid = Math.ceil(len / perLine) * Math.round(fs * 1.5); break; }
     case 'wordscramble':
     case 'krisskross': { const fs = layout.fontSize; const txt = (puzzle.solution.words || []).join(', '); const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.56))); grid = Math.ceil((txt.length || 1) / perLine) * Math.round(fs * 1.5); break; }
     case 'trivia': { const fs = Math.max(9, Math.round(blockWidth / 26)); grid = (puzzle.solution.answers || []).length * Math.round(fs * 1.6); break; }

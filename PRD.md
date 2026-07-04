@@ -42,9 +42,9 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (101 tests passing)
+### Engine (107 tests passing)
 
-**13 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
+**14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
 | Puzzle Type | Status |
 |---|---|
@@ -61,6 +61,7 @@ Planned split (future):
 | Logic Grid | ✅ Complete — constraint-solver-proven unique solutions, natural-language clues (Tier 2 now 12/12) |
 | Word Ladder | ✅ Complete — common-word graph, minimal-hint unique solutions (Tier 3 started) |
 | Word Wheel | ✅ Complete — 9-letter source, baked common-word dictionary, full findable-word key |
+| Cipher | ✅ Complete — Caesar / Atbash / A1Z26 / Morse, decoder verified round-trip |
 
 **4 activity page types** (no answer key):
 - **Coloring** — seed-driven unique line art: mandala / shape-pattern / bubble-letter
@@ -195,12 +196,12 @@ Internal engine levels are **1–4**; the labels shown to buyers depend on the b
 |---|---|
 | Word Ladder | ✅ |
 | Word Wheel | ✅ |
+| Cipher / Code Puzzles | ✅ |
 | Spot the Difference | 🔲 Roadmap |
 | Sudoku Variants | 🔲 Roadmap |
 | Math Puzzles | 🔲 Roadmap |
 | Riddles | 🔲 Roadmap |
 | Brain Teasers | 🔲 Roadmap |
-| Cipher / Code Puzzles | 🔲 Roadmap |
 
 ### Tier 4 — Stretch Goals
 | Type | Status |
@@ -1032,9 +1033,10 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - ✅ Logic Grid — constraint-solver-verified unique solutions, natural-language clues, book + answer-key support
 - ✅ Word Ladder — common-word graph (frequency list ∩ dictionary), minimal-hint unique solutions, book + answer-key support
 - ✅ Word Wheel — 9-letter source word, baked common-word dictionary (50k-freq ∩ dictionary), full findable-word key + scoring targets
+- ✅ Cipher — Caesar / Atbash / A1Z26 / Morse; the shared algorithm encodes and the solver decodes straight back (answer key can't drift)
 - 🔲 Spot the Difference
 - 🔲 Sudoku variants
-- 🔲 Riddles / Brain Teasers / Cipher puzzles (Tier 3)
+- 🔲 Riddles / Brain Teasers (Tier 3)
 
 ### ✅ Phase 8 — Image-Based Tools (complete)
 14. ✅ Image-to-Coloring Page — Sharp + JS Sobel edge detector → black line art, detail

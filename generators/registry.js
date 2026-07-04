@@ -109,6 +109,14 @@ const wordwheel = {
   render: require('./wordwheel/renderer').render,
 };
 
+const cipher = {
+  type: 'cipher',
+  generate: require('./cipher').generate,
+  validate: require('./cipher/validator').validate,
+  solve: require('./cipher/solver').solve,
+  render: require('./cipher/renderer').render,
+};
+
 // Activity pages for kids' books — no answer, no puzzle solving.
 const coloring = {
   type: 'coloring',
@@ -156,6 +164,7 @@ const MODULES = {
   logicgrid,
   wordladder,
   wordwheel,
+  cipher,
   coloring,
   drawing,
   bleedguard,

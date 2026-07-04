@@ -19,7 +19,8 @@ test('number search and trivia are registered (ten puzzle types + activity pages
   assert.ok(types.includes('logicgrid'));
   assert.ok(types.includes('wordladder'));
   assert.ok(types.includes('wordwheel'));
-  assert.equal(types.length, 17);
+  assert.ok(types.includes('cipher'));
+  assert.equal(types.length, 18);
 });
 
 // --- Number Search ---

@@ -124,6 +124,14 @@ const DIFFICULTY = {
     3: { minLen: 4, sourceTop: 1, minWords: 10 },
     4: { minLen: 5, sourceTop: 1, minWords: 8 },
   },
+  // Cipher: which ciphers are drawn, the max message length, and whether the
+  // Caesar shift is revealed (harder levels hide it).
+  cipher: {
+    1: { modes: ['caesar', 'a1z26'], maxLen: 24, showKey: true },
+    2: { modes: ['caesar', 'atbash', 'a1z26'], maxLen: 34, showKey: true },
+    3: { modes: ['caesar', 'atbash', 'morse'], maxLen: 44, showKey: false },
+    4: { modes: ['caesar', 'atbash', 'morse'], maxLen: 60, showKey: false },
+  },
 };
 
 function acceptThreshold(type) {
