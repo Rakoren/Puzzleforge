@@ -60,12 +60,12 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (73 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (78 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Eleven puzzle types**, each with Golden Standards validation and an
+- **Twelve puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
   - **Word Search** — direction mix and word separation by difficulty
     (easy: words fully isolated; medium: no crossings; hard: dense crossings)
@@ -81,6 +81,8 @@ Implemented so far:
   - **Trivia** — numbered quiz questions with an answer key
   - **Logic Grid** — deduction puzzle; a constraint solver proves each clue set
     has exactly one solution, with natural-language clues
+  - **Word Ladder** — change one letter at a time (start → end); built on a
+    common-word graph with the minimum hints needed for a unique answer
 - Four **activity page** types (no answer key): coloring, drawing,
   blank/bleed-guard, breather (quote/fact/divider)
 - Non-bypassable offensive-language filter (applied to words, fill, and clues)
@@ -163,6 +165,7 @@ node cli/index.js --type maze --difficulty 3 --answers --out maze.pdf
 node cli/index.js --type crossword --theme space --answers --out crossword.pdf
 node cli/index.js --type cryptogram --difficulty 2 --out cryptogram.pdf
 node cli/index.js --type logicgrid --difficulty 2 --answers --out logic.pdf
+node cli/index.js --type wordladder --difficulty 2 --answers --out ladder.pdf
 
 # Assemble and export a full book from a config file
 node cli/index.js --book examples/animals-activity-book.json --out book.pdf

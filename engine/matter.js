@@ -261,6 +261,11 @@ function miniAnswer(puzzle, blockWidth) {
         .join('');
       return `<table class="logic-ans" style="border-collapse:collapse;width:100%;table-layout:fixed"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table>`;
     }
+    case 'wordladder': {
+      const fs = Math.max(9, Math.round(blockWidth / 16));
+      const chain = (puzzle.solution.ladder || []).map((w) => esc(w.toUpperCase())).join(' &rarr; ');
+      return `<div class="ladder-ans" style="font-size:${fs}px;line-height:1.5;font-weight:600">${chain}</div>`;
+    }
     default:
       return `<div class="generic">(no compact answer view for ${esc(puzzle.type)})</div>`;
   }
@@ -314,6 +319,7 @@ function estBlockHeight(puzzle, blockWidth, layout) {
     case 'krisskross': { const fs = layout.fontSize; const txt = (puzzle.solution.words || []).join(', '); const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.56))); grid = Math.ceil((txt.length || 1) / perLine) * Math.round(fs * 1.5); break; }
     case 'trivia': { const fs = Math.max(9, Math.round(blockWidth / 26)); grid = (puzzle.solution.answers || []).length * Math.round(fs * 1.6); break; }
     case 'logicgrid': { const n = (puzzle.solution.rows || []).length; grid = (n + 1) * Math.round(layout.fontSize * 1.7); break; }
+    case 'wordladder': { const fs = Math.max(9, Math.round(blockWidth / 16)); const len = (puzzle.solution.ladder || []).join(' → ').length; const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.62))); grid = Math.ceil(len / perLine) * Math.round(fs * 1.5); break; }
     default: grid = 80;
   }
   return Math.ceil(grid) + labelH + 8;

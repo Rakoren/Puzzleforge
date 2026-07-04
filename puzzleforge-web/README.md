@@ -36,9 +36,9 @@ notice instead of failing.
 
 ## What it does
 
-- **Pick a puzzle** — any of the engine's 11 types (word search, number search,
+- **Pick a puzzle** — any of the engine's 12 types (word search, number search,
   sudoku, maze, cryptogram, word scramble, crossword, kriss-kross, nonogram,
-  trivia, logic grid)
+  trivia, logic grid, word ladder)
 - **Words** — choose a built-in theme or paste your own word list
 - **Settings** — difficulty, page (trim) size, audience, optional grid size and title
 - **Text size & font** — Normal / Large print / Extra large, and Sans / Serif / Rounded (large-print "senior" mode)

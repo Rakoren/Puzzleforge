@@ -93,6 +93,14 @@ const logicgrid = {
   render: require('./logicgrid/renderer').render,
 };
 
+const wordladder = {
+  type: 'wordladder',
+  generate: require('./wordladder').generate,
+  validate: require('./wordladder/validator').validate,
+  solve: require('./wordladder/solver').solve,
+  render: require('./wordladder/renderer').render,
+};
+
 // Activity pages for kids' books — no answer, no puzzle solving.
 const coloring = {
   type: 'coloring',
@@ -138,6 +146,7 @@ const MODULES = {
   numbersearch,
   trivia,
   logicgrid,
+  wordladder,
   coloring,
   drawing,
   bleedguard,

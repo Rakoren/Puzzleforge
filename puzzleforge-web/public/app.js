@@ -449,6 +449,7 @@
       numbersearch: 'Number Search',
       trivia: 'Trivia Quiz',
       logicgrid: 'Logic Grid',
+      wordladder: 'Word Ladder',
       coloring: 'Coloring Page',
       drawing: 'Drawing Page',
       bleedguard: 'Blank (bleed guard)',

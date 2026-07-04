@@ -87,6 +87,15 @@ const DIFFICULTY = {
     2: { items: 4, cats: 4, ordinal: true, style: 'mixed' },
     3: { items: 5, cats: 4, ordinal: true, style: 'hard' },
   },
+  // Word Ladder: `length` is the word length, `steps` the number of words in the
+  // ladder (incl. both endpoints), and `style` how many letters are given
+  // (guided = at most one blank per rung; minimal = only enough for a unique
+  // answer).
+  wordladder: {
+    1: { length: 3, steps: 4, style: 'guided' },
+    2: { length: 4, steps: 5, style: 'some' },
+    3: { length: 4, steps: 6, style: 'minimal' },
+  },
 };
 
 function acceptThreshold(type) {

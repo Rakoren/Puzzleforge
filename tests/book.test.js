@@ -361,3 +361,74 @@ test('logic grid: works inside an assembled book with a back-of-book key', () =>
   assert.match(html, /Clues/);
   assert.match(html, /logic-ans/); // compact answer table in the key
 });
+
+// --- Word Ladder --------------------------------------------------------
+const ladder = require('../generators/wordladder');
+const ladderSolver = require('../generators/wordladder/solver');
+const ladderValidator = require('../generators/wordladder/validator');
+const ladderRenderer = require('../generators/wordladder/renderer');
+
+test('word ladder: every difficulty generates a uniquely-solvable ladder of real words', () => {
+  for (let d = 1; d <= 3; d++) {
+    for (let s = 1; s <= 8; s++) {
+      const p = engineGenerate({ type: 'wordladder', difficulty: d, seed: s });
+      const v = ladderValidator.validate(p);
+      assert.ok(v.valid, `d${d} s${s} valid: ${v.errors.join('; ')}`);
+      const solved = ladderSolver.solve(p);
+      assert.deepEqual(solved.missing, [], `d${d} s${s} solver: ${solved.missing.join('; ')}`);
+      // consecutive words differ by exactly one letter
+      const L = p.solution.ladder;
+      for (let i = 1; i < L.length; i++) {
+        assert.ok(ladderSolver.isNeighbor(L[i - 1], L[i]), `${L[i - 1]}→${L[i]} one-letter step`);
+      }
+      assert.equal(L[0], p.data.start);
+      assert.equal(L[L.length - 1], p.data.end);
+    }
+  }
+});
+
+test('word ladder: revealed hints match the answer, and a wrong hint is rejected', () => {
+  const p = engineGenerate({ type: 'wordladder', difficulty: 2, seed: 4 });
+  // find a revealed cell and corrupt it
+  let found = false;
+  for (let i = 0; i < p.data.rungs.length && !found; i++) {
+    for (let j = 0; j < p.data.length; j++) {
+      if (p.data.rungs[i][j] != null) {
+        p.data.rungs[i][j] = p.data.rungs[i][j] === 'a' ? 'b' : 'a';
+        found = true; break;
+      }
+    }
+  }
+  assert.ok(found, 'puzzle had at least one hint to corrupt');
+  assert.ok(!ladderValidator.validate(p).valid, 'a wrong hint should fail validation');
+});
+
+test('word ladder: reproducible from a seed (content)', () => {
+  const c = (p) => JSON.stringify({ data: p.data, solution: p.solution });
+  const a = c(engineGenerate({ type: 'wordladder', difficulty: 3, seed: 88 }));
+  const b = c(engineGenerate({ type: 'wordladder', difficulty: 3, seed: 88 }));
+  assert.equal(a, b);
+});
+
+test('word ladder: renders boxed rungs (puzzle) and the full chain (answer key)', () => {
+  const p = engineGenerate({ type: 'wordladder', difficulty: 2, seed: 6 });
+  const puzzleHtml = ladderRenderer.render(p, LGLAYOUT, {});
+  const keyHtml = ladderRenderer.render(p, LGLAYOUT, { answerKey: true });
+  // Each letter renders in its own cell, so compare on the tag-stripped text
+  // where a row's cells concatenate back into the word.
+  const text = (h) => h.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, '');
+  assert.ok(text(puzzleHtml).includes(p.data.start.toUpperCase()));
+  assert.ok(text(puzzleHtml).includes(p.data.end.toUpperCase()));
+  const keyText = text(keyHtml);
+  for (const w of p.solution.ladder) assert.ok(keyText.includes(w.toUpperCase()), `key shows ${w}`);
+});
+
+test('word ladder: works inside an assembled book with a back-of-book key', () => {
+  const book = assembleBook({
+    title: 'Ladders', puzzleforgeBook: 1, trimSize: '8.5x11', answerKey: true,
+    puzzles: [{ type: 'wordladder', count: 2, difficulty: '1-2' }], seed: 3,
+  });
+  const html = renderBookHtml(book);
+  assert.match(html, /Word Ladder/);
+  assert.match(html, /ladder-ans/);
+});

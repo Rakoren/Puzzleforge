@@ -74,7 +74,7 @@
   const TYPE_NAMES = {
     wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku',
     maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble',
-    crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz', logicgrid: 'Logic Grid',
+    crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz', logicgrid: 'Logic Grid', wordladder: 'Word Ladder',
     coloring: 'Coloring Page', drawing: 'Drawing Page', bleedguard: 'Blank (bleed guard)',
   };
   const DIFFICULTIES = [

@@ -1,7 +1,7 @@
 # PuzzleForge — Product Requirements Document
 
 **Version:** 0.3 (Active Development)
-**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace) — puzzle-type depth (Tier 3) next
+**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace); Tier 3 puzzle types underway
 **Last full docs sync:** 2026-07-04
 **Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
@@ -42,9 +42,9 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (73 tests passing)
+### Engine (78 tests passing)
 
-**11 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
+**12 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
 | Puzzle Type | Status |
 |---|---|
@@ -59,6 +59,7 @@ Planned split (future):
 | Nonogram | ✅ Complete |
 | Trivia / Quiz | ✅ Complete |
 | Logic Grid | ✅ Complete — constraint-solver-proven unique solutions, natural-language clues (Tier 2 now 12/12) |
+| Word Ladder | ✅ Complete — common-word graph, minimal-hint unique solutions (Tier 3 started) |
 
 **4 activity page types** (no answer key):
 - **Coloring** — seed-driven unique line art: mandala / shape-pattern / bubble-letter
@@ -170,7 +171,7 @@ Planned split (future):
 ### Tier 3 — Niche / High Value
 | Type | Status |
 |---|---|
-| Word Ladder | 🔲 Roadmap |
+| Word Ladder | ✅ |
 | Spot the Difference | 🔲 Roadmap |
 | Sudoku Variants | 🔲 Roadmap |
 | Math Puzzles | 🔲 Roadmap |
@@ -1007,7 +1008,7 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 
 ### 🟡 Phase 7 — More Puzzle Variety
 - ✅ Logic Grid — constraint-solver-verified unique solutions, natural-language clues, book + answer-key support
-- 🔲 Word Ladder
+- ✅ Word Ladder — common-word graph (frequency list ∩ dictionary), minimal-hint unique solutions, book + answer-key support
 - 🔲 Spot the Difference
 - 🔲 Sudoku variants
 - 🔲 Riddles / Brain Teasers / Word Wheel / Cipher puzzles (Tier 3)
