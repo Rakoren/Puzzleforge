@@ -270,3 +270,25 @@ test('titlePage:false omits the auto title page but keeps title/author for cover
   // Content page numbering shifts down by one when there's no title page.
   assert.equal(off.pages[0].pageNumber, on.pages[0].pageNumber - 1);
 });
+
+const bookTemplates = require('../puzzleforge-web/public/templates.js');
+
+test('every starter template assembles into a real, renderable book', () => {
+  assert.ok(Array.isArray(bookTemplates) && bookTemplates.length >= 1);
+  const ids = new Set();
+  for (const tpl of bookTemplates) {
+    assert.ok(tpl.id && tpl.name && tpl.config, `template ${tpl.id} shape`);
+    assert.ok(!ids.has(tpl.id), `duplicate template id ${tpl.id}`);
+    ids.add(tpl.id);
+    // Deep-copy: applyConfig/useTemplate must never mutate the shared template.
+    const cfg = JSON.parse(JSON.stringify(tpl.config));
+    const book = assembleBook(cfg);
+    assert.ok(book.pages.length > 0, `${tpl.id} produced pages`);
+    const html = renderBookHtml(book);
+    assert.ok(html.includes(tpl.config.title), `${tpl.id} renders its title`);
+    // Row counts stay within the builder's 1–40 per-row cap.
+    for (const p of tpl.config.puzzles) {
+      assert.ok(p.count >= 1 && p.count <= 40, `${tpl.id} ${p.type} count ${p.count} within 1–40`);
+    }
+  }
+});

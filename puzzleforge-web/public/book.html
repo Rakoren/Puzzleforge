@@ -28,6 +28,10 @@
 
   <main class="layout">
     <section class="panel config" aria-label="Book settings">
+      <button id="openTemplates" class="tpl-cta" type="button">
+        <span class="tpl-cta-emoji">✨</span>
+        <span class="tpl-cta-text"><strong>Start from a template</strong><small>Pick a ready-made book and edit from there</small></span>
+      </button>
       <h2>1 · Book details</h2>
       <label class="field">
         <span>Title</span>
@@ -271,6 +275,20 @@
     </section>
   </main>
 
+  <!-- Starter-book template gallery -->
+  <div id="tplModal" class="pf-modal" hidden>
+    <div class="pf-modal-backdrop" data-close="1"></div>
+    <div class="pf-modal-box">
+      <div class="pf-modal-head">
+        <h2>Start from a template</h2>
+        <button id="tplClose" class="ghost mini" aria-label="Close">✕</button>
+      </div>
+      <p class="pf-modal-sub">Pick a ready-made book to fill in the builder — a full puzzle mix, cover colors and KDP details, all editable. Great for going from zero to a print-ready book fast.</p>
+      <div id="tplGrid" class="pf-tpl-grid"></div>
+    </div>
+  </div>
+
+  <script src="templates.js"></script>
   <script src="book.js"></script>
 </body>
 </html>

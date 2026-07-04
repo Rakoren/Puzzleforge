@@ -65,6 +65,10 @@
     pageInfo: $('pageInfo'),
     editPanel: $('editPanel'),
     editList: $('editList'),
+    openTemplates: $('openTemplates'),
+    tplModal: $('tplModal'),
+    tplClose: $('tplClose'),
+    tplGrid: $('tplGrid'),
   };
 
   const TYPE_NAMES = {
@@ -744,6 +748,45 @@
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.fontScale, el.fontFamily, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );
+    setupTemplates();
+  }
+
+  // --- starter-book templates ---
+  function setupTemplates() {
+    if (!el.openTemplates || !el.tplGrid) return;
+    const list = (typeof window !== 'undefined' && window.PFBookTemplates) || [];
+    el.tplGrid.innerHTML = '';
+    list.forEach((tpl) => {
+      const card = document.createElement('div');
+      card.className = 'pf-tpl-card';
+      const pick = document.createElement('button');
+      pick.type = 'button';
+      pick.className = 'pf-tpl-pick';
+      pick.innerHTML =
+        `<span class="pf-tpl-emoji">${tpl.emoji || '📘'}</span>` +
+        `<span class="pf-tpl-name">${escapeHtml(tpl.name)}</span>` +
+        `<span class="pf-tpl-desc">${escapeHtml(tpl.desc || '')}</span>` +
+        (tpl.badge ? `<span class="pf-tpl-badge">${escapeHtml(tpl.badge)}</span>` : '');
+      pick.addEventListener('click', () => useTemplate(tpl));
+      card.appendChild(pick);
+      el.tplGrid.appendChild(card);
+    });
+    el.openTemplates.addEventListener('click', () => { el.tplModal.hidden = false; });
+    const close = () => { el.tplModal.hidden = true; };
+    el.tplClose.addEventListener('click', close);
+    el.tplModal.addEventListener('click', (e) => { if (e.target.dataset && e.target.dataset.close) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !el.tplModal.hidden) close(); });
+  }
+
+  function useTemplate(tpl) {
+    applyConfig(JSON.parse(JSON.stringify(tpl.config)));
+    el.tplModal.hidden = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setStatus(`Loaded “${tpl.name}” — tweak anything, then Preview or Open in Editor.`, 'ok');
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   init();
