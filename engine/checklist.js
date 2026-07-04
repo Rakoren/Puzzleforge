@@ -11,9 +11,68 @@
  * check reports status 'pass' (🟢).
  */
 const { isActivityType } = require('../generators/registry');
-const { getLayout } = require('../layouts');
+const { getLayout, PX_PER_IN } = require('../layouts');
 const { gutterMinInches, KDP_PAGE_MAX } = require('./kdp');
 const { difficultyTier } = require('../config/difficulty');
+const imagesize = require('./imagesize');
+
+const KDP_MIN_DPI = 300; // KDP's minimum image resolution for print
+
+// Positioned free elements (editor layer) across the book, with their page.
+function pageElements(book) {
+  const out = [];
+  (book.pages || []).forEach((pg, i) => {
+    const els = pg.state && pg.state.layout && pg.state.layout.elements;
+    if (Array.isArray(els)) for (const e of els) if (e) out.push({ page: pg.pageNumber || i + 1, el: e });
+  });
+  return out;
+}
+
+// Images whose effective print resolution falls below KDP's 300 DPI minimum.
+// Effective DPI = natural pixels / printed inches; printed inches = display px
+// (width × scale) ÷ 96 px-per-inch.
+function lowResImages(book) {
+  const bad = [];
+  for (const { page, el } of pageElements(book)) {
+    if (el.kind !== 'image' || !el.src) continue;
+    const dim = imagesize.fromDataUri(el.src);
+    if (!dim || !dim.width) continue;
+    const displayPx = (Number(el.width) || 0) * (Number(el.scale) || 1);
+    if (displayPx <= 0) continue;
+    const dpi = (dim.width * PX_PER_IN) / displayPx;
+    if (dpi < KDP_MIN_DPI) bad.push({ page, dpi: Math.round(dpi) });
+  }
+  return bad;
+}
+
+// Free elements that spill outside the page's usable (safe) area — our usable
+// area already sits inside KDP's minimum margins, so anything beyond it risks
+// being trimmed. Uses known dimensions; text/table height is unknown so only
+// their top-left and right edge are checked (no false positives from wrapping).
+function outOfSafeArea(book) {
+  let layout;
+  try { layout = getLayout(book.trimSize, { audience: book.audience }); } catch (_) { return []; }
+  const W = layout.usableWidth, H = layout.usableHeight, tol = 2;
+  const pages = new Set();
+  for (const { page, el } of pageElements(book)) {
+    if (el.group !== 'el') continue;
+    const scale = Number(el.scale) || 1;
+    const x = Number(el.x) || 0, y = Number(el.y) || 0;
+    let w = null, h = null;
+    if (el.kind === 'image') {
+      w = (Number(el.width) || 0) * scale;
+      const d = imagesize.fromDataUri(el.src);
+      if (d && d.width) h = w * (d.height / d.width);
+    } else if (el.kind === 'shape') { w = (Number(el.w) || 0) * scale; h = (Number(el.h) || 0) * scale; }
+    else if (el.kind === 'qr') { w = (Number(el.w) || 0) * scale; h = w; }
+    else { w = (Number(el.w) || 0) * scale; } // text/table: width only
+    let bad = x < -tol || y < -tol;
+    if (w != null && x + w > W + tol) bad = true;
+    if (h != null && y + h > H + tol) bad = true;
+    if (bad) pages.add(page);
+  }
+  return [...pages].sort((a, b) => a - b);
+}
 
 // All user-authored text on the pages (template / matter text objects), lowercased.
 // Lets matter checks work whether copyright came from a Book Builder field or an
@@ -77,9 +136,12 @@ function wordlistMismatches(book) {
 }
 
 // A non-activity puzzle should carry real puzzle data and a solution.
+// A generated puzzle always carries a populated data object (a failed
+// generation throws and never reaches the book), so "has content" = a non-empty
+// data object. (A type-keyed whitelist went stale as new types were added and
+// false-failed on sudoku/logic grid/etc.)
 function hasPuzzleContent(p) {
-  const d = p.data || {};
-  return Boolean(d.grid || d.words || d.cells || d.items || d.clues || d.questions || d.message);
+  return Boolean(p && p.data && typeof p.data === 'object' && Object.keys(p.data).length > 0);
 }
 function hasSolution(p) {
   const s = p.solution;
@@ -215,6 +277,20 @@ function runChecklist(book, opts = {}) {
         `Inside margin is ${gutter}" but a ${pages}-page book needs at least ${need}". Reduce pages or widen the gutter.`);
     } catch (_) { /* unknown trim already flagged by trim-consistent */ }
   }
+
+  // Image resolution — KDP's own previewer warns below 300 DPI.
+  const lowRes = lowResImages(book);
+  add('image-dpi', 'Images meet 300 DPI', 'warning', lowRes.length === 0,
+    lowRes.length
+      ? `${lowRes.length} placed image(s) print below KDP's 300 DPI minimum — e.g. page ${lowRes[0].page} at ~${lowRes[0].dpi} DPI. Use a higher-resolution image or make it smaller on the page.`
+      : '');
+
+  // Content must stay inside the safe area (our usable area ⊆ KDP's margins).
+  const oob = outOfSafeArea(book);
+  add('safe-area', 'Content inside the safe margins', 'warning', oob.length === 0,
+    oob.length
+      ? `An object spills past the page's safe area (into the trim margin or off the page) on page ${oob[0]}${oob.length > 1 ? ` (+${oob.length - 1} more)` : ''}. KDP may cut it off — move it inside the guides.`
+      : '');
 
   const summary = items.reduce(
     (acc, it) => {

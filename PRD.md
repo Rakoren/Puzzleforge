@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (107 tests passing)
+### Engine (112 tests passing)
 
 **14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -287,9 +287,9 @@ Adding a new puzzle type = new folder, same four exports. Engine doesn't change.
 |---|---|
 | Grid resolution | 300 DPI |
 | Crossword cell numbers | 600 DPI |
-| Gutter (inside margin) | 0.75" ≤150pp / 0.875" 151–300pp / 1.0" 300+pp |
-| Outside margin | 0.625" |
-| Top / bottom margins | 0.75" |
+| Gutter (inside margin) — **KDP minimums, verified July 2026** | ≤150pp → 0.375" · 151–300 → 0.5" · 301–500 → 0.625" · 501–700 → 0.75" · 701–828 → 0.875" (source of truth: `engine/kdp.js` `gutterMinInches`; our trim specs exceed these) |
+| Outside / top / bottom margin (KDP minimum) | ≥ 0.25" (≥ 0.375" with bleed) |
+| Image resolution | ≥ 300 DPI (600 recommended); interior file ≤ 650 MB |
 | Bleed | None (0.125" if decorative edges) |
 | Minimum page count | 24 (50+ recommended) |
 | Maximum page count | 828pp B&W / 550pp premium color |
@@ -1111,7 +1111,7 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner. *(Shipped: the QR foundation — `engine/qr.js` encodes offline via `qrcode-generator`; the shared `element-html.js` draws it as a crisp vector so it stays scannable at any print size; placeable/editable in the Page Editor as a QR element pointing at any URL, editor==PDF. Per-page hint/answer landing pages + book-level auto-QR still to come.)*
 - **ComfyUI visibility** — WebSocket progress display, live latent preview, workflow debug panel
 - **ComfyUI prompt helper** — Claude-powered prompt optimizer, context-aware per preset, positive + negative prompt output, "explain changes" toggle
-- **Publish Checklist** — pre-flight checklist with 🔴 blockers / 🟡 warnings / 🟢 passes, structural + KDP compliance checks (logic), content quality checks (Claude API), "Fix it" shortcuts per item, auto-runs on export. *(Shipped early: the structural/print logic checks — `engine/checklist.js`, "Run publish checklist" button in Book Builder, renders the book for an accurate page count. Claude content-quality checks, "Fix it" jumps, and auto-run-on-export still to come.)*
+- **Publish Checklist** — pre-flight checklist with 🔴 blockers / 🟡 warnings / 🟢 passes, structural + KDP compliance checks (logic), content quality checks (Claude API), "Fix it" shortcuts per item, auto-runs on export. *(Shipped: `engine/checklist.js` — structural/print checks verified against KDP's published rules (July 2026): page count 24–828, even, gutter table per page count, trim set; plus image ≥300 DPI (`engine/imagesize.js`) and content-inside-safe-area checks, answer-key completeness, word-list match, difficulty/audience coherence, bleed guards, copyright/back-matter. **Export gate**: the KDP bundle / PDF download runs the checklist first and blocks on 🔴 blockers unless the user overrides (warnings never block). Fixed a stale `hasPuzzleContent` whitelist that had false-flagged sudoku/logic-grid/etc. as "empty". Still to come: Claude content-quality checks, "Fix it" jumps, cover-image DPI, server-side gate enforcement.)*
 
 ### 🔲 Phase 10 — Digital Layer + Multi-Platform (Publisher)
 - **QR full digital layer** — celebration animations, story continuation, bonus puzzles, audio, parent/teacher pages

@@ -418,8 +418,31 @@
     el.kdpStatus.className = 'status' + (kind ? ' ' + kind : '');
   }
 
+  // Pre-flight gate: run the publish checklist and stop on hard blockers unless
+  // the user overrides. Warnings never block. Returns true to proceed.
+  async function preflightGate(statusFn) {
+    statusFn('Running pre-flight checks…', 'busy');
+    try {
+      const res = await fetch('/api/book/checklist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastBookId ? { bookId: lastBookId, config: config() } : { config: config() }),
+      });
+      const data = await res.json();
+      if (!res.ok) return true; // if the check can't run, don't block the export
+      renderChecklist(data);
+      el.checklist.classList.remove('hidden');
+      const blockers = (data.items || []).filter((i) => i.status !== 'pass' && i.severity === 'blocker');
+      if (!blockers.length) return true;
+      const list = blockers.map((b) => `• ${b.label}${b.message ? ` — ${b.message}` : ''}`).join('\n\n');
+      return window.confirm(
+        `Pre-flight found ${blockers.length} blocker${blockers.length === 1 ? '' : 's'} that KDP is likely to reject:\n\n${list}\n\nThese are shown in the checklist below. Download anyway?`
+      );
+    } catch (_) { return true; }
+  }
+
   async function buildBundle() {
     if (!rows.length) { setKdpStatus('Add at least one puzzle first.', 'err'); return; }
+    if (!(await preflightGate(setKdpStatus))) { setKdpStatus('Export cancelled — fix the blockers in the checklist.', 'err'); return; }
     setKdpStatus('Building interior + cover… (this can take a while)', 'busy');
     el.kdpBundle.disabled = true;
     try {
@@ -472,6 +495,7 @@
   }
 
   async function buildPdf() {
+    if (!(await preflightGate(setStatus))) { setStatus('Export cancelled — fix the blockers in the checklist.', 'err'); return; }
     setStatus('Rendering PDF…', 'busy');
     el.buildPdf.disabled = true;
     try {
