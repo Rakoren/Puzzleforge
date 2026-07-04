@@ -432,3 +432,63 @@ test('word ladder: works inside an assembled book with a back-of-book key', () =
   assert.match(html, /Word Ladder/);
   assert.match(html, /ladder-ans/);
 });
+
+// --- Word Wheel ---------------------------------------------------------
+const wheel = require('../generators/wordwheel');
+const wheelSolver = require('../generators/wordwheel/solver');
+const wheelValidator = require('../generators/wordwheel/validator');
+const wheelRenderer = require('../generators/wordwheel/renderer');
+
+test('word wheel: every difficulty generates a valid, solvable wheel', () => {
+  for (let d = 1; d <= 4; d++) {
+    for (let s = 1; s <= 5; s++) {
+      const p = engineGenerate({ type: 'wordwheel', difficulty: d, seed: s });
+      const v = wheelValidator.validate(p);
+      assert.ok(v.valid, `d${d} s${s} valid: ${v.errors.join('; ')}`);
+      const solved = wheelSolver.solve(p);
+      assert.deepEqual(solved.missing, [], `d${d} s${s} solver: ${solved.missing.join('; ')}`);
+      // wheel letters equal the 9-letter word's letters; centre is on the wheel
+      assert.equal(p.data.wheel.length, 9);
+      assert.equal(p.data.wheel.split('').sort().join(''), p.solution.pangram.split('').sort().join(''));
+      assert.ok(p.data.wheel.includes(p.data.center));
+      // every listed word uses the centre and is ≥ minLen
+      for (const w of p.solution.words) {
+        assert.ok(w.includes(p.data.center) && w.length >= p.data.minLen, `${w} legal`);
+      }
+    }
+  }
+});
+
+test('word wheel: an illegal answer is rejected', () => {
+  const p = engineGenerate({ type: 'wordwheel', difficulty: 2, seed: 4 });
+  p.solution.words.push('zzzz'); // not makeable from the wheel
+  assert.ok(!wheelValidator.validate(p).valid);
+});
+
+test('word wheel: reproducible from a seed', () => {
+  const c = (p) => JSON.stringify({ data: p.data, solution: p.solution });
+  assert.equal(
+    c(engineGenerate({ type: 'wordwheel', difficulty: 3, seed: 21 })),
+    c(engineGenerate({ type: 'wordwheel', difficulty: 3, seed: 21 })),
+  );
+});
+
+test('word wheel: renders the wheel (puzzle) and the full word list (answer key)', () => {
+  const p = engineGenerate({ type: 'wordwheel', difficulty: 2, seed: 6 });
+  const puzzleHtml = wheelRenderer.render(p, LGLAYOUT, {});
+  const keyHtml = wheelRenderer.render(p, LGLAYOUT, { answerKey: true });
+  assert.match(puzzleHtml, /<svg/);
+  assert.match(puzzleHtml, new RegExp(p.data.center.toUpperCase()));
+  assert.match(keyHtml, new RegExp(p.solution.pangram.toUpperCase()));
+  assert.match(keyHtml, /words to find/);
+});
+
+test('word wheel: works inside an assembled book with a back-of-book key', () => {
+  const book = assembleBook({
+    title: 'Wheels', puzzleforgeBook: 1, trimSize: '8.5x11', answerKey: true,
+    puzzles: [{ type: 'wordwheel', count: 1, difficulty: '2' }], seed: 3,
+  });
+  const html = renderBookHtml(book);
+  assert.match(html, /Word Wheel/);
+  assert.match(html, /wheel-ans/);
+});

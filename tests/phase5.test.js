@@ -18,7 +18,8 @@ test('number search and trivia are registered (ten puzzle types + activity pages
   assert.ok(types.includes('breather'));
   assert.ok(types.includes('logicgrid'));
   assert.ok(types.includes('wordladder'));
-  assert.equal(types.length, 16);
+  assert.ok(types.includes('wordwheel'));
+  assert.equal(types.length, 17);
 });
 
 // --- Number Search ---

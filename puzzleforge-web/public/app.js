@@ -471,6 +471,7 @@
       trivia: 'Trivia Quiz',
       logicgrid: 'Logic Grid',
       wordladder: 'Word Ladder',
+      wordwheel: 'Word Wheel',
       coloring: 'Coloring Page',
       drawing: 'Drawing Page',
       bleedguard: 'Blank (bleed guard)',

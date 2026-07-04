@@ -60,12 +60,12 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (96 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (101 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Twelve puzzle types**, each with Golden Standards validation and an
+- **Thirteen puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
   - **Word Search** — direction mix and word separation by difficulty
     (easy: words fully isolated; medium: no crossings; hard: dense crossings)
@@ -83,6 +83,8 @@ Implemented so far:
     has exactly one solution, with natural-language clues
   - **Word Ladder** — change one letter at a time (start → end); built on a
     common-word graph with the minimum hints needed for a unique answer
+  - **Word Wheel** — nine letters around a required centre; find every word and
+    the hidden 9-letter word, from a baked common-word dictionary
 - Four **activity page** types (no answer key): coloring, drawing,
   blank/bleed-guard, breather (quote/fact/divider)
 - Non-bypassable offensive-language filter (applied to words, fill, and clues)
@@ -100,9 +102,9 @@ Implemented so far:
   tables, break-apart puzzles, scannable **QR codes**, My Books library +
   autosave, and a self-hosted LAN team workspace).
 
-Not yet built (later phases): more Tier 3 puzzle types (Riddles, Word Wheel, …),
-the QR digital layer (hosted hint/answer landing pages — the placeable QR
-foundation is done), and teacher-tool extras (worksheet builder, lesson packets).
+Not yet built (later phases): more Tier 3 puzzle types (Riddles, Cipher, …), the
+QR digital layer (hosted hint/answer landing pages — the placeable QR foundation
+is done), and teacher-tool extras (worksheet builder, lesson packets).
 See [`PRD.md`](./PRD.md) for the full roadmap.
 
 ## Architecture
@@ -168,6 +170,7 @@ node cli/index.js --type crossword --theme space --answers --out crossword.pdf
 node cli/index.js --type cryptogram --difficulty 2 --out cryptogram.pdf
 node cli/index.js --type logicgrid --difficulty 2 --answers --out logic.pdf
 node cli/index.js --type wordladder --difficulty 2 --answers --out ladder.pdf
+node cli/index.js --type wordwheel --difficulty 2 --answers --out wheel.pdf
 
 # Assemble and export a full book from a config file
 node cli/index.js --book examples/animals-activity-book.json --out book.pdf

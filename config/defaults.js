@@ -115,6 +115,15 @@ const DIFFICULTY = {
     3: { length: 4, steps: 6, style: 'minimal' },
     4: { length: 4, steps: 7, style: 'minimal' },
   },
+  // Word Wheel: `minLen` is the shortest word allowed; `sourceTop` biases the
+  // 9-letter source word toward the common end of the list (lower = easier
+  // target); `minWords` is the acceptance floor on findable words.
+  wordwheel: {
+    1: { minLen: 3, sourceTop: 0.35, minWords: 12 },
+    2: { minLen: 4, sourceTop: 0.6, minWords: 12 },
+    3: { minLen: 4, sourceTop: 1, minWords: 10 },
+    4: { minLen: 5, sourceTop: 1, minWords: 8 },
+  },
 };
 
 function acceptThreshold(type) {

@@ -42,9 +42,9 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (96 tests passing)
+### Engine (101 tests passing)
 
-**12 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
+**13 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
 | Puzzle Type | Status |
 |---|---|
@@ -60,6 +60,7 @@ Planned split (future):
 | Trivia / Quiz | ✅ Complete |
 | Logic Grid | ✅ Complete — constraint-solver-proven unique solutions, natural-language clues (Tier 2 now 12/12) |
 | Word Ladder | ✅ Complete — common-word graph, minimal-hint unique solutions (Tier 3 started) |
+| Word Wheel | ✅ Complete — 9-letter source, baked common-word dictionary, full findable-word key |
 
 **4 activity page types** (no answer key):
 - **Coloring** — seed-driven unique line art: mandala / shape-pattern / bubble-letter
@@ -193,12 +194,12 @@ Internal engine levels are **1–4**; the labels shown to buyers depend on the b
 | Type | Status |
 |---|---|
 | Word Ladder | ✅ |
+| Word Wheel | ✅ |
 | Spot the Difference | 🔲 Roadmap |
 | Sudoku Variants | 🔲 Roadmap |
 | Math Puzzles | 🔲 Roadmap |
 | Riddles | 🔲 Roadmap |
 | Brain Teasers | 🔲 Roadmap |
-| Word Wheel | 🔲 Roadmap |
 | Cipher / Code Puzzles | 🔲 Roadmap |
 
 ### Tier 4 — Stretch Goals
@@ -1030,9 +1031,10 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 ### 🟡 Phase 7 — More Puzzle Variety
 - ✅ Logic Grid — constraint-solver-verified unique solutions, natural-language clues, book + answer-key support
 - ✅ Word Ladder — common-word graph (frequency list ∩ dictionary), minimal-hint unique solutions, book + answer-key support
+- ✅ Word Wheel — 9-letter source word, baked common-word dictionary (50k-freq ∩ dictionary), full findable-word key + scoring targets
 - 🔲 Spot the Difference
 - 🔲 Sudoku variants
-- 🔲 Riddles / Brain Teasers / Word Wheel / Cipher puzzles (Tier 3)
+- 🔲 Riddles / Brain Teasers / Cipher puzzles (Tier 3)
 
 ### ✅ Phase 8 — Image-Based Tools (complete)
 14. ✅ Image-to-Coloring Page — Sharp + JS Sobel edge detector → black line art, detail
