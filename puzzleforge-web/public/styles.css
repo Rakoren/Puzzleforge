@@ -530,6 +530,19 @@ body.theme-dark {
 /* Master pages */
 .master-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 14px; margin: 8px 16px 0; border-radius: 10px; background: #eef1fe; border: 1px solid var(--brand); color: #33407a; font-size: 13px; }
 .master-banner[hidden] { display: none; }
+
+/* Ribbon split-button dropdowns (Page ▾, …) */
+.rdrop { position: relative; display: inline-flex; }
+.rdrop-btn { display: inline-flex; align-items: center; }
+.rdrop-caret { font-size: 10px; margin-left: 1px; }
+.rdrop-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 200; min-width: 200px;
+  background: var(--panel, #fff); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px rgba(20, 26, 45, .16); padding: 5px; }
+.rdrop-menu[hidden] { display: none; }
+.rdrop-menu button { display: block; width: 100%; text-align: left; background: none; border: none;
+  padding: 8px 12px; border-radius: 7px; font-size: 13px; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.rdrop-menu button:hover { background: #eef1fe; color: var(--brand); }
+.theme-dark .rdrop-menu { background: #34373d; }
+.theme-dark .rdrop-menu button:hover { background: #2f3b57; color: #cdd6ff; }
 .theme-dark .master-banner { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
 .pf-master-ov { pointer-events: none; }                 /* master overlay is non-interactive on normal pages */
 body:not(.master-editing) .pf-master-ov { opacity: .82; }

@@ -102,6 +102,8 @@
             <button class="iconbtn shape-btn" data-shape="rect" title="Rectangle">▭</button>
             <button class="iconbtn shape-btn" data-shape="ellipse" title="Ellipse">◯</button>
             <button class="iconbtn shape-btn" data-shape="line" title="Line">─</button>
+            <button class="iconbtn shape-btn" data-shape="speech" title="Speech bubble">💬</button>
+            <button class="iconbtn shape-btn" data-shape="thought" title="Thought bubble">💭</button>
           </div>
           <div class="rgroup-name">Objects</div>
         </div>
@@ -143,9 +145,14 @@
       <section class="ribbon-panel" data-panel="insert">
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="addBlank" class="ghost" title="Insert a blank page after the current one">＋ Blank page</button>
-            <button id="insertTpl" class="ghost" title="Insert a page from a template">＋ Page template…</button>
-            <button id="dupPage" class="ghost" title="Duplicate the current page">⧉ Duplicate page</button>
+            <span class="rdrop" id="pageDrop">
+              <button class="ghost rdrop-btn" id="pageDropBtn" aria-haspopup="true" aria-expanded="false">📄 Page&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <button type="button" data-act="blank">📄 Insert Blank Page</button>
+                <button type="button" data-act="dup">⧉ Insert Duplicate Page</button>
+                <button type="button" data-act="tpl">🗂 Insert Page…</button>
+              </div>
+            </span>
             <button id="savePageTpl" class="ghost" title="Save this page's layout as a reusable template">Save as template…</button>
           </div>
           <div class="rgroup-name">Pages</div>
@@ -160,6 +167,8 @@
               <button class="iconbtn shape-btn" data-shape="triangle" title="Triangle">△</button>
               <button class="iconbtn shape-btn" data-shape="star" title="Star">☆</button>
               <button class="iconbtn shape-btn" data-shape="line" title="Line">─</button>
+              <button class="iconbtn shape-btn" data-shape="speech" title="Speech bubble">💬</button>
+              <button class="iconbtn shape-btn" data-shape="thought" title="Thought bubble">💭</button>
             </span>
           </div>
           <div class="rgroup-name">Illustrations</div>

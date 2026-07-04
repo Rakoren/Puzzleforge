@@ -163,6 +163,17 @@ test('checklist does not false-positive on an untouched (baked) word list', () =
   assert.equal(wl.status, 'pass');
 });
 
+test('speech and thought bubble shapes render with fill + stroke', () => {
+  const { elementHtml } = require('../engine/element-html');
+  const speech = elementHtml({ kind: 'shape', shape: 'speech', w: 200, h: 130, fill: '#ffd43b', stroke: '#222222', strokeW: 2 });
+  assert.match(speech, /<path d="M/);            // single tailed-bubble path
+  assert.match(speech, /fill="#ffd43b"/);
+  assert.match(speech, /stroke="#222222"/);
+  const thought = elementHtml({ kind: 'shape', shape: 'thought', w: 200, h: 130, fill: '#ffffff', stroke: '#333333', strokeW: 2 });
+  assert.match(thought, /<ellipse/);             // body
+  assert.equal((thought.match(/<circle/g) || []).length, 2); // two trailing puffs
+});
+
 test('objects flagged behind render under the puzzle pieces (export stacking)', () => {
   const { composeParts } = require('../engine/components');
   const { getLayout } = require('../layouts');

@@ -74,6 +74,24 @@
     return `<table style="border-collapse:collapse;table-layout:fixed;width:${totalW}px;font-family:${fam};font-size:${fs}px;color:${col};line-height:1.35;">${cg}<tbody>${body}</tbody></table>`;
   }
 
+  // A rounded-rectangle speech bubble with a tail on the bottom-left, as one
+  // fillable path (so fill + stroke follow the whole outline, tail included).
+  function speechPath(w, h, inset) {
+    const x0 = inset, y0 = inset, x1 = w - inset, y1 = h - inset;
+    const tailH = Math.min((y1 - y0) * 0.26, 24);
+    const bodyB = y1 - tailH;
+    const r = Math.max(2, Math.min(16, (x1 - x0) / 2, (bodyB - y0) / 2));
+    const baseL = x0 + Math.min((x1 - x0) * 0.24, 44);
+    const baseR = baseL + Math.min((x1 - x0) * 0.15, 26);
+    const tip = x0 + Math.min((x1 - x0) * 0.11, 18);
+    return [
+      `M ${x0 + r} ${y0}`, `H ${x1 - r}`, `A ${r} ${r} 0 0 1 ${x1} ${y0 + r}`,
+      `V ${bodyB - r}`, `A ${r} ${r} 0 0 1 ${x1 - r} ${bodyB}`,
+      `H ${baseR}`, `L ${tip} ${y1}`, `L ${baseL} ${bodyB}`, `H ${x0 + r}`,
+      `A ${r} ${r} 0 0 1 ${x0} ${bodyB - r}`, `V ${y0 + r}`, `A ${r} ${r} 0 0 1 ${x0 + r} ${y0}`, 'Z',
+    ].join(' ');
+  }
+
   function shapeSvg(e) {
     const w = Math.max(8, num(e.w, 160));
     const h = Math.max(4, num(e.h, 120));
@@ -96,6 +114,22 @@
       case 'line':
         body = `<line x1="${i}" y1="${h / 2}" x2="${w - i}" y2="${h / 2}" stroke="${stroke === 'none' ? '#222222' : stroke}" stroke-width="${Math.max(1, sw)}" stroke-linecap="round"/>`;
         break;
+      case 'speech':
+        body = `<path d="${speechPath(w, h, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'thought': {
+        const inW = w - sw, inH = h - sw;
+        const bodyH = inH * 0.6;
+        const rx = inW / 2, ry = bodyH / 2;
+        const p1r = Math.max(3, Math.min((inH - bodyH) * 0.42, inW * 0.12));
+        const p2r = Math.max(2, p1r * 0.6);
+        const p1y = i + bodyH + p1r * 0.6;
+        const p2y = Math.min(h - i - p2r, p1y + p1r * 0.85 + p2r);
+        body = `<ellipse cx="${w / 2}" cy="${i + ry}" rx="${rx}" ry="${ry}" ${attrs}/>`
+          + `<circle cx="${i + inW * 0.42}" cy="${p1y}" r="${p1r}" ${attrs}/>`
+          + `<circle cx="${i + inW * 0.26}" cy="${p2y}" r="${p2r}" ${attrs}/>`;
+        break;
+      }
       default: // rect
         body = `<rect x="${i}" y="${i}" width="${w - sw}" height="${h - sw}" rx="${Math.max(0, num(e.rx, 0))}" ${attrs}/>`;
     }

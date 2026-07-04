@@ -273,6 +273,25 @@
   function duplicatePage(i) { pageModels.splice(i + 1, 0, clonePageModel(pageModels[i])); cur = i + 1; buildPageList(); renderPage(); }
   function insertBlankAfterCurrent() { const at = cur < 0 ? pageModels.length : cur + 1; pageModels.splice(at, 0, blankModel()); cur = at; buildPageList(); renderPage(); }
 
+  // --- Ribbon split-button dropdowns (Publisher-style) ---
+  function initDropdowns() {
+    const closeAll = (except) => document.querySelectorAll('.rdrop-menu').forEach((m) => { if (m !== except) { m.hidden = true; const b = m.parentElement.querySelector('.rdrop-btn'); if (b) b.setAttribute('aria-expanded', 'false'); } });
+    document.querySelectorAll('.rdrop').forEach((drop) => {
+      const btn = drop.querySelector('.rdrop-btn'); const menu = drop.querySelector('.rdrop-menu');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', (e) => { e.stopPropagation(); const open = menu.hidden; closeAll(); menu.hidden = !open; btn.setAttribute('aria-expanded', String(open)); });
+      menu.addEventListener('click', (e) => { const it = e.target.closest('[data-act]'); if (!it) return; menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); handleDropAct(drop.id, it.dataset.act); });
+    });
+    document.addEventListener('click', () => closeAll());
+  }
+  function handleDropAct(dropId, act) {
+    if (dropId === 'pageDrop') {
+      if (act === 'blank') insertBlankAfterCurrent();
+      else if (act === 'dup') { if (cur >= 0) duplicatePage(cur); }
+      else if (act === 'tpl') openTplPicker();
+    }
+  }
+
   // --- page templates -------------------------------------------------------
   // Matter and layout pages live in the editor as templates: inserting one
   // drops a fresh page whose content is ordinary, editable text/shape objects.
@@ -875,11 +894,12 @@
   function addImageFile(file) { const r = new FileReader(); r.onload = () => addElement({ group: 'el', id: uid++, kind: 'image', x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 80), scale: 1, rot: 0, z: 100, src: r.result, width: 160 }); r.readAsDataURL(file); }
   function addShape(shape) {
     const line = shape === 'line';
+    const bubble = shape === 'speech' || shape === 'thought';
     addElement({
       group: 'el', id: uid++, kind: 'shape', shape,
-      x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 60),
+      x: Math.round(dims.usableWidth / 2 - 90), y: Math.round(dims.usableHeight / 2 - 65),
       scale: 1, rot: 0, z: 100,
-      w: line ? 220 : 160, h: line ? 12 : 120,
+      w: line ? 220 : bubble ? 200 : 160, h: line ? 12 : bubble ? 130 : 120,
       fill: line ? 'none' : schemeFill(), stroke: schemeStroke(), strokeW: line ? 3 : 2,
     });
   }
@@ -1900,8 +1920,9 @@
     el.border.addEventListener('change', setBorder);
     el.gridToggle.addEventListener('change', () => { if (gridEl) gridEl.style.display = el.gridToggle.checked ? '' : 'none'; });
     el.reroll.addEventListener('click', reroll); el.resetLayout.addEventListener('click', resetLayout);
-    el.addBlank.addEventListener('click', insertBlankAfterCurrent);
+    if (el.addBlank) el.addBlank.addEventListener('click', insertBlankAfterCurrent);
     if (el.addBlankSide) el.addBlankSide.addEventListener('click', insertBlankAfterCurrent);
+    initDropdowns();
     if (el.insertTpl) el.insertTpl.addEventListener('click', openTplPicker);
     if (el.insertTplSide) el.insertTplSide.addEventListener('click', openTplPicker);
     if (el.savePageTpl) el.savePageTpl.addEventListener('click', savePageAsTemplate);
