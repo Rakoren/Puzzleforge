@@ -24,6 +24,7 @@ const {
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,
+  frontImageDpi,
   defaultLeaves,
   renderMatterDoc,
 } = require('./engine/export');
@@ -72,6 +73,7 @@ module.exports = {
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,
+  frontImageDpi,
   getLayout,
   listTrimSizes,
   listTypes,

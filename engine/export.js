@@ -28,8 +28,9 @@ const {
   renderAnswerKey,
   answerKeyPages,
   answerKeyPageCount,
+  pageShell,
 } = require('./matter');
-const { renderCoverHtml, coverDimensions } = require('./cover');
+const { renderCoverHtml, coverDimensions, frontImageDpi } = require('./cover');
 
 function findChromium(explicit) {
   const home = process.env.HOME || process.env.USERPROFILE || '';
@@ -338,6 +339,8 @@ function defaultLeaves(book) {
       leaves.push({ role: 'backmatter', matter: bm, matterKind: bm.kind });
     }
   }
+  // KDP requires an even physical page count. Optionally append a blank leaf.
+  if (book.padToEven && leaves.length % 2 === 1) leaves.push({ role: 'blank' });
   return leaves;
 }
 
@@ -363,6 +366,9 @@ function renderLeafDoc(book, layout, styleOpts, leaf) {
   const border = st.border !== undefined ? st.border : book.border;
   const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
   const withBorder = (doc) => (border && border !== 'none') ? applyBorder(doc, layout, border, borderColor) : doc;
+
+  // A padding leaf: an intentionally blank page (no border, no number).
+  if (leaf.role === 'blank') return pageShell(layout, '', '');
 
   if (leaf.role === 'content') {
     const puzzle = leaf.puzzle;
@@ -529,6 +535,7 @@ module.exports = {
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,
+  frontImageDpi,
   combinePages,
   findChromium,
   defaultLeaves,

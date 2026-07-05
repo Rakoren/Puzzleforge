@@ -913,7 +913,7 @@ app.post('/api/book/package', async (req, res) => {
     try { await pf.exportCoverPdf(coverConfig, { outPath: coverPath }); cover = fs.readFileSync(coverPath); } finally { fs.unlink(coverPath, () => {}); }
 
     const dims = pf.coverDimensions(book.trimSize, pageCount, paper);
-    const info = buildInfoSheet({ title: book.title, subtitle: book.subtitle, author: book.author }, book, pageCount, paper, dims, metadata);
+    const info = buildInfoSheet({ title: book.title, subtitle: book.subtitle, author: book.author }, book, pageCount, paper, dims, metadata, coverConfig);
     const chkReport = renderChecklistText(pf.runChecklist(book, { pageCount }), pageCount);
 
     const base = (book.title || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
@@ -1244,7 +1244,19 @@ function countPdfPages(pdfBuffer) {
   return Math.max(pageObjs, maxCount) || pageObjs;
 }
 
-function buildInfoSheet(config, book, pageCount, paper, dims, meta) {
+// Cover-image resolution lines for the build-info sheet (empty when no image).
+function coverImageLines(coverConfig) {
+  if (!coverConfig) return [];
+  let d;
+  try { d = pf.frontImageDpi(coverConfig); } catch (_) { d = null; }
+  if (!d) return [];
+  return [
+    `Cover image:      ${d.width} x ${d.height}px → ~${d.dpi} DPI on the front panel` +
+      (d.ok ? ' (OK)' : `  ⚠ BELOW ${d.minDpi} DPI — use a larger image`),
+  ];
+}
+
+function buildInfoSheet(config, book, pageCount, paper, dims, meta, coverConfig) {
   const md = pf.normalizeMetadata(meta || {});
   const colorPaper = paper === 'cream' ? 'bw' : 'bw'; // interiors here are B&W
   const est = pf.royaltyEstimate({ pageCount, paper: colorPaper, listPrice: md.listPrice });
@@ -1270,6 +1282,7 @@ function buildInfoSheet(config, book, pageCount, paper, dims, meta) {
     `Spine width:      ${dims.spineIn} in`,
     `Full cover size:  ${dims.fullWidthIn} x ${dims.fullHeightIn} in (includes 0.125" bleed)`,
     `Spine text:       ${dims.spineTextAllowed ? 'printed (book is long enough)' : 'hidden (KDP needs >= 79 pages)'}`,
+    ...coverImageLines(coverConfig),
     '',
     'Description / blurb',
     '-------------------',
@@ -1352,7 +1365,7 @@ app.post('/api/book/kdp', async (req, res) => {
     const cover = fs.readFileSync(coverPath);
 
     const dims = pf.coverDimensions(book.trimSize, pageCount, paper);
-    const info = buildInfoSheet(config, book, pageCount, paper, dims, body.metadata);
+    const info = buildInfoSheet(config, book, pageCount, paper, dims, body.metadata, coverConfig);
 
     const base = (config.title || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
     res.setHeader('Content-Type', 'application/zip');

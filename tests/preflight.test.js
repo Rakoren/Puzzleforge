@@ -71,6 +71,54 @@ test('metadata checks warn when empty and pass when filled (never block)', () =>
   }
 });
 
+test('padToEven appends a blank leaf only when the page count is odd', () => {
+  const { defaultLeaves } = require('../engine/export');
+  const base = { title: 'Pad', puzzleforgeBook: 1, trimSize: '8.5x11', audience: 'adult', titlePage: false, seed: 3 };
+  // 1 puzzle + no answer key + no title = 1 leaf (odd).
+  const odd = assembleBook({ ...base, answerKey: false, puzzles: [{ type: 'sudoku', count: 1, difficulty: '2' }] });
+  assert.equal(defaultLeaves({ ...odd, padToEven: false }).length % 2, 1, 'odd without padding');
+  const padded = defaultLeaves({ ...odd, padToEven: true });
+  assert.equal(padded.length % 2, 0, 'even after padding');
+  assert.equal(padded[padded.length - 1].role, 'blank', 'trailing leaf is blank');
+  // An already-even book is left untouched.
+  const even = assembleBook({ ...base, answerKey: false, puzzles: [{ type: 'sudoku', count: 2, difficulty: '2' }] });
+  const evenLeaves = defaultLeaves({ ...even, padToEven: true });
+  assert.ok(!evenLeaves.some((l) => l.role === 'blank'), 'no blank added to an even book');
+});
+
+test('assembleBook carries padToEven through from config', () => {
+  const on = assembleBook({ title: 'X', puzzleforgeBook: 1, trimSize: '8.5x11', audience: 'adult', padToEven: true, puzzles: [{ type: 'sudoku', count: 1, difficulty: '2' }] });
+  assert.equal(on.padToEven, true);
+  const off = assembleBook({ title: 'X', puzzleforgeBook: 1, trimSize: '8.5x11', audience: 'adult', puzzles: [{ type: 'sudoku', count: 1, difficulty: '2' }] });
+  assert.equal(off.padToEven, false);
+});
+
+test('price-breakeven warns below break-even, passes above, absent without a price', () => {
+  const base = { title: 'P', puzzleforgeBook: 1, trimSize: '8.5x11', audience: 'adult', answerKey: true, puzzles: [{ type: 'sudoku', count: 30, difficulty: '2' }] };
+  // No listPrice → the check doesn't run at all.
+  assert.equal(item(assembleBook(base), 'price-breakeven'), undefined);
+  // A $0.99 price can't clear break-even on any real book → warning (never blocks).
+  const low = runChecklist(assembleBook({ ...base, metadata: { listPrice: 0.99 } }));
+  const lowItem = low.items.find((i) => i.id === 'price-breakeven');
+  assert.equal(lowItem.status, 'fail');
+  assert.equal(lowItem.severity, 'warning');
+  // A healthy price clears it.
+  assert.equal(runChecklist(assembleBook({ ...base, metadata: { listPrice: 9.99 } })).items.find((i) => i.id === 'price-breakeven').status, 'pass');
+});
+
+test('frontImageDpi flags a low-res cover image and passes a crisp one', () => {
+  const { frontImageDpi } = require('../engine/cover');
+  assert.equal(frontImageDpi({ trimSize: '8.5x11', pageCount: 100 }), null, 'no image → null');
+  // 300px wide on an ~8.75"-wide front panel → ~34 DPI (fail).
+  const low = frontImageDpi({ trimSize: '8.5x11', pageCount: 100, front: { image: pngUri(300, 400) } });
+  assert.equal(low.ok, false);
+  assert.ok(low.dpi < 300);
+  // 3000×3600 easily clears 300 DPI on the same panel.
+  const ok = frontImageDpi({ trimSize: '8.5x11', pageCount: 100, front: { image: pngUri(3000, 3600) } });
+  assert.equal(ok.ok, true);
+  assert.ok(ok.dpi >= 300);
+});
+
 test('collectBookText gathers all reader-facing text and de-dupes', () => {
   const { collectBookText } = require('../engine/booktext');
   const book = assembleBook({

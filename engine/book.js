@@ -408,6 +408,7 @@ function buildBook(config, opts, seed, rand) {
     metadata: config.metadata && typeof config.metadata === 'object' ? config.metadata : null, // KDP listing metadata (kept for pre-flight checks)
     perPageDifficulty: config.perPageDifficulty === true, // print a difficulty label on each puzzle page
     answerKey,
+    padToEven: config.padToEven === true, // append a blank leaf so the physical page count is even (KDP)
     titlePage, // whether an auto title page leads the book (off = template-driven)
     pageNumbers: config.pageNumbers === true, // footer page numbers on content pages
     footerText: config.footerText ? String(config.footerText).trim() : null,

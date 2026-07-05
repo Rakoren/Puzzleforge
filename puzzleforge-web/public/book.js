@@ -21,6 +21,7 @@
     theme: $('theme'),
     themeFilter: $('themeFilter'),
     answerKey: $('answerKey'), perPageDifficulty: $('perPageDifficulty'),
+    padToEven: $('padToEven'),
     uniqueWords: $('uniqueWords'),
     shuffle: $('shuffle'),
     pageNumbers: $('pageNumbers'),
@@ -210,7 +211,8 @@
     );
     const guards = el.bleedGuard.checked ? gaps * drawableFillers + drawableRows : 0;
     // No title page here — it's added in the editor. Cover/matter pages are too.
-    const pages = total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0);
+    let pages = total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0);
+    if (el.padToEven.checked && pages % 2 === 1) pages += 1; // KDP even-page pad
     const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
     const diff = diffRangeLabel();
     el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages${diff ? ` · Difficulty: ${diff}` : ''} (puzzles + answer key; add title & matter in the editor)`;
@@ -317,6 +319,7 @@
       titlePage: false, // title page is added in the Page Editor (Title Page template)
       answerKey: el.answerKey.checked,
       perPageDifficulty: el.perPageDifficulty.checked,
+      padToEven: el.padToEven.checked,
       uniqueWords: el.uniqueWords.checked,
       shuffle: el.shuffle.checked,
       pageNumbers: el.pageNumbers.checked,
@@ -699,6 +702,7 @@
     el.shuffle.checked = cfg.shuffle === true;
     el.pageNumbers.checked = cfg.pageNumbers === true;
     el.perPageDifficulty.checked = cfg.perPageDifficulty === true;
+    el.padToEven.checked = cfg.padToEven !== false;
     el.footerText.value = cfg.footerText || '';
     // Preserve any matter this recipe carried (edited in the Page Editor now).
     carriedMatter = {};
@@ -843,6 +847,7 @@
       node.addEventListener('change', invalidate)
     );
     el.perPageDifficulty.addEventListener('change', invalidate);
+    el.padToEven.addEventListener('change', () => { invalidate(); updateSummary(); });
     // Switching audience relabels every row's difficulty (kids ages ↔ Easy…Expert)
     // and the difficulty range in the summary.
     el.audience.addEventListener('change', () => { renderRows(); updateSummary(); });

@@ -104,6 +104,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .status.err { color: #c92a2a; }
 .status.busy { color: var(--muted); }
 .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+.hint.ok { color: var(--ok); }
+.hint.err { color: #c92a2a; }
 .hidden { display: none !important; }
 
 .clue-editor { border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; margin: 0 0 12px; }

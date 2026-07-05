@@ -14,12 +14,15 @@
  * safe margin so trimming never clips it.
  */
 
+const imagesize = require('./imagesize');
+
 // Per-page thickness (inches) by paper. KDP black-and-white:
 //   white = 0.002252", cream = 0.0025".
 const PAGE_THICKNESS = { white: 0.002252, cream: 0.0025 };
 const BLEED_IN = 0.125;
 const SAFE_IN = 0.25; // keep text this far inside the trim edge
 const MIN_SPINE_TEXT_PAGES = 79; // KDP minimum page count for spine text
+const COVER_MIN_DPI = 300; // KDP's minimum cover-image resolution for print
 
 function parseTrim(trimSize) {
   const [w, h] = String(trimSize || '8.5x11').split('x').map(Number);
@@ -45,6 +48,38 @@ function coverDimensions(trimSize, pageCount, paper = 'white') {
     paper: PAGE_THICKNESS[paper] ? paper : 'white',
     pageCount: pages,
     spineTextAllowed: pages >= MIN_SPINE_TEXT_PAGES && spine >= 0.18,
+  };
+}
+
+/**
+ * Effective print resolution of the front-cover image.
+ *
+ * The front image fills the front panel with `background-size: cover`, i.e. it
+ * is scaled uniformly (and cropped) until it covers the whole panel — trim
+ * width + outside bleed, by the full bleed height. The limiting resolution is
+ * therefore the smaller of the two per-axis pixel densities.
+ *
+ * @param {object} config same shape as renderCoverHtml's config (needs front.image, trimSize, pageCount, paper)
+ * @returns {null | { dpi, ok, minDpi, width, height, panelWidthIn, panelHeightIn }}
+ *   null when there is no front image or its dimensions can't be read.
+ */
+function frontImageDpi(config = {}) {
+  const front = config.front || {};
+  if (!front.image) return null;
+  const dim = imagesize.fromDataUri(front.image);
+  if (!dim || !dim.width || !dim.height) return null;
+  const dims = coverDimensions(config.trimSize, config.pageCount, config.paper);
+  const panelW = dims.trimWidthIn + dims.bleedIn; // front panel spans trim + outside bleed
+  const panelH = dims.fullHeightIn;               // and the full bleed height
+  const dpi = Math.floor(Math.min(dim.width / panelW, dim.height / panelH));
+  return {
+    dpi,
+    ok: dpi >= COVER_MIN_DPI,
+    minDpi: COVER_MIN_DPI,
+    width: dim.width,
+    height: dim.height,
+    panelWidthIn: +panelW.toFixed(3),
+    panelHeightIn: +panelH.toFixed(3),
   };
 }
 
@@ -154,4 +189,4 @@ function renderCoverHtml(config = {}) {
   };
 }
 
-module.exports = { coverDimensions, renderCoverHtml };
+module.exports = { coverDimensions, renderCoverHtml, frontImageDpi, COVER_MIN_DPI };

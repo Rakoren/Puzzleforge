@@ -12,7 +12,7 @@
  */
 const { isActivityType } = require('../generators/registry');
 const { getLayout, PX_PER_IN } = require('../layouts');
-const { gutterMinInches, KDP_PAGE_MAX } = require('./kdp');
+const { gutterMinInches, KDP_PAGE_MAX, royaltyEstimate } = require('./kdp');
 const { difficultyTier } = require('../config/difficulty');
 const imagesize = require('./imagesize');
 
@@ -273,6 +273,19 @@ function runChecklist(book, opts = {}) {
   if (String(book.audience || '').toLowerCase() === 'kids') {
     add('meta-reading-age', 'Reading age set (kids book)', 'warning', Boolean(String(md.readingAge || '').trim()),
       'Kids book has no reading age — required for it to appear in age-filtered search on Amazon.');
+  }
+
+  // List price must clear the break-even printing cost or the book earns no
+  // royalty (KDP's 60% of list must exceed print cost). Only checked when a
+  // price is set; otherwise informational-only via the estimate.
+  const listPrice = md.listPrice != null && md.listPrice !== '' ? Number(md.listPrice) : null;
+  if (listPrice != null && Number.isFinite(listPrice)) {
+    const paper = /color/.test(String(md.paper || '')) ? String(md.paper) : 'bw';
+    const est = royaltyEstimate({ pageCount: pages, paper, listPrice });
+    add('price-breakeven', 'List price clears break-even', 'warning', !est.belowMinimum,
+      est.belowMinimum
+        ? `List price $${est.listPrice.toFixed(2)} is below the $${est.breakeven.toFixed(2)} break-even for a ${pages}-page ${paper === 'bw' ? 'black-&-white' : paper} book — you'd earn no royalty (print cost $${est.printCost.toFixed(2)}). Price at least $${est.suggestedLow.toFixed(2)}.`
+        : '');
   }
 
   // --- Print readiness ---

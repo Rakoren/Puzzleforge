@@ -2,7 +2,7 @@
 
 **Version:** 0.3 (Active Development)
 **Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace); Tier 3 puzzle types (Logic Grid, Word Ladder, Word Wheel, Cipher); KDP-verified pre-flight export gate live
-**Last full docs sync:** 2026-07-04
+**Last full docs sync:** 2026-07-05
 **Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
 **Author:** Rakoren
@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (114 tests passing)
+### Engine (118 tests passing)
 
 **14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -345,7 +345,7 @@ The PuzzleForge export bundle should pre-fill both fields based on which tools w
 
 ### KDP Royalty Estimator
 
-*Shipped (v1): `engine/kdp.js` + "Estimate royalty" button and a listing-metadata fieldset in the Book Builder. US paperback, 60%, B&W modeled precisely (color approximate); renders the book for an accurate page count; build-info sheet now includes metadata, royalty estimate, and pre-filled AI disclosure. Multi-marketplace currency and IngramSpark/Books.by are still to come.*
+*Shipped (v1): `engine/kdp.js` + "Estimate royalty" button and a listing-metadata fieldset in the Book Builder. US paperback, 60%, B&W modeled precisely (color approximate); renders the book for an accurate page count; build-info sheet now includes metadata, royalty estimate, and pre-filled AI disclosure. The pre-flight checklist also warns (`price-breakeven`) when a set list price falls below the printing break-even (no royalty). Multi-marketplace currency and IngramSpark/Books.by are still to come.*
 
 Built into the export bundle screen. Calculates estimated royalty per sale before upload so you can set pricing confidently without switching to KDP's external calculator.
 
@@ -789,12 +789,12 @@ Each checklist item has a **"Fix it" shortcut** that jumps directly to the relev
 
 **Shipped** (`engine/checklist.js`, checked against KDP's published rules) and **gated on export** — "Download KDP bundle" / "Download PDF" run the checklist first and block on 🔴 blockers unless the user overrides; 🟡 warnings never block:
 
-- **Structural** — page count 24–828 · even · puzzle count matches config · no empty puzzle pages · answer key present + complete · bleed guards placed · copyright / back matter · word list matches grid · difficulty↔audience coherence + range summary.
-- **Print readiness** — single trim set · within KDP page limit · gutter (inside) margin per page-count table (`engine/kdp.js`) · images ≥ 300 DPI (`engine/imagesize.js`) · content inside the safe area.
-- **KDP listing metadata** (warnings) — description present · 7 keywords · 3 categories · reading age set (kids).
+- **Structural** — page count 24–828 · even (with an optional "Pad to an even page count" toggle that appends a blank leaf where you control it) · puzzle count matches config · no empty puzzle pages · answer key present + complete · bleed guards placed · copyright / back matter · word list matches grid · difficulty↔audience coherence + range summary.
+- **Print readiness** — single trim set · within KDP page limit · gutter (inside) margin per page-count table (`engine/kdp.js`) · interior images ≥ 300 DPI (`engine/imagesize.js`) · front cover-image effective DPI ≥ 300 (`engine/cover.js` `frontImageDpi`, surfaced inline in the Cover Builder and on the build-info sheet) · content inside the safe area.
+- **KDP listing metadata + pricing** (warnings) — description present · 7 keywords · 3 categories · reading age set (kids) · list price clears the printing break-even (`engine/kdp.js` `royaltyEstimate` — a price below break-even earns no royalty).
 - **Content quality (Claude API)** — an on-demand "AI content review" button runs one Claude pass over all reader-facing text (`engine/booktext.js` collects titles, instructions, crossword clues, trivia Q&A, blurb, matter) and returns findings: spelling/grammar errors, placeholder/ambiguous clues, generic titles, dry blurbs, reading-level mismatches. Results render in the checklist panel; reuses the editor proofread's SDK path.
 
-**Still to come** (tracked below): cover-image DPI + cover-dimension checks, price-vs-breakeven, AI-disclosure completeness, per-item "Fix it" jumps, folding the AI review into the export gate, and server-side gate enforcement (today's gate is client-side — right for the local single-user tool, bypassable via direct API).
+**Still to come** (tracked below): cover-dimension formula check, AI-disclosure completeness, per-item "Fix it" jumps, folding the AI review into the export gate, and server-side gate enforcement (today's gate is client-side — right for the local single-user tool, bypassable via direct API).
 
 ---
 
@@ -820,7 +820,7 @@ These checks use the Claude API to evaluate subjective quality. Run as a batch �
 
 | Check | Severity | Notes |
 |---|---|---|
-| Page count even | 🔴 | KDP requires even page count — auto-offer to add blank page |
+| Page count even | 🟡 ✅ | KDP requires even page count — a "Pad to an even page count" toggle appends a blank leaf; the checklist also warns on an odd count |
 | Answer key present | 🔴 | At least one answer key page exists |
 | Answer key complete | 🔴 | Every puzzle has a corresponding answer key entry |
 | No blank puzzle pages | 🔴 | Generator failure edge case — puzzle page with no content |
@@ -836,7 +836,7 @@ These checks use the Claude API to evaluate subjective quality. Run as a batch �
 
 | Check | Severity | Notes |
 |---|---|---|
-| Images at correct DPI | 🔴 | All images ≥300 DPI (600 DPI for crossword cell numbers) |
+| Images at correct DPI | 🟡 ✅ | Interior images ≥300 DPI (`engine/imagesize.js`) and the front cover image ≥300 DPI (`engine/cover.js` `frontImageDpi`) — warned in the checklist, inline in the Cover Builder, and on the build-info sheet |
 | Nothing in margin zone | 🔴 | No content bleeds into KDP minimum margin area |
 | Spine text threshold | 🟡 | Spine text only shown if page count ≥80 pages — warn if spine text enabled on thin book |
 | Trim size consistent | 🔴 | All pages match the configured trim size — no mixed dimensions |
@@ -853,7 +853,7 @@ These checks use the Claude API to evaluate subjective quality. Run as a batch �
 | All 3 categories filled | 🟡 | Leaving category slots empty hurts discoverability |
 | All 7 keywords filled | 🟡 | Leaving keyword slots empty hurts discoverability |
 | Description/blurb present | 🔴 | Cannot publish without a book description |
-| Price above KDP minimum | 🔴 | List price must yield at least $0.01 royalty — show minimum price for this book's print cost |
+| Price above KDP minimum | 🟡 ✅ | List price must clear the printing break-even or the book earns no royalty — the checklist warns (`price-breakeven`) using `royaltyEstimate`, showing the break-even and a suggested price |
 | ISBN field decision made | 🟡 | Prompt user to confirm KDP free ISBN or own ISBN — don't leave ambiguous |
 | Series fields consistent | 🟡 | If series name is set, series number must also be set |
 
