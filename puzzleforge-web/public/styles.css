@@ -571,6 +571,35 @@ body.theme-dark {
 .rdrop-menu button:hover { background: #eef1fe; color: var(--brand); }
 .theme-dark .rdrop-menu { background: #34373d; }
 .theme-dark .rdrop-menu button:hover { background: #2f3b57; color: #cdd6ff; }
+
+/* Home → Objects group: Text / Pictures / Table / Shapes */
+.objects-body { gap: 4px; }
+.objbtn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-width: 52px; padding: 5px 8px; font-size: 11px; line-height: 1.1; }
+.objbtn .objbtn-ico { font-size: 17px; line-height: 1; }
+.objbtn.rdrop-btn { flex-direction: column; }
+.objbtn .rdrop-caret { margin: 0; }
+
+/* Table grid-picker */
+.tablepick-menu { min-width: 0; padding: 8px; }
+.tablepick-grid { display: grid; gap: 2px; }
+.tablepick-cell { width: 16px; height: 16px; border: 1px solid var(--line); border-radius: 2px; background: #fff; cursor: pointer; }
+.tablepick-cell.on { background: #4263eb; border-color: #2f4bd6; }
+.tablepick-label { text-align: center; font-size: 12px; color: var(--ink); margin-top: 7px; }
+.tablepick-more { display: block; width: 100%; text-align: center !important; margin-top: 6px;
+  border-top: 1px solid var(--line) !important; border-radius: 0 !important; padding-top: 8px !important; }
+.theme-dark .tablepick-cell { background: #2a2d33; border-color: #4a4f57; }
+.theme-dark .tablepick-cell.on { background: #4263eb; border-color: #6d86f0; }
+
+/* Shape gallery */
+.shapegal-menu { min-width: 0; max-width: 220px; max-height: 60vh; overflow-y: auto; padding: 6px 8px; }
+.shapegal-cat { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--muted, #8a90a2); margin: 8px 2px 3px; }
+.shapegal-cat:first-child { margin-top: 2px; }
+.shapegal-grid { display: grid; grid-template-columns: repeat(6, 30px); gap: 3px; }
+.shapegal-grid .shape-btn { display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 28px; padding: 2px; }
+.shapegal-grid .shape-btn svg { max-width: 24px; max-height: 20px; }
 .theme-dark .master-banner { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
 .pf-master-ov { pointer-events: none; }                 /* master overlay is non-interactive on normal pages */
 body:not(.master-editing) .pf-master-ov { opacity: .82; }

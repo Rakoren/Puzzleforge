@@ -28,16 +28,55 @@
   };
 
   // 5-point star fitted to a w×h box, inset so the stroke isn't clipped.
-  function starPoints(w, h, inset) {
-    const cx = w / 2, cy = h / 2;
-    const rx = w / 2 - inset, ry = h / 2 - inset;
-    const pts = [];
-    for (let i = 0; i < 10; i++) {
-      const f = i % 2 === 0 ? 1 : 0.42;
-      const a = (Math.PI / 5) * i - Math.PI / 2;
-      pts.push(`${(cx + Math.cos(a) * rx * f).toFixed(2)},${(cy + Math.sin(a) * ry * f).toFixed(2)}`);
+  function starPoints(w, h, inset) { return nStarPoints(w, h, 5, 0.42, inset); }
+
+  // n-point star (points × 2 vertices, alternating outer/inner radius).
+  function nStarPoints(w, h, points, innerRatio, inset) {
+    const cx = w / 2, cy = h / 2, rx = w / 2 - inset, ry = h / 2 - inset, out = [];
+    for (let k = 0; k < points * 2; k++) {
+      const f = k % 2 === 0 ? 1 : innerRatio;
+      const a = (Math.PI / points) * k - Math.PI / 2;
+      out.push(`${(cx + Math.cos(a) * rx * f).toFixed(2)},${(cy + Math.sin(a) * ry * f).toFixed(2)}`);
     }
-    return pts.join(' ');
+    return out.join(' ');
+  }
+
+  // Regular n-gon fitted to the box, rotated by rotDeg (0 = first vertex up).
+  function regPoly(w, h, n, rotDeg, inset) {
+    const cx = w / 2, cy = h / 2, rx = w / 2 - inset, ry = h / 2 - inset;
+    const rot = (rotDeg || 0) * Math.PI / 180, out = [];
+    for (let k = 0; k < n; k++) {
+      const a = rot - Math.PI / 2 + (2 * Math.PI * k) / n;
+      out.push(`${(cx + Math.cos(a) * rx).toFixed(2)},${(cy + Math.sin(a) * ry).toFixed(2)}`);
+    }
+    return out.join(' ');
+  }
+
+  // Block arrow pointing right, fitted to the box (mirror/rotate for the others).
+  function arrowPoints(w, h, dir, inset) {
+    const i = inset;
+    // right-pointing arrow in a w×h box; swap axes / mirror for other dirs.
+    const build = (W, H) => {
+      const headW = W * 0.42, sT = H * 0.28, sB = H * 0.72;
+      return [[i, sT], [W - headW, sT], [W - headW, i], [W - i, H / 2], [W - headW, H - i], [W - headW, sB], [i, sB]];
+    };
+    let p = dir === 'up' || dir === 'down' ? build(h, w).map(([x, y]) => [y, x]) : build(w, h);
+    if (dir === 'left') p = p.map(([x, y]) => [w - x, y]);
+    if (dir === 'up') p = p.map(([x, y]) => [x, h - y]);
+    return p.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
+  }
+
+  // Plus / cross fitted to the box (arm thickness = fraction of the short side).
+  function crossPoints(w, h, inset) {
+    const i = inset, t = 0.34;
+    const ax = w * (0.5 - t / 2), bx = w * (0.5 + t / 2), ay = h * (0.5 - t / 2), by = h * (0.5 + t / 2);
+    return [[ax, i], [bx, i], [bx, ay], [w - i, ay], [w - i, by], [bx, by], [bx, h - i], [ax, h - i], [ax, by], [i, by], [i, ay], [ax, ay]]
+      .map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
+  }
+  function heartPath(w, h, i) {
+    const cx = w / 2;
+    return `M ${cx},${h - i} C ${w * 0.02},${h * 0.6} ${w * 0.1},${h * 0.16} ${cx},${h * 0.3}`
+      + ` C ${w - w * 0.1},${h * 0.16} ${w - w * 0.02},${h * 0.6} ${cx},${h - i} Z`;
   }
 
   // A simple data table. Rendered as an HTML <table> with inline styles so it
@@ -110,6 +149,48 @@
         break;
       case 'star':
         body = `<polygon points="${starPoints(w, h, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'star4':
+        body = `<polygon points="${nStarPoints(w, h, 4, 0.45, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'star6':
+        body = `<polygon points="${nStarPoints(w, h, 6, 0.55, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'righttriangle':
+        body = `<polygon points="${i},${i} ${i},${h - i} ${w - i},${h - i}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'diamond':
+        body = `<polygon points="${w / 2},${i} ${w - i},${h / 2} ${w / 2},${h - i} ${i},${h / 2}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'pentagon':
+        body = `<polygon points="${regPoly(w, h, 5, 0, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'hexagon':
+        body = `<polygon points="${regPoly(w, h, 6, 90, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'octagon':
+        body = `<polygon points="${regPoly(w, h, 8, 22.5, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'trapezoid':
+        body = `<polygon points="${w * 0.25},${i} ${w * 0.75},${i} ${w - i},${h - i} ${i},${h - i}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'parallelogram':
+        body = `<polygon points="${w * 0.25},${i} ${w - i},${i} ${w * 0.75},${h - i} ${i},${h - i}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'cross':
+        body = `<polygon points="${crossPoints(w, h, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'heart':
+        body = `<path d="${heartPath(w, h, i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'arrow-right':
+      case 'arrow-left':
+      case 'arrow-up':
+      case 'arrow-down':
+        body = `<polygon points="${arrowPoints(w, h, e.shape.slice(6), i)}" ${attrs} stroke-linejoin="round"/>`;
+        break;
+      case 'roundrect':
+        body = `<rect x="${i}" y="${i}" width="${w - sw}" height="${h - sw}" rx="${Math.max(6, Math.min(w, h) * 0.16)}" ${attrs}/>`;
         break;
       case 'line':
         body = `<line x1="${i}" y1="${h / 2}" x2="${w - i}" y2="${h / 2}" stroke="${stroke === 'none' ? '#222222' : stroke}" stroke-width="${Math.max(1, sw)}" stroke-linecap="round"/>`;

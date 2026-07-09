@@ -96,14 +96,21 @@
           <div class="rgroup-name">Paragraph</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body">
-            <button id="hAddText" class="ghost">Text Box</button>
-            <label class="upload ghost">Picture<input id="hAddImage" type="file" accept="image/*" hidden></label>
-            <button class="iconbtn shape-btn" data-shape="rect" title="Rectangle">▭</button>
-            <button class="iconbtn shape-btn" data-shape="ellipse" title="Ellipse">◯</button>
-            <button class="iconbtn shape-btn" data-shape="line" title="Line">─</button>
-            <button class="iconbtn shape-btn" data-shape="speech" title="Speech bubble">💬</button>
-            <button class="iconbtn shape-btn" data-shape="thought" title="Thought bubble">💭</button>
+          <div class="rgroup-body objects-body">
+            <button id="hAddText" class="ghost objbtn" title="Draw a text box"><span class="objbtn-ico">🄰</span>Text</button>
+            <label class="upload ghost objbtn" title="Insert a picture from your device"><span class="objbtn-ico">🖼</span>Pictures<input id="hAddImage" type="file" accept="image/*" hidden></label>
+            <span class="rdrop" id="tableDrop">
+              <button class="ghost objbtn rdrop-btn" id="tableDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a table"><span class="objbtn-ico">▦</span>Table&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu tablepick-menu" hidden>
+                <div class="tablepick-grid" id="tablepickGrid"></div>
+                <div class="tablepick-label" id="tablepickLabel">Insert Table</div>
+                <button type="button" class="tablepick-more" id="tablepickMore">Insert Table…</button>
+              </div>
+            </span>
+            <span class="rdrop" id="shapeDrop">
+              <button class="ghost objbtn rdrop-btn" id="shapeDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a shape"><span class="objbtn-ico">⬠</span>Shapes&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu shapegal-menu" id="shapeGallery" hidden></div>
+            </span>
           </div>
           <div class="rgroup-name">Objects</div>
         </div>

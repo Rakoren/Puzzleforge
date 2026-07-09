@@ -1013,8 +1013,9 @@
 
   // --- Tables ---
   function emptyCells(rows, cols) { return Array.from({ length: rows }, () => Array.from({ length: cols }, () => '')); }
-  function addTable() {
-    const rows = 3, cols = 3;
+  function addTable(rows, cols) {
+    rows = Math.max(1, Math.min(60, rows || 3));
+    cols = Math.max(1, Math.min(20, cols || 3));
     addElement({
       group: 'el', id: uid++, kind: 'table',
       x: Math.round(dims.usableWidth / 2 - 135), y: Math.round(dims.usableHeight / 2 - 60),
@@ -1024,6 +1025,80 @@
       fontSize: 15, fontFamily: 'sans', color: '#222222', align: 'left',
     });
   }
+  // Build the Home → Objects dropdowns: a hover grid-picker for tables and a
+  // categorised shape gallery (Publisher-style). Both live in .rdrop menus, so
+  // initDropdowns() already handles open/close/placement.
+  const SHAPE_GALLERY = [
+    { name: 'Lines', shapes: [['line', 'Line'], ['arrow-right', 'Arrow']] },
+    { name: 'Basic Shapes', shapes: [
+      ['rect', 'Rectangle'], ['roundrect', 'Rounded rectangle'], ['ellipse', 'Ellipse'],
+      ['triangle', 'Triangle'], ['righttriangle', 'Right triangle'], ['diamond', 'Diamond'],
+      ['pentagon', 'Pentagon'], ['hexagon', 'Hexagon'], ['octagon', 'Octagon'],
+      ['trapezoid', 'Trapezoid'], ['parallelogram', 'Parallelogram'], ['cross', 'Cross'], ['heart', 'Heart'],
+    ] },
+    { name: 'Block Arrows', shapes: [
+      ['arrow-right', 'Right arrow'], ['arrow-left', 'Left arrow'], ['arrow-up', 'Up arrow'], ['arrow-down', 'Down arrow'],
+    ] },
+    { name: 'Stars & Banners', shapes: [['star4', '4-point star'], ['star', '5-point star'], ['star6', '6-point star']] },
+    { name: 'Callouts', shapes: [['speech', 'Speech bubble'], ['thought', 'Thought bubble']] },
+  ];
+  function shapeIcon(shape) {
+    // A tiny preview drawn by the shared renderer, so gallery icons match output.
+    const line = shape === 'line';
+    return elHtml({ kind: 'shape', shape, w: 26, h: line ? 16 : 22, fill: line ? 'none' : '#dbe4ff', stroke: '#3b4a66', strokeW: line ? 2 : 1.5 });
+  }
+  function buildShapeGallery() {
+    const host = document.getElementById('shapeGallery'); if (!host) return;
+    host.innerHTML = '';
+    SHAPE_GALLERY.forEach((cat) => {
+      const h = document.createElement('div'); h.className = 'shapegal-cat'; h.textContent = cat.name; host.appendChild(h);
+      const grid = document.createElement('div'); grid.className = 'shapegal-grid';
+      cat.shapes.forEach(([shape, label]) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'iconbtn shape-btn'; b.dataset.shape = shape; b.title = label;
+        b.innerHTML = shapeIcon(shape);
+        grid.appendChild(b);
+      });
+      host.appendChild(grid);
+    });
+  }
+  function buildTablePicker() {
+    const grid = document.getElementById('tablepickGrid');
+    const label = document.getElementById('tablepickLabel');
+    const more = document.getElementById('tablepickMore');
+    if (!grid) return;
+    const MAXR = 8, MAXC = 10;
+    grid.style.gridTemplateColumns = `repeat(${MAXC}, 16px)`;
+    grid.innerHTML = '';
+    const cells = [];
+    const paint = (rr, cc) => {
+      cells.forEach((cell) => cell.classList.toggle('on', cell._r <= rr && cell._c <= cc));
+      label.textContent = rr && cc ? `${rr} × ${cc} Table` : 'Insert Table';
+    };
+    for (let r = 1; r <= MAXR; r++) {
+      for (let c = 1; c <= MAXC; c++) {
+        const cell = document.createElement('span'); cell.className = 'tablepick-cell'; cell._r = r; cell._c = c;
+        cell.addEventListener('mouseenter', () => paint(r, c));
+        cell.addEventListener('click', () => { closeObjMenus(); addTable(r, c); });
+        cells.push(cell); grid.appendChild(cell);
+      }
+    }
+    grid.addEventListener('mouseleave', () => paint(0, 0));
+    if (more) more.addEventListener('click', () => {
+      closeObjMenus();
+      const spec = window.prompt('Table size — rows × columns:', '3 x 3');
+      if (spec == null) return;
+      const m = String(spec).match(/(\d+)\s*[x×,]\s*(\d+)/i);
+      if (m) addTable(Number(m[1]), Number(m[2]));
+    });
+  }
+  function closeObjMenus() {
+    document.querySelectorAll('#tableDrop .rdrop-menu, #shapeDrop .rdrop-menu').forEach((m) => {
+      m.hidden = true; const b = m.parentElement.querySelector('.rdrop-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+    });
+  }
+  function buildObjectMenus() { buildShapeGallery(); buildTablePicker(); }
+
   // --- QR codes ---
   // Encode a URL into a module matrix using the shared qrcode-generator lib
   // (window.qrcode), the same encoder the engine uses — so the editor QR is
@@ -2005,7 +2080,7 @@
   }
 
   function init() {
-    setupRibbon(); setupTheme();
+    setupRibbon(); setupTheme(); buildObjectMenus();
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
     document.querySelectorAll('.shape-btn').forEach((b) => b.addEventListener('click', () => addShape(b.dataset.shape)));
@@ -2042,7 +2117,7 @@
     el.strokeW.addEventListener('input', () => applyShapeProp('strokeW', Math.max(0, Number(el.strokeW.value) || 0)));
     el.noFill.addEventListener('change', () => applyShapeProp('fill', el.noFill.checked ? 'none' : el.fillColor.value));
     // Tables
-    if (el.addTable) el.addTable.addEventListener('click', addTable);
+    if (el.addTable) el.addTable.addEventListener('click', () => addTable(3, 3));
     if (el.tblAddRow) el.tblAddRow.addEventListener('click', () => tableOp((t) => { t.rows++; }));
     if (el.tblDelRow) el.tblDelRow.addEventListener('click', () => tableOp((t) => { if (t.rows > 1) { t.rows--; t.cells.pop(); } }));
     if (el.tblAddCol) el.tblAddCol.addEventListener('click', () => tableOp((t) => { t.cols++; t.colW.push(90); }));
