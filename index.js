@@ -38,6 +38,7 @@ const {
   selectWords,
   clueMap,
   wordCount,
+  upgradeToFourTiers,
   THEME_DIR,
 } = require('./themes');
 const { listTypes, isActivityType } = require('./generators/registry');
@@ -87,6 +88,7 @@ module.exports = {
   selectWords,
   clueMap,
   wordCount,
+  upgradeToFourTiers,
   themesDir: THEME_DIR,
   isOffensiveWord: offensive.isOffensiveWord,
   scanTextForOffensive: offensive.scanText,

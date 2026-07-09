@@ -39,6 +39,35 @@ function normEntry(entry) {
   return { word: String(entry.word || '').toUpperCase(), clue: entry.clue || null };
 }
 
+// Upgrade a 3-tier theme to 4 tiers: if the Expert tier (4) is empty, promote
+// the hardest ~40% of tier 3 (longest words first, then alphabetical for stable
+// ties) into tier 4. Tiers 1–2 are never touched, and a theme with a populated
+// tier 4 (or too few tier-3 words to split) is returned unchanged. This is the
+// same rule used to build the four-tier built-in themes, so old user-generated
+// themes behave identically once upgraded.
+function upgradeToFourTiers(tiers) {
+  const t = {
+    1: tiers['1'] || tiers[1] || [],
+    2: tiers['2'] || tiers[2] || [],
+    3: tiers['3'] || tiers[3] || [],
+    4: tiers['4'] || tiers[4] || [],
+  };
+  if (t[4].length > 0 || t[3].length < 5) return t;
+  const wordOf = (e) => String(typeof e === 'string' ? e : (e && e.word) || '').toUpperCase();
+  const ranked = [...t[3]].sort((a, b) => {
+    const wa = wordOf(a), wb = wordOf(b);
+    return wb.length - wa.length || wa.localeCompare(wb);
+  });
+  const promote = Math.max(1, Math.round(ranked.length * 0.4));
+  const toT4 = new Set(ranked.slice(0, promote).map(wordOf));
+  return {
+    1: t[1],
+    2: t[2],
+    3: t[3].filter((e) => !toT4.has(wordOf(e))),
+    4: t[3].filter((e) => toT4.has(wordOf(e))),
+  };
+}
+
 // Normalize a theme's `audiences` list. Missing/empty = suits both audiences.
 function normAudiences(raw) {
   const list = (Array.isArray(raw) ? raw : [])
@@ -78,7 +107,10 @@ function loadTheme(id) {
     tags: Array.isArray(raw.tags) ? raw.tags : [],
     audiences: normAudiences(raw.audiences),
     facts: Array.isArray(raw.facts) ? raw.facts : [],
-    tiers,
+    // Old (pre-4-tier) themes have an empty Expert tier — split tier 3 in memory
+    // so adult Expert still gets its own vocabulary. Non-destructive: the file
+    // stays 3-tier until the theme is re-saved / "Clean"ed.
+    tiers: upgradeToFourTiers(tiers),
   };
 }
 
@@ -253,5 +285,6 @@ module.exports = {
   selectWords,
   clueMap,
   wordCount,
+  upgradeToFourTiers,
   THEME_DIR,
 };

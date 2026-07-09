@@ -106,6 +106,14 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 8px; }
 .hint.ok { color: var(--ok); }
 .hint.err { color: #c92a2a; }
+.aud-badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .3px; padding: 1px 6px; border-radius: 999px; vertical-align: middle; }
+.aud-badge.aud-kids { background: #e6f4ea; color: #1e7e34; }
+.aud-badge.aud-adult { background: #e7eefc; color: #2a5db0; }
+.aud-badge.aud-both { background: #eee; color: #555; }
+.theme-dark .aud-badge.aud-kids { background: #1e3a29; color: #7ee2a8; }
+.theme-dark .aud-badge.aud-adult { background: #1e2c4a; color: #8fb4f2; }
+.theme-dark .aud-badge.aud-both { background: #333; color: #bbb; }
 .hidden { display: none !important; }
 
 .clue-editor { border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; margin: 0 0 12px; }

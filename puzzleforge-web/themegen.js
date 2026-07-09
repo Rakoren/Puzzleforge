@@ -178,7 +178,8 @@ function buildPrompt(topic, perTier, mode) {
 function sanitizeTier(rawEntries, seen, report) {
   const out = [];
   for (const entry of rawEntries || []) {
-    const word = String((entry && entry.word) || '')
+    // An entry is a plain string (clue-less word) or a { word, clue } object.
+    const word = String((typeof entry === 'string' ? entry : (entry && entry.word)) || '')
       .toUpperCase()
       .replace(/[^A-Z]/g, '');
     if (word.length < MIN_LEN || word.length > MAX_LEN) {
@@ -514,6 +515,12 @@ function cleanTheme(id) {
     (Array.isArray(raw.facts) ? raw.facts.length : 0);
 
   const { theme, report } = sanitizeTheme(raw, raw.label);
+  // Upgrade legacy 3-tier themes: if the Expert tier is empty, split tier 3 so
+  // the theme gains a real fourth tier (adult Expert vocabulary). No-op for
+  // themes that already have four tiers.
+  const beforeT4 = theme.tiers['4'].length;
+  theme.tiers = pf.upgradeToFourTiers(theme.tiers);
+  const tier4Added = theme.tiers['4'].length - beforeT4;
   const payload = {
     id: raw.id || slugify(id),
     label: theme.label,
@@ -526,7 +533,8 @@ function cleanTheme(id) {
   fs.writeFileSync(file, JSON.stringify(payload, null, 2) + '\n', 'utf8');
 
   const after = report.total + report.factCount;
-  return { id: payload.id, report, removed: Math.max(0, before - after) };
+  report.counts = { 1: theme.tiers['1'].length, 2: theme.tiers['2'].length, 3: theme.tiers['3'].length, 4: theme.tiers['4'].length };
+  return { id: payload.id, report, removed: Math.max(0, before - after), tier4Added };
 }
 
 /** Normalize a tier entry's word for comparison. */

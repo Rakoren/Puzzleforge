@@ -62,6 +62,38 @@ test('adult Expert draws the hardest tier; kids Independent never does', () => {
   assert.ok(kidsTop.every((w) => w.length <= 8), 'kids Independent words within the cap');
 });
 
+test('upgradeToFourTiers splits an old 3-tier theme, leaving 4-tier ones alone', () => {
+  const three = { 1: ['CAT'], 2: ['TIGER', 'ZEBRA'], 3: ['GIRAFFE', 'ELEPHANT', 'RHINOCEROS', 'HIPPOPOTAMUS', 'DOLPHIN', 'PENGUIN'], 4: [] };
+  const up = themes.upgradeToFourTiers(three);
+  assert.ok(up[4].length > 0, 'tier 4 populated from the hardest tier-3 words');
+  assert.deepEqual(up[1], ['CAT'], 'tiers 1–2 untouched');
+  assert.deepEqual(up[2], ['TIGER', 'ZEBRA']);
+  assert.equal(up[3].length + up[4].length, three[3].length, 'no tier-3 word lost');
+  assert.ok(up[4].includes('HIPPOPOTAMUS'), 'longest word promoted to Expert');
+  // Already-4-tier themes are returned unchanged.
+  const four = { 1: ['A'], 2: ['BB'], 3: ['CCC'], 4: ['DDDD'] };
+  assert.deepEqual(themes.upgradeToFourTiers(four)[4], ['DDDD']);
+  // Too few tier-3 words to split → left as a 3-tier theme.
+  assert.equal(themes.upgradeToFourTiers({ 1: ['A'], 2: ['B'], 3: ['CCC', 'DDD'], 4: [] })[4].length, 0);
+});
+
+test('a loaded 3-tier theme auto-upgrades in memory and defaults audiences to both', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const file = path.join(themes.THEME_DIR, '__probe_legacy.json');
+  fs.writeFileSync(file, JSON.stringify({
+    id: '__probe_legacy', label: 'Probe', category: 'Other',
+    tiers: { 1: ['CAT', 'DOG'], 2: ['TIGER', 'ZEBRA'], 3: ['GIRAFFE', 'ELEPHANT', 'RHINOCEROS', 'HIPPOPOTAMUS', 'CROCODILE', 'DOLPHIN'] },
+  }));
+  try {
+    const t = themes.loadTheme('__probe_legacy');
+    assert.deepEqual(t.audiences, ['kids', 'adult'], 'missing audiences → both');
+    assert.ok(t.tiers['4'].length > 0, 'Expert tier synthesized on load');
+  } finally {
+    fs.unlinkSync(file);
+  }
+});
+
 test('adult Hard (L3) and Expert (L4) pull different vocabulary', () => {
   const words = (level) => new Set(assembleBook({
     title: 'T', audience: 'adult', trimSize: '8.5x11', theme: 'animals', answerKey: false, seed: 9,

@@ -174,8 +174,24 @@
       head.className = 'manage-cat';
       head.textContent = cat;
       el.manageList.appendChild(head);
-      for (const th of byCat[cat]) el.manageList.appendChild(themeRow(th));
+      // Within a category, group by audience (Kids, then Both, then Adult) so the
+    // list reads [Kids] … / [Adult] … together, then alphabetical by label.
+    byCat[cat].sort((a, b) => audienceRank(a.audiences) - audienceRank(b.audiences) || a.label.localeCompare(b.label));
+    for (const th of byCat[cat]) el.manageList.appendChild(themeRow(th));
     }
+  }
+
+  // Audience → short badge text + a sort rank (kids first, both, adult last).
+  function audienceInfo(audiences) {
+    const a = Array.isArray(audiences) ? audiences : [];
+    const kids = a.includes('kids'), adult = a.includes('adult');
+    if (kids && !adult) return { text: 'Kids', cls: 'aud-kids' };
+    if (adult && !kids) return { text: 'Adult', cls: 'aud-adult' };
+    return { text: 'Both', cls: 'aud-both' };
+  }
+  function audienceRank(audiences) {
+    const t = audienceInfo(audiences).text;
+    return t === 'Kids' ? 0 : t === 'Both' ? 1 : 2;
   }
 
   function themeRow(th) {
@@ -184,7 +200,12 @@
 
     const name = document.createElement('span');
     name.className = 'manage-name';
-    name.textContent = `${th.label} (${th.wordCount})`;
+    const aud = audienceInfo(th.audiences);
+    const badge = document.createElement('span');
+    badge.className = 'aud-badge ' + aud.cls;
+    badge.textContent = aud.text;
+    name.appendChild(badge);
+    name.appendChild(document.createTextNode(` ${th.label} (${th.wordCount})`));
 
     const edit = document.createElement('button');
     edit.className = 'iconbtn';
@@ -227,9 +248,10 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Clean failed');
       const r = data.report || {};
+      const upgraded = data.tier4Added ? `, added a ${data.tier4Added}-word Expert tier` : '';
       setStatus(
         el.saveStatus,
-        `Cleaned “${th.label}” — ${r.total} words${data.removed ? `, removed ${data.removed}` : ', nothing to remove'}.`,
+        `Cleaned “${th.label}” — ${r.total} words${data.removed ? `, removed ${data.removed}` : ''}${upgraded}${!data.removed && !data.tier4Added ? ', nothing to change' : ''}.`,
         'ok'
       );
       loadThemeList();
