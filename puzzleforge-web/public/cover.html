@@ -34,12 +34,12 @@
           <select id="trimSize"></select>
         </label>
         <label class="field">
-          <span>Page count</span>
+          <span>Page count <i class="pf-info" title="The book's final interior page count — from the Book Builder. This sets the spine width, so get it right before printing.">i</i></span>
           <input id="pageCount" type="number" min="24" max="800" value="100">
         </label>
       </div>
       <label class="field">
-        <span>Paper</span>
+        <span>Paper <i class="pf-info" title="White or cream interior paper — cream is slightly thicker, so it widens the spine a touch. Match what you'll pick on KDP.">i</i></span>
         <select id="paper">
           <option value="white">White</option>
           <option value="cream">Cream</option>
@@ -67,30 +67,34 @@
         </select>
       </label>
       <label class="field">
-        <span>Front image (optional, full-bleed)</span>
+        <span>Front image (optional, full-bleed) <i class="pf-info" title="Fills the whole front cover. Use a high-resolution image — you'll get a warning below if it prints under 300 DPI.">i</i></span>
         <input id="frontImage" type="file" accept="image/*">
       </label>
       <button id="clearImage" class="ghost" type="button" hidden>Remove image</button>
       <p id="imageDpi" class="hint"></p>
 
-      <h2>4 · Back cover</h2>
-      <div class="row">
-        <label class="field"><span>Background</span><input id="backBg" type="color" value="#1b5fb0"></label>
-        <label class="field"><span>Text color</span><input id="backText" type="color" value="#ffffff"></label>
-      </div>
-      <label class="field">
-        <span>Back blurb (optional)</span>
-        <textarea id="blurb" rows="4" placeholder="A short description of the book…"></textarea>
-      </label>
+      <details class="pf-group">
+        <summary>Back cover &amp; spine <span class="sub">blurb, colors, spine text</span></summary>
+        <div class="pf-group-body">
+          <h2 style="margin-top:0;">Back cover</h2>
+          <div class="row">
+            <label class="field"><span>Background</span><input id="backBg" type="color" value="#1b5fb0"></label>
+            <label class="field"><span>Text color</span><input id="backText" type="color" value="#ffffff"></label>
+          </div>
+          <label class="field">
+            <span>Back blurb (optional)</span>
+            <textarea id="blurb" rows="4" placeholder="A short description of the book…"></textarea>
+          </label>
+          <h2>Spine <i class="pf-info" title="Spine text only prints when the book is thick enough (KDP needs ≈ 79+ pages). You'll see a note below if it's too thin.">i</i></h2>
+          <div class="row">
+            <label class="field"><span>Background</span><input id="spineBg" type="color" value="#1b5fb0"></label>
+            <label class="field"><span>Text color</span><input id="spineText" type="color" value="#ffffff"></label>
+          </div>
+          <p class="hint" id="spineInfo"></p>
+        </div>
+      </details>
 
-      <h2>5 · Spine</h2>
-      <div class="row">
-        <label class="field"><span>Background</span><input id="spineBg" type="color" value="#1b5fb0"></label>
-        <label class="field"><span>Text color</span><input id="spineText" type="color" value="#ffffff"></label>
-      </div>
-      <p class="hint" id="spineInfo"></p>
-
-      <h2>6 · Build</h2>
+      <h2>4 · Build</h2>
       <div class="actions">
         <button id="preview" class="primary">Preview cover</button>
         <button id="downloadPdf" class="primary" disabled>Download cover PDF</button>
