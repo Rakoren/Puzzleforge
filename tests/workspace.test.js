@@ -1,15 +1,19 @@
 'use strict';
-const { test } = require('node:test');
+const { test: _test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-// Point the workspace store at a throwaway data dir BEFORE requiring it.
+// workspace.js lives in the web app. In an engine-only checkout (after the repo
+// split) it isn't present, so the whole suite skips instead of erroring.
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-ws-'));
 process.env.PUZZLEFORGE_DATA_DIR = TMP;
-const { _store } = require('../puzzleforge-web/workspace');
-_store.load();
+let _store = null;
+try { _store = require('../puzzleforge-web/workspace')._store; } catch (_) { /* engine-only repo */ }
+const _skip = _store ? undefined : 'puzzleforge-web not present';
+const test = (name, fn) => _test(name, { skip: _skip }, fn);
+if (_store) _store.load();
 
 const recipe = (title) => ({ recipeVersion: 2, kind: 'book', book: { title, subtitle: 'Sub', trimSize: '6x9' }, seed: 1, pagePlan: [{}, {}, {}] });
 

@@ -9,10 +9,15 @@ const { assembleBook } = require('../engine/book');
 
 const BUILT_INS = ['animals', 'body', 'food', 'jobs', 'ocean', 'space', 'sports', 'transport', 'weather'];
 
-test('splitTheme makes Kids + Adult variants from a Both theme and keeps the original', () => {
+// splitTheme lives in the web app (themegen). In an engine-only checkout (after
+// the repo split) it isn't present, so these two tests skip.
+let themegen = null;
+try { themegen = require('../puzzleforge-web/themegen'); } catch (_) { /* engine-only repo */ }
+const webSkip = themegen ? undefined : 'puzzleforge-web not present';
+
+test('splitTheme makes Kids + Adult variants from a Both theme and keeps the original', { skip: webSkip }, () => {
   const fs = require('fs');
   const path = require('path');
-  const themegen = require('../puzzleforge-web/themegen');
   const dir = themes.THEME_DIR;
   const srcFile = path.join(dir, '__probe_split_test.json');
   const w = (e) => (typeof e === 'string' ? e : e.word);
@@ -45,10 +50,9 @@ test('splitTheme makes Kids + Adult variants from a Both theme and keeps the ori
   }
 });
 
-test('splitTheme refuses a theme that is not Both', () => {
+test('splitTheme refuses a theme that is not Both', { skip: webSkip }, () => {
   const fs = require('fs');
   const path = require('path');
-  const themegen = require('../puzzleforge-web/themegen');
   const file = path.join(themes.THEME_DIR, '__probe_kidsonly.json');
   fs.writeFileSync(file, JSON.stringify({
     id: '__probe_kidsonly', label: 'Kids Only', category: 'Other', audiences: ['kids'],

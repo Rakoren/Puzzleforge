@@ -274,9 +274,12 @@ test('titlePage:false omits the auto title page but keeps title/author for cover
   assert.equal(off.pages[0].pageNumber, on.pages[0].pageNumber - 1);
 });
 
-const bookTemplates = require('../puzzleforge-web/public/templates.js');
+// Starter templates live in the web app; skip this check in an engine-only
+// checkout (after the repo split) where puzzleforge-web isn't present.
+let bookTemplates = null;
+try { bookTemplates = require('../puzzleforge-web/public/templates.js'); } catch (_) { /* engine-only repo */ }
 
-test('every starter template assembles into a real, renderable book', () => {
+test('every starter template assembles into a real, renderable book', { skip: bookTemplates ? undefined : 'puzzleforge-web not present' }, () => {
   assert.ok(Array.isArray(bookTemplates) && bookTemplates.length >= 1);
   const ids = new Set();
   for (const tpl of bookTemplates) {
