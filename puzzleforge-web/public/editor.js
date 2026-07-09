@@ -125,6 +125,7 @@
     }
     if (state && state.border) m._border = state.border;
     if (state && state.borderColor) m._borderColor = state.borderColor;
+    if (state && state.guides) m.guides = { v: (state.guides.v || []).map(Number), h: (state.guides.h || []).map(Number) };
     return m;
   }
   function modelFromPage(p) {
@@ -479,7 +480,25 @@
     renderPage();
     setStatus(spreadMode ? 'Two-page spread — the facing page is a live preview; click it to edit it.' : 'Single-page view.', 'ok');
   }
-  function syncRulers() { el.rulerTop.style.backgroundPositionX = (-el.stageScroll.scrollLeft) + 'px'; el.rulerLeft.style.backgroundPositionY = (-el.stageScroll.scrollTop) + 'px'; }
+  // Align the ruler tick gradients + draw inch numbers against the page's actual
+  // on-screen position (the page is centred in the scroll area, so we can't just
+  // use scrollLeft). Called on zoom, scroll, and page render.
+  function syncRulers() {
+    const stage = el.editorMain.querySelector('.editor-stage');
+    if (!stage || stage.classList.contains('no-rulers')) return;
+    const inner = el.stageInner.getBoundingClientRect();
+    const offX = inner.left - el.rulerTop.getBoundingClientRect().left;
+    const offY = inner.top - el.rulerLeft.getBoundingClientRect().top;
+    const inch = PX_PER_IN * zoom;
+    el.rulerTop.style.backgroundPositionX = offX + 'px';
+    el.rulerLeft.style.backgroundPositionY = offY + 'px';
+    const marks = (ruler) => { let m = ruler.querySelector('.ruler-marks'); if (!m) { m = document.createElement('div'); m.className = 'ruler-marks'; ruler.appendChild(m); } return m; };
+    const wIn = Math.round(dims.usableWidth / PX_PER_IN), hIn = Math.round(dims.usableHeight / PX_PER_IN);
+    const mt = marks(el.rulerTop); mt.innerHTML = '';
+    for (let i = 0; i <= wIn; i++) { const s = document.createElement('span'); s.textContent = i; s.style.left = (offX + i * inch) + 'px'; mt.appendChild(s); }
+    const ml = marks(el.rulerLeft); ml.innerHTML = '';
+    for (let i = 0; i <= hIn; i++) { const s = document.createElement('span'); s.textContent = i; s.style.top = (offY + i * inch) + 'px'; ml.appendChild(s); }
+  }
   const setZoom = (z) => { zoom = Math.max(0.15, Math.min(4, z)); applyZoom(); drawSel(); };
   // Fit the page to the window width only (height may scroll) — Publisher's "Page Width".
   function fitWidth() { const aw = (el.stageScroll.clientWidth || 700) - 24; return Math.max(0.15, Math.min(aw / dims.usableWidth, 4)); }
@@ -551,6 +570,7 @@
     selLayer = document.createElement('div'); selLayer.className = 'pf-sel-layer';
     el.stageInner.appendChild(vGuide); el.stageInner.appendChild(hGuide); el.stageInner.appendChild(selLayer);
     applyMarginGuide();
+    renderUserGuides();
     if (!masterMode) renderMasterOverlay();
 
     // Content: measure flow bases (no transform yet). Matter: bases already set.
@@ -593,9 +613,9 @@
   function setRot(ref, r) { ref.rot = r; ref.group === 'piece' ? applyPieceTf(ref) : applyElTf(ref); }
 
   // --- history ---
-  function snapshot(pm) { return JSON.stringify({ comps: pm.comps.map((c) => ({ key: c.key, dx: c.dx, dy: c.dy, scale: c.scale, rot: c.rot, hidden: c.hidden, locked: c.locked })), elements: pm.elements.map((e) => { const { _node, ...r } = e; return r; }) }); }
+  function snapshot(pm) { return JSON.stringify({ comps: pm.comps.map((c) => ({ key: c.key, dx: c.dx, dy: c.dy, scale: c.scale, rot: c.rot, hidden: c.hidden, locked: c.locked })), elements: pm.elements.map((e) => { const { _node, ...r } = e; return r; }), guides: pm.guides ? { v: pm.guides.v.slice(), h: pm.guides.h.slice() } : { v: [], h: [] } }); }
   function pushUndo() { const pm = curModel(); pm.undo.push(snapshot(pm)); if (pm.undo.length > 60) pm.undo.shift(); pm.redo = []; }
-  function applySnap(pm, snap) { const s = JSON.parse(snap); const byKey = {}; pm.comps.forEach((c) => (byKey[c.key] = c)); s.comps.forEach((sc) => { const c = byKey[sc.key]; if (c) Object.assign(c, sc); }); pm.elements = s.elements.map((e) => ({ ...e, group: 'el' })); }
+  function applySnap(pm, snap) { const s = JSON.parse(snap); const byKey = {}; pm.comps.forEach((c) => (byKey[c.key] = c)); s.comps.forEach((sc) => { const c = byKey[sc.key]; if (c) Object.assign(c, sc); }); pm.elements = s.elements.map((e) => ({ ...e, group: 'el' })); pm.guides = s.guides ? { v: (s.guides.v || []).slice(), h: (s.guides.h || []).slice() } : { v: [], h: [] }; }
   function undo() { const pm = curModel(); if (!pm.undo.length) return; pm.redo.push(snapshot(pm)); applySnap(pm, pm.undo.pop()); if (masterMode) master.elements = pm.elements; renderPage(); }
   function redo() { const pm = curModel(); if (!pm.redo.length) return; pm.undo.push(snapshot(pm)); applySnap(pm, pm.redo.pop()); if (masterMode) master.elements = pm.elements; renderPage(); }
 
@@ -682,10 +702,78 @@
   function snapTargets(excl) {
     const xs = [0, dims.usableWidth / 2, dims.usableWidth], ys = [0, dims.usableHeight / 2, dims.usableHeight];
     for (const r of allRefs()) { if (excl.indexOf(r) >= 0 || !r._node) continue; const b = box(r); xs.push(b.x, b.x + b.w / 2, b.x + b.w); ys.push(b.y, b.y + b.h / 2, b.y + b.h); }
+    const g = ensureGuides(curModel()); if (g) { xs.push(...g.v); ys.push(...g.h); } // objects snap to user guides
     return { xs, ys };
   }
   const showGuide = (g, a, v) => { g.style.display = ''; if (a === 'x') g.style.left = v + 'px'; else g.style.top = v + 'px'; };
   const hideGuides = () => { if (vGuide) vGuide.style.display = 'none'; if (hGuide) hGuide.style.display = 'none'; };
+
+  // --- user ruler guides (drag off a ruler to place; snap objects to them) ----
+  // Stored per page in unscaled page px: pm.guides = { v: [x…], h: [y…] }.
+  function ensureGuides(pm) { if (pm && !pm.guides) pm.guides = { v: [], h: [] }; return pm && pm.guides; }
+  function renderUserGuides() {
+    el.stageInner.querySelectorAll('.pf-user-guide').forEach((n) => n.remove());
+    const pm = curModel(); const g = ensureGuides(pm); if (!g) return;
+    g.v.forEach((x, i) => el.stageInner.appendChild(makeGuideEl('v', x, i)));
+    g.h.forEach((y, i) => el.stageInner.appendChild(makeGuideEl('h', y, i)));
+  }
+  function makeGuideEl(axis, pos, idx) {
+    const node = document.createElement('div');
+    node.className = 'pf-user-guide ' + axis;
+    node.style[axis === 'v' ? 'left' : 'top'] = pos + 'px';
+    node.title = 'Drag to move · double-click (or drag onto the ruler) to remove';
+    node.addEventListener('pointerdown', (ev) => startGuideDrag(ev, axis, idx));
+    node.addEventListener('dblclick', (ev) => { ev.stopPropagation(); const g = ensureGuides(curModel()); pushUndo(); (axis === 'v' ? g.v : g.h).splice(idx, 1); renderUserGuides(); });
+    return node;
+  }
+  // Position of a client point in unscaled page px along one axis.
+  const pageX = (clientX) => (clientX - el.stageInner.getBoundingClientRect().left) / zoom;
+  const pageY = (clientY) => (clientY - el.stageInner.getBoundingClientRect().top) / zoom;
+
+  // Press on a ruler and drag onto the page to drop a new guide.
+  function startRulerCreate(ev, axis) {
+    ev.preventDefault();
+    const pm = curModel(); const g = ensureGuides(pm); if (!g) return;
+    const preview = document.createElement('div');
+    preview.className = 'pf-user-guide ' + axis + ' dragging';
+    el.stageInner.appendChild(preview);
+    let pos = null;
+    const move = (e) => {
+      const rect = el.stageInner.getBoundingClientRect();
+      if (axis === 'h') { pos = Math.max(0, Math.min(dims.usableHeight, (e.clientY - rect.top) / zoom)); preview.style.top = pos + 'px'; }
+      else { pos = Math.max(0, Math.min(dims.usableWidth, (e.clientX - rect.left) / zoom)); preview.style.left = pos + 'px'; }
+    };
+    const up = (e) => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+      preview.remove();
+      const rect = el.stageInner.getBoundingClientRect();
+      const onPage = axis === 'h' ? e.clientY >= rect.top : e.clientX >= rect.left; // dropped onto the page, not back on the ruler
+      if (pos == null || !onPage) return;
+      pushUndo();
+      (axis === 'h' ? g.h : g.v).push(Math.round(pos));
+      renderUserGuides();
+    };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    move(ev);
+  }
+
+  // Drag an existing guide; releasing back over the ruler removes it.
+  function startGuideDrag(ev, axis, idx) {
+    ev.preventDefault(); ev.stopPropagation();
+    const g = ensureGuides(curModel()); const arr = axis === 'v' ? g.v : g.h; pushUndo();
+    const move = (e) => {
+      arr[idx] = axis === 'v'
+        ? Math.round(Math.max(0, Math.min(dims.usableWidth, pageX(e.clientX))))
+        : Math.round(Math.max(0, Math.min(dims.usableHeight, pageY(e.clientY))));
+      renderUserGuides();
+    };
+    const up = (e) => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+      const rect = el.stageInner.getBoundingClientRect();
+      if ((axis === 'v' && e.clientX < rect.left) || (axis === 'h' && e.clientY < rect.top)) { arr.splice(idx, 1); renderUserGuides(); }
+    };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }
 
   // --- drag / resize ---
   // Grouped objects select and move as one (Publisher-style groups).
@@ -1326,6 +1414,7 @@
     }
     if (pm._border) st.border = pm._border;
     if (pm._borderColor) st.borderColor = pm._borderColor;
+    if (pm.guides && (pm.guides.v.length || pm.guides.h.length)) st.guides = { v: pm.guides.v.slice(), h: pm.guides.h.slice() };
     return st;
   }
   // Per-page arrangement for export/recipe: keeps the final page order, marks
@@ -1997,6 +2086,10 @@
     if (el.movePageUp) el.movePageUp.addEventListener('click', () => { if (cur >= 0) movePage(cur, -1); });
     if (el.movePageDown) el.movePageDown.addEventListener('click', () => { if (cur >= 0) movePage(cur, 1); });
     if (el.marginGuide) el.marginGuide.addEventListener('change', applyMarginGuide);
+    // Drag off a ruler to place a guide: down from the top ruler → horizontal;
+    // right from the left ruler → vertical.
+    el.rulerTop.addEventListener('pointerdown', (ev) => startRulerCreate(ev, 'h'));
+    el.rulerLeft.addEventListener('pointerdown', (ev) => startRulerCreate(ev, 'v'));
     // Master pages
     if (el.editMasterBtn) el.editMasterBtn.addEventListener('click', toggleMaster);
     if (el.exitMasterBtn) el.exitMasterBtn.addEventListener('click', exitMaster);
