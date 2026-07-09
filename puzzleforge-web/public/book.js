@@ -784,6 +784,11 @@
   }
 
   async function init() {
+    // Prefill the author from the signed-in profile's pen name (only if empty,
+    // so it never overwrites what the user typed or a loaded recipe).
+    if (window.PFIdentity) {
+      PFIdentity.onReady((me) => { if (me && !el.author.value.trim()) el.author.value = me.penName || me.name || ''; });
+    }
     try {
       meta = await (await fetch('/api/meta')).json();
     } catch (_) {

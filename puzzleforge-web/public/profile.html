@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PuzzleForge — Profile &amp; Team</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <div>
+        <h1>PuzzleForge</h1>
+        <p class="tagline">Profile &amp; Team</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Puzzle Maker</a>
+      <a href="book.html">Book Builder</a>
+      <a href="library.html">My Books</a>
+      <a href="themes.html">Themes</a>
+      <a href="cover.html">Cover Builder</a>
+    </nav>
+  </header>
+
+  <main class="layout" style="grid-template-columns: 1fr; max-width: 720px;">
+    <!-- Signed-out state -->
+    <section class="panel hidden" id="signedOut" aria-label="Sign in">
+      <h2>You're not signed in</h2>
+      <p class="hint">Pick your profile to manage your settings and team. On this shared workspace,
+        your books and comments are signed with your name.</p>
+      <div class="actions"><button id="doSignIn" class="primary" type="button">Sign in</button></div>
+    </section>
+
+    <!-- Profile settings -->
+    <section class="panel hidden" id="profilePanel" aria-label="Your profile">
+      <h2>Your profile</h2>
+      <label class="field"><span>Name</span><input id="pName" type="text" maxlength="80"></label>
+      <label class="field"><span>Email (optional)</span><input id="pEmail" type="email" maxlength="160"></label>
+      <label class="field"><span>Pen name / author name</span>
+        <input id="pPen" type="text" maxlength="120" placeholder="Shown by default on your books">
+      </label>
+      <div class="row">
+        <label class="field"><span>Avatar color</span><input id="pColor" type="color" value="#3b6fd4"></label>
+        <label class="field"><span>Role</span>
+          <select id="pRole" disabled>
+            <option>Owner</option><option>Writer</option><option>Editor</option>
+            <option>Illustrator</option><option>Reviewer</option><option>Contributor</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint" id="roleHint">Only an owner can change roles.</p>
+
+      <h2>Sign-in PIN</h2>
+      <p class="hint" id="pinState">No PIN set — anyone on the workspace can pick your profile.</p>
+      <div class="row">
+        <label class="field"><span>New PIN (optional)</span><input id="pPin" type="password" inputmode="numeric" autocomplete="off" placeholder="Leave blank to keep current"></label>
+        <label class="field checkbox-field"><span>&nbsp;</span>
+          <label class="checkbox"><input type="checkbox" id="pClearPin"> Remove my PIN</label>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="pSave" class="primary" type="button">Save changes</button>
+      </div>
+      <p class="status" id="pStatus"></p>
+    </section>
+
+    <!-- Team management (Owner only) -->
+    <section class="panel hidden" id="teamPanel" aria-label="Team">
+      <h2>Team</h2>
+      <p class="hint">Everyone with a profile on this workspace. Invite new people with a one-time link.</p>
+      <div id="teamList" class="rows"></div>
+      <div class="actions">
+        <button id="invite" class="primary" type="button">+ Invite someone</button>
+      </div>
+      <div id="inviteBox" class="tool hidden">
+        <div class="row">
+          <label class="field"><span>Their role</span>
+            <select id="iRole">
+              <option>Editor</option><option>Writer</option><option>Illustrator</option>
+              <option>Reviewer</option><option>Contributor</option><option>Owner</option>
+            </select>
+          </label>
+          <label class="field"><span>Their name (optional)</span><input id="iName" type="text" maxlength="80"></label>
+        </div>
+        <label class="field"><span>Invite link (single use)</span><input id="iLink" type="text" readonly placeholder="Click Generate"></label>
+        <div class="actions">
+          <button id="iGen" class="primary" type="button">Generate link</button>
+          <button id="iCopy" class="ghost" type="button" disabled>Copy</button>
+        </div>
+        <p class="hint">Send this link to the person. They open it once, set up their profile, and they're in.</p>
+      </div>
+      <p class="status" id="teamStatus"></p>
+    </section>
+  </main>
+
+  <script src="identity.js"></script>
+  <script src="profile.js"></script>
+</body>
+</html>

@@ -171,6 +171,7 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 
 **Self-hosted team workspace (LAN, publisher-only):**
 - `workspace.js` — a lightweight self-hosted backend (JSON-file store) for a small local team: shared roster, shared book library, live comments via Server-Sent Events, "Save to my library" fork + team notifications. No hosted accounts required (optional `PUZZLEFORGE_WORKSPACE_TOKEN`; email left as an optional SMTP hook)
+- **Identity / sign-in** (`workspace.js` profiles + sessions + invites, client `identity.js`): each person is a **profile** (name, email, role, pen name, avatar colour, optional PIN). Sign-in = pick your profile (+PIN if set) → a session token remembered in the browser; a self-mounting "Signed in as …" chip on every page (menu → Profile settings, Switch user, Sign out). The first profile bootstraps as **Owner**; owners expand the team with **single-use invite links** (`profile.html?invite=<token>`) that register the new person and sign them in. A dedicated **Profile & Team** page (`profile.html`) edits your profile and, for owners, manages the roster. The book Author field prefills from your pen name. A reserved `google` slot on each profile lets **"Sign in with Google"** drop in later (once the app is behind an HTTPS address) with no data migration.
 
 **Manual (non-AI) theme builder:**
 - Build a themed word list + facts by hand (tiers, category, tags) — an alternative to the AI Theme Generator
