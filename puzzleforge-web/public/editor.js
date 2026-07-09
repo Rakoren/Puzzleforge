@@ -302,6 +302,20 @@
       if (act === 'blank') insertBlankAfterCurrent();
       else if (act === 'dup') { if (cur >= 0) duplicatePage(cur); }
       else if (act === 'tpl') openTplPicker();
+    } else if (dropId === 'alignDrop') {
+      const m = { aleft: 'left', acenter: 'centerh', aright: 'right', atop: 'top', amiddle: 'middle', abottom: 'bottom' };
+      if (m[act]) alignSel(m[act]);
+      else if (act === 'disth') distribute('x');
+      else if (act === 'distv') distribute('y');
+    } else if (dropId === 'rotateDrop') {
+      if (act === 'rright') rotateBy(90);
+      else if (act === 'rleft') rotateBy(-90);
+      else if (act === 'flipv') flip('v');
+      else if (act === 'fliph') flip('h');
+      else if (act === 'free') freeRotate();
+    } else if (dropId === 'wrapDrop') {
+      if (act === 'wfront') reorder('front');
+      else if (act === 'wbehind') reorder('back');
     }
   }
 
@@ -994,6 +1008,14 @@
   }
 
   function flip(axis) { const o = sels.length === 1 && sels[0]; if (!o || (o.kind !== 'image' && o.kind !== 'shape')) return; pushUndo(); if (axis === 'h') o.flipH = !o.flipH; else o.flipV = !o.flipV; o._node.innerHTML = elHtml(o); }
+  const norm360 = (d) => ((Math.round(d) % 360) + 360) % 360;
+  function rotateBy(delta) { if (!sels.length) return; pushUndo(); sels.forEach((r) => setRot(r, norm360(num(r.rot, 0) + delta))); drawSel(); syncSelUI(); }
+  function freeRotate() {
+    const o = sels.length === 1 && sels[0]; if (!o) { setStatus('Select one object to rotate.', ''); return; }
+    const v = window.prompt('Rotate to how many degrees?', String(norm360(num(o.rot, 0))));
+    if (v == null) return; const n = Number(v); if (!Number.isFinite(n)) return;
+    pushUndo(); setRot(o, norm360(n)); drawSel(); syncSelUI();
+  }
   function toggleLock() { const o = sels.length === 1 && sels[0]; if (!o) return; pushUndo(); o.locked = !o.locked; syncSelUI(); }
 
   function addElement(e) { pushUndo(); curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }

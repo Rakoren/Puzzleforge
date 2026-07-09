@@ -120,6 +120,36 @@
             <button id="hBackward" class="ghost">Send back</button>
             <button id="hGroup" class="ghost">Group</button>
             <button id="hUngroup" class="ghost">Ungroup</button>
+            <span class="rdrop" id="wrapDrop">
+              <button class="ghost rdrop-btn" id="wrapDropBtn" aria-haspopup="true" aria-expanded="false" title="How this object layers with the puzzle & text">◲ Wrap Text&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <button type="button" data-act="wfront">▤ In Front of Puzzle</button>
+                <button type="button" data-act="wbehind">▥ Behind Puzzle</button>
+              </div>
+            </span>
+            <span class="rdrop" id="alignDrop">
+              <button class="ghost rdrop-btn" id="alignDropBtn" aria-haspopup="true" aria-expanded="false" title="Align or distribute the selection">⯐ Align&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <button type="button" data-act="aleft">⯇ Align Left</button>
+                <button type="button" data-act="acenter">≡ Align Center</button>
+                <button type="button" data-act="aright">⯈ Align Right</button>
+                <button type="button" data-act="atop">⤒ Align Top</button>
+                <button type="button" data-act="amiddle">⇕ Align Middle</button>
+                <button type="button" data-act="abottom">⤓ Align Bottom</button>
+                <button type="button" data-act="disth">⇿ Distribute Horizontally</button>
+                <button type="button" data-act="distv">⇳ Distribute Vertically</button>
+              </div>
+            </span>
+            <span class="rdrop" id="rotateDrop">
+              <button class="ghost rdrop-btn" id="rotateDropBtn" aria-haspopup="true" aria-expanded="false" title="Rotate or flip the selection">⟳ Rotate&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <button type="button" data-act="rright">⟳ Rotate Right 90°</button>
+                <button type="button" data-act="rleft">⟲ Rotate Left 90°</button>
+                <button type="button" data-act="flipv">⇅ Flip Vertical</button>
+                <button type="button" data-act="fliph">⇆ Flip Horizontal</button>
+                <button type="button" data-act="free">⌖ Free Rotate…</button>
+              </div>
+            </span>
           </div>
           <div class="rgroup-name">Arrange</div>
         </div>
