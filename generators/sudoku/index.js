@@ -10,7 +10,7 @@
  *   difficulty 1|2|3   easy / medium / hard (default 1)
  *   symmetric  boolean remove clues in symmetric pairs (default true)
  */
-const { DIFFICULTY } = require('../../config/defaults');
+const { presetFor } = require('../../config/defaults');
 const { solveGrid, countSolutions, candidates, cloneGrid, N, BOX } = require('./solver');
 
 function shuffle(arr, rand) {
@@ -59,7 +59,7 @@ function buildSolution(rand) {
  */
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = DIFFICULTY.sudoku[difficulty] || DIFFICULTY.sudoku[1];
+  const preset = presetFor('sudoku', difficulty, config.audience);
   // Symmetry: the caller can force it, else the tier decides (Expert drops it to
   // dig deeper).
   const symmetric = config.symmetric != null ? config.symmetric : preset.symmetric !== false;
@@ -105,6 +105,7 @@ function generate(config = {}, rand = Math.random) {
   return {
     type: 'sudoku',
     difficulty,
+    audience: config.audience || 'adult', // lets the validator apply the right (kids vs adult) rules
     theme: null,
     title: config.title || `Sudoku — ${cap(preset.label)}`,
     instructions:

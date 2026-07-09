@@ -14,7 +14,7 @@
  */
 const { PEOPLE, ATTRIBUTES, ORDINALS } = require('./pools');
 const { enumerate } = require('./solver');
-const { DIFFICULTY } = require('../../config/defaults');
+const { DIFFICULTY, presetFor } = require('../../config/defaults');
 
 const PRESETS = (DIFFICULTY.logicgrid) || {
   1: { items: 4, cats: 3, ordinal: false, style: 'positive' },
@@ -161,7 +161,7 @@ function selectClues(cats, ordered, rand) {
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = PRESETS[difficulty] || PRESETS[1];
+  const preset = presetFor('logicgrid', difficulty, config.audience);
 
   const cats = buildCategories(preset, config, rand);
   const { sol, rows } = buildSolution(cats, rand);

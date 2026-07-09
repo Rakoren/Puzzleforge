@@ -25,6 +25,7 @@ const { generate } = require('./generate');
 const { withSeed } = require('./rng');
 const { isActivityType } = require('../generators/registry');
 const { summarizeLevels } = require('../config/difficulty');
+const { kidsWordMaxLen } = require('../config/defaults');
 const themes = require('../themes');
 const breatherContent = require('../content/breathers');
 
@@ -155,16 +156,17 @@ function curveLevel(i, n, curve, flatLevel, rand) {
 // When `exclude` is a Set, words already used elsewhere in the book are avoided;
 // if uniqueness leaves the puzzle short, it tops up (allowing repeats, but never
 // from a harder tier) so a puzzle is never starved of words.
-function wordsFromTheme(theme, difficulty, count, exclude) {
+function wordsFromTheme(theme, difficulty, count, exclude, maxLength) {
   // Pull from the difficulty's tier; sample `count` so each puzzle differs.
-  let words = themes.selectWords(theme, { difficulty, count, exclude });
+  // `maxLength` (kids tiers) keeps a young-reader grid from hiding a long word.
+  let words = themes.selectWords(theme, { difficulty, count, exclude, maxLength });
 
   if (words.length < count) {
     // `inThis` only guards against duplicates *within* this one puzzle; repeats
     // across puzzles are what the no-words-left fallback deliberately allows.
     const inThis = new Set(words);
     const fill = (opts) => {
-      for (const w of themes.selectWords(theme, opts)) {
+      for (const w of themes.selectWords(theme, { maxLength, ...opts })) {
         if (words.length >= count) break;
         if (inThis.has(w)) continue;
         inThis.add(w);
@@ -180,6 +182,9 @@ function wordsFromTheme(theme, difficulty, count, exclude) {
       // the puzzle stays full — still never pulling a harder word into an easier
       // puzzle.
       if (words.length < count) fill({ maxDifficulty: difficulty, count });
+      // Last resort: kids cap left too few words — drop the cap so the puzzle is
+      // never starved (better a slightly long word than an empty grid).
+      if (words.length === 0 && maxLength != null) fill({ maxDifficulty: difficulty, count, maxLength: null });
     } else if (words.length === 0) {
       // No uniqueness constraint and this tier came back empty (e.g. a theme
       // with no words at this level) — fall back to the whole theme.
@@ -306,7 +311,9 @@ function buildBook(config, opts, seed, rand) {
       const difficulty = curve
         ? curveLevel(gIdx++, totalPuzzles, curve, flatLevel, rand)
         : pickDifficulty(spec, rand);
-      const puzzleConfig = { type: spec.type, difficulty, size: spec.size };
+      // Audience reaches the generator so it reads the right difficulty ladder
+      // (kids get the gentler KIDS_DIFFICULTY presets; adults the standard ones).
+      const puzzleConfig = { type: spec.type, difficulty, size: spec.size, audience };
       if (WORD_TYPES.has(spec.type)) {
         if (spec.words) {
           puzzleConfig.words = spec.words;
@@ -321,7 +328,9 @@ function buildBook(config, opts, seed, rand) {
           }
           const theme = themes.resolveTheme(themeRef);
           const count = spec.count_words || DEFAULT_WORD_COUNT;
-          puzzleConfig.words = wordsFromTheme(theme, difficulty, count, usedWords);
+          // Cap auto-picked word length for kids so a Beginner grid stays gentle.
+          const maxLen = kidsWordMaxLen(difficulty, audience);
+          puzzleConfig.words = wordsFromTheme(theme, difficulty, count, usedWords, maxLen);
           puzzleConfig.clues = themes.clueMap(theme);
           puzzleConfig.theme = theme.label; // clean title even for a merged category
         }

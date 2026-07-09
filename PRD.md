@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (118 tests passing)
+### Engine (125 tests passing)
 
 **14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -77,7 +77,7 @@ Planned split (future):
 
 ### Difficulty System ✅
 
-Internal engine levels are **1–4**; the labels shown to buyers depend on the book's **audience** (`config/difficulty.js` is the single source of truth):
+Internal engine levels are **1–4**, but **kids and adults are two separate ladders — not one ladder with two labels.** `config/difficulty.js` is the single source of truth for the labels; `config/defaults.js` (`DIFFICULTY` + `KIDS_DIFFICULTY`, resolved by `presetFor(type, level, audience)`) is the source of truth for the **mechanics**. A kids "Independent" (L4) puzzle is deliberately far gentler than an adult "Expert" (L4).
 
 | Level | Adult label | Kids label | Ages | Grade |
 |---|---|---|---|---|
@@ -86,9 +86,20 @@ Internal engine levels are **1–4**; the labels shown to buyers depend on the b
 | 3 | Hard | Growing Reader | 8–10 | Grades 3–4 |
 | 4 | **Expert** | Independent | 10–12 | Grades 5–6 |
 
-- **Expert (level 4)** added across every playable type (`config/defaults.js` presets): Word Search grows to 20×20+ (tier `minSize` floor), Sudoku digs deeper by dropping 180° symmetry (~24 givens vs ~28 at Hard; 17 is aspirational), Maze 25×33, and the rest scale count / length / vocabulary. Nonogram Expert stays 15×15 (a 20×20 unique-solution search costs ~8s/puzzle).
-- **Audience-aware labels in the UI** — the Kids/Adult toggle swaps the label set; the internal value never changes. Teacher tool (Puzzle Maker) shows age + grade; the Book Builder shows both sets (Easy…Expert for adults, tier + age band for kids) with cross-tier ranges (e.g. Hard–Expert).
-- Kids vocabulary targets these Lexile bands: Beginner BR–200L, Early Reader 200–500L, Growing Reader 500–820L, Independent 820–1100L.
+**The two ladders are mechanically distinct** (verified in `tests/difficulty-ladder.test.js`):
+
+| | Adult ramp (L1→L4) | Kids ramp (Beginner→Independent) |
+|---|---|---|
+| Word search grid | 10×10 → **20×20**, diagonal + backwards + *dense* (crossing) | 7×7 → **13×13**, never dense; backwards only at the very top tier |
+| Maze grid | 10×10 → **25×33** | 7×7 → **13×17** (kids top ≈ adult Easy–Medium) |
+| Auto word length | full theme pool | capped per tier (≤5 / ≤6 / ≤7 / ≤8 letters) — hand-typed words are never dropped |
+| Sudoku | 9×9, digs to ~20 givens at Expert | **not offered below Growing Reader (8–10)**; 9×9 with heavy givens (~43 / ~37) for the two older tiers |
+| Cipher | Morse by Hard; key hidden from Hard | **never Morse**; Caesar key stays shown until the top tier |
+
+- **Expert (level 4, adults)** added across every playable type: Word Search 20×20+ (tier `minSize` floor), Sudoku digs deeper by dropping 180° symmetry, Maze 25×33. Nonogram Expert stays 15×15 (a 20×20 unique-solution search costs ~8s/puzzle).
+- **Audience threads into generation**, not just labels: `book.js` passes `audience` to every puzzle so `presetFor` picks the right ladder; the word-length cap and gentler presets apply automatically. Requesting a kids sudoku below Growing Reader throws a clear, actionable error rather than silently making an age-inappropriate puzzle.
+- **Audience-aware labels in the UI** — the Kids/Adult toggle swaps the label set; the internal value never changes. Puzzle Maker shows age + grade; the Book Builder shows both sets with cross-tier ranges (e.g. Hard–Expert / Beginner–Growing Reader).
+- Kids vocabulary targets these Lexile bands: Beginner BR–200L, Early Reader 200–500L, Growing Reader 500–820L, Independent 820–1100L (the per-tier length cap is the concrete enforcement today; full Lexile scoring is future work).
 - **Publish Checklist** flags when the audience is unset or the listing's reading age contradicts it (e.g. a Kids book tagged "Adult").
 
 **Displaying difficulty** (all off a shared descriptor — `config/difficulty.js` `summarizeLevels` + `book.meta.difficulty`; levels are known by construction, not estimated):

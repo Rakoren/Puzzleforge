@@ -56,7 +56,7 @@ test('every playable type generates at Expert (no fallback to easy)', () => {
 });
 
 test('checklist flags an audience/reading-age mismatch and passes when coherent', () => {
-  const base = { title: 'B', puzzleforgeBook: 1, trimSize: '8.5x11', answerKey: true, puzzles: [{ type: 'sudoku', count: 2, difficulty: '2' }] };
+  const base = { title: 'B', puzzleforgeBook: 1, trimSize: '8.5x11', answerKey: true, puzzles: [{ type: 'maze', count: 2, difficulty: '2' }] };
   const item = (book) => runChecklist(book).items.find((i) => i.id === 'difficulty-audience');
 
   // Kids audience but "Adult" reading age → warning.

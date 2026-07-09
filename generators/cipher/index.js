@@ -15,7 +15,7 @@
  */
 const BANK = require('./messages');
 const { encode, MODES } = require('./ciphers');
-const { DIFFICULTY } = require('../../config/defaults');
+const { DIFFICULTY, presetFor } = require('../../config/defaults');
 
 const PRESETS = (DIFFICULTY.cipher) || {
   1: { modes: ['caesar', 'a1z26'], maxLen: 24, showKey: true },
@@ -47,7 +47,7 @@ function instructionsFor(mode, showKey, shift) {
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = PRESETS[difficulty] || PRESETS[1];
+  const preset = presetFor('cipher', difficulty, config.audience);
   const mode = MODES.includes(config.mode) ? config.mode : pick(preset.modes, rand);
 
   let message;

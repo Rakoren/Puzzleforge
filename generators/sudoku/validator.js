@@ -9,7 +9,7 @@
  *     alone — that would make it trivial
  */
 const { solve, candidates, cloneGrid, N, BOX } = require('./solver');
-const { DIFFICULTY } = require('../../config/defaults');
+const { presetFor } = require('../../config/defaults');
 
 const TRIVIAL_PENALTY = 0.2;
 
@@ -69,7 +69,9 @@ function validate(puzzle) {
 
   const { givens } = puzzle.data;
   const difficulty = puzzle.difficulty || 1;
-  const preset = DIFFICULTY.sudoku[difficulty] || DIFFICULTY.sudoku[1];
+  const audience = puzzle.audience;
+  const isKids = String(audience || '').toLowerCase() === 'kids';
+  const preset = presetFor('sudoku', difficulty, audience);
 
   if (!givensConsistent(givens)) {
     errors.push('Givens contain a row, column, or box conflict.');
@@ -92,8 +94,10 @@ function validate(puzzle) {
     }
   }
 
-  // Soft: a medium/hard puzzle solvable by naked singles alone is too easy.
-  if (errors.length === 0 && difficulty >= 2 && solvableByNakedSingles(givens)) {
+  // Soft: a medium/hard ADULT puzzle solvable by naked singles alone is too
+  // easy. Kids sudoku is deliberately gentle (heavy givens), so naked-singles
+  // solvability is a feature, not a defect — never penalize it for kids.
+  if (errors.length === 0 && !isKids && difficulty >= 2 && solvableByNakedSingles(givens)) {
     warnings.push('Puzzle is solvable by naked singles alone — easier than its difficulty.');
     score -= TRIVIAL_PENALTY;
   }

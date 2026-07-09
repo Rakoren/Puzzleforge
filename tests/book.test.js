@@ -11,7 +11,10 @@ const CONFIG = {
   title: 'Test Activity Book',
   subtitle: 'A Mixed Puzzle Sampler',
   author: 'PuzzleForge',
-  audience: 'kids',
+  // Adult sampler: sudoku isn't offered to the youngest kids tiers, so this
+  // mixed wordsearch+sudoku baseline is an adult book. Kids-ladder behavior has
+  // its own dedicated tests (see difficulty-ladder.test.js).
+  audience: 'adult',
   trimSize: '8x10',
   theme: 'animals',
   puzzles: [

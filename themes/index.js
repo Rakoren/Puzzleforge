@@ -163,6 +163,7 @@ function mergeThemes(themes) {
  * @param {number} [opts.difficulty]    pull from this tier (1|2|3)
  * @param {number} [opts.maxDifficulty] cumulative: tiers 1..max (legacy)
  * @param {number} [opts.minLength=3]
+ * @param {number} [opts.maxLength]     drop words longer than this (kids tiers)
  * @param {number} [opts.count]         random sample of this many (for variety)
  * @param {Set<string>|string[]} [opts.exclude] words to leave out (e.g. already
  *                                       used elsewhere in a book)
@@ -188,8 +189,9 @@ function selectWords(theme, opts = {}) {
     entries = allEntries(theme);
   }
 
+  const maxLength = opts.maxLength != null ? opts.maxLength : Infinity;
   let pool = [...new Set(entries.map((e) => e.word))].filter(
-    (w) => w.length >= minLength && !(exclude && exclude.has(w))
+    (w) => w.length >= minLength && w.length <= maxLength && !(exclude && exclude.has(w))
   );
 
   if (opts.count != null) {

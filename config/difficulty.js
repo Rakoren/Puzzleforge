@@ -1,15 +1,19 @@
 /**
  * Difficulty labels & tiers.
  *
- * The engine speaks in internal levels 1–4 only. What the *reader/buyer* sees is
+ * The engine speaks in internal levels 1–4. What the *reader/buyer* sees is
  * presentation, and it depends on the book's audience:
  *
  *   Adult → industry labels people search Amazon for: Easy / Medium / Hard / Expert
  *   Kids  → age range is the primary label (parents & teachers shop by age),
  *           with the grade band as a secondary label.
  *
- * This module is the single source of truth for that mapping. Internal 1/2/3/4
- * never changes; only the label set swaps by audience.
+ * This module is the single source of truth for that LABEL mapping. The two
+ * audiences are also two separate difficulty LADDERS mechanically: kids books
+ * generate smaller grids / shorter, commoner words at every level (see
+ * `KIDS_DIFFICULTY` and `presetFor` in config/defaults.js). A kids "Independent"
+ * (L4) puzzle is far gentler than an adult "Expert" (L4) — same internal number,
+ * deliberately different puzzle.
  */
 
 const LEVELS = [1, 2, 3, 4];

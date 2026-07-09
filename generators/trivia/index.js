@@ -13,7 +13,7 @@
  *   title       string
  */
 const BANK = require('./bank');
-const { DIFFICULTY } = require('../../config/defaults');
+const { presetFor } = require('../../config/defaults');
 
 function shuffle(arr, rand) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -25,7 +25,7 @@ function shuffle(arr, rand) {
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = DIFFICULTY.trivia[difficulty] || DIFFICULTY.trivia[1];
+  const preset = presetFor('trivia', difficulty, config.audience);
   const count = config.count || preset.count;
   const maxDifficulty = config.maxDifficulty || preset.maxDifficulty;
 

@@ -13,7 +13,7 @@
  *   title       str
  */
 const { countLadders, neighbors, dictFor, WORDS } = require('./solver');
-const { DIFFICULTY } = require('../../config/defaults');
+const { DIFFICULTY, presetFor } = require('../../config/defaults');
 
 const PRESETS = (DIFFICULTY.wordladder) || {
   1: { length: 3, steps: 4, style: 'guided' },
@@ -68,7 +68,7 @@ function variedEnough(path) {
 
 // Reveal letters on the intermediate rungs until the ladder is the only
 // solution, then add difficulty-appropriate guiding hints.
-function makeHints(ladder, difficulty, rand) {
+function makeHints(ladder, preset, rand) {
   const steps = ladder.length;
   const L = ladder[0].length;
   const patterns = ladder.map((w, i) => (i === 0 || i === steps - 1 ? w.split('') : new Array(L).fill(null)));
@@ -94,7 +94,6 @@ function makeHints(ladder, difficulty, rand) {
     if (!isUnique()) patterns[i][j] = saved;
   }
   // Guiding hints on top of the minimal unique set.
-  const preset = PRESETS[difficulty] || PRESETS[1];
   if (preset.style === 'guided') {
     // Leave at most one blank per intermediate rung.
     for (let i = 1; i < steps - 1; i++) {
@@ -112,13 +111,13 @@ function makeHints(ladder, difficulty, rand) {
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = PRESETS[difficulty] || PRESETS[1];
+  const preset = presetFor('wordladder', difficulty, config.audience);
   const length = config.length || preset.length;
   const steps = config.steps || preset.steps;
 
   const ladder = buildLadder(length, steps, rand);
   if (!ladder) { const err = new Error('wordladder.generate: could not build a ladder'); err.retryable = true; throw err; }
-  const rungs = makeHints(ladder, difficulty, rand);
+  const rungs = makeHints(ladder, preset, rand);
   const anyHints = rungs.some((r) => r.some((c) => c != null));
 
   return {

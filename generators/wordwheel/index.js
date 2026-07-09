@@ -12,7 +12,7 @@
  */
 const WORDS = require('./words');
 const { findWords } = require('./solver');
-const { DIFFICULTY } = require('../../config/defaults');
+const { DIFFICULTY, presetFor } = require('../../config/defaults');
 
 const PRESETS = (DIFFICULTY.wordwheel) || {
   1: { minLen: 3, sourceTop: 0.35, minWords: 12 },
@@ -49,7 +49,7 @@ function bestCenter(pan, minLen) {
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = PRESETS[difficulty] || PRESETS[1];
+  const preset = presetFor('wordwheel', difficulty, config.audience);
   const minLen = preset.minLen;
 
   // Bias the source word toward the common end of the list for easier levels.

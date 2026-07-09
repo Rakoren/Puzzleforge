@@ -134,6 +134,119 @@ const DIFFICULTY = {
   },
 };
 
+// --- Kids difficulty ladder (a SEPARATE, gentler ramp) --------------------
+//
+// Kids and adults are two different ladders, not one ladder with two labels.
+// A kids book's top tier ("Independent", ages 10–12) tops out around where the
+// adult ladder sits in its lower-middle — smaller grids, shorter/commoner words,
+// gentler mechanics. When `audience === 'kids'`, `presetFor()` reads THIS table
+// instead of `DIFFICULTY`; a type absent here falls back to the adult preset.
+//
+// Grounding (vs the adult numbers above):
+//   • Word search: adult tops at 20×20 dense+backwards; kids top at 13×13, only
+//     light backwards at the very top tier, never the "dense" (crossing) mode.
+//   • Maze: adult tops at 25×33; kids top at 13×17 (≈ adult Easy–Medium).
+//   • Sudoku is NOT offered below Growing Reader (8–10) — it isn't a 4–8 puzzle.
+//     Kids sudoku is 9×9 with heavy givens only for the two older tiers.
+const KIDS_DIFFICULTY = {
+  wordsearch: {
+    1: { directions: 'orthogonal', allowBackwards: false, minWordLen: 3, separation: 'isolated', minSize: 7 },
+    2: { directions: 'orthogonal', allowBackwards: false, minWordLen: 3, separation: 'isolated', minSize: 9 },
+    3: { directions: 'diagonal', allowBackwards: false, minWordLen: 3, separation: 'noCross', minSize: 11 },
+    4: { directions: 'diagonal', allowBackwards: true, minWordLen: 3, separation: 'noCross', minSize: 13 },
+  },
+  maze: {
+    1: { label: 'easy', width: 7, height: 7 },
+    2: { label: 'easy', width: 9, height: 9 },
+    3: { label: 'medium', width: 11, height: 13 },
+    4: { label: 'medium', width: 13, height: 17 },
+  },
+  nonogram: {
+    1: { label: 'easy', size: 5, fill: 0.55 },
+    2: { label: 'easy', size: 5, fill: 0.55 },
+    3: { label: 'medium', size: 8, fill: 0.55 },
+    4: { label: 'medium', size: 10, fill: 0.52 },
+  },
+  numbersearch: {
+    1: { count: 8, len: 3, directions: 'orthogonal', allowBackwards: false, separation: 'isolated' },
+    2: { count: 10, len: 3, directions: 'orthogonal', allowBackwards: false, separation: 'isolated' },
+    3: { count: 12, len: 4, directions: 'diagonal', allowBackwards: false, separation: 'noCross' },
+    4: { count: 12, len: 4, directions: 'diagonal', allowBackwards: true, separation: 'noCross' },
+  },
+  // Sudoku: only the two older tiers (Growing Reader 8–10, Independent 10–12).
+  // Requesting a kids sudoku below level 3 throws a helpful error (see presetFor).
+  sudoku: {
+    3: { label: 'easy', target: 44, minGivens: 40 },
+    4: { label: 'medium', target: 38, minGivens: 34 },
+  },
+  trivia: {
+    1: { count: 8, maxDifficulty: 1 },
+    2: { count: 10, maxDifficulty: 1 },
+    3: { count: 10, maxDifficulty: 2 },
+    4: { count: 12, maxDifficulty: 2 },
+  },
+  logicgrid: {
+    1: { items: 4, cats: 3, ordinal: false, style: 'positive' },
+    2: { items: 4, cats: 3, ordinal: false, style: 'positive' },
+    3: { items: 4, cats: 4, ordinal: false, style: 'positive' },
+    4: { items: 4, cats: 4, ordinal: true, style: 'mixed' },
+  },
+  wordladder: {
+    1: { length: 3, steps: 3, style: 'guided' },
+    2: { length: 3, steps: 4, style: 'guided' },
+    3: { length: 4, steps: 4, style: 'some' },
+    4: { length: 4, steps: 5, style: 'some' },
+  },
+  wordwheel: {
+    1: { minLen: 3, sourceTop: 0.25, minWords: 8 },
+    2: { minLen: 3, sourceTop: 0.35, minWords: 8 },
+    3: { minLen: 3, sourceTop: 0.5, minWords: 10 },
+    4: { minLen: 4, sourceTop: 0.7, minWords: 10 },
+  },
+  // Morse is never used for kids; the Caesar key stays shown until the top tier.
+  cipher: {
+    1: { modes: ['caesar'], maxLen: 18, showKey: true },
+    2: { modes: ['caesar', 'atbash'], maxLen: 24, showKey: true },
+    3: { modes: ['caesar', 'atbash', 'a1z26'], maxLen: 30, showKey: true },
+    4: { modes: ['caesar', 'atbash', 'a1z26'], maxLen: 40, showKey: false },
+  },
+};
+
+// Max word length for AUTO-SELECTED kids theme words, per tier. Keeps a
+// Beginner grid from hiding an 11-letter word. Applies only to words drawn from
+// a theme — never to words a publisher typed in by hand.
+const KIDS_WORD_MAXLEN = { 1: 5, 2: 6, 3: 7, 4: 8 };
+
+const isKidsAudience = (a) => String(a || '').toLowerCase() === 'kids';
+const clampLvl = (lv) => Math.max(1, Math.min(4, Math.round(Number(lv) || 1)));
+
+/**
+ * Resolve the difficulty preset for a type at a level, for an audience.
+ * Kids books read the gentler KIDS_DIFFICULTY ladder; adults (or any type not
+ * in that table) read the standard DIFFICULTY ladder.
+ * @throws when a kids book requests a tier a type doesn't offer for kids
+ *   (e.g. sudoku below Growing Reader).
+ */
+function presetFor(type, level, audience) {
+  const lv = clampLvl(level);
+  if (isKidsAudience(audience) && KIDS_DIFFICULTY[type]) {
+    const k = KIDS_DIFFICULTY[type][lv];
+    if (k) return k;
+    // The type exists for kids but not at this (too-easy) tier — sudoku only.
+    if (type === 'sudoku') {
+      throw new Error(
+        'Sudoku isn’t offered for Beginner/Early Reader (ages 4–8). Use Growing Reader (8–10) or older, or pick a word search or maze for younger kids.'
+      );
+    }
+  }
+  return (DIFFICULTY[type] && (DIFFICULTY[type][lv] || DIFFICULTY[type][1])) || null;
+}
+
+/** Max auto-selected word length for a kids tier (null for adults). */
+function kidsWordMaxLen(level, audience) {
+  return isKidsAudience(audience) ? KIDS_WORD_MAXLEN[clampLvl(level)] : null;
+}
+
 function acceptThreshold(type) {
   return ACCEPT_THRESHOLDS[type] != null
     ? ACCEPT_THRESHOLDS[type]
@@ -146,5 +259,9 @@ module.exports = {
   ACCEPT_THRESHOLD_DEFAULT,
   ACCEPT_THRESHOLDS,
   DIFFICULTY,
+  KIDS_DIFFICULTY,
+  KIDS_WORD_MAXLEN,
+  presetFor,
+  kidsWordMaxLen,
   acceptThreshold,
 };

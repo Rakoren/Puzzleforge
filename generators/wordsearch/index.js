@@ -15,7 +15,7 @@
  *   title        string     optional
  *   instructions string     optional
  */
-const { DIFFICULTY } = require('../../config/defaults');
+const { presetFor } = require('../../config/defaults');
 const {
   resolveDirections,
   autoSize,
@@ -48,7 +48,7 @@ function generate(config = {}, rand = Math.random) {
   const words = [...new Set(rawWords)];
 
   const difficulty = config.difficulty || 1;
-  const preset = DIFFICULTY.wordsearch[difficulty] || DIFFICULTY.wordsearch[1];
+  const preset = presetFor('wordsearch', difficulty, config.audience);
   const mode = config.directions || preset.directions;
   const allowBackwards =
     config.allowBackwards != null ? config.allowBackwards : preset.allowBackwards;
