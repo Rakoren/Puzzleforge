@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (125 tests passing)
+### Engine (131 tests passing)
 
 **14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -92,7 +92,7 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 |---|---|---|
 | Word search grid | 10×10 → **20×20**, diagonal + backwards + *dense* (crossing) | 7×7 → **13×13**, never dense; backwards only at the very top tier |
 | Maze grid | 10×10 → **25×33** | 7×7 → **13×17** (kids top ≈ adult Easy–Medium) |
-| Auto word length | full theme pool | capped per tier (≤5 / ≤6 / ≤7 / ≤8 letters) — hand-typed words are never dropped |
+| Theme vocabulary | exact tier per level (L4 → tier 4, the hardest) | easier tiers only (never tier 4), each capped ≤5 / ≤6 / ≤7 / ≤8 letters — hand-typed words are never dropped |
 | Sudoku | 9×9, digs to ~20 givens at Expert | **not offered below Growing Reader (8–10)**; 9×9 with heavy givens (~43 / ~37) for the two older tiers |
 | Cipher | Morse by Hard; key hidden from Hard | **never Morse**; Caesar key stays shown until the top tier |
 
@@ -115,10 +115,10 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 ### Theme System ✅
 
 - 9 built-in themes, ~1,275 clued words
-- Words organized by **difficulty tiers** (easy / medium / hard) — level 1 puzzles never pull hard words
-- Categories + tags, grouped in pickers
-- **AI Theme Generator** — topic → Claude-written tiered clued word list **plus fun facts**, singular words, safety/dedup filtered before save, appears instantly in every picker
-- **Manage themes** — re-run the filter over a saved theme ("Clean") or delete it
+- Words organized by **four difficulty tiers** (Easy / Medium / Hard / **Expert**), matching the engine's four levels — a level-1 puzzle never pulls a tier-3 word, and adult **Expert (level 4)** pulls a genuinely harder tier than Hard (the built-ins' hardest vocabulary was split into Hard + Expert).
+- **Audience-aware selection** — each theme carries an `audiences` field, and the word pull is audience-aware (`engine/book.js` `themeTierOpts`): adults draw the exact tier for the level (Expert → tier 4); kids draw the easier tiers with a per-tier word-length cap and **never** reach the hardest tier. Same theme, age-appropriate vocabulary for each audience.
+- **AI Theme Generator** — topic + **audience** (Kids / Adults / Both) → Claude-written four-tier clued word list **plus fun facts**, vocabulary + clue reading-level calibrated to the audience, singular words, safety/dedup filtered before save, appears instantly in every picker
+- **Manual theme builder** and **Manage themes** — build a four-tier theme by hand (with an audience), re-run the filter over a saved theme ("Clean"), or delete it
 - **Tag filter / search** on theme pickers
 - **Whole-category selection** — e.g. "All Animals & Nature" merges animals + ocean + weather into one pool
 - **Mixed themes** fully supported — generator receives a merged word pool
@@ -394,17 +394,22 @@ Themes are **word lists only** — no visual assets. Visual presentation is hand
 {
   id: "space",
   label: "Space",
-  words: [
-    { word: "ASTEROID", clue: "A rocky object orbiting the sun", difficulty: 2 },
-    { word: "COMET", clue: "An icy body with a glowing tail", difficulty: 1 },
-  ]
+  audiences: ["kids", "adult"],   // who the theme suits; missing = both
+  tiers: {                         // four vocabulary tiers (1 easiest → 4 hardest)
+    1: [{ word: "MOON", clue: "It orbits the Earth" }, "STAR"],
+    2: [{ word: "COMET", clue: "An icy body with a glowing tail" }],
+    3: [{ word: "ASTEROID", clue: "A rocky object orbiting the sun" }],
+    4: [{ word: "CONSTELLATION", clue: "A pattern of stars in the sky" }]
+  }
 }
 ```
 
-- Words carry a clue (for crossword/kriss-kross) and a difficulty rating
-- Mixed themes fully supported — generator receives a merged pool
+- An entry is a plain string or `{ word, clue }` (clue for crossword/kriss-kross)
+- **Four tiers** matching the four difficulty levels; adults draw the exact tier for a level (Expert → tier 4), kids draw the easier tiers with a length cap (never tier 4)
+- `audiences` marks suitability; the AI generator sets it from the chosen audience, and any theme missing it counts as both
+- Mixed themes fully supported — generator receives a merged pool (audiences unioned)
 - Custom word lists supported in both CLI and web UI
-- AI Theme Generator available — topic → tiered clued word list via Claude API
+- AI Theme Generator — topic + audience → four-tier clued word list via Claude API
 
 ---
 

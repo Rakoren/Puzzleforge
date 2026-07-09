@@ -2,212 +2,819 @@
   "id": "sports",
   "label": "Sports",
   "category": "Sports & Games",
-  "tags": ["sports", "games", "fitness"],
+  "tags": [
+    "sports",
+    "games",
+    "fitness"
+  ],
+  "audiences": [
+    "kids",
+    "adult"
+  ],
   "tiers": {
     "1": [
-      { "word": "RUN", "clue": "Move fast on your feet" },
-      { "word": "BAT", "clue": "You swing it to hit a ball" },
-      { "word": "BALL", "clue": "A round object used in many games" },
-      { "word": "GOAL", "clue": "Where you score in soccer" },
-      { "word": "TEAM", "clue": "A group that plays together" },
-      { "word": "JUMP", "clue": "Leap up off the ground" },
-      { "word": "KICK", "clue": "Strike a ball with your foot" },
-      { "word": "SWIM", "clue": "Move through water" },
-      { "word": "RACE", "clue": "A contest of speed" },
-      { "word": "GAME", "clue": "A contest played for fun" },
-      { "word": "WIN", "clue": "To come in first" },
-      { "word": "NET", "clue": "You hit a ball over it in tennis" },
-      { "word": "BIKE", "clue": "You pedal it to ride" },
-      { "word": "GOLF", "clue": "A game of hitting a small ball into holes" },
-      { "word": "PUCK", "clue": "The disc used in ice hockey" },
-      { "word": "BASE", "clue": "A spot a runner touches in baseball" },
-      { "word": "DIVE", "clue": "Plunge headfirst into water" },
-      { "word": "SKATE", "clue": "Glide on ice or wheels" },
-      { "word": "COACH", "clue": "The person who trains the team" },
-      { "word": "MEDAL", "clue": "A prize for winning" },
-      { "word": "SCORE", "clue": "The number of points in a game" },
-      { "word": "FIELD", "clue": "The grassy area a game is played on" },
-      { "word": "TRACK", "clue": "An oval path for running races" },
-      { "word": "LAP", "clue": "One time around the track" },
-      { "word": "GYM", "clue": "A place for exercise and sports" },
-      { "word": "MAT", "clue": "A padded surface for tumbling" },
-      { "word": "ROW", "clue": "Pull the oars of a boat" },
-      { "word": "TAG", "clue": "A chasing game" },
-      { "word": "TEE", "clue": "Where a golf ball starts" },
-      { "word": "PAR", "clue": "The expected score for a golf hole" },
-      { "word": "FOUL", "clue": "A break of the rules" },
-      { "word": "PASS", "clue": "To send the ball to a teammate" },
-      { "word": "SHOT", "clue": "An attempt to score" },
-      { "word": "PLAY", "clue": "To take part in a game" },
-      { "word": "FANS", "clue": "People who cheer for a team" },
-      { "word": "LOSE", "clue": "To not win" },
-      { "word": "TIE", "clue": "An equal score" },
-      { "word": "JOG", "clue": "To run at a slow steady pace" },
-      { "word": "AIM", "clue": "To point at a target" },
-      { "word": "RINK", "clue": "A surface for ice skating" }
+      {
+        "word": "RUN",
+        "clue": "Move fast on your feet"
+      },
+      {
+        "word": "BAT",
+        "clue": "You swing it to hit a ball"
+      },
+      {
+        "word": "BALL",
+        "clue": "A round object used in many games"
+      },
+      {
+        "word": "GOAL",
+        "clue": "Where you score in soccer"
+      },
+      {
+        "word": "TEAM",
+        "clue": "A group that plays together"
+      },
+      {
+        "word": "JUMP",
+        "clue": "Leap up off the ground"
+      },
+      {
+        "word": "KICK",
+        "clue": "Strike a ball with your foot"
+      },
+      {
+        "word": "SWIM",
+        "clue": "Move through water"
+      },
+      {
+        "word": "RACE",
+        "clue": "A contest of speed"
+      },
+      {
+        "word": "GAME",
+        "clue": "A contest played for fun"
+      },
+      {
+        "word": "WIN",
+        "clue": "To come in first"
+      },
+      {
+        "word": "NET",
+        "clue": "You hit a ball over it in tennis"
+      },
+      {
+        "word": "BIKE",
+        "clue": "You pedal it to ride"
+      },
+      {
+        "word": "GOLF",
+        "clue": "A game of hitting a small ball into holes"
+      },
+      {
+        "word": "PUCK",
+        "clue": "The disc used in ice hockey"
+      },
+      {
+        "word": "BASE",
+        "clue": "A spot a runner touches in baseball"
+      },
+      {
+        "word": "DIVE",
+        "clue": "Plunge headfirst into water"
+      },
+      {
+        "word": "SKATE",
+        "clue": "Glide on ice or wheels"
+      },
+      {
+        "word": "COACH",
+        "clue": "The person who trains the team"
+      },
+      {
+        "word": "MEDAL",
+        "clue": "A prize for winning"
+      },
+      {
+        "word": "SCORE",
+        "clue": "The number of points in a game"
+      },
+      {
+        "word": "FIELD",
+        "clue": "The grassy area a game is played on"
+      },
+      {
+        "word": "TRACK",
+        "clue": "An oval path for running races"
+      },
+      {
+        "word": "LAP",
+        "clue": "One time around the track"
+      },
+      {
+        "word": "GYM",
+        "clue": "A place for exercise and sports"
+      },
+      {
+        "word": "MAT",
+        "clue": "A padded surface for tumbling"
+      },
+      {
+        "word": "ROW",
+        "clue": "Pull the oars of a boat"
+      },
+      {
+        "word": "TAG",
+        "clue": "A chasing game"
+      },
+      {
+        "word": "TEE",
+        "clue": "Where a golf ball starts"
+      },
+      {
+        "word": "PAR",
+        "clue": "The expected score for a golf hole"
+      },
+      {
+        "word": "FOUL",
+        "clue": "A break of the rules"
+      },
+      {
+        "word": "PASS",
+        "clue": "To send the ball to a teammate"
+      },
+      {
+        "word": "SHOT",
+        "clue": "An attempt to score"
+      },
+      {
+        "word": "PLAY",
+        "clue": "To take part in a game"
+      },
+      {
+        "word": "FANS",
+        "clue": "People who cheer for a team"
+      },
+      {
+        "word": "LOSE",
+        "clue": "To not win"
+      },
+      {
+        "word": "TIE",
+        "clue": "An equal score"
+      },
+      {
+        "word": "JOG",
+        "clue": "To run at a slow steady pace"
+      },
+      {
+        "word": "AIM",
+        "clue": "To point at a target"
+      },
+      {
+        "word": "RINK",
+        "clue": "A surface for ice skating"
+      }
     ],
     "2": [
-      { "word": "TENNIS", "clue": "A racket sport over a net" },
-      { "word": "HOCKEY", "clue": "Played with sticks and a puck" },
-      { "word": "SOCCER", "clue": "A game of kicking a round ball" },
-      { "word": "RACKET", "clue": "Used to hit a tennis ball" },
-      { "word": "TROPHY", "clue": "A cup awarded to champions" },
-      { "word": "REFEREE", "clue": "The official who enforces the rules" },
-      { "word": "UMPIRE", "clue": "The official in baseball or cricket" },
-      { "word": "CAPTAIN", "clue": "The leader of a team" },
-      { "word": "PLAYER", "clue": "A person who takes part in a game" },
-      { "word": "JERSEY", "clue": "A team shirt with a number" },
-      { "word": "HELMET", "clue": "Headgear that protects players" },
-      { "word": "WHISTLE", "clue": "The referee blows it to stop play" },
-      { "word": "STADIUM", "clue": "A big arena where games are played" },
-      { "word": "ARENA", "clue": "An indoor place for sports events" },
-      { "word": "BOXING", "clue": "A sport of two fighters with gloves" },
-      { "word": "ROWING", "clue": "Powering a boat with oars" },
-      { "word": "CYCLING", "clue": "Racing on bicycles" },
-      { "word": "SKIING", "clue": "Sliding down snow on two boards" },
-      { "word": "SURFING", "clue": "Riding ocean waves on a board" },
-      { "word": "BOWLING", "clue": "Rolling a ball to knock down pins" },
-      { "word": "ARCHERY", "clue": "Shooting arrows at a target" },
-      { "word": "FENCING", "clue": "A sport of sword duels" },
-      { "word": "CRICKET", "clue": "A bat-and-ball game with wickets" },
-      { "word": "RUGBY", "clue": "A rough game with an oval ball" },
-      { "word": "HURDLE", "clue": "A barrier runners leap over" },
-      { "word": "SPRINT", "clue": "A short, very fast run" },
-      { "word": "DRIBBLE", "clue": "To bounce a basketball while moving" },
-      { "word": "TACKLE", "clue": "To stop an opponent in football" },
-      { "word": "PENALTY", "clue": "A punishment for breaking a rule" },
-      { "word": "OFFENSE", "clue": "The team trying to score" },
-      { "word": "DEFENSE", "clue": "The team trying to stop scoring" },
-      { "word": "ATHLETE", "clue": "A person skilled in sports" },
-      { "word": "JAVELIN", "clue": "A spear thrown for distance" },
-      { "word": "DISCUS", "clue": "A heavy disc thrown in track events" },
-      { "word": "SOFTBALL", "clue": "A game like baseball with a bigger ball" },
-      { "word": "BASEBALL", "clue": "A bat-and-ball game with bases" },
-      { "word": "FOOTBALL", "clue": "A team game played with an oval ball" },
-      { "word": "HANDBALL", "clue": "A game of throwing a ball into a goal" },
-      { "word": "DODGEBALL", "clue": "A game of throwing balls to tag players" },
-      { "word": "RALLY", "clue": "A long exchange of shots in tennis" },
-      { "word": "SERVE", "clue": "The shot that starts a tennis point" },
-      { "word": "VOLLEY", "clue": "Hitting a ball before it bounces" },
-      { "word": "SMASH", "clue": "A powerful overhead shot" },
-      { "word": "BIRDIE", "clue": "One under par in golf" },
-      { "word": "BUNKER", "clue": "A sand trap on a golf course" },
-      { "word": "CADDIE", "clue": "A person who carries golf clubs" },
-      { "word": "PUTTER", "clue": "A club for short golf shots" },
-      { "word": "MALLET", "clue": "A long-handled hammer used in polo" },
-      { "word": "GLOVE", "clue": "Worn to catch a baseball" },
-      { "word": "CLEATS", "clue": "Shoes with studs for grip" },
-      { "word": "GOGGLES", "clue": "Eye protection for swimming" },
-      { "word": "KAYAKING", "clue": "Paddling a small narrow boat" },
-      { "word": "CANOEING", "clue": "Paddling a light open boat" },
-      { "word": "SAILING", "clue": "Moving a boat using the wind" },
-      { "word": "DIVING", "clue": "Plunging into water from a board" },
-      { "word": "JUDO", "clue": "A martial art of throws and holds" },
-      { "word": "KARATE", "clue": "A martial art of strikes and kicks" },
-      { "word": "SUMO", "clue": "A Japanese wrestling sport" },
-      { "word": "RELAY", "clue": "A race where teammates take turns" },
-      { "word": "SHOTPUT", "clue": "Throwing a heavy metal ball" },
-      { "word": "LONGJUMP", "clue": "Leaping as far as possible" },
-      { "word": "HIGHJUMP", "clue": "Leaping over a high bar" },
-      { "word": "SPRINTER", "clue": "A short-distance runner" },
-      { "word": "RUNNER", "clue": "A person who runs in a race" },
-      { "word": "PITCHER", "clue": "The player who throws in baseball" },
-      { "word": "CATCHER", "clue": "The player behind home plate" },
-      { "word": "BATTER", "clue": "The player trying to hit the ball" },
-      { "word": "DEFENDER", "clue": "A player who guards the goal area" },
-      { "word": "STRIKER", "clue": "A soccer player who scores goals" },
-      { "word": "GOALIE", "clue": "The player who guards the net" },
-      { "word": "KICKER", "clue": "The player who kicks field goals" },
-      { "word": "PUNTER", "clue": "A player who kicks the ball away" },
-      { "word": "DUGOUT", "clue": "Where a baseball team sits" },
-      { "word": "REBOUND", "clue": "Grabbing a missed basketball shot" },
-      { "word": "ASSIST", "clue": "A pass that leads to a score" },
-      { "word": "OFFSIDE", "clue": "A position rule violation in soccer" },
-      { "word": "TIMEOUT", "clue": "A short break in a game" },
-      { "word": "HALFTIME", "clue": "The break in the middle of a game" },
-      { "word": "OVERTIME", "clue": "Extra time to break a tie" },
-      { "word": "PLAYOFF", "clue": "A game to decide who advances" }
+      {
+        "word": "TENNIS",
+        "clue": "A racket sport over a net"
+      },
+      {
+        "word": "HOCKEY",
+        "clue": "Played with sticks and a puck"
+      },
+      {
+        "word": "SOCCER",
+        "clue": "A game of kicking a round ball"
+      },
+      {
+        "word": "RACKET",
+        "clue": "Used to hit a tennis ball"
+      },
+      {
+        "word": "TROPHY",
+        "clue": "A cup awarded to champions"
+      },
+      {
+        "word": "REFEREE",
+        "clue": "The official who enforces the rules"
+      },
+      {
+        "word": "UMPIRE",
+        "clue": "The official in baseball or cricket"
+      },
+      {
+        "word": "CAPTAIN",
+        "clue": "The leader of a team"
+      },
+      {
+        "word": "PLAYER",
+        "clue": "A person who takes part in a game"
+      },
+      {
+        "word": "JERSEY",
+        "clue": "A team shirt with a number"
+      },
+      {
+        "word": "HELMET",
+        "clue": "Headgear that protects players"
+      },
+      {
+        "word": "WHISTLE",
+        "clue": "The referee blows it to stop play"
+      },
+      {
+        "word": "STADIUM",
+        "clue": "A big arena where games are played"
+      },
+      {
+        "word": "ARENA",
+        "clue": "An indoor place for sports events"
+      },
+      {
+        "word": "BOXING",
+        "clue": "A sport of two fighters with gloves"
+      },
+      {
+        "word": "ROWING",
+        "clue": "Powering a boat with oars"
+      },
+      {
+        "word": "CYCLING",
+        "clue": "Racing on bicycles"
+      },
+      {
+        "word": "SKIING",
+        "clue": "Sliding down snow on two boards"
+      },
+      {
+        "word": "SURFING",
+        "clue": "Riding ocean waves on a board"
+      },
+      {
+        "word": "BOWLING",
+        "clue": "Rolling a ball to knock down pins"
+      },
+      {
+        "word": "ARCHERY",
+        "clue": "Shooting arrows at a target"
+      },
+      {
+        "word": "FENCING",
+        "clue": "A sport of sword duels"
+      },
+      {
+        "word": "CRICKET",
+        "clue": "A bat-and-ball game with wickets"
+      },
+      {
+        "word": "RUGBY",
+        "clue": "A rough game with an oval ball"
+      },
+      {
+        "word": "HURDLE",
+        "clue": "A barrier runners leap over"
+      },
+      {
+        "word": "SPRINT",
+        "clue": "A short, very fast run"
+      },
+      {
+        "word": "DRIBBLE",
+        "clue": "To bounce a basketball while moving"
+      },
+      {
+        "word": "TACKLE",
+        "clue": "To stop an opponent in football"
+      },
+      {
+        "word": "PENALTY",
+        "clue": "A punishment for breaking a rule"
+      },
+      {
+        "word": "OFFENSE",
+        "clue": "The team trying to score"
+      },
+      {
+        "word": "DEFENSE",
+        "clue": "The team trying to stop scoring"
+      },
+      {
+        "word": "ATHLETE",
+        "clue": "A person skilled in sports"
+      },
+      {
+        "word": "JAVELIN",
+        "clue": "A spear thrown for distance"
+      },
+      {
+        "word": "DISCUS",
+        "clue": "A heavy disc thrown in track events"
+      },
+      {
+        "word": "SOFTBALL",
+        "clue": "A game like baseball with a bigger ball"
+      },
+      {
+        "word": "BASEBALL",
+        "clue": "A bat-and-ball game with bases"
+      },
+      {
+        "word": "FOOTBALL",
+        "clue": "A team game played with an oval ball"
+      },
+      {
+        "word": "HANDBALL",
+        "clue": "A game of throwing a ball into a goal"
+      },
+      {
+        "word": "DODGEBALL",
+        "clue": "A game of throwing balls to tag players"
+      },
+      {
+        "word": "RALLY",
+        "clue": "A long exchange of shots in tennis"
+      },
+      {
+        "word": "SERVE",
+        "clue": "The shot that starts a tennis point"
+      },
+      {
+        "word": "VOLLEY",
+        "clue": "Hitting a ball before it bounces"
+      },
+      {
+        "word": "SMASH",
+        "clue": "A powerful overhead shot"
+      },
+      {
+        "word": "BIRDIE",
+        "clue": "One under par in golf"
+      },
+      {
+        "word": "BUNKER",
+        "clue": "A sand trap on a golf course"
+      },
+      {
+        "word": "CADDIE",
+        "clue": "A person who carries golf clubs"
+      },
+      {
+        "word": "PUTTER",
+        "clue": "A club for short golf shots"
+      },
+      {
+        "word": "MALLET",
+        "clue": "A long-handled hammer used in polo"
+      },
+      {
+        "word": "GLOVE",
+        "clue": "Worn to catch a baseball"
+      },
+      {
+        "word": "CLEATS",
+        "clue": "Shoes with studs for grip"
+      },
+      {
+        "word": "GOGGLES",
+        "clue": "Eye protection for swimming"
+      },
+      {
+        "word": "KAYAKING",
+        "clue": "Paddling a small narrow boat"
+      },
+      {
+        "word": "CANOEING",
+        "clue": "Paddling a light open boat"
+      },
+      {
+        "word": "SAILING",
+        "clue": "Moving a boat using the wind"
+      },
+      {
+        "word": "DIVING",
+        "clue": "Plunging into water from a board"
+      },
+      {
+        "word": "JUDO",
+        "clue": "A martial art of throws and holds"
+      },
+      {
+        "word": "KARATE",
+        "clue": "A martial art of strikes and kicks"
+      },
+      {
+        "word": "SUMO",
+        "clue": "A Japanese wrestling sport"
+      },
+      {
+        "word": "RELAY",
+        "clue": "A race where teammates take turns"
+      },
+      {
+        "word": "SHOTPUT",
+        "clue": "Throwing a heavy metal ball"
+      },
+      {
+        "word": "LONGJUMP",
+        "clue": "Leaping as far as possible"
+      },
+      {
+        "word": "HIGHJUMP",
+        "clue": "Leaping over a high bar"
+      },
+      {
+        "word": "SPRINTER",
+        "clue": "A short-distance runner"
+      },
+      {
+        "word": "RUNNER",
+        "clue": "A person who runs in a race"
+      },
+      {
+        "word": "PITCHER",
+        "clue": "The player who throws in baseball"
+      },
+      {
+        "word": "CATCHER",
+        "clue": "The player behind home plate"
+      },
+      {
+        "word": "BATTER",
+        "clue": "The player trying to hit the ball"
+      },
+      {
+        "word": "DEFENDER",
+        "clue": "A player who guards the goal area"
+      },
+      {
+        "word": "STRIKER",
+        "clue": "A soccer player who scores goals"
+      },
+      {
+        "word": "GOALIE",
+        "clue": "The player who guards the net"
+      },
+      {
+        "word": "KICKER",
+        "clue": "The player who kicks field goals"
+      },
+      {
+        "word": "PUNTER",
+        "clue": "A player who kicks the ball away"
+      },
+      {
+        "word": "DUGOUT",
+        "clue": "Where a baseball team sits"
+      },
+      {
+        "word": "REBOUND",
+        "clue": "Grabbing a missed basketball shot"
+      },
+      {
+        "word": "ASSIST",
+        "clue": "A pass that leads to a score"
+      },
+      {
+        "word": "OFFSIDE",
+        "clue": "A position rule violation in soccer"
+      },
+      {
+        "word": "TIMEOUT",
+        "clue": "A short break in a game"
+      },
+      {
+        "word": "HALFTIME",
+        "clue": "The break in the middle of a game"
+      },
+      {
+        "word": "OVERTIME",
+        "clue": "Extra time to break a tie"
+      },
+      {
+        "word": "PLAYOFF",
+        "clue": "A game to decide who advances"
+      }
     ],
     "3": [
-      { "word": "BASKETBALL", "clue": "A game of shooting hoops" },
-      { "word": "VOLLEYBALL", "clue": "A game of hitting a ball over a high net" },
-      { "word": "BADMINTON", "clue": "A racket game with a shuttlecock" },
-      { "word": "GYMNASTICS", "clue": "A sport of tumbling and balancing" },
-      { "word": "GYMNAST", "clue": "An athlete who tumbles and balances" },
-      { "word": "MARATHON", "clue": "A very long running race" },
-      { "word": "TRIATHLON", "clue": "A race of swimming, cycling, and running" },
-      { "word": "DECATHLON", "clue": "A contest of ten track-and-field events" },
-      { "word": "OLYMPICS", "clue": "The world's biggest sports event" },
-      { "word": "CHAMPION", "clue": "The winner of a competition" },
-      { "word": "TOURNAMENT", "clue": "A series of games to find a winner" },
-      { "word": "QUARTERBACK", "clue": "The player who throws the football" },
-      { "word": "GOALKEEPER", "clue": "The player who guards the net" },
-      { "word": "MIDFIELDER", "clue": "A soccer player who links defense and attack" },
-      { "word": "TOUCHDOWN", "clue": "A score in American football" },
-      { "word": "HOMERUN", "clue": "A hit that lets a batter circle the bases" },
-      { "word": "SLAMDUNK", "clue": "Jamming the basketball through the hoop" },
-      { "word": "FREETHROW", "clue": "An unguarded shot in basketball" },
-      { "word": "BACKHAND", "clue": "A tennis stroke across the body" },
-      { "word": "BUTTERFLY", "clue": "A swimming stroke with both arms together" },
-      { "word": "BACKSTROKE", "clue": "Swimming on your back" },
-      { "word": "SNOWBOARD", "clue": "A single board for sliding down snow" },
-      { "word": "SKATEBOARD", "clue": "A board with wheels for tricks" },
-      { "word": "WRESTLING", "clue": "A sport of grappling opponents" },
-      { "word": "EQUESTRIAN", "clue": "Relating to horse riding sports" },
-      { "word": "SPRINGBOARD", "clue": "A flexible board used in diving" },
-      { "word": "GOALPOST", "clue": "The frame you aim the ball between" },
-      { "word": "SCOREBOARD", "clue": "It shows the points in a game" },
-      { "word": "GRANDSTAND", "clue": "The main seating at a stadium" },
-      { "word": "PENTATHLON", "clue": "A contest of five different events" },
-      { "word": "STEEPLECHASE", "clue": "A race with hurdles and water jumps" },
-      { "word": "WATERPOLO", "clue": "A ball game played in a pool" },
-      { "word": "POWERLIFTING", "clue": "A sport of lifting maximum weights" },
-      { "word": "WEIGHTLIFTING", "clue": "Lifting heavy barbells overhead" },
-      { "word": "BODYBUILDING", "clue": "Training to build large muscles" },
-      { "word": "KICKBOXING", "clue": "A combat sport of punches and kicks" },
-      { "word": "TAEKWONDO", "clue": "A Korean martial art of high kicks" },
-      { "word": "LACROSSE", "clue": "A game played with netted sticks" },
-      { "word": "RACQUETBALL", "clue": "A fast game played in a walled court" },
-      { "word": "PARAGLIDING", "clue": "Gliding under a parachute-like wing" },
-      { "word": "SKYDIVING", "clue": "Jumping from a plane with a parachute" },
-      { "word": "SNOWBOARDING", "clue": "Riding snow on a single board" },
-      { "word": "SKATEBOARDING", "clue": "Riding and doing tricks on a board" },
-      { "word": "WATERSKIING", "clue": "Skiing on water behind a boat" },
-      { "word": "WINDSURFING", "clue": "Sailing on a board with a sail" },
-      { "word": "KITESURFING", "clue": "Riding waves while pulled by a kite" },
-      { "word": "BOBSLED", "clue": "A team races it down an icy track" },
-      { "word": "LUGE", "clue": "A sled you ride feet-first" },
-      { "word": "CURLING", "clue": "Sliding stones across ice toward a target" },
-      { "word": "BIATHLON", "clue": "Cross-country skiing and shooting" },
-      { "word": "HEPTATHLON", "clue": "A contest of seven track-and-field events" },
-      { "word": "ORIENTEERING", "clue": "Racing with a map and compass" },
-      { "word": "CALISTHENICS", "clue": "Exercises using your own body weight" },
-      { "word": "GOALTENDER", "clue": "The hockey player who guards the net" },
-      { "word": "LINEBACKER", "clue": "A defensive football player" },
-      { "word": "CORNERBACK", "clue": "A defensive back in football" },
-      { "word": "SHORTSTOP", "clue": "A fielding position in baseball" },
-      { "word": "OUTFIELDER", "clue": "A baseball player far from the bases" },
-      { "word": "INFIELDER", "clue": "A baseball player near the bases" },
-      { "word": "GRANDSLAM", "clue": "Winning all four major tournaments" },
-      { "word": "TIEBREAKER", "clue": "A way to settle a tied set in tennis" },
-      { "word": "FREEKICK", "clue": "An unguarded kick awarded in soccer" },
-      { "word": "CORNERKICK", "clue": "A kick from the corner in soccer" },
-      { "word": "FIELDGOAL", "clue": "A kick between the posts for points" },
-      { "word": "HALFPIPE", "clue": "A U-shaped ramp for board tricks" },
-      { "word": "TRAMPOLINE", "clue": "A springy surface for bouncing" },
-      { "word": "SOMERSAULT", "clue": "A forward or backward roll in the air" },
-      { "word": "CARTWHEEL", "clue": "A sideways handspring" },
-      { "word": "HANDSPRING", "clue": "A leap onto the hands and back to the feet" },
-      { "word": "MARATHONER", "clue": "A long-distance race runner" },
-      { "word": "PARALYMPICS", "clue": "The games for athletes with disabilities" },
-      { "word": "SPORTSMANSHIP", "clue": "Fair and respectful play" },
-      { "word": "COMPETITION", "clue": "A contest between players or teams" },
-      { "word": "RECREATION", "clue": "Activity done for enjoyment" },
-      { "word": "CHAMPIONSHIP", "clue": "A contest to crown the best" },
-      { "word": "SCRIMMAGE", "clue": "A practice game" },
-      { "word": "KNOCKOUT", "clue": "A win when an opponent can't continue" },
-      { "word": "SEMIFINAL", "clue": "The round before the final" },
-      { "word": "QUARTERFINAL", "clue": "The round before the semifinal" }
+      {
+        "word": "VOLLEYBALL",
+        "clue": "A game of hitting a ball over a high net"
+      },
+      {
+        "word": "BADMINTON",
+        "clue": "A racket game with a shuttlecock"
+      },
+      {
+        "word": "GYMNAST",
+        "clue": "An athlete who tumbles and balances"
+      },
+      {
+        "word": "MARATHON",
+        "clue": "A very long running race"
+      },
+      {
+        "word": "TRIATHLON",
+        "clue": "A race of swimming, cycling, and running"
+      },
+      {
+        "word": "DECATHLON",
+        "clue": "A contest of ten track-and-field events"
+      },
+      {
+        "word": "OLYMPICS",
+        "clue": "The world's biggest sports event"
+      },
+      {
+        "word": "CHAMPION",
+        "clue": "The winner of a competition"
+      },
+      {
+        "word": "TOURNAMENT",
+        "clue": "A series of games to find a winner"
+      },
+      {
+        "word": "MIDFIELDER",
+        "clue": "A soccer player who links defense and attack"
+      },
+      {
+        "word": "TOUCHDOWN",
+        "clue": "A score in American football"
+      },
+      {
+        "word": "HOMERUN",
+        "clue": "A hit that lets a batter circle the bases"
+      },
+      {
+        "word": "SLAMDUNK",
+        "clue": "Jamming the basketball through the hoop"
+      },
+      {
+        "word": "FREETHROW",
+        "clue": "An unguarded shot in basketball"
+      },
+      {
+        "word": "BACKHAND",
+        "clue": "A tennis stroke across the body"
+      },
+      {
+        "word": "BUTTERFLY",
+        "clue": "A swimming stroke with both arms together"
+      },
+      {
+        "word": "SNOWBOARD",
+        "clue": "A single board for sliding down snow"
+      },
+      {
+        "word": "SKATEBOARD",
+        "clue": "A board with wheels for tricks"
+      },
+      {
+        "word": "WRESTLING",
+        "clue": "A sport of grappling opponents"
+      },
+      {
+        "word": "GOALPOST",
+        "clue": "The frame you aim the ball between"
+      },
+      {
+        "word": "SCOREBOARD",
+        "clue": "It shows the points in a game"
+      },
+      {
+        "word": "PENTATHLON",
+        "clue": "A contest of five different events"
+      },
+      {
+        "word": "WATERPOLO",
+        "clue": "A ball game played in a pool"
+      },
+      {
+        "word": "TAEKWONDO",
+        "clue": "A Korean martial art of high kicks"
+      },
+      {
+        "word": "LACROSSE",
+        "clue": "A game played with netted sticks"
+      },
+      {
+        "word": "SKYDIVING",
+        "clue": "Jumping from a plane with a parachute"
+      },
+      {
+        "word": "BOBSLED",
+        "clue": "A team races it down an icy track"
+      },
+      {
+        "word": "LUGE",
+        "clue": "A sled you ride feet-first"
+      },
+      {
+        "word": "CURLING",
+        "clue": "Sliding stones across ice toward a target"
+      },
+      {
+        "word": "BIATHLON",
+        "clue": "Cross-country skiing and shooting"
+      },
+      {
+        "word": "LINEBACKER",
+        "clue": "A defensive football player"
+      },
+      {
+        "word": "SHORTSTOP",
+        "clue": "A fielding position in baseball"
+      },
+      {
+        "word": "OUTFIELDER",
+        "clue": "A baseball player far from the bases"
+      },
+      {
+        "word": "INFIELDER",
+        "clue": "A baseball player near the bases"
+      },
+      {
+        "word": "GRANDSLAM",
+        "clue": "Winning all four major tournaments"
+      },
+      {
+        "word": "TIEBREAKER",
+        "clue": "A way to settle a tied set in tennis"
+      },
+      {
+        "word": "FREEKICK",
+        "clue": "An unguarded kick awarded in soccer"
+      },
+      {
+        "word": "FIELDGOAL",
+        "clue": "A kick between the posts for points"
+      },
+      {
+        "word": "HALFPIPE",
+        "clue": "A U-shaped ramp for board tricks"
+      },
+      {
+        "word": "TRAMPOLINE",
+        "clue": "A springy surface for bouncing"
+      },
+      {
+        "word": "SOMERSAULT",
+        "clue": "A forward or backward roll in the air"
+      },
+      {
+        "word": "CARTWHEEL",
+        "clue": "A sideways handspring"
+      },
+      {
+        "word": "MARATHONER",
+        "clue": "A long-distance race runner"
+      },
+      {
+        "word": "RECREATION",
+        "clue": "Activity done for enjoyment"
+      },
+      {
+        "word": "SCRIMMAGE",
+        "clue": "A practice game"
+      },
+      {
+        "word": "KNOCKOUT",
+        "clue": "A win when an opponent can't continue"
+      },
+      {
+        "word": "SEMIFINAL",
+        "clue": "The round before the final"
+      }
+    ],
+    "4": [
+      {
+        "word": "BASKETBALL",
+        "clue": "A game of shooting hoops"
+      },
+      {
+        "word": "GYMNASTICS",
+        "clue": "A sport of tumbling and balancing"
+      },
+      {
+        "word": "QUARTERBACK",
+        "clue": "The player who throws the football"
+      },
+      {
+        "word": "GOALKEEPER",
+        "clue": "The player who guards the net"
+      },
+      {
+        "word": "BACKSTROKE",
+        "clue": "Swimming on your back"
+      },
+      {
+        "word": "EQUESTRIAN",
+        "clue": "Relating to horse riding sports"
+      },
+      {
+        "word": "SPRINGBOARD",
+        "clue": "A flexible board used in diving"
+      },
+      {
+        "word": "GRANDSTAND",
+        "clue": "The main seating at a stadium"
+      },
+      {
+        "word": "STEEPLECHASE",
+        "clue": "A race with hurdles and water jumps"
+      },
+      {
+        "word": "POWERLIFTING",
+        "clue": "A sport of lifting maximum weights"
+      },
+      {
+        "word": "WEIGHTLIFTING",
+        "clue": "Lifting heavy barbells overhead"
+      },
+      {
+        "word": "BODYBUILDING",
+        "clue": "Training to build large muscles"
+      },
+      {
+        "word": "KICKBOXING",
+        "clue": "A combat sport of punches and kicks"
+      },
+      {
+        "word": "RACQUETBALL",
+        "clue": "A fast game played in a walled court"
+      },
+      {
+        "word": "PARAGLIDING",
+        "clue": "Gliding under a parachute-like wing"
+      },
+      {
+        "word": "SNOWBOARDING",
+        "clue": "Riding snow on a single board"
+      },
+      {
+        "word": "SKATEBOARDING",
+        "clue": "Riding and doing tricks on a board"
+      },
+      {
+        "word": "WATERSKIING",
+        "clue": "Skiing on water behind a boat"
+      },
+      {
+        "word": "WINDSURFING",
+        "clue": "Sailing on a board with a sail"
+      },
+      {
+        "word": "KITESURFING",
+        "clue": "Riding waves while pulled by a kite"
+      },
+      {
+        "word": "HEPTATHLON",
+        "clue": "A contest of seven track-and-field events"
+      },
+      {
+        "word": "ORIENTEERING",
+        "clue": "Racing with a map and compass"
+      },
+      {
+        "word": "CALISTHENICS",
+        "clue": "Exercises using your own body weight"
+      },
+      {
+        "word": "GOALTENDER",
+        "clue": "The hockey player who guards the net"
+      },
+      {
+        "word": "CORNERBACK",
+        "clue": "A defensive back in football"
+      },
+      {
+        "word": "CORNERKICK",
+        "clue": "A kick from the corner in soccer"
+      },
+      {
+        "word": "HANDSPRING",
+        "clue": "A leap onto the hands and back to the feet"
+      },
+      {
+        "word": "PARALYMPICS",
+        "clue": "The games for athletes with disabilities"
+      },
+      {
+        "word": "SPORTSMANSHIP",
+        "clue": "Fair and respectful play"
+      },
+      {
+        "word": "COMPETITION",
+        "clue": "A contest between players or teams"
+      },
+      {
+        "word": "CHAMPIONSHIP",
+        "clue": "A contest to crown the best"
+      },
+      {
+        "word": "QUARTERFINAL",
+        "clue": "The round before the semifinal"
+      }
     ]
   }
 }

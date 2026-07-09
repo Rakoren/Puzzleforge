@@ -952,6 +952,7 @@ app.post('/api/theme/generate', async (req, res) => {
     const result = await themegen.generateTheme({
       topic: body.topic,
       wordsPerTier: body.wordsPerTier,
+      audience: body.audience,
     });
     res.json(result);
   } catch (err) {
@@ -967,6 +968,7 @@ app.post('/api/category/generate', async (req, res) => {
       topic: body.topic,
       count: body.count,
       wordsPerTier: body.wordsPerTier,
+      audience: body.audience,
     });
     res.json(result);
   } catch (err) {

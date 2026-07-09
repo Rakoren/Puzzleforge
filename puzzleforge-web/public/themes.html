@@ -44,11 +44,20 @@
         <input id="topic" type="text" placeholder="e.g. dinosaurs, ancient Egypt, the solar system" maxlength="80">
       </label>
       <label class="field">
-        <span>Words per level (Easy / Medium / Hard)</span>
+        <span>Words per level (Easy / Medium / Hard / Expert)</span>
         <input id="perTier" type="number" min="8" max="40" value="24">
       </label>
-      <p class="hint">Claude writes the words and kid-friendly clues. Everything is run through
-        the same safety filter as the built-in themes before you see it.</p>
+      <label class="field">
+        <span>Audience</span>
+        <select id="audience">
+          <option value="both">Kids &amp; Adults (general)</option>
+          <option value="kids">Kids — simpler, shorter, common words</option>
+          <option value="adult">Adults — richer, harder vocabulary</option>
+        </select>
+      </label>
+      <p class="hint">Four difficulty tiers (Easy → Expert). Audience sets how hard each tier goes:
+        Kids stay short and common; Adults get advanced words at the top. Claude writes the words
+        and clues; everything runs through the same safety filter as the built-in themes.</p>
 
       <h2>2 · Generate</h2>
       <div class="actions">
@@ -92,6 +101,14 @@
         <span>How many sub-themes</span>
         <input id="catCount" type="number" min="2" max="6" value="4">
       </label>
+      <label class="field">
+        <span>Audience</span>
+        <select id="catAudience">
+          <option value="both">Kids &amp; Adults (general)</option>
+          <option value="kids">Kids — simpler, shorter, common words</option>
+          <option value="adult">Adults — richer, harder vocabulary</option>
+        </select>
+      </label>
       <div class="actions">
         <button id="catGenerate" class="primary">✨ Generate category</button>
       </div>
@@ -134,8 +151,18 @@
         <label class="field"><span>Medium (Level 2)</span>
           <textarea id="mTier2" rows="6"></textarea>
         </label>
-        <label class="field"><span>Harder (Level 3)</span>
+        <label class="field"><span>Hard (Level 3)</span>
           <textarea id="mTier3" rows="6"></textarea>
+        </label>
+        <label class="field"><span>Expert (Level 4)</span>
+          <textarea id="mTier4" rows="6" placeholder="The hardest / longest words"></textarea>
+        </label>
+        <label class="field"><span>Audience</span>
+          <select id="mAudience">
+            <option value="both">Kids &amp; Adults (general)</option>
+            <option value="kids">Kids</option>
+            <option value="adult">Adults</option>
+          </select>
         </label>
         <p class="hint" id="mCount">0 words</p>
 

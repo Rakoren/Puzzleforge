@@ -3,19 +3,24 @@
  *
  * Themes are word lists tiered by difficulty. Each theme file has the shape:
  *
- *   { "id": "animals", "label": "Animals",
+ *   { "id": "animals", "label": "Animals", "audiences": ["kids","adult"],
  *     "tiers": { "1": [ {"word":"CAT","clue":"..."}, "DOG", ... ],
- *                "2": [ ... ], "3": [ ... ] } }
+ *                "2": [ ... ], "3": [ ... ], "4": [ ... ] } }
  *
  * An entry may be a plain string or { word, clue } — the clue is optional and
- * only used by crosswords. Generators pull from the tier matching the puzzle's
- * difficulty so a level-1 puzzle never sees a level-3 word.
+ * only used by crosswords. There are FOUR vocabulary tiers (1 easiest → 4
+ * hardest), matching the engine's four difficulty levels. `audiences` lists who
+ * the theme suits ("kids" / "adult"); missing = both. How tiers map to a puzzle
+ * depends on the book's audience (see engine/book.js): adults draw the exact
+ * tier for the level (Expert → tier 4); kids draw the easier tiers with a
+ * per-tier word-length cap and never reach the hardest tier.
  */
 const fs = require('fs');
 const path = require('path');
 
 const THEME_DIR = __dirname;
-const TIERS = ['1', '2', '3'];
+const TIERS = ['1', '2', '3', '4'];
+const ALL_AUDIENCES = ['kids', 'adult'];
 
 function themePath(id) {
   return path.join(THEME_DIR, `${id}.json`);
@@ -34,6 +39,14 @@ function normEntry(entry) {
   return { word: String(entry.word || '').toUpperCase(), clue: entry.clue || null };
 }
 
+// Normalize a theme's `audiences` list. Missing/empty = suits both audiences.
+function normAudiences(raw) {
+  const list = (Array.isArray(raw) ? raw : [])
+    .map((a) => String(a || '').toLowerCase().trim())
+    .filter((a) => ALL_AUDIENCES.includes(a));
+  return list.length ? [...new Set(list)] : [...ALL_AUDIENCES];
+}
+
 /**
  * Load a theme by id. Returns { id, label, tiers: { '1':[{word,clue}], ... } }.
  * Accepts the legacy flat format ({ words: [{word, clue, difficulty}] }) too.
@@ -44,7 +57,7 @@ function loadTheme(id) {
     throw new Error(`Unknown theme "${id}". Available: ${listThemes().join(', ')}`);
   }
   const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-  const tiers = { 1: [], 2: [], 3: [] };
+  const tiers = { 1: [], 2: [], 3: [], 4: [] };
 
   if (raw.tiers) {
     for (const t of TIERS) {
@@ -53,7 +66,7 @@ function loadTheme(id) {
   } else if (raw.words) {
     // Legacy: split a flat list by each word's `difficulty`.
     for (const entry of raw.words) {
-      const tier = Math.min(3, Math.max(1, entry.difficulty || 1));
+      const tier = Math.min(4, Math.max(1, entry.difficulty || 1));
       tiers[tier].push(normEntry(entry));
     }
   }
@@ -63,6 +76,7 @@ function loadTheme(id) {
     label: raw.label || id,
     category: raw.category || 'Other',
     tags: Array.isArray(raw.tags) ? raw.tags : [],
+    audiences: normAudiences(raw.audiences),
     facts: Array.isArray(raw.facts) ? raw.facts : [],
     tiers,
   };
@@ -76,7 +90,7 @@ function listThemesDetailed() {
   return listThemes()
     .map((id) => {
       const t = loadTheme(id);
-      return { id, label: t.label, category: t.category, tags: t.tags, wordCount: wordCount(t) };
+      return { id, label: t.label, category: t.category, tags: t.tags, audiences: t.audiences, wordCount: wordCount(t) };
     })
     .sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
 }
@@ -86,7 +100,7 @@ function tierEntries(theme, tier) {
 }
 
 function allEntries(theme) {
-  return [...theme.tiers['1'], ...theme.tiers['2'], ...theme.tiers['3']];
+  return TIERS.flatMap((t) => theme.tiers[t] || []);
 }
 
 /** Total number of words across all tiers. */
@@ -138,11 +152,13 @@ function resolveTheme(ref) {
  */
 function mergeThemes(themes) {
   const loaded = themes.map((t) => (typeof t === 'string' ? loadTheme(t) : t));
-  const tiers = { 1: [], 2: [], 3: [] };
+  const tiers = { 1: [], 2: [], 3: [], 4: [] };
   const seen = new Set();
+  const audiences = new Set();
   for (const theme of loaded) {
+    for (const a of normAudiences(theme.audiences)) audiences.add(a);
     for (const t of TIERS) {
-      for (const entry of theme.tiers[t]) {
+      for (const entry of theme.tiers[t] || []) {
         if (seen.has(entry.word)) continue;
         seen.add(entry.word);
         tiers[t].push(entry);
@@ -152,6 +168,7 @@ function mergeThemes(themes) {
   return {
     id: loaded.map((t) => t.id).join('+'),
     label: loaded.map((t) => t.label).join(' + '),
+    audiences: audiences.size ? [...audiences] : [...ALL_AUDIENCES],
     tiers,
   };
 }
@@ -160,8 +177,8 @@ function mergeThemes(themes) {
  * Select words from a theme.
  * @param {object} theme  loaded theme
  * @param {object} [opts]
- * @param {number} [opts.difficulty]    pull from this tier (1|2|3)
- * @param {number} [opts.maxDifficulty] cumulative: tiers 1..max (legacy)
+ * @param {number} [opts.difficulty]    pull from this exact tier (1|2|3|4)
+ * @param {number} [opts.maxDifficulty] cumulative: tiers 1..max
  * @param {number} [opts.minLength=3]
  * @param {number} [opts.maxLength]     drop words longer than this (kids tiers)
  * @param {number} [opts.count]         random sample of this many (for variety)

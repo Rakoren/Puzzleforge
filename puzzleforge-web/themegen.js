@@ -30,7 +30,17 @@ const DEFAULT_MODEL = process.env.PUZZLEFORGE_THEME_MODEL || 'claude-opus-4-8';
 
 const MIN_LEN = 3;
 const MAX_LEN = 14;
-const TIERS = ['1', '2', '3'];
+const TIERS = ['1', '2', '3', '4'];
+const ALL_AUDIENCES = ['kids', 'adult'];
+
+// Normalize the requested audience into the list a theme records + which prompt
+// guidance to use. 'both' (default) suits kids and adults.
+function normAudience(raw) {
+  const a = String(raw || 'both').toLowerCase().trim();
+  if (a === 'kids' || a === 'child' || a === 'children') return { mode: 'kids', audiences: ['kids'] };
+  if (a === 'adult' || a === 'adults') return { mode: 'adult', audiences: ['adult'] };
+  return { mode: 'both', audiences: [...ALL_AUDIENCES] };
+}
 
 function clampPerTier(n) {
   const v = Number(n);
@@ -77,8 +87,8 @@ function themeSchema(perTier) {
       },
       tiers: {
         type: 'object',
-        properties: { 1: tierArray, 2: tierArray, 3: tierArray },
-        required: ['1', '2', '3'],
+        properties: { 1: tierArray, 2: tierArray, 3: tierArray, 4: tierArray },
+        required: ['1', '2', '3', '4'],
         additionalProperties: false,
       },
       facts: {
@@ -92,29 +102,68 @@ function themeSchema(perTier) {
   };
 }
 
-function buildPrompt(topic, perTier) {
+// Audience-specific tier guidance. There are four tiers (matching the engine's
+// four difficulty levels); the vocabulary and clue reading-level of each tier
+// depend on who the theme is for. Kids and adults are two different ramps — a
+// kids "hardest" tier is far gentler than an adult one.
+function tierGuidance(mode, perTier) {
+  if (mode === 'kids') {
+    return [
+      'This theme is for CHILDREN (roughly ages 4–12). Every word must be one a',
+      'child would actually know, concrete and common — no technical, abstract, or',
+      'obscure vocabulary. Clues read at a young level (simple words, present tense).',
+      '',
+      'Produce four gently increasing tiers:',
+      `  • Tier 1 (ages 4–6): ~${perTier} very short, super-common words (3-4 letters).`,
+      `  • Tier 2 (ages 6–8): ~${perTier} short, familiar words (4-6 letters).`,
+      `  • Tier 3 (ages 8–10): ~${perTier} slightly longer everyday words (5-7 letters).`,
+      `  • Tier 4 (ages 10–12): ~${perTier} longer but still kid-friendly words (7-9 letters).`,
+    ];
+  }
+  if (mode === 'adult') {
+    return [
+      'This theme is for ADULTS. Vocabulary can be rich and specific; the hardest',
+      'tier should genuinely challenge an adult solver. Keep everything wholesome',
+      'and accurate. Clues may be more sophisticated (still fair, never giving away',
+      'the spelling).',
+      '',
+      'Produce four increasing tiers:',
+      `  • Tier 1 (Easy): ~${perTier} short, common words (3-5 letters).`,
+      `  • Tier 2 (Medium): ~${perTier} moderately challenging words (5-8 letters).`,
+      `  • Tier 3 (Hard): ~${perTier} longer or less-common words (7-11 letters).`,
+      `  • Tier 4 (Expert): ~${perTier} advanced, specialist, or rare words (9-14 letters).`,
+    ];
+  }
+  // both: a general audience spanning easy → hard, kept wholesome for all ages.
+  return [
+    'This theme feeds books for a general audience (children through adults), so',
+    'every word and clue must be wholesome and classroom-appropriate. Clues read',
+    'like a crossword definition and never give away the spelling.',
+    '',
+    'Produce four increasing tiers:',
+    `  • Tier 1 (Easy): ~${perTier} short, common, very recognizable words (3-5 letters).`,
+    `  • Tier 2 (Medium): ~${perTier} moderately challenging words (5-8 letters).`,
+    `  • Tier 3 (Hard): ~${perTier} longer or more advanced words (7-11 letters).`,
+    `  • Tier 4 (Expert): ~${perTier} the longest or most advanced words (9-14 letters).`,
+  ];
+}
+
+function buildPrompt(topic, perTier, mode) {
   return [
     `Create a puzzle-book word theme about: "${topic}".`,
     '',
-    'This theme feeds word searches, crosswords, and word scrambles in books for',
-    'children and families, so every word and clue must be wholesome and',
-    'classroom-appropriate.',
+    'This theme feeds word searches, crosswords, and word scrambles.',
     '',
-    'Produce three difficulty tiers:',
-    `  • Tier 1 (Easy): ~${perTier} short, common, very recognizable words (about 3-5 letters).`,
-    `  • Tier 2 (Medium): ~${perTier} moderately challenging words (about 5-8 letters).`,
-    `  • Tier 3 (Hard): ~${perTier} longer or more advanced words (about 7-14 letters).`,
+    ...tierGuidance(mode, perTier),
     '',
     'Rules for every word:',
     '  • A single word only — no spaces, hyphens, numbers, or punctuation.',
     '  • Use the SINGULAR form (CAT, not CATS; LEAF, not LEAVES), unless the word',
     '    is only ever used in the plural (e.g. SCISSORS).',
     '  • Genuinely on-topic and real (no invented or misspelled words).',
-    '  • Unique across all three tiers (never repeat a word).',
+    '  • Unique across all four tiers (never repeat a word).',
+    '  • Each tier should be clearly harder than the one before it.',
     '  • Avoid having one word be contained inside another (e.g. EAR inside HEART).',
-    '',
-    'Each clue should be one short sentence a child could understand — like a',
-    'crossword definition, never giving away the spelling.',
     '',
     'Also provide 12-15 fun facts about the topic for "did you know?" pages:',
     '  • Each fact is one short, accurate, family-friendly sentence.',
@@ -162,10 +211,17 @@ function sanitizeTheme(raw, fallbackTopic) {
   raw = raw || {};
   const report = { dropped: 0, blocked: 0 };
   const seen = new Set();
-  const tiers = { 1: [], 2: [], 3: [] };
+  const tiers = { 1: [], 2: [], 3: [], 4: [] };
   for (const t of TIERS) {
     tiers[t] = sanitizeTier(raw.tiers && raw.tiers[t], seen, report);
   }
+  // Preserve a theme's audience suitability (missing/invalid = both).
+  const audiences = (() => {
+    const list = (Array.isArray(raw.audiences) ? raw.audiences : [])
+      .map((a) => String(a || '').toLowerCase().trim())
+      .filter((a) => ALL_AUDIENCES.includes(a));
+    return list.length ? [...new Set(list)] : [...ALL_AUDIENCES];
+  })();
 
   const label = String(raw.label || fallbackTopic || 'New Theme').trim().slice(0, 60) || 'New Theme';
   const category = String(raw.category || 'Other').trim().slice(0, 40) || 'Other';
@@ -191,32 +247,33 @@ function sanitizeTheme(raw, fallbackTopic) {
   }
 
   const id = slugify(label) || slugify(fallbackTopic) || 'theme';
-  const counts = { 1: tiers[1].length, 2: tiers[2].length, 3: tiers[3].length };
-  report.total = counts[1] + counts[2] + counts[3];
+  const counts = { 1: tiers[1].length, 2: tiers[2].length, 3: tiers[3].length, 4: tiers[4].length };
+  report.total = counts[1] + counts[2] + counts[3] + counts[4];
   report.counts = counts;
   report.factCount = facts.length;
 
-  return { theme: { id, label, category, tags, tiers, facts }, report };
+  return { theme: { id, label, category, tags, audiences, tiers, facts }, report };
 }
 
 /** A few sample words per tier, for a preview without dumping the whole list. */
 function sampleWords(theme, n = 6) {
   const pick = (tier) =>
-    theme.tiers[tier].slice(0, n).map((e) => (typeof e === 'string' ? e : e.word));
-  return { 1: pick('1'), 2: pick('2'), 3: pick('3') };
+    (theme.tiers[tier] || []).slice(0, n).map((e) => (typeof e === 'string' ? e : e.word));
+  return { 1: pick('1'), 2: pick('2'), 3: pick('3'), 4: pick('4') };
 }
 
 /**
  * Generate a theme from a topic with Claude.
  * @returns {Promise<{ theme, report, sample, model }>}
  */
-async function generateTheme({ topic, wordsPerTier, model } = {}) {
+async function generateTheme({ topic, wordsPerTier, audience, model } = {}) {
   topic = String(topic || '').trim();
   if (!topic) {
     const e = new Error('Enter a topic to generate a theme.');
     e.status = 400;
     throw e;
   }
+  const aud = normAudience(audience);
   if (!process.env.ANTHROPIC_API_KEY) {
     const e = new Error(
       'The AI theme generator needs an Anthropic API key. Set the ANTHROPIC_API_KEY environment variable and restart the server.'
@@ -236,7 +293,7 @@ async function generateTheme({ topic, wordsPerTier, model } = {}) {
     const stream = client.messages.stream({
       model: useModel,
       max_tokens: 16000,
-      messages: [{ role: 'user', content: buildPrompt(topic, perTier) }],
+      messages: [{ role: 'user', content: buildPrompt(topic, perTier, aud.mode) }],
       output_config: { format: { type: 'json_schema', schema: themeSchema(perTier) } },
     });
     message = await stream.finalMessage();
@@ -259,6 +316,7 @@ async function generateTheme({ topic, wordsPerTier, model } = {}) {
     throw e;
   }
 
+  raw.audiences = aud.audiences; // record who this theme was generated for
   const { theme, report } = sanitizeTheme(raw, topic);
   if (report.total < 6) {
     const e = new Error('Could not build a usable theme for that topic. Try a more concrete subject.');
@@ -275,7 +333,7 @@ async function generateTheme({ topic, wordsPerTier, model } = {}) {
  * is saved.
  * @returns {Promise<{ category, themes: Array<{theme, report, sample}> }>}
  */
-async function generateCategory({ topic, count, wordsPerTier } = {}) {
+async function generateCategory({ topic, count, wordsPerTier, audience } = {}) {
   topic = String(topic || '').trim();
   if (!topic) {
     const e = new Error('Enter a topic to generate a category.');
@@ -340,7 +398,7 @@ async function generateCategory({ topic, count, wordsPerTier } = {}) {
   const themes = [];
   for (const name of names) {
     try {
-      const r = await generateTheme({ topic: name, wordsPerTier });
+      const r = await generateTheme({ topic: name, wordsPerTier, audience });
       r.theme.category = category; // force shared grouping
       themes.push({ theme: r.theme, report: r.report, sample: r.sample });
     } catch (_) {
@@ -402,6 +460,7 @@ function saveTheme(rawTheme) {
     label: theme.label,
     category: theme.category,
     tags: theme.tags,
+    audiences: theme.audiences,
     tiers: theme.tiers,
     facts: theme.facts || [],
   };
@@ -451,7 +510,7 @@ function cleanTheme(id) {
   }
   const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
   const before =
-    ['1', '2', '3'].reduce((n, t) => n + ((raw.tiers && raw.tiers[t]) || []).length, 0) +
+    TIERS.reduce((n, t) => n + ((raw.tiers && raw.tiers[t]) || []).length, 0) +
     (Array.isArray(raw.facts) ? raw.facts.length : 0);
 
   const { theme, report } = sanitizeTheme(raw, raw.label);
@@ -460,6 +519,7 @@ function cleanTheme(id) {
     label: theme.label,
     category: theme.category,
     tags: theme.tags,
+    audiences: theme.audiences,
     tiers: theme.tiers,
     facts: theme.facts || [],
   };
@@ -493,7 +553,7 @@ function removeFromTheme(id, { words = [], facts = [] } = {}) {
 
   let removedWords = 0;
   const tiers = raw.tiers || {};
-  for (const t of ['1', '2', '3']) {
+  for (const t of TIERS) {
     const before = (tiers[t] || []).length;
     tiers[t] = (tiers[t] || []).filter((e) => !dropWords.has(entryWord(e)));
     removedWords += before - tiers[t].length;
@@ -510,7 +570,7 @@ function removeFromTheme(id, { words = [], facts = [] } = {}) {
   fs.writeFileSync(file, JSON.stringify(raw, null, 2) + '\n', 'utf8');
   return {
     id: raw.id || slugify(id),
-    counts: { 1: tiers['1'].length, 2: tiers['2'].length, 3: tiers['3'].length },
+    counts: { 1: (tiers['1'] || []).length, 2: (tiers['2'] || []).length, 3: (tiers['3'] || []).length, 4: (tiers['4'] || []).length },
     factCount: Array.isArray(raw.facts) ? raw.facts.length : 0,
     removedWords,
     removedFacts,

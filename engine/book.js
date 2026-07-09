@@ -152,14 +152,29 @@ function curveLevel(i, n, curve, flatLevel, rand) {
   return curve === 'hard-to-easy' ? 3 - step : 1 + step;
 }
 
+// Map a puzzle level (1–4) + audience to how words are drawn from a theme's
+// FOUR vocabulary tiers (1 easiest → 4 hardest):
+//   Adult → the exact tier for the level, so Expert (L4) pulls tier-4 vocabulary
+//           that Hard (L3) never sees.
+//   Kids  → the easier tiers only (cumulative for variety), never the hardest
+//           tier, plus a per-tier word-length cap. A kids "Independent" (L4)
+//           tops out at tier-3 words ≤8 letters — far gentler than adult Expert.
+function themeTierOpts(level, audience) {
+  const lv = Math.max(1, Math.min(4, Number(level) || 1));
+  if (String(audience || '').toLowerCase() === 'kids') {
+    const maxTier = { 1: 1, 2: 2, 3: 2, 4: 3 }[lv];
+    return { maxDifficulty: maxTier, maxLength: kidsWordMaxLen(lv, 'kids'), ceiling: maxTier };
+  }
+  return { difficulty: lv, ceiling: lv }; // adults: exact tier = level (1..4)
+}
+
 // Select the word list for a word-type puzzle from an already-resolved theme.
 // When `exclude` is a Set, words already used elsewhere in the book are avoided;
 // if uniqueness leaves the puzzle short, it tops up (allowing repeats, but never
 // from a harder tier) so a puzzle is never starved of words.
-function wordsFromTheme(theme, difficulty, count, exclude, maxLength) {
-  // Pull from the difficulty's tier; sample `count` so each puzzle differs.
-  // `maxLength` (kids tiers) keeps a young-reader grid from hiding a long word.
-  let words = themes.selectWords(theme, { difficulty, count, exclude, maxLength });
+function wordsFromTheme(theme, level, count, exclude, audience) {
+  const { ceiling, maxLength, ...base } = themeTierOpts(level, audience);
+  let words = themes.selectWords(theme, { ...base, maxLength, count, exclude });
 
   if (words.length < count) {
     // `inThis` only guards against duplicates *within* this one puzzle; repeats
@@ -174,17 +189,16 @@ function wordsFromTheme(theme, difficulty, count, exclude, maxLength) {
       }
     };
     if (exclude) {
-      // This difficulty's tier is exhausted of unused words. Borrow still-unused
-      // words from this and easier tiers (never harder than requested, so the
-      // level stays valid), keeping uniqueness across the book…
-      fill({ maxDifficulty: difficulty, count, exclude });
+      // This tier is exhausted of unused words. Borrow still-unused words from
+      // this and easier tiers (never harder than the level's ceiling, so the
+      // difficulty stays valid), keeping uniqueness across the book…
+      fill({ maxDifficulty: ceiling, count, exclude });
       // …then, only if still short, repeat words from the same/easier tiers so
-      // the puzzle stays full — still never pulling a harder word into an easier
-      // puzzle.
-      if (words.length < count) fill({ maxDifficulty: difficulty, count });
-      // Last resort: kids cap left too few words — drop the cap so the puzzle is
-      // never starved (better a slightly long word than an empty grid).
-      if (words.length === 0 && maxLength != null) fill({ maxDifficulty: difficulty, count, maxLength: null });
+      // the puzzle stays full — still never pulling a harder word in.
+      if (words.length < count) fill({ maxDifficulty: ceiling, count });
+      // Last resort: the kids cap left too few words — drop the cap so the
+      // puzzle is never starved (better a slightly long word than an empty grid).
+      if (words.length === 0 && maxLength != null) fill({ maxDifficulty: ceiling, count, maxLength: null });
     } else if (words.length === 0) {
       // No uniqueness constraint and this tier came back empty (e.g. a theme
       // with no words at this level) — fall back to the whole theme.
@@ -328,9 +342,9 @@ function buildBook(config, opts, seed, rand) {
           }
           const theme = themes.resolveTheme(themeRef);
           const count = spec.count_words || DEFAULT_WORD_COUNT;
-          // Cap auto-picked word length for kids so a Beginner grid stays gentle.
-          const maxLen = kidsWordMaxLen(difficulty, audience);
-          puzzleConfig.words = wordsFromTheme(theme, difficulty, count, usedWords, maxLen);
+          // Audience + level pick the right vocabulary tiers (adults reach tier 4
+          // at Expert; kids stay in the easier tiers with a word-length cap).
+          puzzleConfig.words = wordsFromTheme(theme, difficulty, count, usedWords, audience);
           puzzleConfig.clues = themes.clueMap(theme);
           puzzleConfig.theme = theme.label; // clean title even for a merged category
         }

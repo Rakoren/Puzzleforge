@@ -7,6 +7,8 @@
     unavailable: $('unavailable'),
     topic: $('topic'),
     perTier: $('perTier'),
+    audience: $('audience'),
+    catAudience: $('catAudience'),
     generate: $('generate'),
     status: $('status'),
     result: $('result'),
@@ -33,7 +35,8 @@
     catSaveStatus: $('catSaveStatus'),
     modeAi: $('modeAi'), modeManual: $('modeManual'), aiView: $('aiView'), manualView: $('manualView'),
     mName: $('mName'), mCategory: $('mCategory'), mCatList: $('mCatList'), mTags: $('mTags'),
-    mTier1: $('mTier1'), mTier2: $('mTier2'), mTier3: $('mTier3'), mCount: $('mCount'),
+    mTier1: $('mTier1'), mTier2: $('mTier2'), mTier3: $('mTier3'), mTier4: $('mTier4'), mCount: $('mCount'),
+    mAudience: $('mAudience'),
     mFacts: $('mFacts'), mSave: $('mSave'), mClear: $('mClear'), mStatus: $('mStatus'),
   };
 
@@ -44,7 +47,9 @@
     node.className = 'status' + (kind ? ' ' + kind : '');
   }
 
-  const TIER_NAMES = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+  const TIER_NAMES = { 1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Expert' };
+  const AUD_LABEL = { kids: 'Kids', adult: 'Adults' };
+  const audienceText = (a) => (Array.isArray(a) && a.length === 1 ? AUD_LABEL[a[0]] || 'Everyone' : 'Kids & Adults');
 
   function wordsOf(tier) {
     return (current.tiers[tier] || []).map((e) => (typeof e === 'string' ? e : e.word));
@@ -55,7 +60,7 @@
     const counts = data.report.counts;
     el.rLabel.textContent = current.label;
     const total = data.report.total;
-    let meta = `${current.category} · ${total} words (${counts['1']} easy, ${counts['2']} medium, ${counts['3']} hard)`;
+    let meta = `${current.category} · ${audienceText(current.audiences)} · ${total} words (${counts['1']} easy, ${counts['2']} medium, ${counts['3']} hard, ${counts['4'] || 0} expert)`;
     if (data.report.factCount) meta += ` · ${data.report.factCount} fun facts`;
     if (data.report.blocked) meta += ` · ${data.report.blocked} removed by filter`;
     el.rMeta.textContent = meta;
@@ -69,7 +74,7 @@
     }
 
     el.tierSamples.innerHTML = '';
-    for (const t of ['1', '2', '3']) {
+    for (const t of ['1', '2', '3', '4']) {
       const block = document.createElement('div');
       block.className = 'tier-block';
       const h = document.createElement('strong');
@@ -100,7 +105,7 @@
       const res = await fetch('/api/theme/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, wordsPerTier: Number(el.perTier.value) || undefined }),
+        body: JSON.stringify({ topic, wordsPerTier: Number(el.perTier.value) || undefined, audience: el.audience ? el.audience.value : undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -268,7 +273,7 @@
       const res = await fetch('/api/category/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, count: Number(el.catCount.value) || 4 }),
+        body: JSON.stringify({ topic, count: Number(el.catCount.value) || 4, audience: el.catAudience ? el.catAudience.value : undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -339,7 +344,7 @@
 
   let editing = null; // current theme id being edited
 
-  const TIER_LABEL = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+  const TIER_LABEL = { 1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Expert' };
 
   async function openEditor(th) {
     editing = th.id;
@@ -363,7 +368,7 @@
 
   function renderEditor(theme) {
     el.editorBody.innerHTML = '';
-    for (const t of ['1', '2', '3']) {
+    for (const t of ['1', '2', '3', '4']) {
       const entries = theme.tiers[t] || [];
       const block = document.createElement('div');
       block.className = 'editor-block';
@@ -453,25 +458,28 @@
       return clue ? { word, clue } : { word };
     }).filter(Boolean);
   }
-  function manualTiers() { return { 1: parseTier(el.mTier1.value), 2: parseTier(el.mTier2.value), 3: parseTier(el.mTier3.value) }; }
+  function manualTiers() { return { 1: parseTier(el.mTier1.value), 2: parseTier(el.mTier2.value), 3: parseTier(el.mTier3.value), 4: parseTier(el.mTier4.value) }; }
   function updateManualCount() {
     const t = manualTiers();
-    const n = t[1].length + t[2].length + t[3].length;
-    el.mCount.textContent = `${n} word${n === 1 ? '' : 's'} (${t[1].length} easy · ${t[2].length} medium · ${t[3].length} harder)`;
+    const n = t[1].length + t[2].length + t[3].length + t[4].length;
+    el.mCount.textContent = `${n} word${n === 1 ? '' : 's'} (${t[1].length} easy · ${t[2].length} medium · ${t[3].length} hard · ${t[4].length} expert)`;
   }
   function clearManual() {
-    ['mName', 'mCategory', 'mTags', 'mTier1', 'mTier2', 'mTier3', 'mFacts'].forEach((k) => { el[k].value = ''; });
+    ['mName', 'mCategory', 'mTags', 'mTier1', 'mTier2', 'mTier3', 'mTier4', 'mFacts'].forEach((k) => { el[k].value = ''; });
+    if (el.mAudience) el.mAudience.value = 'both';
     updateManualCount(); setStatus(el.mStatus, '');
   }
+  const AUDIENCES_FOR = (v) => (v === 'kids' ? ['kids'] : v === 'adult' ? ['adult'] : ['kids', 'adult']);
   async function saveManual() {
     const label = el.mName.value.trim();
     if (!label) { setStatus(el.mStatus, 'Give the theme a name.', 'err'); el.mName.focus(); return; }
     const tiers = manualTiers();
-    if (!(tiers[1].length + tiers[2].length + tiers[3].length)) { setStatus(el.mStatus, 'Add at least one word.', 'err'); return; }
+    if (!(tiers[1].length + tiers[2].length + tiers[3].length + tiers[4].length)) { setStatus(el.mStatus, 'Add at least one word.', 'err'); return; }
     const theme = {
       label,
       category: el.mCategory.value.trim() || 'Other',
       tags: el.mTags.value.split(',').map((s) => s.trim()).filter(Boolean),
+      audiences: AUDIENCES_FOR(el.mAudience ? el.mAudience.value : 'both'),
       tiers,
       facts: el.mFacts.value.split('\n').map((s) => s.trim()).filter(Boolean),
     };
@@ -527,7 +535,7 @@
     el.modeManual.addEventListener('click', () => setMode('manual'));
     el.mSave.addEventListener('click', saveManual);
     el.mClear.addEventListener('click', clearManual);
-    [el.mTier1, el.mTier2, el.mTier3].forEach((t) => t.addEventListener('input', updateManualCount));
+    [el.mTier1, el.mTier2, el.mTier3, el.mTier4].forEach((t) => t.addEventListener('input', updateManualCount));
     loadThemeList();
   }
 
