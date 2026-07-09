@@ -804,3 +804,27 @@ a.primary.lib-btn { background: var(--brand); color: #fff; border: 1px solid var
 .pf-id-modal-foot .primary { background: var(--brand); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
 .pf-id-modal-foot .ghost { background: none; border: 1px solid var(--line); padding: 9px 14px; border-radius: 8px; font: inherit; color: var(--ink); cursor: pointer; }
 .pf-id-modal-foot .primary:hover { background: var(--brand-dark); }
+
+/* --- Collapsible tool groups + tooltips (progressive disclosure) --- */
+.pf-group { border: 1px solid var(--line); border-radius: 11px; margin: 0 0 10px; background: var(--panel); }
+.pf-group > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex;
+  align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--ink); user-select: none; }
+.pf-group > summary::-webkit-details-marker { display: none; }
+.pf-group > summary::after { content: "▾"; margin-left: auto; color: var(--muted); font-size: 12px; transition: transform .15s ease; }
+.pf-group[open] > summary::after { transform: rotate(180deg); }
+.pf-group > summary:hover { background: var(--bg); border-radius: 11px; }
+.pf-group[open] > summary { border-bottom: 1px solid var(--line); border-radius: 11px 11px 0 0; }
+.pf-group .sub { font-weight: 400; font-size: 12px; color: var(--muted); }
+.pf-group-body { padding: 14px; }
+.pf-group-body > *:first-child { margin-top: 0; }
+
+/* Small info tooltip badge — put an explanation in title="" */
+.pf-info { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px;
+  border-radius: 50%; background: var(--line); color: var(--muted); font-size: 10px; font-weight: 700;
+  cursor: help; margin-left: 5px; vertical-align: middle; font-style: normal; }
+.pf-info:hover { background: var(--brand); color: #fff; }
+.theme-dark .pf-info { background: #3a3d44; }
+
+/* Tighter checkbox stacks inside groups */
+.pf-checks { display: flex; flex-direction: column; gap: 9px; }
+.pf-checks .checkbox { color: var(--ink); }
