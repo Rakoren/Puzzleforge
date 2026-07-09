@@ -89,9 +89,17 @@ function loadTheme(id) {
 function listThemesDetailed() {
   return listThemes()
     .map((id) => {
-      const t = loadTheme(id);
-      return { id, label: t.label, category: t.category, tags: t.tags, audiences: t.audiences, wordCount: wordCount(t) };
+      // One malformed theme file (e.g. a bad hand-edit) must not break the whole
+      // list — skip it with a warning so the rest of the library still loads.
+      try {
+        const t = loadTheme(id);
+        return { id, label: t.label, category: t.category, tags: t.tags, audiences: t.audiences, wordCount: wordCount(t) };
+      } catch (err) {
+        console.warn(`Skipping theme "${id}": ${err.message}`);
+        return null;
+      }
     })
+    .filter(Boolean)
     .sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
 }
 
