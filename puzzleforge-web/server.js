@@ -1040,6 +1040,17 @@ app.post('/api/theme/clean', (req, res) => {
   }
 });
 
+// Split a "Both" theme into Kids + Adult variants (keeping the original).
+app.post('/api/theme/split', (req, res) => {
+  const id = req.body && req.body.id;
+  if (!id) return res.status(400).json({ error: 'No theme id.' });
+  try {
+    res.json(themegen.splitTheme(id));
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // Persist a previewed (or edited) theme to the themes library.
 app.post('/api/theme/save', (req, res) => {
   const theme = req.body && req.body.theme;

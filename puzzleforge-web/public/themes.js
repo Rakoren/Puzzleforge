@@ -229,10 +229,43 @@
     actions.className = 'manage-actions';
     actions.appendChild(edit);
     actions.appendChild(clean);
+    // Only a "Both" theme can be split into Kids + Adult variants.
+    if (aud.text === 'Both') {
+      const split = document.createElement('button');
+      split.className = 'iconbtn';
+      split.type = 'button';
+      split.textContent = 'Split K/A';
+      split.title = 'Create Kids and Adult variants (keeps this one)';
+      split.addEventListener('click', () => splitTheme(th, split));
+      actions.appendChild(split);
+    }
     actions.appendChild(del);
     row.appendChild(name);
     row.appendChild(actions);
     return row;
+  }
+
+  async function splitTheme(th, btn) {
+    btn.disabled = true;
+    const prev = btn.textContent;
+    btn.textContent = '…';
+    try {
+      const res = await fetch('/api/theme/split', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: th.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Split failed');
+      const kn = data.kidsReport && data.kidsReport.total;
+      const an = data.adultReport && data.adultReport.total;
+      setStatus(el.saveStatus, `Split “${th.label}” into “${th.label} (Kids)” (${kn} words) and “${th.label} (Adult)” (${an} words). The original stays.`, 'ok');
+      loadThemeList();
+    } catch (err) {
+      setStatus(el.saveStatus, err.message, 'err');
+      btn.disabled = false;
+      btn.textContent = prev;
+    }
   }
 
   async function cleanTheme(th, btn) {

@@ -537,6 +537,38 @@ function cleanTheme(id) {
   return { id: payload.id, report, removed: Math.max(0, before - after), tier4Added };
 }
 
+/**
+ * Split a "Both"-audience theme into two saved variants, keeping the original:
+ *   • "<label> (Kids)"  — the easier tiers only (1–3), re-tiered into four kid
+ *     levels; the adult-hard Expert words are dropped.
+ *   • "<label> (Adult)" — the full four-tier range, unchanged.
+ * @returns {{ source, kids, adult }} the three theme ids
+ */
+function splitTheme(id) {
+  const source = pf.loadTheme(id); // normalized, four tiers (auto-upgraded if old)
+  const auds = Array.isArray(source.audiences) ? source.audiences : [];
+  if (!(auds.includes('kids') && auds.includes('adult'))) {
+    const e = new Error('Only a "Both" theme can be split into Kids and Adult variants.');
+    e.status = 400;
+    throw e;
+  }
+
+  // Kids: keep the easier vocabulary (tiers 1–3), re-tiered into four kid levels.
+  const kidsTiers = pf.upgradeToFourTiers({ 1: source.tiers['1'], 2: source.tiers['2'], 3: source.tiers['3'], 4: [] });
+  const kids = saveTheme({
+    label: `${source.label} (Kids)`, category: source.category, tags: source.tags,
+    audiences: ['kids'], tiers: kidsTiers, facts: source.facts,
+  });
+
+  // Adult: the full range, all four tiers.
+  const adult = saveTheme({
+    label: `${source.label} (Adult)`, category: source.category, tags: source.tags,
+    audiences: ['adult'], tiers: source.tiers, facts: source.facts,
+  });
+
+  return { source: id, kids: kids.id, adult: adult.id, kidsReport: kids.report, adultReport: adult.report };
+}
+
 /** Normalize a tier entry's word for comparison. */
 function entryWord(e) {
   return String((typeof e === 'string' ? e : (e && e.word)) || '')
@@ -592,6 +624,7 @@ module.exports = {
   saveTheme,
   deleteTheme,
   cleanTheme,
+  splitTheme,
   removeFromTheme,
   slugify,
 };

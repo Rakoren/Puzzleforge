@@ -8,6 +8,58 @@ const themes = require('../themes');
 const { assembleBook } = require('../engine/book');
 
 const BUILT_INS = ['animals', 'body', 'food', 'jobs', 'ocean', 'space', 'sports', 'transport', 'weather'];
+
+test('splitTheme makes Kids + Adult variants from a Both theme and keeps the original', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const themegen = require('../puzzleforge-web/themegen');
+  const dir = themes.THEME_DIR;
+  const srcFile = path.join(dir, '__probe_split_test.json');
+  const w = (e) => (typeof e === 'string' ? e : e.word);
+  const clean = (ids) => ids.forEach((id) => { const f = path.join(dir, `${id}.json`); if (fs.existsSync(f)) fs.unlinkSync(f); });
+
+  fs.writeFileSync(srcFile, JSON.stringify({
+    id: '__probe_split_test', label: 'Probe Split', category: 'Other', audiences: ['kids', 'adult'],
+    tiers: {
+      1: ['CAT', 'DOG', 'COW'], 2: ['TIGER', 'ZEBRA', 'EAGLE'],
+      3: ['GIRAFFE', 'DOLPHIN', 'PENGUIN', 'CHEETAH', 'LEOPARD', 'GAZELLE'],
+      4: [{ word: 'RHINOCEROS', clue: 'horn' }, 'HIPPOPOTAMUS', 'ORANGUTAN'],
+    },
+  }));
+  let r;
+  try {
+    r = themegen.splitTheme('__probe_split_test');
+    const kids = themes.loadTheme(r.kids);
+    const adult = themes.loadTheme(r.adult);
+
+    assert.deepEqual(kids.audiences, ['kids']);
+    assert.deepEqual(adult.audiences, ['adult']);
+    // Kids drops the Expert (adult-hard) words; Adult keeps them.
+    const kidsWords = new Set(['1', '2', '3', '4'].flatMap((t) => kids.tiers[t].map(w)));
+    assert.ok(!kidsWords.has('HIPPOPOTAMUS'), 'kids variant excludes the adult Expert words');
+    assert.ok(adult.tiers['4'].map(w).includes('HIPPOPOTAMUS'), 'adult variant keeps the Expert tier');
+    // The original is untouched and still Both.
+    assert.deepEqual(themes.loadTheme('__probe_split_test').audiences, ['kids', 'adult']);
+  } finally {
+    clean(['__probe_split_test', r && r.kids, r && r.adult].filter(Boolean));
+  }
+});
+
+test('splitTheme refuses a theme that is not Both', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const themegen = require('../puzzleforge-web/themegen');
+  const file = path.join(themes.THEME_DIR, '__probe_kidsonly.json');
+  fs.writeFileSync(file, JSON.stringify({
+    id: '__probe_kidsonly', label: 'Kids Only', category: 'Other', audiences: ['kids'],
+    tiers: { 1: ['CAT'], 2: ['TIGER'], 3: ['GIRAFFE'], 4: [] },
+  }));
+  try {
+    assert.throws(() => themegen.splitTheme('__probe_kidsonly'), /only a "both" theme/i);
+  } finally {
+    fs.unlinkSync(file);
+  }
+});
 const wordOf = (e) => (typeof e === 'string' ? e : e.word);
 
 test('every built-in theme has four non-empty tiers and an audiences field', () => {
