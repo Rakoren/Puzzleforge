@@ -337,6 +337,8 @@
       else if (act === 'wbehind') reorder('back');
     } else if (dropId === 'pageNoDrop') {
       insertPageNumber(act);
+    } else if (dropId === 'accentDrop') {
+      addAccentBar(act);
     }
   }
 
@@ -1168,6 +1170,20 @@
       w: line ? 220 : bubble ? 200 : 160, h: line ? 12 : bubble ? 130 : 120,
       fill: line ? 'none' : schemeFill(), stroke: schemeStroke(), strokeW: line ? 3 : 2,
     });
+  }
+
+  // Decorative accent bar spanning most of the content width (Publisher-style).
+  function addAccentBar(style) {
+    const w = Math.round(dims.usableWidth * 0.9);
+    const x = Math.round((dims.usableWidth - w) / 2);
+    const y = Math.round(dims.usableHeight / 2);
+    if (style === 'line' || style === 'double') {
+      addElement({ group: 'el', id: uid++, kind: 'shape', shape: 'line', x, y, scale: 1, rot: 0, z: 100,
+        w, h: 12, fill: 'none', stroke: schemeStroke(), strokeW: style === 'double' ? 5 : 2 });
+    } else {
+      addElement({ group: 'el', id: uid++, kind: 'shape', shape: 'rect', x, y, scale: 1, rot: 0, z: 100,
+        w, h: style === 'thick' ? 22 : 10, fill: schemeFill(), stroke: 'none', strokeW: 0 });
+    }
   }
 
   // --- Tables ---
