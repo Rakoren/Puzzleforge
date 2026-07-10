@@ -15,6 +15,7 @@
     zoom100: $('zoom100'), zoomWhole: $('zoomWhole'), zoomWidth: $('zoomWidth'),
     rulerToggle: $('rulerToggle'), navToggle: $('navToggle'), boundToggle: $('boundToggle'), editorMain: $('editorMain'), spreadToggle: $('spreadToggle'),
     addText: $('addText'), addImage: $('addImage'), addPicPlaceholder: $('addPicPlaceholder'), addTable: $('addTable'), addQr: $('addQr'),
+    addCalendarBtn: $('addCalendarBtn'), insLinkBtn: $('insLinkBtn'), insBookmarkBtn: $('insBookmarkBtn'),
     qrProps: $('qrProps'), qrUrl: $('qrUrl'), qrEcl: $('qrEcl'), qrFg: $('qrFg'),
     tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
     tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
@@ -1262,6 +1263,65 @@
     }
   }
 
+  // Insert a month calendar as a title text + a 7-column table, grouped.
+  function addCalendar() {
+    const now = new Date();
+    const def = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const spec = window.prompt('Calendar month (YYYY-MM):', def);
+    if (spec == null) return;
+    const m = /^(\d{4})-(\d{1,2})$/.exec(String(spec).trim());
+    const year = m ? Number(m[1]) : now.getFullYear();
+    const month = (m ? Math.max(1, Math.min(12, Number(m[2]))) : now.getMonth() + 1) - 1;
+    const first = new Date(year, month, 1);
+    const startDay = first.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weeks = Math.ceil((startDay + daysInMonth) / 7);
+    const rows = weeks + 1; // header row + weeks
+    const cols = 7;
+    const cells = Array.from({ length: rows }, () => Array(cols).fill(''));
+    names.forEach((d, i) => { cells[0][i] = d; });
+    let day = 1;
+    for (let r = 1; r < rows && day <= daysInMonth; r++) {
+      for (let c = 0; c < cols; c++) {
+        if ((r - 1) * 7 + c >= startDay && day <= daysInMonth) cells[r][c] = String(day++);
+      }
+    }
+    const colW = Math.max(48, Math.round((dims.usableWidth * 0.86) / cols));
+    const tblW = colW * cols;
+    const x = Math.round((dims.usableWidth - tblW) / 2), y = Math.round(dims.usableHeight * 0.2);
+    const title = first.toLocaleString('en-US', { month: 'long' }) + ' ' + year;
+    pushUndo();
+    const gid = 'g' + uid++;
+    const els = [
+      { group: 'el', id: uid++, gid, kind: 'text', text: title, x, y, w: tblW, scale: 1, rot: 0, z: 100,
+        fontSize: 22, bold: true, align: 'center', color: '#222222', fontFamily: 'sans' },
+      { group: 'el', id: uid++, gid, kind: 'table', x, y: y + 40, scale: 1, rot: 0, z: 100,
+        rows, cols, cells, colW: Array(cols).fill(colW), header: true, borderColor: schemeStroke(), borderW: 1,
+        headerFill: '#eef1fe', cellPad: 6, fontSize: 13, fontFamily: 'sans', color: '#222222', align: 'center' },
+    ];
+    const pm = curModel();
+    els.forEach((e) => { pm.elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); });
+    setSel(els);
+    setStatus(`Inserted a ${title} calendar.`, 'ok');
+  }
+  // Make the selected object a clickable link (renders as an <a> in the PDF).
+  function linkSel() {
+    const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') { setStatus('Select an object first, then add a link.', ''); return; }
+    const url = window.prompt('Link to (URL) — leave blank to remove:', o.link || 'https://');
+    if (url == null) return;
+    pushUndo(); o.link = url.trim() || undefined; o._node.innerHTML = elHtml(o); requestAnimationFrame(drawSel);
+    setStatus(o.link ? 'Link added — the object is clickable in a digital PDF.' : 'Link removed.', 'ok');
+  }
+  // Tag the selected object with a bookmark name (a jump target in a digital PDF).
+  function bookmarkSel() {
+    const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') { setStatus('Select an object first, then add a bookmark.', ''); return; }
+    const name = window.prompt('Bookmark name — leave blank to remove:', o.bookmark || '');
+    if (name == null) return;
+    pushUndo(); o.bookmark = name.trim() || undefined; o._node.innerHTML = elHtml(o); requestAnimationFrame(drawSel);
+    setStatus(o.bookmark ? `Bookmark “${o.bookmark}” added.` : 'Bookmark removed.', 'ok');
+  }
+
   // --- Tables ---
   function emptyCells(rows, cols) { return Array.from({ length: rows }, () => Array.from({ length: cols }, () => '')); }
   function addTable(rows, cols) {
@@ -1298,8 +1358,8 @@
     const line = shape === 'line';
     return elHtml({ kind: 'shape', shape, w: 26, h: line ? 16 : 22, fill: line ? 'none' : '#dbe4ff', stroke: '#3b4a66', strokeW: line ? 2 : 1.5 });
   }
-  function buildShapeGallery() {
-    const host = document.getElementById('shapeGallery'); if (!host) return;
+  function buildShapeGallery(hostId) {
+    const host = document.getElementById(hostId || 'shapeGallery'); if (!host) return;
     host.innerHTML = '';
     SHAPE_GALLERY.forEach((cat) => {
       const h = document.createElement('div'); h.className = 'shapegal-cat'; h.textContent = cat.name; host.appendChild(h);
@@ -1349,7 +1409,8 @@
     });
   }
   function buildObjectMenus() {
-    buildShapeGallery();
+    buildShapeGallery('shapeGallery');
+    buildShapeGallery('insShapeGallery');
     buildTablePicker('tablepickGrid', 'tablepickLabel', 'tablepickMore');
     buildTablePicker('insTablepickGrid', 'insTablepickLabel', 'insTablepickMore');
     buildPagePartsMenu();
@@ -1777,6 +1838,7 @@
         fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline, lineHeight: e.lineHeight,
         textStroke: e.textStroke, textStrokeW: e.textStrokeW, textShadow: e.textShadow,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV, placeholder: e.placeholder || undefined,
+        link: e.link || undefined, bookmark: e.bookmark || undefined,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
         borderColor: e.borderColor, borderW: e.borderW, headerFill: e.headerFill, cellPad: e.cellPad,
@@ -2391,6 +2453,9 @@
     if (el.addPicPlaceholder) el.addPicPlaceholder.addEventListener('click', addPicturePlaceholder);
     if (el.insHeader) el.insHeader.addEventListener('click', () => addMasterText('header'));
     if (el.insFooter) el.insFooter.addEventListener('click', () => addMasterText('footer'));
+    if (el.addCalendarBtn) el.addCalendarBtn.addEventListener('click', addCalendar);
+    if (el.insLinkBtn) el.insLinkBtn.addEventListener('click', linkSel);
+    if (el.insBookmarkBtn) el.insBookmarkBtn.addEventListener('click', bookmarkSel);
     document.querySelectorAll('.shape-btn').forEach((b) => b.addEventListener('click', () => addShape(b.dataset.shape)));
     // Font: live update on input, commit an undo entry on change.
     el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));

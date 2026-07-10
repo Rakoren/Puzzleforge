@@ -343,6 +343,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .theme-dark .ribbon .iconbtn.on { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
 /* Fixed widths so the control-heavy groups wrap into tidy 2-row blocks
    instead of collapsing to one-control-per-row when flexbox hands them slack. */
+.ribbon .bb-border { width: 132px; margin: 0; }
+.ribbon .bb-border > span { font-size: 10px; margin-bottom: 2px; }
 .ribbon .font-body { width: 210px; align-content: center; gap: 4px 4px; }
 .ribbon .para-body { width: 100px; align-content: center; gap: 4px 4px; }
 /* Live page-border overlay (mirrors the printed .pf-frame from export.js). */

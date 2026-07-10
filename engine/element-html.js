@@ -248,7 +248,7 @@
    * Render a free element's inner HTML (unpositioned — the caller wraps it and
    * applies the translate/rotate/scale transform).
    */
-  function elementHtml(e) {
+  function elementInner(e) {
     if (!e) return '';
     if (e.kind === 'qr') return qrSvg(e);
     if (e.kind === 'image') {
@@ -279,6 +279,19 @@
       (e.textStroke ? `-webkit-text-stroke:${Math.max(0, num(e.textStrokeW, 1))}px ${color(e.textStroke, '#222')};` : '') +
       (e.textShadow ? `text-shadow:2px 2px 0 ${color(e.textShadow, '#00000040')};` : '');
     return `<div class="pf-textbox" style="${css}">${esc(e.text || '')}</div>`;
+  }
+
+  // Wrap the inner HTML in a link / bookmark anchor when set, so Chromium emits
+  // a clickable link (and a named target) in the exported PDF. Both are inert on
+  // paper. Only http(s)/mailto and same-page #targets are allowed as hrefs.
+  function elementHtml(e) {
+    const inner = elementInner(e);
+    if (!e || (!e.link && !e.bookmark)) return inner;
+    const href = /^(https?:|mailto:|#)/i.test(String(e.link || '')) ? esc(e.link) : null;
+    const name = e.bookmark ? esc(String(e.bookmark)) : null;
+    if (!href && !name) return inner;
+    const attrs = (href ? ` href="${href}"` : '') + (name ? ` id="${name}" name="${name}"` : '');
+    return `<a${attrs} style="text-decoration:none;color:inherit;display:block;">${inner}</a>`;
   }
 
   return { elementHtml };

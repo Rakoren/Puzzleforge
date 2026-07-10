@@ -193,7 +193,7 @@
         <div class="rgroup">
           <div class="rgroup-body">
             <span class="rdrop" id="pageDrop">
-              <button class="ghost rdrop-btn" id="pageDropBtn" aria-haspopup="true" aria-expanded="false">📄 Page&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="pageDropBtn" aria-haspopup="true" aria-expanded="false"><span class="rbig-ico">📄</span>Page&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu" hidden>
                 <button type="button" data-act="puzzle">🧩 Insert Puzzle…</button>
                 <button type="button" data-act="blank">📄 Insert Blank Page</button>
@@ -201,49 +201,45 @@
                 <button type="button" data-act="tpl">🗂 Insert Page…</button>
               </div>
             </span>
-            <button id="savePageTpl" class="ghost" title="Save this page's layout as a reusable template">Save as template…</button>
+            <button id="savePageTpl" class="rbig" title="Save this page's layout as a reusable template"><span class="rbig-ico">🗂</span>Save as<br>Template</button>
           </div>
           <div class="rgroup-name">Pages</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
             <span class="rdrop" id="insTableDrop">
-              <button class="ghost rdrop-btn" id="insTableDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a table">▦ Table&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="insTableDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a table"><span class="rbig-ico">▦</span>Table&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu tablepick-menu" hidden>
                 <div class="tablepick-grid" id="insTablepickGrid"></div>
                 <div class="tablepick-label" id="insTablepickLabel">Insert Table</div>
                 <button type="button" class="tablepick-more" id="insTablepickMore">Insert Table…</button>
               </div>
             </span>
-            <button id="addQr" class="ghost" title="Insert a QR code linking to a URL">▣ QR code</button>
+            <button id="addQr" class="rbig" title="Insert a QR code linking to a URL"><span class="rbig-ico">▣</span>QR<br>Code</button>
           </div>
           <div class="rgroup-name">Tables</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <label class="upload ghost">🖼 Picture<input id="addImage" type="file" accept="image/*" hidden></label>
-            <button id="addPicPlaceholder" class="ghost" title="Insert an empty picture frame — double-click it later to fill it">🖼⬚ Placeholder</button>
-            <button id="aiArtBtn" class="ghost" title="Open the AI Art studio (ComfyUI) in a new tab">✨ AI Art</button>
-            <span class="shape-mini">
-              <button class="iconbtn shape-btn" data-shape="rect" title="Rectangle">▭</button>
-              <button class="iconbtn shape-btn" data-shape="ellipse" title="Ellipse">◯</button>
-              <button class="iconbtn shape-btn" data-shape="triangle" title="Triangle">△</button>
-              <button class="iconbtn shape-btn" data-shape="star" title="Star">☆</button>
-              <button class="iconbtn shape-btn" data-shape="line" title="Line">─</button>
-              <button class="iconbtn shape-btn" data-shape="speech" title="Speech bubble">💬</button>
-              <button class="iconbtn shape-btn" data-shape="thought" title="Thought bubble">💭</button>
+            <label class="upload rbig" title="Insert a picture from your device"><span class="rbig-ico">🖼</span>Picture<input id="addImage" type="file" accept="image/*" hidden></label>
+            <button id="addPicPlaceholder" class="rbig" title="Insert an empty picture frame — double-click it later to fill it"><span class="rbig-ico">▢</span>Picture<br>Placeholder</button>
+            <span class="rdrop" id="insShapeDrop">
+              <button class="rbig rdrop-btn" id="insShapeDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a shape"><span class="rbig-ico">⬠</span>Shapes&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu shapegal-menu" id="insShapeGallery" hidden></div>
             </span>
+            <button id="aiArtBtn" class="rbig" title="Open the AI Art studio (ComfyUI) in a new tab"><span class="rbig-ico">✨</span>AI<br>Art</button>
           </div>
           <div class="rgroup-name">Illustrations</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body wide">
+          <div class="rgroup-body">
             <span class="rdrop" id="pagePartsDrop">
-              <button class="ghost rdrop-btn" id="pagePartsDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a pre-designed heading, pull quote, or sidebar">▤ Page Parts&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="pagePartsDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a pre-designed heading, pull quote, or sidebar"><span class="rbig-ico">▤</span>Page&nbsp;Parts&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu shapegal-menu" id="pagePartsMenu" hidden></div>
             </span>
+            <button id="addCalendarBtn" class="rbig" title="Insert a month calendar"><span class="rbig-ico">📅</span>Calendars</button>
             <span class="rdrop" id="accentDrop">
-              <button class="ghost rdrop-btn" id="accentDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a decorative accent bar">▬ Accent&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="accentDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a decorative accent bar"><span class="rbig-ico">▬</span>Borders&nbsp;&amp;<br>Accents&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu" hidden>
                 <button type="button" data-act="line">— Thin line</button>
                 <button type="button" data-act="bar">▬ Slim bar</button>
@@ -251,7 +247,7 @@
                 <button type="button" data-act="double">═ Double line</button>
               </div>
             </span>
-            <label class="field compact"><span>Page border</span>
+            <label class="field compact bb-border"><span>Page border</span>
               <select id="border"><option value="">(book default)</option></select>
             </label>
             <button id="borderAll" class="ghost" title="Use this border on every page">Apply to all</button>
@@ -260,23 +256,32 @@
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="addText" class="ghost">A Text Box</button>
-            <select id="wordArt" class="mini" title="WordArt — styled title">
-              <option value="" disabled selected>WordArt…</option>
-            </select>
-            <select id="symbolPick" class="mini" title="Insert symbol">
-              <option value="" disabled selected>Ω Symbol…</option>
-            </select>
-            <button id="insertDate" class="ghost" title="Insert today's date">📅 Date</button>
+            <button id="addText" class="rbig"><span class="rbig-ico">🄰</span>Text<br>Box</button>
+            <span class="rmini-col">
+              <select id="wordArt" class="mini" title="WordArt — styled title">
+                <option value="" disabled selected>WordArt…</option>
+              </select>
+              <select id="symbolPick" class="mini" title="Insert symbol">
+                <option value="" disabled selected>Ω Symbol…</option>
+              </select>
+            </span>
+            <button id="insertDate" class="rbig" title="Insert today's date"><span class="rbig-ico">📆</span>Date</button>
           </div>
           <div class="rgroup-name">Text</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="insHeader" class="ghost" title="Add a repeating header (edits the master page)">▔ Header</button>
-            <button id="insFooter" class="ghost" title="Add a repeating footer (edits the master page)">▁ Footer</button>
+            <button id="insLinkBtn" class="rbig" title="Make the selected object a clickable link (digital PDF)"><span class="rbig-ico">🔗</span>Link</button>
+            <button id="insBookmarkBtn" class="rbig" title="Tag the selected object with a bookmark name"><span class="rbig-ico">🔖</span>Bookmark</button>
+          </div>
+          <div class="rgroup-name">Links</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="insHeader" class="rbig" title="Add a repeating header (edits the master page)"><span class="rbig-ico">▔</span>Header</button>
+            <button id="insFooter" class="rbig" title="Add a repeating footer (edits the master page)"><span class="rbig-ico">▁</span>Footer</button>
             <span class="rdrop" id="pageNoDrop">
-              <button class="ghost rdrop-btn" id="pageNoDropBtn" aria-haspopup="true" aria-expanded="false"># Page Number&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="pageNoDropBtn" aria-haspopup="true" aria-expanded="false"><span class="rbig-ico">#</span>Page&nbsp;<br>Number&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu" hidden>
                 <button type="button" data-act="tl">↖ Top Left</button>
                 <button type="button" data-act="tc">▲ Top Center</button>
