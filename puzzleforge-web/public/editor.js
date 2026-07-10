@@ -60,8 +60,8 @@
     noteText: $('noteText'), noteAdd: $('noteAdd'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
-    puzModal: $('puzModal'), puzClose: $('puzClose'), puzType: $('puzType'), puzDiff: $('puzDiff'),
-    puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
+    puzModal: $('puzModal'), puzClose: $('puzClose'), puzType: $('puzType'), puzTheme: $('puzTheme'),
+    puzDiff: $('puzDiff'), puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
     publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
     pubRunChecks: $('pubRunChecks'), pubCheckStatus: $('pubCheckStatus'), pubReport: $('pubReport'),
     pubPrice: $('pubPrice'), pubPaper: $('pubPaper'), pubAge: $('pubAge'), pubDesc: $('pubDesc'),
@@ -448,8 +448,22 @@
         const o = document.createElement('option'); o.value = id; o.textContent = label; el.puzType.appendChild(o);
       });
       const ws = [...el.puzType.options].find((o) => o.value === 'wordsearch'); if (ws) el.puzType.value = 'wordsearch';
+      fillThemeSelect(el.puzTheme, meta.themes || [], '— book theme —');
       puzTypesLoaded = el.puzType.options.length > 0;
     } catch (_) { /* leave empty; insert will warn */ }
+  }
+  // Grouped theme picker (mirrors the Book Builder). Blank option = book theme.
+  function fillThemeSelect(select, themeList, defaultLabel) {
+    if (!select) return;
+    select.innerHTML = '';
+    if (defaultLabel) { const o = document.createElement('option'); o.value = ''; o.textContent = defaultLabel; select.appendChild(o); }
+    const byCat = {};
+    (themeList || []).forEach((th) => { (byCat[th.category] = byCat[th.category] || []).push(th); });
+    Object.keys(byCat).sort().forEach((cat) => {
+      const group = document.createElement('optgroup'); group.label = cat;
+      byCat[cat].forEach((th) => { const o = document.createElement('option'); o.value = th.id; o.textContent = `${th.label} (${th.wordCount})`; group.appendChild(o); });
+      select.appendChild(group);
+    });
   }
   async function openPuzzleInsert() {
     if (el.main.hidden) { setStatus('Open a book first.', ''); return; }
@@ -468,7 +482,7 @@
     try {
       const res = await fetch('/api/book/insert-puzzle', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config: bookConfig, type, difficulty, count }),
+        body: JSON.stringify({ config: bookConfig, type, difficulty, count, theme: (el.puzTheme && el.puzTheme.value) || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not generate the puzzle.');

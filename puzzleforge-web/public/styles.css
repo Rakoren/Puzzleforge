@@ -135,7 +135,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .prow {
   display: grid;
-  grid-template-columns: 1fr 56px 92px auto;
+  grid-template-columns: minmax(0, 1fr) 52px 84px minmax(0, 1.1fr) auto;
   gap: 6px;
   align-items: center;
   border: 1px solid var(--line);

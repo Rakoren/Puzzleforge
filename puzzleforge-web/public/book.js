@@ -150,6 +150,13 @@
       }
       diff.addEventListener('change', () => { row.difficulty = diff.value; invalidate(); });
 
+      // Per-puzzle theme — blank means "use the book's theme".
+      const theme = document.createElement('select');
+      theme.title = 'Theme for these puzzles (blank = book theme)';
+      fillThemeSelect(theme, (meta && meta.themes) || [], '— book theme —');
+      theme.value = row.theme || '';
+      theme.addEventListener('change', () => { row.theme = theme.value || undefined; invalidate(); });
+
       const move = document.createElement('div');
       move.className = 'move';
       const up = iconBtn('▲', 'Move up', () => reorder(i, i - 1));
@@ -169,6 +176,7 @@
       div.appendChild(type);
       div.appendChild(count);
       div.appendChild(diff);
+      div.appendChild(theme);
       div.appendChild(controls);
       el.rows.appendChild(div);
     });
@@ -338,7 +346,7 @@
       ...(currentSeed != null ? { seed: currentSeed } : {}),
       ...(pageState.length ? { pageState } : {}),
       puzzleforgeBook: 1,
-      puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
+      puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty, ...(r.theme ? { theme: r.theme } : {}) })),
     };
   }
 
@@ -725,19 +733,22 @@
       type: p.type,
       count: p.count || 1,
       difficulty: String(p.difficulty || '1'),
+      theme: p.theme || undefined,
     }));
     renderRows();
     invalidate();
   }
 
   // Build the theme <select> grouped by category from a (possibly filtered) list.
-  function populateThemes(themes) {
-    el.theme.innerHTML = '';
+  function populateThemes(themes) { fillThemeSelect(el.theme, themes); }
+  // Fill a <select> with the grouped theme list. `defaultLabel` adds a leading
+  // blank option (used by the per-puzzle row picker to mean "use book theme").
+  function fillThemeSelect(select, themeList, defaultLabel) {
+    select.innerHTML = '';
+    if (defaultLabel) { const o = document.createElement('option'); o.value = ''; o.textContent = defaultLabel; select.appendChild(o); }
     const byCat = {};
-    for (const th of themes) (byCat[th.category] = byCat[th.category] || []).push(th);
+    for (const th of themeList) (byCat[th.category] = byCat[th.category] || []).push(th);
     const cats = Object.keys(byCat).sort();
-
-    // Whole-category bundles: pick a category to use every theme in it, merged.
     if (cats.length) {
       const bundles = document.createElement('optgroup');
       bundles.label = 'Whole categories';
@@ -749,9 +760,8 @@
         o.textContent = `★ All ${cat} (${list.length} themes, ${words} words)`;
         bundles.appendChild(o);
       }
-      el.theme.appendChild(bundles);
+      select.appendChild(bundles);
     }
-
     for (const cat of cats) {
       const group = document.createElement('optgroup');
       group.label = cat;
@@ -761,7 +771,7 @@
         o.textContent = `${th.label} (${th.wordCount})`;
         group.appendChild(o);
       }
-      el.theme.appendChild(group);
+      select.appendChild(group);
     }
   }
 
