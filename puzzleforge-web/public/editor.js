@@ -399,6 +399,82 @@
     ) },
   ];
 
+  // Building Blocks: pre-designed clusters of objects (heading / pull quote /
+  // sidebar) dropped onto the CURRENT page as a movable group. `c` carries the
+  // page size and scheme colors.
+  const PAGE_PARTS = [
+    { cat: 'Headings', name: 'Heading + rule', make: (c) => {
+      const w = R(c.W * 0.8), x = R(c.W * 0.1), y = R(c.H * 0.12);
+      return [
+        tEl({ text: 'Heading', x, y, w, fontSize: Math.max(28, R(c.W / 16)), bold: true, color: c.color }),
+        sEl({ shape: 'line', x, y: y + R(c.W / 12), w, h: 12, fill: 'none', stroke: c.stroke, strokeW: 3 }),
+      ];
+    } },
+    { cat: 'Headings', name: 'Bar heading', make: (c) => {
+      const w = R(c.W * 0.8), x = R(c.W * 0.1), y = R(c.H * 0.12), h = R(c.W / 9);
+      return [
+        sEl({ shape: 'rect', x, y, w, h, fill: c.fill, stroke: 'none', strokeW: 0, z: 90 }),
+        tEl({ text: 'Heading', x: x + 16, y: y + R(h * 0.24), w: w - 32, fontSize: Math.max(22, R(c.W / 18)), bold: true, color: '#ffffff', z: 100 }),
+      ];
+    } },
+    { cat: 'Pull Quotes', name: 'Lined quote', make: (c) => {
+      const w = R(c.W * 0.6), x = R(c.W * 0.2), y = R(c.H * 0.2), fs = Math.max(18, R(c.W / 26));
+      return [
+        sEl({ shape: 'line', x, y, w, h: 12, fill: 'none', stroke: c.stroke, strokeW: 2 }),
+        tEl({ text: '“A short, punchy line to draw the reader in.”', x, y: y + 18, w, fontSize: fs, italic: true, align: 'center', color: c.color }),
+        sEl({ shape: 'line', x, y: y + 18 + R(c.W / 8), w, h: 12, fill: 'none', stroke: c.stroke, strokeW: 2 }),
+      ];
+    } },
+    { cat: 'Pull Quotes', name: 'Boxed quote', make: (c) => {
+      const w = R(c.W * 0.6), x = R(c.W * 0.2), y = R(c.H * 0.2), h = R(c.W / 4);
+      return [
+        sEl({ shape: 'rect', x, y, w, h, fill: 'none', stroke: c.stroke, strokeW: 2, z: 90 }),
+        tEl({ text: '“Wrap a memorable line in a clean box.”', x: x + 18, y: y + R(h * 0.32), w: w - 36, fontSize: Math.max(18, R(c.W / 26)), italic: true, align: 'center', color: c.color, z: 100 }),
+      ];
+    } },
+    { cat: 'Sidebars', name: 'Color sidebar', make: (c) => {
+      const w = R(c.W * 0.32), x = R(c.W * 0.62), y = R(c.H * 0.12), h = R(c.H * 0.5);
+      return [
+        sEl({ shape: 'rect', x, y, w, h, fill: c.fill, stroke: 'none', strokeW: 0, z: 90 }),
+        tEl({ text: 'Did you know?', x: x + 14, y: y + 16, w: w - 28, fontSize: Math.max(16, R(c.W / 28)), bold: true, color: '#ffffff', z: 100 }),
+        tEl({ text: 'Add a fun fact or tip here.', x: x + 14, y: y + 16 + R(c.W / 7), w: w - 28, fontSize: Math.max(13, R(c.W / 36)), color: '#ffffff', z: 100 }),
+      ];
+    } },
+    { cat: 'Sidebars', name: 'Bordered sidebar', make: (c) => {
+      const w = R(c.W * 0.32), x = R(c.W * 0.62), y = R(c.H * 0.12), h = R(c.H * 0.5);
+      return [
+        sEl({ shape: 'rect', x, y, w, h, fill: 'none', stroke: c.stroke, strokeW: 2, z: 90 }),
+        tEl({ text: 'Notes', x: x + 14, y: y + 16, w: w - 28, fontSize: Math.max(16, R(c.W / 28)), bold: true, color: c.color, z: 100 }),
+        tEl({ text: 'Jot a note or a short list here.', x: x + 14, y: y + 16 + R(c.W / 7), w: w - 28, fontSize: Math.max(13, R(c.W / 36)), color: c.color, z: 100 }),
+      ];
+    } },
+  ];
+  function insertPagePart(part) {
+    if (el.main.hidden || !part) return;
+    pushUndo();
+    const c = { W: dims.usableWidth, H: dims.usableHeight, fill: schemeFill(), stroke: schemeStroke(), color: '#222222' };
+    const els = part.make(c).map((e) => ({ ...e, group: 'el', id: uid++ }));
+    const gid = els.length > 1 ? 'g' + uid++ : null;
+    const pm = curModel();
+    els.forEach((e) => { if (gid) e.gid = gid; pm.elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); });
+    setSel(els);
+    setStatus(`Inserted “${part.name}”.`, 'ok');
+  }
+  function buildPagePartsMenu() {
+    const host = document.getElementById('pagePartsMenu'); if (!host) return;
+    host.innerHTML = '';
+    const byCat = {};
+    PAGE_PARTS.forEach((part) => { (byCat[part.cat] = byCat[part.cat] || []).push(part); });
+    Object.keys(byCat).forEach((cat) => {
+      const h = document.createElement('div'); h.className = 'shapegal-cat'; h.textContent = cat; host.appendChild(h);
+      byCat[cat].forEach((part) => {
+        const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = part.name;
+        btn.addEventListener('click', () => { closeObjMenus(); insertPagePart(part); });
+        host.appendChild(btn);
+      });
+    });
+  }
+
   function openTplPicker() { if (el.main.hidden) return; renderTplPicker(); el.tplModal.hidden = false; }
   function closeTplPicker() { el.tplModal.hidden = true; }
   function tplCard(name, desc, onPick, onDelete) {
@@ -1276,6 +1352,7 @@
     buildShapeGallery();
     buildTablePicker('tablepickGrid', 'tablepickLabel', 'tablepickMore');
     buildTablePicker('insTablepickGrid', 'insTablepickLabel', 'insTablepickMore');
+    buildPagePartsMenu();
   }
 
   // --- QR codes ---
