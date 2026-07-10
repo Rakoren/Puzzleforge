@@ -301,9 +301,35 @@
         <div class="rgroup">
           <div class="rgroup-body col">
             <span class="design-info" id="trimInfo">—</span>
+            <span class="rdrop" id="marginsDrop">
+              <button class="ghost rdrop-btn" id="marginsDropBtn" aria-haspopup="true" aria-expanded="false" title="Margin guide preset">▭ Margins&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <button type="button" data-act="wide">Wide — 1″</button>
+                <button type="button" data-act="moderate">Moderate — 0.5″</button>
+                <button type="button" data-act="narrow">Narrow — 0.25″</button>
+                <button type="button" data-act="none">None — 0″</button>
+                <button type="button" data-act="custom">Custom margin…</button>
+              </div>
+            </span>
             <label class="checkbox"><input type="checkbox" id="marginGuide"> Show safe-margin guide</label>
           </div>
           <div class="rgroup-name">Page Setup</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <span class="rdrop" id="guidesDrop">
+              <button class="ghost rdrop-btn" id="guidesDropBtn" aria-haspopup="true" aria-expanded="false" title="Ruler guides">⌗ Guides&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <button type="button" data-act="addh">➕ Add horizontal guide</button>
+                <button type="button" data-act="addv">➕ Add vertical guide</button>
+                <button type="button" data-act="clear">🗑 Clear guides</button>
+              </div>
+            </span>
+            <span class="design-info" style="margin:2px 0 0;">Align to</span>
+            <label class="checkbox"><input type="checkbox" id="alignGuidesChk" checked> Guides</label>
+            <label class="checkbox"><input type="checkbox" id="alignObjectsChk" checked> Objects</label>
+          </div>
+          <div class="rgroup-name">Layout</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">

@@ -41,6 +41,7 @@
     insertTpl: $('insertTpl'), insertTplSide: $('insertTplSide'), savePageTpl: $('savePageTpl'),
     dupPage: $('dupPage'), aiArtBtn: $('aiArtBtn'), wordArt: $('wordArt'), symbolPick: $('symbolPick'), insertDate: $('insertDate'),
     trimInfo: $('trimInfo'), marginGuide: $('marginGuide'), renamePage: $('renamePage'), delPage: $('delPage'),
+    alignGuidesChk: $('alignGuidesChk'), alignObjectsChk: $('alignObjectsChk'),
     movePageUp: $('movePageUp'), movePageDown: $('movePageDown'), schemeGallery: $('schemeGallery'),
     masterEnabled: $('masterEnabled'), editMasterBtn: $('editMasterBtn'), insertPageNo: $('insertPageNo'),
     insHeader: $('insHeader'), insFooter: $('insFooter'),
@@ -92,6 +93,9 @@
   // (title / instructions / word list → editable text) the first time it's
   // shown, so the generated labels are editable without a manual click.
   let autoBreak = false;
+  // Page Design → Layout: what dragged objects snap to, and the margin-guide inset.
+  let alignGuides = true, alignObjects = true;
+  let marginInset = GRID; // px; 0.25in default (Narrow)
   const masterModel = { role: 'master', matterKind: null, blank: true, type: 'master', title: 'Master', comps: [], elements: master.elements, style: '', _border: '', undo: [], redo: [] };
   const curModel = () => (masterMode ? masterModel : pageModels[cur]);
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
@@ -340,6 +344,12 @@
       insertPageNumber(act);
     } else if (dropId === 'accentDrop') {
       addAccentBar(act);
+    } else if (dropId === 'guidesDrop') {
+      if (act === 'addh') addGuide('h');
+      else if (act === 'addv') addGuide('v');
+      else if (act === 'clear') clearGuides();
+    } else if (dropId === 'marginsDrop') {
+      setMargins(act);
     }
   }
 
@@ -915,9 +925,11 @@
   }
 
   function snapTargets(excl) {
+    // Page edges/centers always snap; objects and guides are gated by the
+    // Page Design → Align To checkboxes.
     const xs = [0, dims.usableWidth / 2, dims.usableWidth], ys = [0, dims.usableHeight / 2, dims.usableHeight];
-    for (const r of allRefs()) { if (excl.indexOf(r) >= 0 || !r._node) continue; const b = box(r); xs.push(b.x, b.x + b.w / 2, b.x + b.w); ys.push(b.y, b.y + b.h / 2, b.y + b.h); }
-    const g = ensureGuides(curModel()); if (g) { xs.push(...g.v); ys.push(...g.h); } // objects snap to user guides
+    if (alignObjects) for (const r of allRefs()) { if (excl.indexOf(r) >= 0 || !r._node) continue; const b = box(r); xs.push(b.x, b.x + b.w / 2, b.x + b.w); ys.push(b.y, b.y + b.h / 2, b.y + b.h); }
+    if (alignGuides) { const g = ensureGuides(curModel()); if (g) { xs.push(...g.v); ys.push(...g.h); } }
     return { xs, ys };
   }
   const showGuide = (g, a, v) => { g.style.display = ''; if (a === 'x') g.style.left = v + 'px'; else g.style.top = v + 'px'; };
@@ -1626,9 +1638,33 @@
     let g = el.stageInner.querySelector('.pf-margin-guide');
     if (el.marginGuide.checked) {
       if (!g) { g = document.createElement('div'); g.className = 'pf-margin-guide'; el.stageInner.appendChild(g); }
-      const inset = 24; // ~0.25in keep-clear from the usable edge
+      const inset = marginInset; // set by the Margins dropdown
       g.style.cssText = `position:absolute;left:${inset}px;top:${inset}px;right:${inset}px;bottom:${inset}px;border:1px dashed #ff2d9b;pointer-events:none;z-index:5;`;
     } else if (g) { g.remove(); }
+  }
+  // Page Design → Layout: guide dropdown actions and margin presets.
+  function addGuide(axis) {
+    const g = ensureGuides(curModel()); if (!g) return;
+    pushUndo();
+    if (axis === 'v') g.v.push(Math.round(dims.usableWidth / 2)); else g.h.push(Math.round(dims.usableHeight / 2));
+    renderUserGuides();
+    setStatus('Guide added — drag it to position, double-click to remove.', 'ok');
+  }
+  function clearGuides() {
+    const g = ensureGuides(curModel()); if (!g || (!g.v.length && !g.h.length)) return;
+    pushUndo(); g.v = []; g.h = []; renderUserGuides();
+    setStatus('Guides cleared.', 'ok');
+  }
+  function setMargins(preset) {
+    const map = { wide: 96, moderate: 48, narrow: 24, none: 0 };
+    if (preset === 'custom') {
+      const v = window.prompt('Margin (inches):', (marginInset / PX_PER_IN).toFixed(2));
+      if (v == null) return; const n = Number(v); if (!Number.isFinite(n)) return;
+      marginInset = Math.max(0, Math.round(n * PX_PER_IN));
+    } else if (map[preset] != null) marginInset = map[preset];
+    if (el.marginGuide) el.marginGuide.checked = true;
+    applyMarginGuide();
+    setStatus(`Margin guide set to ${(marginInset / PX_PER_IN).toFixed(2)}″.`, 'ok');
   }
   function applyShapeProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'shape') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); }
   // W/H from the measure panel: intrinsic size per kind.
@@ -2534,6 +2570,8 @@
     if (el.movePageUp) el.movePageUp.addEventListener('click', () => { if (cur >= 0) movePage(cur, -1); });
     if (el.movePageDown) el.movePageDown.addEventListener('click', () => { if (cur >= 0) movePage(cur, 1); });
     if (el.marginGuide) el.marginGuide.addEventListener('change', applyMarginGuide);
+    if (el.alignGuidesChk) el.alignGuidesChk.addEventListener('change', () => { alignGuides = el.alignGuidesChk.checked; });
+    if (el.alignObjectsChk) el.alignObjectsChk.addEventListener('change', () => { alignObjects = el.alignObjectsChk.checked; });
     // Drag off a ruler to place a guide: down from the top ruler → horizontal;
     // right from the left ruler → vertical.
     el.rulerTop.addEventListener('pointerdown', (ev) => startRulerCreate(ev, 'h'));
