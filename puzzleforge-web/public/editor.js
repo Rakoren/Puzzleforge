@@ -63,6 +63,10 @@
     noteText: $('noteText'), noteAdd: $('noteAdd'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
+    changeTplBtn: $('changeTplBtn'), changeTplModal: $('changeTplModal'), changeTplClose: $('changeTplClose'),
+    changeTplBuiltin: $('changeTplBuiltin'), changeTplSaved: $('changeTplSaved'),
+    changeTplSavedCount: $('changeTplSavedCount'), changeTplSavedEmpty: $('changeTplSavedEmpty'),
+    changeTplPageName: $('changeTplPageName'),
     puzModal: $('puzModal'), puzClose: $('puzClose'), puzType: $('puzType'), puzTheme: $('puzTheme'),
     puzAudience: $('puzAudience'), puzDiff: $('puzDiff'), puzColorRow: $('puzColorRow'), puzColorStyle: $('puzColorStyle'),
     puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
@@ -530,6 +534,90 @@
     const at = cur < 0 ? pageModels.length : cur + 1;
     pageModels.splice(at, 0, m); cur = at; buildPageList(); renderPage();
     setStatus(`Inserted “${name}”.`, 'ok');
+  }
+
+  // --- Change Template: apply a layout to the CURRENT page (with previews) ---
+  function tplCtx() {
+    return { W: dims.usableWidth, H: dims.usableHeight, title: (bookConfig && bookConfig.title) || '',
+      subtitle: (bookConfig && bookConfig.subtitle) || '', author: (bookConfig && bookConfig.author) || '',
+      year: new Date().getFullYear(), fill: schemeFill(), stroke: schemeStroke(), color: '#222222' };
+  }
+  // Element list for a template, already scaled to the current page.
+  function tplEls(t) {
+    if (t.make) return t.make(tplCtx()).map((e) => ({ ...e, id: uid++ }));
+    const sx = dims.usableWidth / (t.refW || dims.usableWidth), sy = dims.usableHeight / (t.refH || dims.usableHeight);
+    return (t.elements || []).map((e) => scaleEl(e, sx, sy));
+  }
+  // A small non-interactive visual preview of a template's elements.
+  function tplThumb(els, refW, refH) {
+    const W = 138, s = W / (refW || dims.usableWidth), H = Math.round((refH || dims.usableHeight) * s);
+    const box = document.createElement('div'); box.className = 'pf-tplchg-thumb';
+    box.style.width = W + 'px'; box.style.height = H + 'px';
+    const inner = document.createElement('div');
+    inner.style.cssText = `position:absolute;top:0;left:0;width:${refW}px;height:${refH}px;transform:scale(${s});transform-origin:top left;`;
+    (els || []).forEach((e) => {
+      const d = document.createElement('div'); d.style.position = 'absolute';
+      d.style.left = num(e.x, 0) + 'px'; d.style.top = num(e.y, 0) + 'px';
+      if (e.kind === 'text') {
+        d.style.width = num(e.w, 240) + 'px'; d.style.fontSize = Math.max(6, num(e.fontSize, 24)) + 'px';
+        d.style.color = e.color || '#222'; d.style.textAlign = e.align || 'left';
+        d.style.fontWeight = e.bold ? '700' : '400'; d.style.fontStyle = e.italic ? 'italic' : 'normal';
+        d.style.lineHeight = '1.15'; d.style.overflow = 'hidden';
+        d.textContent = String(e.text || '').slice(0, 120);
+      } else if (e.kind === 'shape' && e.shape === 'line') {
+        d.style.width = num(e.w, 120) + 'px'; d.style.borderTop = `${Math.max(1, num(e.strokeW, 2))}px solid ${e.stroke || '#222'}`;
+      } else if (e.kind === 'shape') {
+        d.style.width = num(e.w, 120) + 'px'; d.style.height = num(e.h, 80) + 'px';
+        if (e.fill && e.fill !== 'none') d.style.background = e.fill;
+        if (e.stroke && e.stroke !== 'none') d.style.border = `${Math.max(1, num(e.strokeW, 2))}px solid ${e.stroke}`;
+      } else if (e.kind === 'image') {
+        d.style.width = num(e.width, 160) + 'px'; d.style.height = num(e.width, 160) * 0.66 + 'px';
+        d.style.background = '#e7ebf5'; d.style.border = '1px dashed #b7c0d8';
+      } else return;
+      inner.appendChild(d);
+    });
+    box.appendChild(inner); return box;
+  }
+  function changeTplCard(name, desc, els, refW, refH, onPick, onDelete) {
+    const card = document.createElement('button'); card.type = 'button'; card.className = 'pf-tplchg-card';
+    card.appendChild(tplThumb(els, refW, refH));
+    const n = document.createElement('span'); n.className = 'pf-tplchg-name'; n.textContent = name; card.appendChild(n);
+    if (desc) { const dd = document.createElement('span'); dd.className = 'pf-tplchg-desc'; dd.textContent = desc; card.appendChild(dd); }
+    card.addEventListener('click', onPick);
+    if (onDelete) { const del = document.createElement('span'); del.className = 'pf-tplchg-del'; del.textContent = '✕'; del.title = 'Delete template';
+      del.addEventListener('click', (e) => { e.stopPropagation(); onDelete(); }); card.appendChild(del); }
+    return card;
+  }
+  function openChangeTpl() { if (el.main.hidden) { setStatus('Open a book first.', ''); return; } renderChangeTpl(); el.changeTplModal.hidden = false; }
+  function closeChangeTpl() { el.changeTplModal.hidden = true; }
+  function renderChangeTpl() {
+    const pm = curModel();
+    el.changeTplPageName.textContent = (pm && pm.title) ? `“${pm.title}”` : 'this page';
+    el.changeTplBuiltin.innerHTML = '';
+    BUILTIN_TPLS.forEach((t) => {
+      const els = t.make(tplCtx());
+      el.changeTplBuiltin.appendChild(changeTplCard(t.name, t.desc, els, dims.usableWidth, dims.usableHeight,
+        () => { applyTplToPage(t); closeChangeTpl(); }));
+    });
+    const saved = loadSavedTemplates();
+    el.changeTplSaved.innerHTML = '';
+    el.changeTplSavedEmpty.hidden = saved.length > 0;
+    el.changeTplSavedCount.textContent = saved.length ? `(${saved.length})` : '';
+    saved.forEach((t) => el.changeTplSaved.appendChild(changeTplCard(
+      t.name, `${t.elements.length} object${t.elements.length !== 1 ? 's' : ''}`, t.elements, t.refW, t.refH,
+      () => { applyTplToPage(t); closeChangeTpl(); },
+      () => { deleteSavedTemplate(t.id); renderChangeTpl(); }
+    )));
+  }
+  function applyTplToPage(t) {
+    const pm = curModel(); if (!pm) return;
+    const had = (pm.elements && pm.elements.length) || 0;
+    if (had && !window.confirm(`Replace this page's ${had} object${had !== 1 ? 's' : ''} with the “${t.name}” layout?`)) return;
+    pushUndo();
+    pm.elements = tplEls(t);
+    pm.title = pm.title && pm.title !== 'Blank' ? pm.title : t.name;
+    renderPage(); buildPageList();
+    setStatus(`Applied “${t.name}” to this page.`, 'ok');
   }
 
   // --- Insert a freshly generated puzzle page ---
@@ -2561,6 +2649,8 @@
     if (el.insertTpl) el.insertTpl.addEventListener('click', openTplPicker);
     if (el.insertTplSide) el.insertTplSide.addEventListener('click', openTplPicker);
     if (el.savePageTpl) el.savePageTpl.addEventListener('click', savePageAsTemplate);
+    if (el.changeTplBtn) el.changeTplBtn.addEventListener('click', openChangeTpl);
+    if (el.changeTplModal) el.changeTplModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeChangeTpl(); });
     if (el.dupPage) el.dupPage.addEventListener('click', () => { if (cur >= 0) duplicatePage(cur); });
     if (el.aiArtBtn) el.aiArtBtn.addEventListener('click', openAiArt);
     if (el.insertDate) el.insertDate.addEventListener('click', insertDate);
@@ -2630,6 +2720,7 @@
     if (el.wordArt) el.wordArt.addEventListener('change', () => { const i = Number(el.wordArt.value); if (WORDART[i]) addWordArt(WORDART[i]); el.wordArt.value = ''; });
     if (el.symbolPick) el.symbolPick.addEventListener('change', () => { addSymbol(el.symbolPick.value); el.symbolPick.value = ''; });
     if (el.tplClose) el.tplClose.addEventListener('click', closeTplPicker);
+    if (el.changeTplClose) el.changeTplClose.addEventListener('click', closeChangeTpl);
     if (el.tplModal) el.tplModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeTplPicker(); });
     if (el.puzClose) el.puzClose.addEventListener('click', closePuzzleInsert);
     if (el.puzModal) el.puzModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closePuzzleInsert(); });
@@ -2690,6 +2781,7 @@
   }
   function onKey(e) {
     if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
+    if (el.changeTplModal && !el.changeTplModal.hidden) { if (e.key === 'Escape') closeChangeTpl(); return; }
     if (el.puzModal && !el.puzModal.hidden) { if (e.key === 'Escape') closePuzzleInsert(); return; }
     if (el.pubModal && !el.pubModal.hidden) { if (e.key === 'Escape') closePublish(); return; }
     if (el.frModal && !el.frModal.hidden) { if (e.key === 'Escape') closeFindReplace(); return; }

@@ -299,6 +299,12 @@
       <!-- PAGE DESIGN -->
       <section class="ribbon-panel" data-panel="design">
         <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="changeTplBtn" class="rbig" title="Apply a page template — replaces this page's layout"><span class="rbig-ico">🗂</span>Change<br>Template</button>
+          </div>
+          <div class="rgroup-name">Template</div>
+        </div>
+        <div class="rgroup">
           <div class="rgroup-body col">
             <span class="design-info" id="trimInfo">—</span>
             <span class="rdrop" id="marginsDrop">
@@ -672,6 +678,25 @@
       <div class="pf-tpl-grid" id="tplSaved"></div>
       <p class="pf-modal-sub" id="tplSavedEmpty">No saved templates yet. Build a page, then use
         <b>Save as template…</b> to reuse it here.</p>
+    </div>
+  </div>
+
+  <!-- Change Template: visual previews, applied to the current page -->
+  <div class="pf-modal" id="changeTplModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box wide" role="dialog" aria-modal="true" aria-labelledby="changeTplTitle">
+      <div class="pf-modal-head">
+        <h2 id="changeTplTitle">Change template</h2>
+        <button class="iconbtn" id="changeTplClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub">Pick a layout to apply to <b id="changeTplPageName">this page</b>. It replaces the
+        page's current text &amp; shapes — everything stays editable afterward.</p>
+      <h3 class="pf-tpl-group">Built-in layouts</h3>
+      <div class="pf-tplchg-grid" id="changeTplBuiltin"></div>
+      <h3 class="pf-tpl-group">Your saved templates <span id="changeTplSavedCount" class="pf-tpl-count"></span></h3>
+      <div class="pf-tplchg-grid" id="changeTplSaved"></div>
+      <p class="pf-modal-sub" id="changeTplSavedEmpty">No saved templates yet. Build a page, then use
+        <b>Insert → Save as Template</b> to reuse it here.</p>
     </div>
   </div>
 
