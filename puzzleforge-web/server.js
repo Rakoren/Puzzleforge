@@ -593,12 +593,14 @@ app.post('/api/book/insert-puzzle', (req, res) => {
     const count = Math.max(1, Math.min(50, Number(body.count) || 1));
     const difficulty = Math.max(1, Math.min(4, Number(body.difficulty) || 1));
     const theme = String(body.theme || '').trim();
+    const audience = body.audience === 'adult' ? 'adult' : (body.audience === 'kids' ? 'kids' : undefined);
+    const style = String(body.style || '').trim();
     // Inherit every setting from the open book, then override the puzzle list.
-    // A per-insert theme (if any) overrides the book's default for these pages.
+    // A per-insert theme/audience/style (if any) overrides the book's default.
     const base = { ...(body.config || {}) };
     delete base.seed; delete base.pageState;
-    const spec = { type, count, difficulty, ...(theme ? { theme } : {}) };
-    const cfg = { ...base, titlePage: false, answerKey: false, puzzles: [spec] };
+    const spec = { type, count, difficulty, ...(theme ? { theme } : {}), ...(style ? { style } : {}) };
+    const cfg = { ...base, titlePage: false, answerKey: false, puzzles: [spec], ...(audience ? { audience } : {}) };
     const gen = pf.assembleBook(cfg);
     const layout = pf.getLayout(gen.trimSize, { audience: gen.audience });
     const pages = (gen.pages || [])

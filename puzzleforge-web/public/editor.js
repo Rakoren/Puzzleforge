@@ -61,7 +61,8 @@
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
     puzModal: $('puzModal'), puzClose: $('puzClose'), puzType: $('puzType'), puzTheme: $('puzTheme'),
-    puzDiff: $('puzDiff'), puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
+    puzAudience: $('puzAudience'), puzDiff: $('puzDiff'), puzColorRow: $('puzColorRow'), puzColorStyle: $('puzColorStyle'),
+    puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
     publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
     pubRunChecks: $('pubRunChecks'), pubCheckStatus: $('pubCheckStatus'), pubReport: $('pubReport'),
     pubPrice: $('pubPrice'), pubPaper: $('pubPaper'), pubAge: $('pubAge'), pubDesc: $('pubDesc'),
@@ -85,6 +86,10 @@
   // swaps the canvas to editing the master itself (via curModel()).
   let master = { enabled: true, applyTo: 'all', skipFirst: 1, startAt: 1, elements: [] };
   let masterMode = false;
+  // When a book is imported from the Book Builder, auto-break each puzzle page
+  // (title / instructions / word list → editable text) the first time it's
+  // shown, so the generated labels are editable without a manual click.
+  let autoBreak = false;
   const masterModel = { role: 'master', matterKind: null, blank: true, type: 'master', title: 'Master', comps: [], elements: master.elements, style: '', _border: '', undo: [], redo: [] };
   const curModel = () => (masterMode ? masterModel : pageModels[cur]);
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
@@ -438,23 +443,40 @@
   // --- Insert a freshly generated puzzle page ---
   const PUZ_LABELS = { wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku', maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble', crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia', logicgrid: 'Logic Grid', wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', coloring: 'Coloring', drawing: 'Drawing' };
   let puzTypesLoaded = false;
+  let insertMeta = null;
+  const ACTIVITY_TYPES = new Set(['coloring', 'drawing']);
   async function loadPuzzleTypes() {
     if (puzTypesLoaded || !el.puzType) return;
     try {
-      const meta = await (await fetch('/api/meta')).json();
+      insertMeta = await (await fetch('/api/meta')).json();
       // bleedguard = the blank filler (its own menu item); breather = an
       // auto-inserted kids rest page. Neither is a user-selectable page.
       const HIDDEN = new Set(['bleedguard', 'breather']);
-      (meta.types || []).forEach((t) => {
+      (insertMeta.types || []).forEach((t) => {
         const id = typeof t === 'string' ? t : t.id;
         if (HIDDEN.has(id)) return;
         const label = (typeof t === 'object' && t.label) || PUZ_LABELS[id] || id;
         const o = document.createElement('option'); o.value = id; o.textContent = label; el.puzType.appendChild(o);
       });
       const ws = [...el.puzType.options].find((o) => o.value === 'wordsearch'); if (ws) el.puzType.value = 'wordsearch';
-      fillThemeSelect(el.puzTheme, meta.themes || [], '— book theme —');
+      fillThemeSelect(el.puzTheme, insertMeta.themes || [], '— book theme —');
       puzTypesLoaded = el.puzType.options.length > 0;
     } catch (_) { /* leave empty; insert will warn */ }
+  }
+  // Difficulty labels track the audience (kids ages vs adult Easy–Expert).
+  function fillPuzDiffOptions() {
+    const kids = String(el.puzAudience.value).toLowerCase() === 'kids';
+    const list = (insertMeta && insertMeta.difficulty && (kids ? insertMeta.difficulty.kids : insertMeta.difficulty.adult)) || [];
+    const prev = el.puzDiff.value;
+    el.puzDiff.innerHTML = '';
+    (list.length ? list : [{ value: 1, label: 'Easy' }, { value: 2, label: 'Medium' }, { value: 3, label: 'Hard' }, { value: 4, label: 'Expert' }])
+      .forEach((o) => { const opt = document.createElement('option'); opt.value = String(o.value); opt.textContent = kids && o.ages ? `${o.label} (${o.ages})` : o.label; el.puzDiff.appendChild(opt); });
+    if ([...el.puzDiff.options].some((o) => o.value === prev)) el.puzDiff.value = prev;
+  }
+  // Coloring pages take a style, not a difficulty — show the right control.
+  function syncPuzTypeUI() {
+    const isColor = el.puzType.value === 'coloring';
+    if (el.puzColorRow) el.puzColorRow.hidden = !isColor;
   }
   // Grouped theme picker (mirrors the Book Builder). Blank option = book theme.
   function fillThemeSelect(select, themeList, defaultLabel) {
@@ -472,8 +494,12 @@
   async function openPuzzleInsert() {
     if (el.main.hidden) { setStatus('Open a book first.', ''); return; }
     await loadPuzzleTypes();
+    // Default the audience to the book's, then fill difficulty to match.
+    el.puzAudience.value = (bookConfig && bookConfig.audience) === 'adult' ? 'adult' : 'kids';
+    fillPuzDiffOptions();
     const d0 = bookConfig && bookConfig.puzzles && bookConfig.puzzles[0] && bookConfig.puzzles[0].difficulty;
-    if (d0) el.puzDiff.value = String(Math.max(1, Math.min(4, d0)));
+    if (d0 && [...el.puzDiff.options].some((o) => o.value === String(d0))) el.puzDiff.value = String(d0);
+    syncPuzTypeUI();
     el.puzStatus.textContent = ''; el.puzModal.hidden = false;
   }
   function closePuzzleInsert() { el.puzModal.hidden = true; }
@@ -481,12 +507,14 @@
     const type = el.puzType.value;
     const difficulty = Number(el.puzDiff.value) || 1;
     const count = Math.max(1, Math.min(50, Number(el.puzCount.value) || 1));
+    const audience = el.puzAudience.value === 'adult' ? 'adult' : 'kids';
+    const style = (type === 'coloring' && el.puzColorStyle && el.puzColorStyle.value) || undefined;
     if (!type) { el.puzStatus.textContent = 'Pick a puzzle type.'; return; }
     el.puzStatus.textContent = 'Generating…'; el.puzInsert.disabled = true;
     try {
       const res = await fetch('/api/book/insert-puzzle', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config: bookConfig, type, difficulty, count, theme: (el.puzTheme && el.puzTheme.value) || undefined }),
+        body: JSON.stringify({ config: bookConfig, type, difficulty, count, audience, style, theme: (el.puzTheme && el.puzTheme.value) || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not generate the puzzle.');
@@ -669,7 +697,16 @@
     if (!masterMode) renderMasterOverlay();
 
     // Content: measure flow bases (no transform yet). Matter: bases already set.
-    requestAnimationFrame(() => { if (!matter) measureBases(pm); pm.comps.forEach(applyPieceTf); sels = []; syncSelUI(); drawSel(); });
+    requestAnimationFrame(() => {
+      if (!matter) measureBases(pm);
+      pm.comps.forEach(applyPieceTf);
+      // Auto-break imported puzzle pages once, after the pieces are measured
+      // (break-apart needs their on-screen geometry). breakApartPuzzle re-renders.
+      if (autoBreak && !matter && !masterMode && pm === pageModels[cur] && !pm._broken && pm.comps.some((c) => !c.hidden && BREAKABLE.includes(c.kind))) {
+        pm._broken = true; breakApartPuzzle(true); return;
+      }
+      sels = []; syncSelUI(); drawSel();
+    });
   }
   function measureBases(pm) {
     const ir = el.stageInner.getBoundingClientRect();
@@ -1055,9 +1092,9 @@
     c.hidden = true;
     return true;
   }
-  function breakApartPuzzle() {
+  function breakApartPuzzle(silent) {
     const pm = pageModels[cur];
-    if (!canBreakApart()) { setStatus('Open a puzzle page with a title or word list to break apart.', 'err'); return; }
+    if (!canBreakApart()) { if (!silent) setStatus('Open a puzzle page with a title or word list to break apart.', 'err'); return; }
     const targets = pm.comps.filter((c) => !c.hidden && BREAKABLE.includes(c.kind));
     pushUndo();
     let made = 0;
@@ -1085,7 +1122,7 @@
       made += 1;
     });
     renderPage();
-    setStatus(`Broke apart ${made} label${made === 1 ? '' : 's'} into editable text — the puzzle grid stays protected. Undo to reverse.`, 'ok');
+    if (!silent) setStatus(`Broke apart ${made} label${made === 1 ? '' : 's'} into editable text — the puzzle grid stays protected. Undo to reverse.`, 'ok');
   }
 
   function flip(axis) { const o = sels.length === 1 && sels[0]; if (!o || (o.kind !== 'image' && o.kind !== 'shape')) return; pushUndo(); if (axis === 'h') o.flipH = !o.flipH; else o.flipV = !o.flipV; o._node.innerHTML = elHtml(o); }
@@ -2352,6 +2389,8 @@
     if (el.puzClose) el.puzClose.addEventListener('click', closePuzzleInsert);
     if (el.puzModal) el.puzModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closePuzzleInsert(); });
     if (el.puzInsert) el.puzInsert.addEventListener('click', insertPuzzlePages);
+    if (el.puzAudience) el.puzAudience.addEventListener('change', fillPuzDiffOptions);
+    if (el.puzType) el.puzType.addEventListener('change', syncPuzTypeUI);
     if (el.publishBtn) el.publishBtn.addEventListener('click', openPublish);
     if (el.pubClose) el.pubClose.addEventListener('click', closePublish);
     if (el.pubModal) el.pubModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closePublish(); });
@@ -2390,7 +2429,7 @@
     let handoff = null;
     try { const raw = localStorage.getItem('pf_editor'); if (raw) { handoff = JSON.parse(raw); localStorage.removeItem('pf_editor'); } } catch (_) { /* */ }
     if (handoff && handoff.recipe) { currentLibId = handoff.libId || null; workspaceId = handoff.workspaceId || null; loadRecipeObject(handoff.recipe); }
-    else if (handoff && (handoff.config || handoff.bookId)) { bookConfig = handoff.config || null; openBook(handoff.bookId ? { bookId: handoff.bookId, config: handoff.config } : { config: handoff.config }); }
+    else if (handoff && (handoff.config || handoff.bookId)) { autoBreak = true; bookConfig = handoff.config || null; openBook(handoff.bookId ? { bookId: handoff.bookId, config: handoff.config } : { config: handoff.config }); }
     else { el.empty.hidden = false; setStatus('Open a book from the Book Builder, or load a recipe.', ''); }
     // Best-effort flush of pending changes when leaving the page.
     window.addEventListener('beforeunload', () => { try { autosaveTick(); } catch (_) { /* */ } });

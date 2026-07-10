@@ -615,13 +615,17 @@
       <p class="pf-modal-sub">Generates a fresh puzzle from this book's theme and audience, and drops it in
         after the current page.</p>
       <label class="field compact"><span>Puzzle type</span><select id="puzType"></select></label>
+      <label class="field compact" id="puzColorRow" hidden><span>Coloring style</span>
+        <select id="puzColorStyle"><option value="">Auto</option><option value="mandala">Mandala</option><option value="pattern">Pattern</option><option value="bubble">Bubble letters</option></select>
+      </label>
       <label class="field compact"><span>Theme</span><select id="puzTheme"></select></label>
       <div class="row">
-        <label class="field compact"><span>Difficulty</span>
-          <select id="puzDiff"><option value="1">1 — Easiest</option><option value="2">2</option><option value="3">3</option><option value="4">4 — Hardest</option></select>
+        <label class="field compact"><span>Audience</span>
+          <select id="puzAudience"><option value="kids">Kids</option><option value="adult">Adult</option></select>
         </label>
-        <label class="field compact"><span>How many</span><input id="puzCount" type="number" min="1" max="50" value="1"></label>
+        <label class="field compact"><span>Difficulty</span><select id="puzDiff"></select></label>
       </div>
+      <label class="field compact"><span>How many</span><input id="puzCount" type="number" min="1" max="50" value="1"></label>
       <div class="actions">
         <button id="puzInsert" class="primary">Insert</button>
         <button class="ghost" data-close>Cancel</button>

@@ -359,6 +359,8 @@ function buildBook(config, opts, seed, rand) {
           puzzleConfig.words = themes.selectWords(theme, { difficulty, count: 12 });
           puzzleConfig.theme = theme.label;
         }
+        // A coloring row may pin a specific style (mandala / pattern / bubble).
+        if (spec.type === 'coloring' && spec.style) puzzleConfig.style = spec.style;
       }
       const puzzle = generate(puzzleConfig);
       if (usedWords) for (const w of puzzleWords(puzzle)) usedWords.add(w);
