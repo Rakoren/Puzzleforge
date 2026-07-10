@@ -296,7 +296,7 @@
         </div>
       </section>
 
-      <!-- PAGE DESIGN -->
+      <!-- PAGE DESIGN (Publisher-style: one row of icon-over-label buttons) -->
       <section class="ribbon-panel" data-panel="design">
         <div class="rgroup">
           <div class="rgroup-body">
@@ -305,52 +305,62 @@
           <div class="rgroup-name">Template</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body col">
-            <span class="design-info" id="trimInfo">—</span>
+          <div class="rgroup-body">
             <span class="rdrop" id="marginsDrop">
-              <button class="ghost rdrop-btn" id="marginsDropBtn" aria-haspopup="true" aria-expanded="false" title="Margin guide preset">▭ Margins&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="marginsDropBtn" aria-haspopup="true" aria-expanded="false" title="Margin guide preset"><span class="rbig-ico">▭</span>Margins&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu" hidden>
                 <button type="button" data-act="wide">Wide — 1″</button>
                 <button type="button" data-act="moderate">Moderate — 0.5″</button>
                 <button type="button" data-act="narrow">Narrow — 0.25″</button>
                 <button type="button" data-act="none">None — 0″</button>
                 <button type="button" data-act="custom">Custom margin…</button>
+                <div class="rdrop-sep"></div>
+                <label class="rdrop-check"><input type="checkbox" id="marginGuide"> Show safe-margin guide</label>
               </div>
             </span>
-            <label class="checkbox"><input type="checkbox" id="marginGuide"> Show safe-margin guide</label>
+            <span class="rdrop" id="orientDrop">
+              <button class="rbig rdrop-btn" id="orientDropBtn" aria-haspopup="true" aria-expanded="false" title="Page orientation"><span class="rbig-ico">▯</span>Orientation&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <div class="rdrop-note">Orientation: <b id="orientInfo">—</b></div>
+                <div class="rdrop-hint">Trim orientation is set per book in the Book Builder.</div>
+              </div>
+            </span>
+            <span class="rdrop" id="sizeDrop">
+              <button class="rbig rdrop-btn" id="sizeDropBtn" aria-haspopup="true" aria-expanded="false" title="Trim size"><span class="rbig-ico">▤</span>Size&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <div class="rdrop-note">Trim: <b id="sizeInfo">—</b></div>
+                <div class="rdrop-hint">KDP prints one trim per book — change it in the Book Builder.</div>
+              </div>
+            </span>
           </div>
           <div class="rgroup-name">Page Setup</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body col">
-            <label class="ro-field" title="Trim size is set per book in the Book Builder (KDP prints one trim per book)."><span>Size</span><span class="ro-val" id="sizeInfo">—</span></label>
-            <label class="ro-field" title="Orientation follows the book's trim size."><span>Orientation</span><span class="ro-val" id="orientInfo">—</span></label>
-            <span class="design-hint">Set in Book Builder</span>
-          </div>
-          <div class="rgroup-name">Size</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body col">
+          <div class="rgroup-body">
             <span class="rdrop" id="guidesDrop">
-              <button class="ghost rdrop-btn" id="guidesDropBtn" aria-haspopup="true" aria-expanded="false" title="Ruler guides">⌗ Guides&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="guidesDropBtn" aria-haspopup="true" aria-expanded="false" title="Ruler guides"><span class="rbig-ico">⌗</span>Guides&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu" hidden>
                 <button type="button" data-act="addh">➕ Add horizontal guide</button>
                 <button type="button" data-act="addv">➕ Add vertical guide</button>
                 <button type="button" data-act="clear">🗑 Clear guides</button>
               </div>
             </span>
-            <span class="design-info" style="margin:2px 0 0;">Align to</span>
-            <label class="checkbox"><input type="checkbox" id="alignGuidesChk" checked> Guides</label>
-            <label class="checkbox"><input type="checkbox" id="alignObjectsChk" checked> Objects</label>
+            <span class="rmini-col align-to">
+              <span class="design-info">Align To</span>
+              <label class="checkbox"><input type="checkbox" id="alignGuidesChk" checked> Guides</label>
+              <label class="checkbox"><input type="checkbox" id="alignObjectsChk" checked> Objects</label>
+            </span>
           </div>
           <div class="rgroup-name">Layout</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="renamePage" class="ghost" title="Give this page a name in the page list">✎ Rename</button>
-            <button id="delPage" class="ghost del" title="Delete this page">🗑 Delete</button>
-            <button id="movePageUp" class="ghost" title="Move page up">↑ Up</button>
-            <button id="movePageDown" class="ghost" title="Move page down">↓ Down</button>
+            <span class="rmini-col">
+              <button id="delPage" class="rmini del" title="Delete this page"><span class="rmini-ico">🗑</span>Delete</button>
+              <button id="renamePage" class="rmini" title="Give this page a name in the page list"><span class="rmini-ico">✎</span>Rename</button>
+              <button id="movePageUp" class="rmini" title="Move page up"><span class="rmini-ico">↑</span>Move Up</button>
+              <button id="movePageDown" class="rmini" title="Move page down"><span class="rmini-ico">↓</span>Move Down</button>
+            </span>
           </div>
           <div class="rgroup-name">Pages</div>
         </div>
@@ -358,56 +368,52 @@
           <div class="rgroup-body">
             <div class="scheme-gallery" id="schemeGallery"></div>
           </div>
-          <div class="rgroup-name">Schemes (frame + accent colors)</div>
+          <div class="rgroup-name">Schemes</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body col">
-            <select id="pageFont" class="mini" title="Set the font for all text on this page"></select>
-            <span class="font-actions">
-              <label class="upload ghost" title="Upload a font file (.ttf, .otf, .woff, .woff2)">⬆ Upload font<input id="fontUpload" type="file" accept=".ttf,.otf,.woff,.woff2,font/*" hidden></label>
-              <span class="rdrop" id="customFontDrop">
-                <button class="ghost rdrop-btn" id="customFontDropBtn" aria-haspopup="true" aria-expanded="false" title="Your uploaded fonts">🔤 My Fonts&nbsp;<span class="rdrop-caret">▾</span></button>
-                <div class="rdrop-menu" id="customFontMenu" hidden></div>
-              </span>
+          <div class="rgroup-body">
+            <span class="rdrop" id="fontsDrop">
+              <button class="rbig rdrop-btn" id="fontsDropBtn" aria-haspopup="true" aria-expanded="false" title="Set the font for all text on this page"><span class="rbig-ico rbig-aa">Aa</span>Fonts&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu fonts-menu" hidden>
+                <div class="fonts-list" id="fontsList"></div>
+                <div class="rdrop-sep"></div>
+                <label class="fonts-upload" title="Upload a font file (.ttf, .otf, .woff, .woff2)">⬆ Upload font…<input id="fontUpload" type="file" accept=".ttf,.otf,.woff,.woff2,font/*" hidden></label>
+              </div>
             </span>
           </div>
           <div class="rgroup-name">Fonts</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body col">
+          <div class="rgroup-body">
             <span class="rdrop" id="bgDrop">
-              <button class="ghost rdrop-btn" id="bgDropBtn" aria-haspopup="true" aria-expanded="false" title="Page background">▧ Background&nbsp;<span class="rdrop-caret">▾</span></button>
-              <div class="rdrop-menu" hidden>
-                <button type="button" data-act="none">None (white)</button>
-                <button type="button" data-act="solid">Solid color…</button>
-                <button type="button" data-act="gradient">Gradient…</button>
+              <button class="rbig rdrop-btn" id="bgDropBtn" aria-haspopup="true" aria-expanded="false" title="Page background"><span class="rbig-ico">▧</span>Background&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu bg-menu" hidden>
+                <button type="button" class="bg-type" data-bg="none">None (white)</button>
+                <button type="button" class="bg-type" data-bg="solid">Solid color</button>
+                <button type="button" class="bg-type" data-bg="gradient">Gradient</button>
+                <div class="rdrop-sep"></div>
+                <div class="bg-colors" id="bgColors" style="display:none;">
+                  <label class="rdrop-field"><span>Color</span><input id="bgColor" type="color" class="mini-color" value="#ffffff"></label>
+                  <label class="rdrop-field" id="bgColor2Field"><span>Color 2</span><input id="bgColor2" type="color" class="mini-color" value="#dddddd"></label>
+                  <label class="rdrop-field" id="bgAngleField"><span>Angle°</span><input id="bgAngle" class="mini-num" type="number" min="0" max="360" value="180"></label>
+                </div>
               </div>
             </span>
-            <span class="bg-colors" id="bgColors" style="display:none;">
-              <input id="bgColor" type="color" class="mini-color" value="#ffffff" title="Background color">
-              <input id="bgColor2" type="color" class="mini-color" value="#dddddd" title="Second color (gradient)">
-              <input id="bgAngle" class="mini-num" type="number" min="0" max="360" value="180" title="Gradient angle (°)">
+            <span class="rdrop" id="masterDrop">
+              <button class="rbig rdrop-btn" id="masterDropBtn" aria-haspopup="true" aria-expanded="false" title="Master page (page numbers, headers, frames)"><span class="rbig-ico">📄</span>Master&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu master-menu" hidden>
+                <label class="rdrop-check"><input type="checkbox" id="masterEnabled" checked> Show master on pages</label>
+                <button type="button" id="editMasterBtn" class="rdrop-item" title="Edit the master overlay">✎ Edit Master Page</button>
+                <button type="button" id="insertPageNo" class="rdrop-item" title="Add an auto page-number field to the master"># Page Number field</button>
+                <div class="rdrop-sep"></div>
+                <label class="rdrop-field"><span>Applies to</span>
+                  <select id="masterApplyTo"><option value="all">All pages</option><option value="odd">Odd only</option><option value="even">Even only</option></select></label>
+                <label class="rdrop-field"><span>Skip first</span><input id="masterSkip" type="number" min="0" max="20" value="1" title="Pages at the start with no master"></label>
+                <label class="rdrop-field"><span>Start at</span><input id="masterStart" type="number" min="0" max="9999" value="1"></label>
+              </div>
             </span>
           </div>
-          <div class="rgroup-name">Background</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body col">
-            <label class="checkbox"><input type="checkbox" id="masterEnabled" checked> Show master on pages</label>
-            <button id="editMasterBtn" class="ghost" title="Edit the master overlay (page numbers, headers, frames)">✎ Edit Master Page</button>
-            <button id="insertPageNo" class="ghost" title="Add an auto page-number field to the master">#️⃣ Page Number field</button>
-          </div>
-          <div class="rgroup-name">Master page</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <label class="m"><span>Applies to</span>
-              <select id="masterApplyTo"><option value="all">All pages</option><option value="odd">Odd only</option><option value="even">Even only</option></select>
-            </label>
-            <label class="m"><span>Skip first</span><input id="masterSkip" type="number" min="0" max="20" value="1" title="Pages at the start with no master (e.g. title/front matter)"></label>
-            <label class="m"><span>Start at</span><input id="masterStart" type="number" min="0" max="9999" value="1"></label>
-          </div>
-          <div class="rgroup-name">Master scope</div>
+          <div class="rgroup-name">Page Background</div>
         </div>
       </section>
 

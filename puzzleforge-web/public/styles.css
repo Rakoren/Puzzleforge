@@ -348,6 +348,42 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .ribbon-panel[data-panel="insert"] .rgroup-body { flex-wrap: nowrap; }
 .ribbon-panel[data-panel="insert"] .rbig { min-width: 44px; max-width: 76px; padding: 3px 5px; }
 .ribbon-panel[data-panel="insert"] .rbig .rbig-ico { font-size: 20px; }
+/* Page Design is also a single row of tall icon-over-label buttons. */
+.ribbon-panel[data-panel="design"] .rgroup-body { flex-wrap: nowrap; align-items: center; }
+.ribbon-panel[data-panel="design"] .rbig { min-width: 46px; max-width: 84px; padding: 3px 6px; }
+.ribbon-panel[data-panel="design"] .rbig .rbig-ico { font-size: 20px; }
+.ribbon .rbig .rbig-aa { font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 600; }
+.ribbon-panel[data-panel="design"] .rmini-col.align-to { gap: 3px; }
+.ribbon-panel[data-panel="design"] .rmini-col.align-to .design-info { font-size: 11px; }
+.ribbon-panel[data-panel="design"] .rmini-col.align-to .checkbox { font-size: 12px; }
+/* Menu building blocks shared by the Margins / Background / Master dropdowns. */
+.rdrop-sep { height: 1px; background: var(--line); margin: 5px 4px; }
+.rdrop-note { padding: 5px 10px 2px; font-size: 12.5px; }
+.rdrop-hint { padding: 0 10px 8px; font-size: 11px; color: var(--muted); max-width: 220px; }
+.rdrop-check { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 12.5px; cursor: pointer; }
+.rdrop-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 10px; font-size: 12px; }
+.rdrop-field > span { color: var(--muted); }
+.rdrop-field select, .rdrop-field input { padding: 4px 6px; font-size: 12px; }
+.rdrop-field input[type=number] { width: 60px; }
+.rdrop-field input[type=color] { width: 40px; height: 26px; padding: 2px; }
+.rdrop-item { display: block; width: 100%; text-align: left; }
+/* Fonts gallery inside the Fonts dropdown. */
+.fonts-menu { width: 244px; }
+.fonts-list { max-height: 300px; overflow-y: auto; padding: 2px; }
+.font-cat { font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); padding: 8px 8px 3px; }
+.font-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px; border-radius: 6px; }
+.font-row.on { background: #eef1fe; }
+.theme-dark .font-row.on { background: #2f3b57; }
+.font-row-use { display: flex; align-items: baseline; gap: 10px; width: 100%; min-width: 0; padding: 6px 9px; text-align: left; overflow: hidden; }
+.font-row-aa { flex: 0 0 auto; font-size: 17px; line-height: 1; }
+.font-row-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.fonts-upload { display: block; padding: 8px 10px; font-size: 12.5px; cursor: pointer; border-radius: 6px; }
+.fonts-upload:hover { background: #eef1fe; color: var(--brand); }
+.theme-dark .fonts-upload:hover { background: #2f3b57; color: #cdd6ff; }
+.bg-menu { min-width: 190px; }
+.bg-type.on { background: #eef1fe; color: var(--brand); }
+.theme-dark .bg-type.on { background: #2f3b57; color: #cdd6ff; }
+.bg-colors { display: grid; gap: 2px; padding: 2px 0; }
 .ribbon .bb-border { width: 118px; margin: 0; }
 .ribbon .bb-border > span { font-size: 10px; margin-bottom: 2px; }
 .ribbon .font-body { width: 210px; align-content: center; gap: 4px 4px; }

@@ -67,8 +67,9 @@
     changeTplBuiltin: $('changeTplBuiltin'), changeTplSaved: $('changeTplSaved'),
     changeTplSavedCount: $('changeTplSavedCount'), changeTplSavedEmpty: $('changeTplSavedEmpty'),
     changeTplPageName: $('changeTplPageName'),
-    pageFont: $('pageFont'), fontUpload: $('fontUpload'),
+    fontUpload: $('fontUpload'),
     bgColors: $('bgColors'), bgColor: $('bgColor'), bgColor2: $('bgColor2'), bgAngle: $('bgAngle'),
+    bgColor2Field: $('bgColor2Field'), bgAngleField: $('bgAngleField'),
     puzModal: $('puzModal'), puzClose: $('puzClose'), puzType: $('puzType'), puzTheme: $('puzTheme'),
     puzAudience: $('puzAudience'), puzDiff: $('puzDiff'), puzColorRow: $('puzColorRow'), puzColorStyle: $('puzColorStyle'),
     puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
@@ -325,10 +326,13 @@
       const btn = drop.querySelector('.rdrop-btn'); const menu = drop.querySelector('.rdrop-menu');
       if (!btn || !menu) return;
       btn.addEventListener('click', (e) => { e.stopPropagation(); const open = menu.hidden; closeAll(); if (open) { place(btn, menu); btn.setAttribute('aria-expanded', 'true'); } else { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); } });
-      menu.addEventListener('click', (e) => { const it = e.target.closest('[data-act]'); if (!it) return; menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); handleDropAct(drop.id, it.dataset.act); });
+      // Action items (data-act or .rdrop-item) dismiss the menu; form controls
+      // (checkboxes, colour pickers, selects) inside a menu leave it open.
+      menu.addEventListener('click', (e) => { const it = e.target.closest('[data-act], .rdrop-item'); if (!it) return; menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); if (it.dataset.act) handleDropAct(drop.id, it.dataset.act); });
     });
-    // A floating menu must close when the page shifts under it.
-    document.addEventListener('click', () => closeAll());
+    // A floating menu closes on any click outside a menu (so interacting with a
+    // control inside one keeps it open).
+    document.addEventListener('click', (e) => { if (!e.target.closest('.rdrop-menu')) closeAll(); });
     window.addEventListener('resize', () => closeAll());
     document.addEventListener('scroll', () => closeAll(), true);
   }
@@ -669,23 +673,32 @@
   }
   function refreshFontSelects() {
     if (el.fontFamily) { const c = el.fontFamily.value; el.fontFamily.innerHTML = fontOptionsHtml(); if (c) el.fontFamily.value = c; }
-    if (el.pageFont) { const c = el.pageFont.value; el.pageFont.innerHTML = `<option value="">— page font —</option>${fontOptionsHtml()}`; el.pageFont.value = c || ''; }
-    buildCustomFontMenu();
+    buildFontsMenu();
   }
-  function buildCustomFontMenu() {
-    const host = document.getElementById('customFontMenu'); if (!host) return;
+  const fontStackFor = (v) => (window.PFElements && PFElements.fontStack) ? PFElements.fontStack(v) : 'inherit';
+  // Publisher-style Fonts gallery: each row previews the font in itself and
+  // applies it as the page font. Custom uploads sit under "Your fonts" with a
+  // remove button; the Upload control lives in the menu footer (in the HTML).
+  function buildFontsMenu() {
+    const host = document.getElementById('fontsList'); if (!host) return;
     host.innerHTML = '';
+    const cur = (curModel() && curModel()._font) || '';
+    const addRow = (value, label, stack, onDel) => {
+      const row = document.createElement('div'); row.className = 'font-row' + (value === cur ? ' on' : '');
+      const use = document.createElement('button'); use.type = 'button'; use.className = 'font-row-use rdrop-item';
+      use.innerHTML = `<span class="font-row-aa">Aa</span><span class="font-row-name">${escHtml(label)}</span>`;
+      use.style.fontFamily = stack;
+      use.addEventListener('click', () => applyPageFont(value));
+      row.appendChild(use);
+      if (onDel) { const del = document.createElement('button'); del.type = 'button'; del.className = 'font-menu-del'; del.textContent = '✕'; del.title = 'Remove font'; del.addEventListener('click', (e) => { e.stopPropagation(); onDel(); }); row.appendChild(del); }
+      host.appendChild(row);
+    };
+    FONT_LIST.forEach((f) => addRow(f.v, f.label, fontStackFor(f.v)));
     const custom = loadCustomFonts();
-    if (!custom.length) { const p = document.createElement('div'); p.className = 'shapegal-cat'; p.textContent = 'No uploaded fonts yet'; host.appendChild(p); return; }
-    custom.forEach((f) => {
-      const row = document.createElement('div'); row.className = 'font-menu-row';
-      const use = document.createElement('button'); use.type = 'button'; use.textContent = f.name;
-      use.style.fontFamily = `'pf-custom-${f.id}', sans-serif`;
-      use.addEventListener('click', () => applyPageFont('custom:' + f.id));
-      const del = document.createElement('button'); del.type = 'button'; del.className = 'font-menu-del'; del.textContent = '✕'; del.title = 'Remove font';
-      del.addEventListener('click', (e) => { e.stopPropagation(); removeCustomFont(f.id); });
-      row.appendChild(use); row.appendChild(del); host.appendChild(row);
-    });
+    if (custom.length) {
+      const cat = document.createElement('div'); cat.className = 'font-cat'; cat.textContent = 'Your fonts'; host.appendChild(cat);
+      custom.forEach((f) => addRow('custom:' + f.id, f.name, `'pf-custom-${f.id}', sans-serif`, () => removeCustomFont(f.id)));
+    }
   }
   function onFontUpload(input) {
     const file = input && input.files && input.files[0]; if (!file) return;
@@ -703,7 +716,6 @@
       list.push({ id, name, dataUrl });
       if (!saveCustomFonts(list)) return;
       injectCustomFontFaces(); refreshFontSelects();
-      if (el.pageFont) el.pageFont.value = 'custom:' + id;
       applyPageFont('custom:' + id);
       setStatus(`Added font “${name}”.`, 'ok');
     };
@@ -722,8 +734,7 @@
     pushUndo();
     pm._font = v;
     (pm.elements || []).forEach((e) => { if (e.kind === 'text') e.fontFamily = v; });
-    renderPage();
-    if (el.pageFont) el.pageFont.value = v;
+    renderPage(); buildFontsMenu();
     const label = v.slice(0, 7) === 'custom:' ? (loadCustomFonts().find((f) => 'custom:' + f.id === v) || {}).name || 'custom' : (FONT_LIST.find((f) => f.v === v) || {}).label || v;
     setStatus(`Page font set to ${label}.`, 'ok');
   }
@@ -954,7 +965,7 @@
     renderBorderFrame(pm);
     gridEl = document.createElement('div'); gridEl.className = 'pf-grid-overlay'; gridEl.style.display = el.gridToggle.checked ? '' : 'none'; el.stageInner.appendChild(gridEl);
 
-    el.border.value = pm._border || ''; if (el.pageFont) el.pageFont.value = pm._font || ''; syncBgUI(); applyZoom();
+    el.border.value = pm._border || ''; syncBgUI(); applyZoom();
     // Matter pages need their true page positions before creating pieces.
     if (matter && pm.comps.length && !pm._measured) measureMatterBases(pm);
 
@@ -2033,10 +2044,12 @@
   function setBgProp(k, v) { const pm = curModel(); if (!pm || !pm._bg) return; pushUndo(); pm._bg[k] = v; el.stageInner.style.background = pageBgCss(pm._bg); }
   function syncBgUI() {
     const bg = curModel() && curModel()._bg; const type = (bg && bg.type) || 'none';
-    if (el.bgColors) el.bgColors.style.display = type === 'none' ? 'none' : 'inline-flex';
-    if (el.bgColor2) el.bgColor2.style.display = type === 'gradient' ? '' : 'none';
-    if (el.bgAngle) el.bgAngle.style.display = type === 'gradient' ? '' : 'none';
+    if (el.bgColors) el.bgColors.style.display = type === 'none' ? 'none' : 'grid';
+    if (el.bgColor2Field) el.bgColor2Field.style.display = type === 'gradient' ? '' : 'none';
+    if (el.bgAngleField) el.bgAngleField.style.display = type === 'gradient' ? '' : 'none';
     if (bg) { if (el.bgColor) el.bgColor.value = bg.color || '#ffffff'; if (el.bgColor2) el.bgColor2.value = bg.color2 || '#dddddd'; if (el.bgAngle) el.bgAngle.value = bg.angle != null ? bg.angle : 180; }
+    // Reflect the active fill on the menu's type buttons.
+    document.querySelectorAll('#bgDrop .bg-type').forEach((b) => b.classList.toggle('on', b.dataset.bg === type));
   }
   function renderBorderFrame(pm) {
     const style = pm && pm._border;
@@ -2702,8 +2715,8 @@
   function init() {
     setupRibbon(); setupTheme(); buildObjectMenus();
     injectCustomFontFaces(); refreshFontSelects();
-    if (el.pageFont) el.pageFont.addEventListener('change', () => applyPageFont(el.pageFont.value));
     if (el.fontUpload) el.fontUpload.addEventListener('change', () => onFontUpload(el.fontUpload));
+    document.querySelectorAll('#bgDrop .bg-type').forEach((b) => b.addEventListener('click', () => setBgType(b.dataset.bg)));
     if (el.bgColor) el.bgColor.addEventListener('change', () => setBgProp('color', el.bgColor.value));
     if (el.bgColor2) el.bgColor2.addEventListener('change', () => setBgProp('color2', el.bgColor2.value));
     if (el.bgAngle) el.bgAngle.addEventListener('change', () => setBgProp('angle', Number(el.bgAngle.value) || 0));
