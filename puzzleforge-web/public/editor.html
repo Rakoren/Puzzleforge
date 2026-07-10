@@ -194,6 +194,7 @@
             <span class="rdrop" id="pageDrop">
               <button class="ghost rdrop-btn" id="pageDropBtn" aria-haspopup="true" aria-expanded="false">📄 Page&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu" hidden>
+                <button type="button" data-act="puzzle">🧩 Insert Puzzle…</button>
                 <button type="button" data-act="blank">📄 Insert Blank Page</button>
                 <button type="button" data-act="dup">⧉ Insert Duplicate Page</button>
                 <button type="button" data-act="tpl">🗂 Insert Page…</button>
@@ -600,6 +601,31 @@
       <div class="pf-tpl-grid" id="tplSaved"></div>
       <p class="pf-modal-sub" id="tplSavedEmpty">No saved templates yet. Build a page, then use
         <b>Save as template…</b> to reuse it here.</p>
+    </div>
+  </div>
+
+  <!-- Insert a generated puzzle -->
+  <div class="pf-modal" id="puzModal" hidden>
+    <div class="pf-modal-backdrop" data-close></div>
+    <div class="pf-modal-box" role="dialog" aria-modal="true" aria-labelledby="puzTitle">
+      <div class="pf-modal-head">
+        <h2 id="puzTitle">Insert puzzle</h2>
+        <button class="iconbtn" id="puzClose" title="Close" data-close>✕</button>
+      </div>
+      <p class="pf-modal-sub">Generates a fresh puzzle from this book's theme and audience, and drops it in
+        after the current page.</p>
+      <label class="field compact"><span>Puzzle type</span><select id="puzType"></select></label>
+      <div class="row">
+        <label class="field compact"><span>Difficulty</span>
+          <select id="puzDiff"><option value="1">1 — Easiest</option><option value="2">2</option><option value="3">3</option><option value="4">4 — Hardest</option></select>
+        </label>
+        <label class="field compact"><span>How many</span><input id="puzCount" type="number" min="1" max="50" value="1"></label>
+      </div>
+      <div class="actions">
+        <button id="puzInsert" class="primary">Insert</button>
+        <button class="ghost" data-close>Cancel</button>
+      </div>
+      <p class="status" id="puzStatus"></p>
     </div>
   </div>
 

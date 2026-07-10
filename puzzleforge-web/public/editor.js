@@ -60,6 +60,8 @@
     noteText: $('noteText'), noteAdd: $('noteAdd'),
     tplModal: $('tplModal'), tplClose: $('tplClose'), tplBuiltin: $('tplBuiltin'), tplSaved: $('tplSaved'),
     tplSavedCount: $('tplSavedCount'), tplSavedEmpty: $('tplSavedEmpty'),
+    puzModal: $('puzModal'), puzClose: $('puzClose'), puzType: $('puzType'), puzDiff: $('puzDiff'),
+    puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
     publishBtn: $('publishBtn'), pubModal: $('pubModal'), pubClose: $('pubClose'),
     pubRunChecks: $('pubRunChecks'), pubCheckStatus: $('pubCheckStatus'), pubReport: $('pubReport'),
     pubPrice: $('pubPrice'), pubPaper: $('pubPaper'), pubAge: $('pubAge'), pubDesc: $('pubDesc'),
@@ -134,6 +136,8 @@
       akIndex: p.akIndex != null ? p.akIndex : null,
       blank: false, type: p.type || '', title: p.title || p.type || '', activity: !!p.activity,
       style: p.style || '', comps: buildComps(p.components || []), elements: [], _border: '', undo: [], redo: [],
+      // Editor-inserted puzzle pages carry their own puzzle object (no src).
+      puzzle: p.puzzle || null,
     };
     return restoreState(m, p.state);
   }
@@ -150,6 +154,13 @@
     const rebuilt = plan.map((entry) => {
       if (!entry) return null;
       if (entry.blank || entry.role === 'blank') return restoreState(blankModel(), entry.state);
+      // Editor-inserted puzzle page: rebuild from the plan's own render cache.
+      if (entry.role === 'content' && entry.puzzle && entry.page) {
+        return restoreState(modelFromPage({
+          role: 'content', type: entry.page.type, title: entry.page.title, activity: true,
+          style: entry.page.style, components: entry.page.components, puzzle: entry.puzzle,
+        }), entry.state);
+      }
       const sp = findSrc(entry); if (!sp) return null;
       return restoreState(modelFromPage(sp), entry.state);
     }).filter(Boolean);
@@ -168,6 +179,7 @@
       comps: pm.comps.map((c) => ({ group: 'piece', kind: c.kind, key: c.key, html: c.html, dx: c.dx, dy: c.dy, scale: c.scale, rot: c.rot, hidden: c.hidden, locked: c.locked, baseX: 0, baseY: 0, baseW: 0, baseH: 0 })),
       elements: pm.elements.map((e) => { const { _node, ...r } = e; return { ...r, id: uid++ }; }),
       _border: pm._border, _borderColor: pm._borderColor, name: pm.name || null, undo: [], redo: [],
+      puzzle: pm.puzzle || null,
     };
   }
 
@@ -302,6 +314,7 @@
       if (act === 'blank') insertBlankAfterCurrent();
       else if (act === 'dup') { if (cur >= 0) duplicatePage(cur); }
       else if (act === 'tpl') openTplPicker();
+      else if (act === 'puzzle') openPuzzleInsert();
     } else if (dropId === 'alignDrop') {
       const m = { aleft: 'left', acenter: 'centerh', aright: 'right', atop: 'top', amiddle: 'middle', abottom: 'bottom' };
       if (m[act]) alignSel(m[act]);
@@ -420,6 +433,55 @@
     const at = cur < 0 ? pageModels.length : cur + 1;
     pageModels.splice(at, 0, m); cur = at; buildPageList(); renderPage();
     setStatus(`Inserted “${name}”.`, 'ok');
+  }
+
+  // --- Insert a freshly generated puzzle page ---
+  const PUZ_LABELS = { wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku', maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble', crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia', coloring: 'Coloring', drawing: 'Drawing' };
+  let puzTypesLoaded = false;
+  async function loadPuzzleTypes() {
+    if (puzTypesLoaded || !el.puzType) return;
+    try {
+      const meta = await (await fetch('/api/meta')).json();
+      (meta.types || []).forEach((t) => {
+        const id = typeof t === 'string' ? t : t.id;
+        const label = (typeof t === 'object' && t.label) || PUZ_LABELS[id] || id;
+        const o = document.createElement('option'); o.value = id; o.textContent = label; el.puzType.appendChild(o);
+      });
+      const ws = [...el.puzType.options].find((o) => o.value === 'wordsearch'); if (ws) el.puzType.value = 'wordsearch';
+      puzTypesLoaded = el.puzType.options.length > 0;
+    } catch (_) { /* leave empty; insert will warn */ }
+  }
+  async function openPuzzleInsert() {
+    if (el.main.hidden) { setStatus('Open a book first.', ''); return; }
+    await loadPuzzleTypes();
+    const d0 = bookConfig && bookConfig.puzzles && bookConfig.puzzles[0] && bookConfig.puzzles[0].difficulty;
+    if (d0) el.puzDiff.value = String(Math.max(1, Math.min(4, d0)));
+    el.puzStatus.textContent = ''; el.puzModal.hidden = false;
+  }
+  function closePuzzleInsert() { el.puzModal.hidden = true; }
+  async function insertPuzzlePages() {
+    const type = el.puzType.value;
+    const difficulty = Number(el.puzDiff.value) || 1;
+    const count = Math.max(1, Math.min(50, Number(el.puzCount.value) || 1));
+    if (!type) { el.puzStatus.textContent = 'Pick a puzzle type.'; return; }
+    el.puzStatus.textContent = 'Generating…'; el.puzInsert.disabled = true;
+    try {
+      const res = await fetch('/api/book/insert-puzzle', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: bookConfig, type, difficulty, count }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not generate the puzzle.');
+      const pages = data.pages || [];
+      if (!pages.length) throw new Error('No puzzle was generated.');
+      let at = cur < 0 ? pageModels.length : cur + 1;
+      pages.forEach((pg) => { pageModels.splice(at, 0, modelFromPage(pg)); at += 1; });
+      cur = at - 1; buildPageList(); renderPage();
+      closePuzzleInsert();
+      const label = PUZ_LABELS[type] || type;
+      setStatus(`Inserted ${pages.length} ${label} page${pages.length > 1 ? 's' : ''}.`, 'ok');
+    } catch (err) { el.puzStatus.textContent = err.message; }
+    finally { el.puzInsert.disabled = false; }
   }
   function savePageAsTemplate() {
     const pm = pageModels[cur];
@@ -1539,7 +1601,14 @@
   const buildPagePlan = () => pageModels.map((pm) => {
     const state = pageStateOf(pm);
     if (pm.blank) return { role: 'blank', state };
-    if (pm.role === 'content') return { role: 'content', src: pm.src, state };
+    if (pm.role === 'content') {
+      // Editor-inserted puzzle: the plan carries the puzzle object (the server
+      // re-splits it for export) plus a render cache (type/title/style/pieces)
+      // so a saved recipe can rebuild the page offline without a src.
+      if (pm.puzzle) return { role: 'content', puzzle: pm.puzzle, state,
+        page: { type: pm.type, title: pm.title, style: pm.style, components: pm.comps.map((c) => ({ kind: c.kind, html: c.html })) } };
+      return { role: 'content', src: pm.src, state };
+    }
     if (pm.role === 'frontmatter' || pm.role === 'backmatter') return { role: pm.role, matterKind: pm.matterKind, state };
     if (pm.role === 'answerkey') return { role: 'answerkey', akIndex: pm.akIndex || 0, state };
     return { role: pm.role, state }; // title
@@ -2262,6 +2331,9 @@
     if (el.symbolPick) el.symbolPick.addEventListener('change', () => { addSymbol(el.symbolPick.value); el.symbolPick.value = ''; });
     if (el.tplClose) el.tplClose.addEventListener('click', closeTplPicker);
     if (el.tplModal) el.tplModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeTplPicker(); });
+    if (el.puzClose) el.puzClose.addEventListener('click', closePuzzleInsert);
+    if (el.puzModal) el.puzModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closePuzzleInsert(); });
+    if (el.puzInsert) el.puzInsert.addEventListener('click', insertPuzzlePages);
     if (el.publishBtn) el.publishBtn.addEventListener('click', openPublish);
     if (el.pubClose) el.pubClose.addEventListener('click', closePublish);
     if (el.pubModal) el.pubModal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closePublish(); });
@@ -2316,6 +2388,7 @@
   }
   function onKey(e) {
     if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
+    if (el.puzModal && !el.puzModal.hidden) { if (e.key === 'Escape') closePuzzleInsert(); return; }
     if (el.pubModal && !el.pubModal.hidden) { if (e.key === 'Escape') closePublish(); return; }
     if (el.frModal && !el.frModal.hidden) { if (e.key === 'Escape') closeFindReplace(); return; }
     if (el.main.hidden) return; const ae = document.activeElement, tag = (ae && ae.tagName) || '';

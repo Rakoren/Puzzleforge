@@ -437,8 +437,11 @@ function pagePlanRender(book, plan) {
     if (!e || typeof e !== 'object') continue;
     const state = e.state && typeof e.state === 'object' ? e.state : null;
     if (e.role === 'content') {
-      const pg = book.pages[e.src]; if (!pg) continue;
-      leaves.push({ role: 'content', puzzle: pg.puzzle, state, src: e.src });
+      // A page inserted in the editor carries its own puzzle object; original
+      // pages reference the cached book by index (src).
+      const puzzle = (e.puzzle && typeof e.puzzle === 'object') ? e.puzzle : (book.pages[e.src] && book.pages[e.src].puzzle);
+      if (!puzzle) continue;
+      leaves.push({ role: 'content', puzzle, state, src: e.src });
     } else if (e.role === 'blank') {
       leaves.push({ role: 'content', puzzle: pf.generate({ type: 'bleedguard', label: '' }), state });
     } else if (e.role === 'title') {
@@ -573,6 +576,41 @@ app.post('/api/book/editor', (req, res) => {
       },
       pages,
     });
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+// Generate fresh puzzle page(s) to insert into the open book, using the book's
+// own settings (theme, audience, trim, tier/difficulty ladder). Returns each as
+// an editor page (style + components) PLUS the raw puzzle object, so the editor
+// carries it in the page plan and it survives export and recipe save/reload.
+app.post('/api/book/insert-puzzle', (req, res) => {
+  const body = req.body || {};
+  try {
+    const type = String(body.type || '').trim();
+    if (!type) return res.status(400).json({ error: 'Pick a puzzle type.' });
+    const count = Math.max(1, Math.min(50, Number(body.count) || 1));
+    const difficulty = Math.max(1, Math.min(4, Number(body.difficulty) || 1));
+    // Inherit every setting from the open book, then override the puzzle list.
+    const base = { ...(body.config || {}) };
+    delete base.seed; delete base.pageState;
+    const cfg = { ...base, titlePage: false, answerKey: false, puzzles: [{ type, count, difficulty }] };
+    const gen = pf.assembleBook(cfg);
+    const layout = pf.getLayout(gen.trimSize, { audience: gen.audience });
+    const pages = (gen.pages || [])
+      .filter((pg) => pg.puzzle && pg.puzzle.type !== 'bleedguard')
+      .map((pg) => {
+        const split = pf.splitPuzzle(pg.puzzle, layout);
+        return {
+          role: 'content', type: pg.puzzle.type,
+          title: pg.puzzle.title || pg.puzzle.type,
+          activity: pf.isActivityType(pg.puzzle.type),
+          style: split.style, components: split.components, puzzle: pg.puzzle,
+        };
+      });
+    if (!pages.length) return res.status(400).json({ error: 'Could not generate that puzzle type.' });
+    res.json({ pages, dims: { usableWidth: layout.usableWidth, usableHeight: layout.usableHeight } });
   } catch (err) {
     res.status(err.status || 400).json({ error: err.message });
   }
