@@ -554,6 +554,7 @@
     const matter = isMatterPage(pm);
     el.stageInner.innerHTML = '';
     const style = document.createElement('style'); style.textContent = scopeCss(pm.style, '#stageInner'); el.stageInner.appendChild(style);
+    renderBorderFrame(pm);
     gridEl = document.createElement('div'); gridEl.className = 'pf-grid-overlay'; gridEl.style.display = el.gridToggle.checked ? '' : 'none'; el.stageInner.appendChild(gridEl);
 
     el.border.value = pm._border || ''; applyZoom();
@@ -1465,7 +1466,18 @@
   function setMeasure(prop, val) { const o = sels.length === 1 && sels[0]; if (!o) return; pushUndo(); const b = box(o); if (prop === 'x') moveTo(o, val, b.y); else if (prop === 'y') moveTo(o, b.x, val); else if (prop === 'scale') setScale(o, val); else if (prop === 'rot') setRot(o, val); drawSel(); syncSelUI(); }
 
   function resetLayout() { pushUndo(); const pm = pageModels[cur]; pm.comps.forEach((c) => { c.hidden = false; c.dx = 0; c.dy = 0; c.scale = 1; c.rot = 0; c.locked = false; }); pm.elements = []; renderPage(); }
-  function setBorder() { pageModels[cur]._border = el.border.value; }
+  function setBorder() { pushUndo(); pageModels[cur]._border = el.border.value; renderPage(); }
+  // Draw the page border as a live SVG overlay using the engine's shared
+  // renderer (window.PFDecor), so what's on screen matches the printed frame.
+  function renderBorderFrame(pm) {
+    const style = pm && pm._border;
+    if (!style || style === 'none' || !(window.PFDecor && window.PFDecor.frameSvg)) return;
+    const color = pm._borderColor || (bookConfig && bookConfig.borderColor) || '#333333';
+    const svg = window.PFDecor.frameSvg(style, dims.usableWidth, dims.usableHeight, { color });
+    if (!svg) return;
+    const fr = document.createElement('div'); fr.className = 'pf-frame'; fr.innerHTML = svg;
+    el.stageInner.appendChild(fr);
+  }
   async function reroll() {
     const pm = pageModels[cur];
     if (!pm || pm.role !== 'content' || pm.src == null) { setStatus('Only puzzle pages can be rerolled.', 'err'); return; }
@@ -2161,7 +2173,7 @@
     if (el.qrEcl) el.qrEcl.addEventListener('change', () => { const q = selQr(); if (q) { pushUndo(); q.ecl = el.qrEcl.value; reencodeQr(q); } });
     if (el.qrFg) el.qrFg.addEventListener('input', () => { const q = selQr(); if (q) { q.fg = el.qrFg.value; q._node.innerHTML = elHtml(q); requestAnimationFrame(drawSel); } });
     el.groupBtn.addEventListener('click', groupSel); el.ungroupBtn.addEventListener('click', ungroupSel);
-    el.borderAll.addEventListener('click', () => { pageModels.forEach((pm) => { pm._border = el.border.value; }); setStatus(el.border.value ? 'Border applied to all pages.' : 'Border override cleared on all pages.', 'ok'); });
+    el.borderAll.addEventListener('click', () => { pageModels.forEach((pm) => { pm._border = el.border.value; }); renderPage(); setStatus(el.border.value ? 'Border applied to all pages.' : 'Border override cleared on all pages.', 'ok'); });
     el.mX.addEventListener('change', () => setMeasure('x', Number(el.mX.value) || 0));
     el.mY.addEventListener('change', () => setMeasure('y', Number(el.mY.value) || 0));
     el.mW.addEventListener('change', () => setElSize('w', Number(el.mW.value) || 0));

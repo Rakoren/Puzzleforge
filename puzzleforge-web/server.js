@@ -35,6 +35,11 @@ app.get('/favicon.ico', (req, res) => {
 app.get('/element-html.js', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'engine', 'element-html.js'));
 });
+// The engine's border renderer, shared with the editor so the live page border
+// matches the printed one exactly.
+app.get('/decor.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'engine', 'decor.js'));
+});
 
 // QR encoder (qrcode-generator, MIT) served so the editor can build a QR's
 // module matrix client-side — the same library the engine uses, so an editor
