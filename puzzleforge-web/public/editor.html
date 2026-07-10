@@ -323,6 +323,14 @@
         </div>
         <div class="rgroup">
           <div class="rgroup-body col">
+            <label class="ro-field" title="Trim size is set per book in the Book Builder (KDP prints one trim per book)."><span>Size</span><span class="ro-val" id="sizeInfo">—</span></label>
+            <label class="ro-field" title="Orientation follows the book's trim size."><span>Orientation</span><span class="ro-val" id="orientInfo">—</span></label>
+            <span class="design-hint">Set in Book Builder</span>
+          </div>
+          <div class="rgroup-name">Size</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
             <span class="rdrop" id="guidesDrop">
               <button class="ghost rdrop-btn" id="guidesDropBtn" aria-haspopup="true" aria-expanded="false" title="Ruler guides">⌗ Guides&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu" hidden>
@@ -364,6 +372,24 @@
             </span>
           </div>
           <div class="rgroup-name">Fonts</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
+            <span class="rdrop" id="bgDrop">
+              <button class="ghost rdrop-btn" id="bgDropBtn" aria-haspopup="true" aria-expanded="false" title="Page background">▧ Background&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <button type="button" data-act="none">None (white)</button>
+                <button type="button" data-act="solid">Solid color…</button>
+                <button type="button" data-act="gradient">Gradient…</button>
+              </div>
+            </span>
+            <span class="bg-colors" id="bgColors" style="display:none;">
+              <input id="bgColor" type="color" class="mini-color" value="#ffffff" title="Background color">
+              <input id="bgColor2" type="color" class="mini-color" value="#dddddd" title="Second color (gradient)">
+              <input id="bgAngle" class="mini-num" type="number" min="0" max="360" value="180" title="Gradient angle (°)">
+            </span>
+          </div>
+          <div class="rgroup-name">Background</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body col">

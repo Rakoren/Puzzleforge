@@ -539,6 +539,12 @@ body.theme-dark {
 .theme-dark .pf-tplchg-thumb { background: #f4f5f8; border-color: #3a3d44; }
 .theme-dark .pf-tplchg-del { background: #34373d; border-color: var(--line); color: var(--muted); }
 
+/* Page Design → Size (read-only info) */
+.ro-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 130px; font-size: 12px; }
+.ro-field > span:first-child { color: var(--muted); }
+.ro-val { font-weight: 600; color: var(--ink); }
+.design-hint { font-size: 10.5px; color: var(--muted); font-style: italic; margin-top: 1px; }
+
 /* Page Design → Fonts group */
 .font-actions { display: flex; gap: 5px; margin-top: 4px; }
 #customFontMenu { min-width: 190px; max-height: 260px; overflow: auto; padding: 4px; }

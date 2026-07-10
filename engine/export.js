@@ -154,6 +154,31 @@ function applyBorder(doc, layout, style, color) {
   return out;
 }
 
+// Build a CSS `background` value for a per-page background spec, validating
+// colors against a hex pattern (untrusted editor input) and clamping the angle.
+function backgroundCss(bg) {
+  if (!bg || typeof bg !== 'object' || bg.type === 'none' || !bg.type) return '';
+  const hex = (c, d) => (/^#[0-9a-fA-F]{3,8}$/.test(c || '') ? c : d);
+  if (bg.type === 'solid') return hex(bg.color, '#ffffff');
+  if (bg.type === 'gradient') {
+    const a = Number.isFinite(Number(bg.angle)) ? Math.round(Number(bg.angle)) % 360 : 180;
+    return `linear-gradient(${a}deg, ${hex(bg.color, '#ffffff')}, ${hex(bg.color2, '#dddddd')})`;
+  }
+  return '';
+}
+
+// Paint a full-page background behind all content (z-index below the border).
+function applyBackground(doc, layout, bg) {
+  const value = backgroundCss(bg);
+  if (!value) return doc;
+  const css =
+    `\n  body { position: relative; min-height: ${layout.usableHeight}px; }` +
+    `\n  .pf-bg { position: absolute; inset: 0; z-index: -2; pointer-events: none; background: ${value}; }\n`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-bg"></div>`);
+  return out;
+}
+
 /**
  * Export a single puzzle to a print-ready PDF.
  * @param {object} puzzle standard puzzle object
@@ -368,9 +393,10 @@ function renderLeafDoc(book, layout, styleOpts, leaf) {
   const border = st.border !== undefined ? st.border : book.border;
   const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
   const withBorder = (doc) => (border && border !== 'none') ? applyBorder(doc, layout, border, borderColor) : doc;
+  const withBg = (doc) => applyBackground(doc, layout, st.bg);
 
   // A padding leaf: an intentionally blank page (no border, no number).
-  if (leaf.role === 'blank') return pageShell(layout, '', '');
+  if (leaf.role === 'blank') return withBg(pageShell(layout, '', ''));
 
   if (leaf.role === 'content') {
     const puzzle = leaf.puzzle;
@@ -382,12 +408,12 @@ function renderLeafDoc(book, layout, styleOpts, leaf) {
     if (book.perPageDifficulty && !isActivityType(puzzle.type)) {
       doc = applyDifficultyBadge(doc, layout, difficulty.badgeText(puzzle.difficulty, book.audience));
     }
-    return doc;
+    return withBg(doc);
   }
   // Title / front matter / answer key / back matter.
   let doc = renderMatterDoc(book, layout, leaf);
   if (st.layout) { const { style, components } = splitHtml(doc); doc = composeParts(style, components, layout, st.layout); }
-  return withBorder(doc);
+  return withBg(withBorder(doc));
 }
 
 // Whether a leaf carries a printed page number (content puzzles + answer key).

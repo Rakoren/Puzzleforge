@@ -40,7 +40,7 @@
     reroll: $('reroll'), resetLayout: $('resetLayout'), addBlankSide: $('addBlankSide'), darkToggle: $('darkToggle'),
     insertTpl: $('insertTpl'), insertTplSide: $('insertTplSide'), savePageTpl: $('savePageTpl'),
     dupPage: $('dupPage'), aiArtBtn: $('aiArtBtn'), wordArt: $('wordArt'), symbolPick: $('symbolPick'), insertDate: $('insertDate'),
-    trimInfo: $('trimInfo'), marginGuide: $('marginGuide'), renamePage: $('renamePage'), delPage: $('delPage'),
+    trimInfo: $('trimInfo'), sizeInfo: $('sizeInfo'), orientInfo: $('orientInfo'), marginGuide: $('marginGuide'), renamePage: $('renamePage'), delPage: $('delPage'),
     alignGuidesChk: $('alignGuidesChk'), alignObjectsChk: $('alignObjectsChk'),
     movePageUp: $('movePageUp'), movePageDown: $('movePageDown'), schemeGallery: $('schemeGallery'),
     masterEnabled: $('masterEnabled'), editMasterBtn: $('editMasterBtn'), insertPageNo: $('insertPageNo'),
@@ -68,6 +68,7 @@
     changeTplSavedCount: $('changeTplSavedCount'), changeTplSavedEmpty: $('changeTplSavedEmpty'),
     changeTplPageName: $('changeTplPageName'),
     pageFont: $('pageFont'), fontUpload: $('fontUpload'),
+    bgColors: $('bgColors'), bgColor: $('bgColor'), bgColor2: $('bgColor2'), bgAngle: $('bgAngle'),
     puzModal: $('puzModal'), puzClose: $('puzClose'), puzType: $('puzType'), puzTheme: $('puzTheme'),
     puzAudience: $('puzAudience'), puzDiff: $('puzDiff'), puzColorRow: $('puzColorRow'), puzColorStyle: $('puzColorStyle'),
     puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
@@ -143,6 +144,7 @@
     }
     if (state && state.border) m._border = state.border;
     if (state && state.borderColor) m._borderColor = state.borderColor;
+    if (state && state.bg && state.bg.type) m._bg = state.bg;
     if (state && state.guides) m.guides = { v: (state.guides.v || []).map(Number), h: (state.guides.h || []).map(Number) };
     return m;
   }
@@ -210,6 +212,10 @@
       if (pendingPlan) { applyPlan(pendingPlan); pendingPlan = null; }
       el.empty.hidden = true; el.main.hidden = false;
       if (el.trimInfo && dims) el.trimInfo.textContent = `${dims.widthIn}" × ${dims.heightIn}" trim`;
+      if (dims) {
+        if (el.sizeInfo) el.sizeInfo.textContent = `${dims.widthIn} × ${dims.heightIn} in`;
+        if (el.orientInfo) el.orientInfo.textContent = dims.heightIn >= dims.widthIn ? 'Portrait' : 'Landscape';
+      }
       if (el.revLanguage && bookConfig && bookConfig.language) el.revLanguage.value = bookConfig.language;
       loadTeamState();
       if (bookConfig && bookConfig.master && typeof bookConfig.master === 'object') {
@@ -235,6 +241,7 @@
     const canvas = document.createElement('div'); canvas.className = 'thumb-canvas';
     const id = 'thm' + (++thumbSeq); canvas.id = id;
     canvas.style.width = dims.usableWidth + 'px'; canvas.style.height = dims.usableHeight + 'px'; canvas.style.transform = `scale(${sc})`;
+    const bgv = pageBgCss(pm._bg); if (bgv) canvas.style.background = bgv;
     if (pm.style) { const st = document.createElement('style'); st.textContent = scopeCss(pm.style, '#' + id); canvas.appendChild(st); }
     const flow = document.createElement('div'); flow.className = 'pf-flow';
     if (isMatterPage(pm) && !pm._measured) {
@@ -355,6 +362,8 @@
       else if (act === 'clear') clearGuides();
     } else if (dropId === 'marginsDrop') {
       setMargins(act);
+    } else if (dropId === 'bgDrop') {
+      setBgType(act);
     }
   }
 
@@ -940,11 +949,12 @@
     const pm = curModel(); highlightPage();
     const matter = isMatterPage(pm);
     el.stageInner.innerHTML = '';
+    el.stageInner.style.background = pageBgCss(pm && pm._bg);
     const style = document.createElement('style'); style.textContent = scopeCss(pm.style, '#stageInner'); el.stageInner.appendChild(style);
     renderBorderFrame(pm);
     gridEl = document.createElement('div'); gridEl.className = 'pf-grid-overlay'; gridEl.style.display = el.gridToggle.checked ? '' : 'none'; el.stageInner.appendChild(gridEl);
 
-    el.border.value = pm._border || ''; if (el.pageFont) el.pageFont.value = pm._font || ''; applyZoom();
+    el.border.value = pm._border || ''; if (el.pageFont) el.pageFont.value = pm._font || ''; syncBgUI(); applyZoom();
     // Matter pages need their true page positions before creating pieces.
     if (matter && pm.comps.length && !pm._measured) measureMatterBases(pm);
 
@@ -2009,6 +2019,25 @@
   function setBorder() { pushUndo(); pageModels[cur]._border = el.border.value; renderPage(); }
   // Draw the page border as a live SVG overlay using the engine's shared
   // renderer (window.PFDecor), so what's on screen matches the printed frame.
+  // CSS `background` value for a page's background spec (mirrors backgroundCss
+  // in engine/export.js so the editor and PDF match).
+  function pageBgCss(bg) {
+    if (!bg || !bg.type || bg.type === 'none') return '';
+    const hex = (c, d) => (/^#[0-9a-fA-F]{3,8}$/.test(c || '') ? c : d);
+    if (bg.type === 'solid') return hex(bg.color, '#ffffff');
+    if (bg.type === 'gradient') { const a = Number.isFinite(Number(bg.angle)) ? Math.round(Number(bg.angle)) % 360 : 180; return `linear-gradient(${a}deg, ${hex(bg.color, '#ffffff')}, ${hex(bg.color2, '#dddddd')})`; }
+    return '';
+  }
+  function curBg() { const pm = curModel(); if (!pm) return null; if (!pm._bg) pm._bg = { type: 'none', color: '#ffffff', color2: '#dddddd', angle: 180 }; return pm._bg; }
+  function setBgType(type) { const pm = curModel(); if (!pm) return; pushUndo(); curBg().type = type; renderPage(); syncBgUI(); setStatus(type === 'none' ? 'Page background cleared.' : `Page background: ${type}.`, 'ok'); }
+  function setBgProp(k, v) { const pm = curModel(); if (!pm || !pm._bg) return; pushUndo(); pm._bg[k] = v; el.stageInner.style.background = pageBgCss(pm._bg); }
+  function syncBgUI() {
+    const bg = curModel() && curModel()._bg; const type = (bg && bg.type) || 'none';
+    if (el.bgColors) el.bgColors.style.display = type === 'none' ? 'none' : 'inline-flex';
+    if (el.bgColor2) el.bgColor2.style.display = type === 'gradient' ? '' : 'none';
+    if (el.bgAngle) el.bgAngle.style.display = type === 'gradient' ? '' : 'none';
+    if (bg) { if (el.bgColor) el.bgColor.value = bg.color || '#ffffff'; if (el.bgColor2) el.bgColor2.value = bg.color2 || '#dddddd'; if (el.bgAngle) el.bgAngle.value = bg.angle != null ? bg.angle : 180; }
+  }
   function renderBorderFrame(pm) {
     const style = pm && pm._border;
     if (!style || style === 'none' || !(window.PFDecor && window.PFDecor.frameSvg)) return;
@@ -2072,6 +2101,7 @@
     }
     if (pm._border) st.border = pm._border;
     if (pm._borderColor) st.borderColor = pm._borderColor;
+    if (pm._bg && pm._bg.type && pm._bg.type !== 'none') st.bg = pm._bg;
     if (pm.guides && (pm.guides.v.length || pm.guides.h.length)) st.guides = { v: pm.guides.v.slice(), h: pm.guides.h.slice() };
     return st;
   }
@@ -2674,6 +2704,9 @@
     injectCustomFontFaces(); refreshFontSelects();
     if (el.pageFont) el.pageFont.addEventListener('change', () => applyPageFont(el.pageFont.value));
     if (el.fontUpload) el.fontUpload.addEventListener('change', () => onFontUpload(el.fontUpload));
+    if (el.bgColor) el.bgColor.addEventListener('change', () => setBgProp('color', el.bgColor.value));
+    if (el.bgColor2) el.bgColor2.addEventListener('change', () => setBgProp('color2', el.bgColor2.value));
+    if (el.bgAngle) el.bgAngle.addEventListener('change', () => setBgProp('angle', Number(el.bgAngle.value) || 0));
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
     if (el.addPicPlaceholder) el.addPicPlaceholder.addEventListener('click', addPicturePlaceholder);
