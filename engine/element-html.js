@@ -252,9 +252,17 @@
     if (!e) return '';
     if (e.kind === 'qr') return qrSvg(e);
     if (e.kind === 'image') {
-      if (typeof e.src !== 'string' || !e.src.startsWith('data:')) return '';
-      const fx = e.flipH || e.flipV ? `transform:scale(${e.flipH ? -1 : 1},${e.flipV ? -1 : 1});` : '';
-      return `<img src="${e.src}" style="width:${num(e.width, 160)}px;display:block;pointer-events:none;${fx}" alt="">`;
+      if (typeof e.src === 'string' && e.src.startsWith('data:')) {
+        const fx = e.flipH || e.flipV ? `transform:scale(${e.flipH ? -1 : 1},${e.flipV ? -1 : 1});` : '';
+        return `<img src="${e.src}" style="width:${num(e.width, 160)}px;display:block;pointer-events:none;${fx}" alt="">`;
+      }
+      // No image yet: a picture placeholder frame (double-click in the editor to
+      // fill it). Rendered with inline styles so it looks the same in the PDF.
+      const w = num(e.width, 200), h = num(e.h, 140);
+      const fs = Math.max(18, Math.min(w, h) * 0.3);
+      return `<div style="width:${w}px;height:${h}px;box-sizing:border-box;border:2px dashed #b6bccb;`
+        + `border-radius:6px;display:flex;align-items:center;justify-content:center;`
+        + `background:#f7f8fb;color:#aeb4c4;font-size:${fs}px;">\u{1F5BC}</div>`;
     }
     if (e.kind === 'shape') return shapeSvg(e);
     if (e.kind === 'table') return tableHtml(e);

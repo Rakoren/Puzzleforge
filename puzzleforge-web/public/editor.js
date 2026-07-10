@@ -14,7 +14,7 @@
     undo: $('undo'), redo: $('redo'), zoomOut: $('zoomOut'), zoomIn: $('zoomIn'), zoomFit: $('zoomFit'), zoomLabel: $('zoomLabel'),
     zoom100: $('zoom100'), zoomWhole: $('zoomWhole'), zoomWidth: $('zoomWidth'),
     rulerToggle: $('rulerToggle'), navToggle: $('navToggle'), boundToggle: $('boundToggle'), editorMain: $('editorMain'), spreadToggle: $('spreadToggle'),
-    addText: $('addText'), addImage: $('addImage'), addTable: $('addTable'), addQr: $('addQr'),
+    addText: $('addText'), addImage: $('addImage'), addPicPlaceholder: $('addPicPlaceholder'), addTable: $('addTable'), addQr: $('addQr'),
     qrProps: $('qrProps'), qrUrl: $('qrUrl'), qrEcl: $('qrEcl'), qrFg: $('qrFg'),
     tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
     tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
@@ -724,6 +724,7 @@
     node.addEventListener('pointerdown', (ev) => onPointerDown(ev, e));
     if (e.kind === 'text') node.addEventListener('dblclick', () => editText(e));
     if (e.kind === 'table') node.addEventListener('dblclick', (ev) => editTableCell(e, ev));
+    if (e.kind === 'image') node.addEventListener('dblclick', () => pickImageFor(e));
     return node;
   }
   function applyElTf(e) { if (e._node) e._node.style.transform = `translate(${num(e.x, 0)}px,${num(e.y, 0)}px) rotate(${num(e.rot, 0)}deg) scale(${num(e.scale, 1)})`; }
@@ -1139,6 +1140,21 @@
   function addElement(e) { pushUndo(); curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }
   function addText() { addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2), scale: 1, rot: 0, z: 100, text: 'Your text', fontSize: 28, color: '#222222', align: 'left', w: 240 }); }
   function addImageFile(file) { const r = new FileReader(); r.onload = () => addElement({ group: 'el', id: uid++, kind: 'image', x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 80), scale: 1, rot: 0, z: 100, src: r.result, width: 160 }); r.readAsDataURL(file); }
+  // An empty picture frame — double-click it (or use Insert → Picture) to fill.
+  function addPicturePlaceholder() {
+    addElement({ group: 'el', id: uid++, kind: 'image', placeholder: true, x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2 - 70), scale: 1, rot: 0, z: 100, width: 200, h: 140 });
+  }
+  // Fill (or replace) an image element by picking a file from disk.
+  function pickImageFor(e) {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.addEventListener('change', () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { pushUndo(); e.src = r.result; e.placeholder = false; e._node.innerHTML = elHtml(e); requestAnimationFrame(drawSel); };
+      r.readAsDataURL(f);
+    });
+    inp.click();
+  }
   function addShape(shape) {
     const line = shape === 'line';
     const bubble = shape === 'speech' || shape === 'thought';
@@ -1202,10 +1218,10 @@
       host.appendChild(grid);
     });
   }
-  function buildTablePicker() {
-    const grid = document.getElementById('tablepickGrid');
-    const label = document.getElementById('tablepickLabel');
-    const more = document.getElementById('tablepickMore');
+  function buildTablePicker(gridId, labelId, moreId) {
+    const grid = document.getElementById(gridId || 'tablepickGrid');
+    const label = document.getElementById(labelId || 'tablepickLabel');
+    const more = document.getElementById(moreId || 'tablepickMore');
     if (!grid) return;
     const MAXR = 8, MAXC = 10;
     grid.style.gridTemplateColumns = `repeat(${MAXC}, 16px)`;
@@ -1233,11 +1249,15 @@
     });
   }
   function closeObjMenus() {
-    document.querySelectorAll('#tableDrop .rdrop-menu, #shapeDrop .rdrop-menu').forEach((m) => {
+    document.querySelectorAll('.rdrop-menu').forEach((m) => {
       m.hidden = true; const b = m.parentElement.querySelector('.rdrop-btn'); if (b) b.setAttribute('aria-expanded', 'false');
     });
   }
-  function buildObjectMenus() { buildShapeGallery(); buildTablePicker(); }
+  function buildObjectMenus() {
+    buildShapeGallery();
+    buildTablePicker('tablepickGrid', 'tablepickLabel', 'tablepickMore');
+    buildTablePicker('insTablepickGrid', 'insTablepickLabel', 'insTablepickMore');
+  }
 
   // --- QR codes ---
   // Encode a URL into a module matrix using the shared qrcode-generator lib
@@ -1637,7 +1657,7 @@
         text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w,
         fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline, lineHeight: e.lineHeight,
         textStroke: e.textStroke, textStrokeW: e.textStrokeW, textShadow: e.textShadow,
-        src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV,
+        src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV, placeholder: e.placeholder || undefined,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
         borderColor: e.borderColor, borderW: e.borderW, headerFill: e.headerFill, cellPad: e.cellPad,
@@ -2249,6 +2269,7 @@
     setupRibbon(); setupTheme(); buildObjectMenus();
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
+    if (el.addPicPlaceholder) el.addPicPlaceholder.addEventListener('click', addPicturePlaceholder);
     document.querySelectorAll('.shape-btn').forEach((b) => b.addEventListener('click', () => addShape(b.dataset.shape)));
     // Font: live update on input, commit an undo entry on change.
     el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));

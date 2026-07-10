@@ -207,6 +207,7 @@
         <div class="rgroup">
           <div class="rgroup-body">
             <label class="upload ghost">🖼 Picture<input id="addImage" type="file" accept="image/*" hidden></label>
+            <button id="addPicPlaceholder" class="ghost" title="Insert an empty picture frame — double-click it later to fill it">🖼⬚ Placeholder</button>
             <button id="aiArtBtn" class="ghost" title="Open the AI Art studio (ComfyUI) in a new tab">✨ AI Art</button>
             <span class="shape-mini">
               <button class="iconbtn shape-btn" data-shape="rect" title="Rectangle">▭</button>
@@ -235,7 +236,14 @@
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="addTable" class="ghost" title="Insert a table (edit cells by double-clicking)">▦ Table</button>
+            <span class="rdrop" id="insTableDrop">
+              <button class="ghost rdrop-btn" id="insTableDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a table">▦ Table&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu tablepick-menu" hidden>
+                <div class="tablepick-grid" id="insTablepickGrid"></div>
+                <div class="tablepick-label" id="insTablepickLabel">Insert Table</div>
+                <button type="button" class="tablepick-more" id="insTablepickMore">Insert Table…</button>
+              </div>
+            </span>
             <button id="addQr" class="ghost" title="Insert a QR code linking to a URL">▣ QR code</button>
           </div>
           <div class="rgroup-name">Tables &amp; codes</div>
