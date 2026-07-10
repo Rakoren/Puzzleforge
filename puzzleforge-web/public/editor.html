@@ -187,7 +187,8 @@
         </div>
       </section>
 
-      <!-- INSERT -->
+      <!-- INSERT (grouped like Publisher: Pages · Tables · Illustrations ·
+           Building Blocks · Text · Header & Footer) -->
       <section class="ribbon-panel" data-panel="insert">
         <div class="rgroup">
           <div class="rgroup-body">
@@ -203,6 +204,20 @@
             <button id="savePageTpl" class="ghost" title="Save this page's layout as a reusable template">Save as template…</button>
           </div>
           <div class="rgroup-name">Pages</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <span class="rdrop" id="insTableDrop">
+              <button class="ghost rdrop-btn" id="insTableDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a table">▦ Table&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu tablepick-menu" hidden>
+                <div class="tablepick-grid" id="insTablepickGrid"></div>
+                <div class="tablepick-label" id="insTablepickLabel">Insert Table</div>
+                <button type="button" class="tablepick-more" id="insTablepickMore">Insert Table…</button>
+              </div>
+            </span>
+            <button id="addQr" class="ghost" title="Insert a QR code linking to a URL">▣ QR code</button>
+          </div>
+          <div class="rgroup-name">Tables</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
@@ -222,11 +237,24 @@
           <div class="rgroup-name">Illustrations</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body">
+          <div class="rgroup-body wide">
             <span class="rdrop" id="pagePartsDrop">
               <button class="ghost rdrop-btn" id="pagePartsDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a pre-designed heading, pull quote, or sidebar">▤ Page Parts&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu shapegal-menu" id="pagePartsMenu" hidden></div>
             </span>
+            <span class="rdrop" id="accentDrop">
+              <button class="ghost rdrop-btn" id="accentDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a decorative accent bar">▬ Accent&nbsp;<span class="rdrop-caret">▾</span></button>
+              <div class="rdrop-menu" hidden>
+                <button type="button" data-act="line">— Thin line</button>
+                <button type="button" data-act="bar">▬ Slim bar</button>
+                <button type="button" data-act="thick">▮ Thick bar</button>
+                <button type="button" data-act="double">═ Double line</button>
+              </div>
+            </span>
+            <label class="field compact"><span>Page border</span>
+              <select id="border"><option value="">(book default)</option></select>
+            </label>
+            <button id="borderAll" class="ghost" title="Use this border on every page">Apply to all</button>
           </div>
           <div class="rgroup-name">Building Blocks</div>
         </div>
@@ -242,38 +270,6 @@
             <button id="insertDate" class="ghost" title="Insert today's date">📅 Date</button>
           </div>
           <div class="rgroup-name">Text</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <span class="rdrop" id="insTableDrop">
-              <button class="ghost rdrop-btn" id="insTableDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a table">▦ Table&nbsp;<span class="rdrop-caret">▾</span></button>
-              <div class="rdrop-menu tablepick-menu" hidden>
-                <div class="tablepick-grid" id="insTablepickGrid"></div>
-                <div class="tablepick-label" id="insTablepickLabel">Insert Table</div>
-                <button type="button" class="tablepick-more" id="insTablepickMore">Insert Table…</button>
-              </div>
-            </span>
-            <button id="addQr" class="ghost" title="Insert a QR code linking to a URL">▣ QR code</button>
-          </div>
-          <div class="rgroup-name">Tables &amp; codes</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body wide">
-            <label class="field compact"><span>Page border</span>
-              <select id="border"><option value="">(book default)</option></select>
-            </label>
-            <button id="borderAll" class="ghost" title="Use this border on every page">Apply to all</button>
-            <span class="rdrop" id="accentDrop">
-              <button class="ghost rdrop-btn" id="accentDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a decorative accent bar">▬ Accent&nbsp;<span class="rdrop-caret">▾</span></button>
-              <div class="rdrop-menu" hidden>
-                <button type="button" data-act="line">— Thin line</button>
-                <button type="button" data-act="bar">▬ Slim bar</button>
-                <button type="button" data-act="thick">▮ Thick bar</button>
-                <button type="button" data-act="double">═ Double line</button>
-              </div>
-            </span>
-          </div>
-          <div class="rgroup-name">Borders &amp; Accents</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
