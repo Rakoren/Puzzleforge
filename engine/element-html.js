@@ -25,7 +25,26 @@
     serif: "Georgia, 'Times New Roman', serif",
     mono: "'Courier New', Courier, monospace",
     hand: "'Comic Sans MS', 'Comic Sans', cursive",
+    rounded: 'Verdana, Geneva, sans-serif',
+    trebuchet: "'Trebuchet MS', 'Segoe UI', sans-serif",
+    tahoma: 'Tahoma, Geneva, sans-serif',
+    palatino: "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+    garamond: "Garamond, 'Times New Roman', serif",
+    century: "'Century Gothic', 'Gill Sans', sans-serif",
+    impact: 'Impact, Haettenschweiler, sans-serif',
+    brush: "'Brush Script MT', 'Segoe Script', cursive",
   };
+  // Resolve a fontFamily value to a CSS font stack. Custom uploaded fonts use
+  // `custom:<slug>` and render through an injected @font-face named
+  // `pf-custom-<slug>` (present in both the editor and the PDF export doc).
+  function fontStack(ff) {
+    const v = String(ff || '');
+    if (v.slice(0, 7) === 'custom:') {
+      const slug = v.slice(7).replace(/[^a-z0-9_-]/gi, '');
+      if (slug) return `'pf-custom-${slug}', Arial, sans-serif`;
+    }
+    return FONTS[v] || FONTS.sans;
+  }
 
   // 5-point star fitted to a w×h box, inset so the stroke isn't clipped.
   function starPoints(w, h, inset) { return nStarPoints(w, h, 5, 0.42, inset); }
@@ -94,7 +113,7 @@
     const header = !!e.header;
     const hFill = color(e.headerFill, '#f0f0f0');
     const fs = Math.max(6, num(e.fontSize, 15));
-    const fam = FONTS[e.fontFamily] || FONTS.sans;
+    const fam = fontStack(e.fontFamily);
     const col = color(e.color, '#222222');
     const align = ['left', 'center', 'right'].includes(e.align) ? e.align : 'left';
     let totalW = 0, cg = '<colgroup>';
@@ -269,7 +288,7 @@
     // text
     const css =
       `font-size:${num(e.fontSize, 24)}px;color:${color(e.color, '#222')};` +
-      `font-family:${FONTS[e.fontFamily] || FONTS.sans};` +
+      `font-family:${fontStack(e.fontFamily)};` +
       `font-weight:${e.bold ? 700 : 400};font-style:${e.italic ? 'italic' : 'normal'};` +
       `text-decoration:${e.underline ? 'underline' : 'none'};` +
       `text-align:${['left', 'center', 'right'].includes(e.align) ? e.align : 'left'};` +
@@ -294,5 +313,21 @@
     return `<a${attrs} style="text-decoration:none;color:inherit;display:block;">${inner}</a>`;
   }
 
-  return { elementHtml };
+  // Build @font-face CSS for uploaded custom fonts. Each entry is
+  // { family:'pf-custom-<slug>', dataUrl:'data:font/...;base64,...' }. Used by
+  // the export doc (server) and the live editor so custom fonts match on both.
+  // Only data: URLs are accepted, and the family is re-derived from the slug so
+  // an untrusted `family` can't inject arbitrary CSS.
+  function fontFaceCss(fonts) {
+    if (!Array.isArray(fonts)) return '';
+    return fonts.map((f) => {
+      const fam = String((f && f.family) || '');
+      const slug = fam.slice(0, 10) === 'pf-custom-' ? fam.slice(10).replace(/[^a-z0-9_-]/gi, '') : '';
+      const url = String((f && f.dataUrl) || '');
+      if (!slug || !/^data:[a-z0-9/+.-]+;base64,[a-z0-9+/=]+$/i.test(url)) return '';
+      return `@font-face{font-family:'pf-custom-${slug}';src:url(${url});font-display:swap;}`;
+    }).filter(Boolean).join('\n');
+  }
+
+  return { elementHtml, fontStack, fontFaceCss, FONTS };
 });

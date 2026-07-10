@@ -346,6 +346,7 @@ app.post('/api/book/pdf', async (req, res) => {
     let book = body.bookId && bookCache.get(body.bookId);
     if (!book) book = pf.assembleBook(body.config || {});
     if (body.master !== undefined) book.master = body.master;
+    book.customFonts = sanitizeCustomFonts(body.fonts);
     // The Page Editor sends live per-page state (decorations + per-page border)
     // to apply onto the cached (possibly rerolled) book before rendering. A
     // pagePlan additionally reorders / inserts blanks / deletes / duplicates.
@@ -482,6 +483,23 @@ function pagePlanRender(book, plan) {
   return { view, leaves };
 }
 
+// Sanitize the editor's uploaded custom fonts before they reach the PDF doc.
+// Only data: URLs and pf-custom-<slug> family names survive; the font-face CSS
+// is re-derived from the slug in the engine, so nothing here is trusted verbatim.
+function sanitizeCustomFonts(fonts) {
+  if (!Array.isArray(fonts)) return undefined;
+  const out = [];
+  for (const f of fonts.slice(0, 24)) {
+    const family = String((f && f.family) || '');
+    const dataUrl = String((f && f.dataUrl) || '');
+    if (!/^pf-custom-[a-z0-9_-]+$/i.test(family)) continue;
+    if (!/^data:[a-z0-9/+.-]+;base64,[a-z0-9+/=]+$/i.test(dataUrl)) continue;
+    if (dataUrl.length > 2_000_000) continue; // ~1.5MB font, generous
+    out.push({ family, dataUrl });
+  }
+  return out;
+}
+
 // Resolve a request into the FINAL book + leaf order to render. Honors the
 // editor's pagePlan (hand arrangement + templates) so pre-flight checks,
 // royalty, and the export package all reflect exactly what will print.
@@ -491,6 +509,7 @@ function resolveBook(body) {
   // The editor sends the live master-page overlay separately so it applies even
   // to a cached book (bookId) whose config predates the master.
   if (body.master !== undefined) book.master = body.master;
+  book.customFonts = sanitizeCustomFonts(body.fonts);
   let leaves;
   if (Array.isArray(body.pagePlan)) { const r = pagePlanRender(book, body.pagePlan); book = r.view; leaves = r.leaves; }
   else if (Array.isArray(body.pageState)) applyPageState(book, body.pageState);

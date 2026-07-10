@@ -18,6 +18,7 @@ const { getLayout } = require('../layouts');
 const { frameSvg } = require('./decor');
 const difficulty = require('../config/difficulty');
 const { composePage, splitHtml, composeParts } = require('./components');
+const { fontFaceCss } = require('./element-html');
 const {
   renderTitlePage,
   renderCopyrightPage,
@@ -274,6 +275,7 @@ function combinePages(htmlDocs, opts = {}) {
     ` font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 11px; color: #666; }`;
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
+  ${opts.fontFaces || ''}
   ${pageRule}
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -440,9 +442,10 @@ function renderBookHtml(book, leaves) {
     footers.push(numbered && leafNumbered(leaf) ? `${prefix}${++n}` : null);
   });
 
+  const fontFaces = fontFaceCss(book.customFonts);
   return numbered
-    ? combinePages(docs, { footers, pageHeight: layout.usableHeight })
-    : combinePages(docs);
+    ? combinePages(docs, { footers, pageHeight: layout.usableHeight, fontFaces })
+    : combinePages(docs, { fontFaces });
 }
 
 function escFooter(s) {

@@ -539,6 +539,15 @@ body.theme-dark {
 .theme-dark .pf-tplchg-thumb { background: #f4f5f8; border-color: #3a3d44; }
 .theme-dark .pf-tplchg-del { background: #34373d; border-color: var(--line); color: var(--muted); }
 
+/* Page Design → Fonts group */
+.font-actions { display: flex; gap: 5px; margin-top: 4px; }
+#customFontMenu { min-width: 190px; max-height: 260px; overflow: auto; padding: 4px; }
+.font-menu-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px; }
+.font-menu-row > button { width: auto; }
+.font-menu-row > button:first-child { min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.font-menu-del { width: 22px; color: var(--muted); }
+.font-menu-del:hover { color: #c0392b; }
+
 /* Publish modal */
 .pf-pub { width: min(640px, 100%); }
 .pf-pub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

@@ -67,6 +67,7 @@
     changeTplBuiltin: $('changeTplBuiltin'), changeTplSaved: $('changeTplSaved'),
     changeTplSavedCount: $('changeTplSavedCount'), changeTplSavedEmpty: $('changeTplSavedEmpty'),
     changeTplPageName: $('changeTplPageName'),
+    pageFont: $('pageFont'), fontUpload: $('fontUpload'),
     puzModal: $('puzModal'), puzClose: $('puzClose'), puzType: $('puzType'), puzTheme: $('puzTheme'),
     puzAudience: $('puzAudience'), puzDiff: $('puzDiff'), puzColorRow: $('puzColorRow'), puzColorStyle: $('puzColorStyle'),
     puzCount: $('puzCount'), puzInsert: $('puzInsert'), puzStatus: $('puzStatus'),
@@ -620,6 +621,104 @@
     setStatus(`Applied “${t.name}” to this page.`, 'ok');
   }
 
+  // --- Fonts: built-in stacks + uploaded custom fonts ------------------------
+  // Values mirror the FONTS map in engine/element-html.js so a font renders the
+  // same on screen and in the exported PDF. Custom fonts use `custom:<id>`.
+  const FONT_LIST = [
+    { v: 'sans', label: 'Sans (Arial)' }, { v: 'serif', label: 'Serif (Georgia)' },
+    { v: 'rounded', label: 'Rounded (Verdana)' }, { v: 'trebuchet', label: 'Trebuchet MS' },
+    { v: 'tahoma', label: 'Tahoma' }, { v: 'century', label: 'Century Gothic' },
+    { v: 'palatino', label: 'Palatino' }, { v: 'garamond', label: 'Garamond' },
+    { v: 'mono', label: 'Mono (Courier)' }, { v: 'hand', label: 'Handwritten' },
+    { v: 'brush', label: 'Brush Script' }, { v: 'impact', label: 'Impact' },
+  ];
+  const FONT_MIME = { ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', woff2: 'font/woff2' };
+  function loadCustomFonts() { try { return JSON.parse(localStorage.getItem('pf_fonts') || '[]'); } catch (_) { return []; } }
+  function saveCustomFonts(l) { try { localStorage.setItem('pf_fonts', JSON.stringify(l)); return true; } catch (_) { setStatus('Could not save the font — browser storage is full.', 'err'); return false; } }
+  function fontSlug(name) { return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32); }
+  // Custom fonts formatted for the shared @font-face builder / PDF send.
+  function customFontsForSend() { return loadCustomFonts().map((f) => ({ family: 'pf-custom-' + f.id, dataUrl: f.dataUrl })); }
+  // Only the custom fonts actually used by a text object anywhere in the book —
+  // keeps export payloads lean (font data URLs are large).
+  function usedCustomFontsForSend() {
+    const used = new Set();
+    pageModels.forEach((pm) => (pm.elements || []).forEach((e) => { if (e.kind === 'text' && String(e.fontFamily || '').slice(0, 7) === 'custom:') used.add(e.fontFamily.slice(7)); }));
+    return loadCustomFonts().filter((f) => used.has(f.id)).map((f) => ({ family: 'pf-custom-' + f.id, dataUrl: f.dataUrl }));
+  }
+  // Keep a <style> in <head> with @font-face rules for every uploaded font so
+  // the live editor renders them (the PDF export gets the same rules server-side).
+  function injectCustomFontFaces() {
+    let st = document.getElementById('pf-custom-fonts');
+    if (!st) { st = document.createElement('style'); st.id = 'pf-custom-fonts'; document.head.appendChild(st); }
+    st.textContent = (window.PFElements && PFElements.fontFaceCss) ? PFElements.fontFaceCss(customFontsForSend()) : '';
+  }
+  function fontOptionsHtml() {
+    let opts = FONT_LIST.map((f) => `<option value="${f.v}">${escHtml(f.label)}</option>`).join('');
+    const custom = loadCustomFonts();
+    if (custom.length) opts += `<optgroup label="Your fonts">${custom.map((f) => `<option value="custom:${escHtml(f.id)}">${escHtml(f.name)}</option>`).join('')}</optgroup>`;
+    return opts;
+  }
+  function refreshFontSelects() {
+    if (el.fontFamily) { const c = el.fontFamily.value; el.fontFamily.innerHTML = fontOptionsHtml(); if (c) el.fontFamily.value = c; }
+    if (el.pageFont) { const c = el.pageFont.value; el.pageFont.innerHTML = `<option value="">— page font —</option>${fontOptionsHtml()}`; el.pageFont.value = c || ''; }
+    buildCustomFontMenu();
+  }
+  function buildCustomFontMenu() {
+    const host = document.getElementById('customFontMenu'); if (!host) return;
+    host.innerHTML = '';
+    const custom = loadCustomFonts();
+    if (!custom.length) { const p = document.createElement('div'); p.className = 'shapegal-cat'; p.textContent = 'No uploaded fonts yet'; host.appendChild(p); return; }
+    custom.forEach((f) => {
+      const row = document.createElement('div'); row.className = 'font-menu-row';
+      const use = document.createElement('button'); use.type = 'button'; use.textContent = f.name;
+      use.style.fontFamily = `'pf-custom-${f.id}', sans-serif`;
+      use.addEventListener('click', () => applyPageFont('custom:' + f.id));
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'font-menu-del'; del.textContent = '✕'; del.title = 'Remove font';
+      del.addEventListener('click', (e) => { e.stopPropagation(); removeCustomFont(f.id); });
+      row.appendChild(use); row.appendChild(del); host.appendChild(row);
+    });
+  }
+  function onFontUpload(input) {
+    const file = input && input.files && input.files[0]; if (!file) return;
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!FONT_MIME[ext]) { setStatus('Pick a .ttf, .otf, .woff, or .woff2 font file.', 'err'); input.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const b64 = String(reader.result || '').split(',')[1] || '';
+      if (!b64) { setStatus('Could not read that font file.', 'err'); return; }
+      const dataUrl = `data:${FONT_MIME[ext]};base64,${b64}`;
+      const name = file.name.replace(/\.[^.]+$/, '');
+      const list = loadCustomFonts();
+      let id = fontSlug(name) || ('f' + Date.now().toString(36));
+      while (list.some((f) => f.id === id)) id += '-2';
+      list.push({ id, name, dataUrl });
+      if (!saveCustomFonts(list)) return;
+      injectCustomFontFaces(); refreshFontSelects();
+      if (el.pageFont) el.pageFont.value = 'custom:' + id;
+      applyPageFont('custom:' + id);
+      setStatus(`Added font “${name}”.`, 'ok');
+    };
+    reader.onerror = () => setStatus('Could not read that font file.', 'err');
+    reader.readAsDataURL(file); input.value = '';
+  }
+  function removeCustomFont(id) {
+    saveCustomFonts(loadCustomFonts().filter((f) => f.id !== id));
+    injectCustomFontFaces(); refreshFontSelects();
+    setStatus('Removed font.', 'ok');
+  }
+  // Set the default font for every text object on the current page.
+  function applyPageFont(v) {
+    if (!v) return;
+    const pm = curModel(); if (!pm) return;
+    pushUndo();
+    pm._font = v;
+    (pm.elements || []).forEach((e) => { if (e.kind === 'text') e.fontFamily = v; });
+    renderPage();
+    if (el.pageFont) el.pageFont.value = v;
+    const label = v.slice(0, 7) === 'custom:' ? (loadCustomFonts().find((f) => 'custom:' + f.id === v) || {}).name || 'custom' : (FONT_LIST.find((f) => f.v === v) || {}).label || v;
+    setStatus(`Page font set to ${label}.`, 'ok');
+  }
+
   // --- Insert a freshly generated puzzle page ---
   const PUZ_LABELS = { wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku', maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble', crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia', logicgrid: 'Logic Grid', wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', coloring: 'Coloring', drawing: 'Drawing' };
   let puzTypesLoaded = false;
@@ -845,7 +944,7 @@
     renderBorderFrame(pm);
     gridEl = document.createElement('div'); gridEl.className = 'pf-grid-overlay'; gridEl.style.display = el.gridToggle.checked ? '' : 'none'; el.stageInner.appendChild(gridEl);
 
-    el.border.value = pm._border || ''; applyZoom();
+    el.border.value = pm._border || ''; if (el.pageFont) el.pageFont.value = pm._font || ''; applyZoom();
     // Matter pages need their true page positions before creating pieces.
     if (matter && pm.comps.length && !pm._measured) measureMatterBases(pm);
 
@@ -1320,7 +1419,7 @@
   function toggleLock() { const o = sels.length === 1 && sels[0]; if (!o) return; pushUndo(); o.locked = !o.locked; syncSelUI(); }
 
   function addElement(e) { pushUndo(); curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }
-  function addText() { addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2), scale: 1, rot: 0, z: 100, text: 'Your text', fontSize: 28, color: '#222222', align: 'left', w: 240 }); }
+  function addText() { const pm = curModel(); addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2), scale: 1, rot: 0, z: 100, text: 'Your text', fontSize: 28, color: '#222222', align: 'left', w: 240, fontFamily: (pm && pm._font) || 'sans' }); }
   function addImageFile(file) { const r = new FileReader(); r.onload = () => addElement({ group: 'el', id: uid++, kind: 'image', x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 80), scale: 1, rot: 0, z: 100, src: r.result, width: 160 }); r.readAsDataURL(file); }
   // An empty picture frame — double-click it (or use Insert → Picture) to fill.
   function addPicturePlaceholder() {
@@ -2052,7 +2151,7 @@
   }
   async function exportPdf() {
     setStatus('Rendering PDF…', 'busy'); el.exportPdf.disabled = true;
-    try { const body = { ...(bookId ? { bookId } : { config: bookConfig }), pagePlan: buildPagePlan(), master: masterForSend() };
+    try { const body = { ...(bookId ? { bookId } : { config: bookConfig }), pagePlan: buildPagePlan(), master: masterForSend(), fonts: usedCustomFontsForSend() };
       const res = await fetch('/api/book/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Export failed'); }
       downloadBlob(await res.blob(), slug((bookConfig && bookConfig.title) || 'book') + '.pdf'); setStatus('PDF exported.', 'ok');
@@ -2061,7 +2160,7 @@
   function downloadBlob(blob, name) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
   // --- Publish flow (pre-flight + KDP package) ------------------------------
-  const bookBody = () => ({ ...(bookId ? { bookId } : { config: bookConfig }), pagePlan: buildPagePlan(), master: masterForSend() });
+  const bookBody = () => ({ ...(bookId ? { bookId } : { config: bookConfig }), pagePlan: buildPagePlan(), master: masterForSend(), fonts: usedCustomFontsForSend() });
   function openPublish() { if (el.main.hidden) return; refreshCoverState(); el.pubModal.hidden = false; }
   function closePublish() { el.pubModal.hidden = true; }
   const bookTitle = () => (bookConfig && bookConfig.title) || '';
@@ -2572,6 +2671,9 @@
 
   function init() {
     setupRibbon(); setupTheme(); buildObjectMenus();
+    injectCustomFontFaces(); refreshFontSelects();
+    if (el.pageFont) el.pageFont.addEventListener('change', () => applyPageFont(el.pageFont.value));
+    if (el.fontUpload) el.fontUpload.addEventListener('change', () => onFontUpload(el.fontUpload));
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
     if (el.addPicPlaceholder) el.addPicPlaceholder.addEventListener('click', addPicturePlaceholder);

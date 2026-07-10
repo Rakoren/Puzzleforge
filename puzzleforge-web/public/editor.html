@@ -354,6 +354,19 @@
         </div>
         <div class="rgroup">
           <div class="rgroup-body col">
+            <select id="pageFont" class="mini" title="Set the font for all text on this page"></select>
+            <span class="font-actions">
+              <label class="upload ghost" title="Upload a font file (.ttf, .otf, .woff, .woff2)">⬆ Upload font<input id="fontUpload" type="file" accept=".ttf,.otf,.woff,.woff2,font/*" hidden></label>
+              <span class="rdrop" id="customFontDrop">
+                <button class="ghost rdrop-btn" id="customFontDropBtn" aria-haspopup="true" aria-expanded="false" title="Your uploaded fonts">🔤 My Fonts&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" id="customFontMenu" hidden></div>
+              </span>
+            </span>
+          </div>
+          <div class="rgroup-name">Fonts</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body col">
             <label class="checkbox"><input type="checkbox" id="masterEnabled" checked> Show master on pages</label>
             <button id="editMasterBtn" class="ghost" title="Edit the master overlay (page numbers, headers, frames)">✎ Edit Master Page</button>
             <button id="insertPageNo" class="ghost" title="Add an auto page-number field to the master">#️⃣ Page Number field</button>
