@@ -42,6 +42,7 @@
     trimInfo: $('trimInfo'), marginGuide: $('marginGuide'), renamePage: $('renamePage'), delPage: $('delPage'),
     movePageUp: $('movePageUp'), movePageDown: $('movePageDown'), schemeGallery: $('schemeGallery'),
     masterEnabled: $('masterEnabled'), editMasterBtn: $('editMasterBtn'), insertPageNo: $('insertPageNo'),
+    insHeader: $('insHeader'), insFooter: $('insFooter'),
     masterApplyTo: $('masterApplyTo'), masterSkip: $('masterSkip'), masterStart: $('masterStart'),
     masterBanner: $('masterBanner'), exitMasterBtn: $('exitMasterBtn'),
     revSpelling: $('revSpelling'), revThesaurus: $('revThesaurus'), revWordCount: $('revWordCount'), revLanguage: $('revLanguage'),
@@ -334,6 +335,8 @@
     } else if (dropId === 'wrapDrop') {
       if (act === 'wfront') reorder('front');
       else if (act === 'wbehind') reorder('back');
+    } else if (dropId === 'pageNoDrop') {
+      insertPageNumber(act);
     }
   }
 
@@ -1344,12 +1347,35 @@
     setStatus('Back to the book. The master overlay shows on every page in scope.', 'ok');
   }
   const toggleMaster = () => (masterMode ? exitMaster() : enterMaster());
-  function insertPageNumber() {
+  // Position within the page margins for a header/footer/page-number field.
+  // `pos` is a two-letter code: [t|b][l|c|r] (top/bottom × left/center/right).
+  function marginPos(pos) {
+    const code = typeof pos === 'string' ? pos : 'bc';
+    const top = code[0] === 't';
+    const col = code[1];
+    const w = 140;
+    const y = top ? 22 : Math.round(dims.usableHeight - 34);
+    let x, align;
+    if (col === 'l') { x = 0; align = 'left'; }
+    else if (col === 'r') { x = Math.round(dims.usableWidth - w); align = 'right'; }
+    else { x = Math.round(dims.usableWidth / 2 - w / 2); align = 'center'; }
+    return { x, y, w, align };
+  }
+  function insertPageNumber(pos) {
     if (!masterMode) enterMaster();
+    const p = marginPos(pos || 'bc');
     addElement({ group: 'el', id: uid++, kind: 'text', field: 'pageNumber', text: '#',
-      x: Math.round(dims.usableWidth / 2 - 10), y: Math.round(dims.usableHeight - 40),
-      scale: 1, rot: 0, z: 200, fontSize: 13, color: '#333333', align: 'center', w: 40, fontFamily: 'sans' });
-    setStatus('Page-number field added — it becomes each page’s number. Position it where you want the number to print.', 'ok');
+      x: p.x, y: p.y, scale: 1, rot: 0, z: 200, fontSize: 13, color: '#333333', align: p.align, w: p.w, fontFamily: 'sans' });
+    setStatus('Page-number field added to the master — it prints each page’s number. Move it where you want.', 'ok');
+  }
+  // A repeating header/footer lives on the master page (edits enter master mode).
+  function addMasterText(which) {
+    if (!masterMode) enterMaster();
+    const footer = which === 'footer';
+    const p = marginPos(footer ? 'bc' : 'tc');
+    addElement({ group: 'el', id: uid++, kind: 'text', text: footer ? 'Footer' : 'Header',
+      x: 0, y: p.y, scale: 1, rot: 0, z: 190, fontSize: 13, color: '#555555', align: 'center', w: dims.usableWidth, fontFamily: 'sans' });
+    setStatus(`${footer ? 'Footer' : 'Header'} added to the master — it repeats on every page. Double-click to edit the text.`, 'ok');
   }
   function syncMasterScopeUI() {
     if (el.masterApplyTo) el.masterApplyTo.value = master.applyTo || 'all';
@@ -2270,6 +2296,8 @@
     el.addText.addEventListener('click', addText);
     el.addImage.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
     if (el.addPicPlaceholder) el.addPicPlaceholder.addEventListener('click', addPicturePlaceholder);
+    if (el.insHeader) el.insHeader.addEventListener('click', () => addMasterText('header'));
+    if (el.insFooter) el.insFooter.addEventListener('click', () => addMasterText('footer'));
     document.querySelectorAll('.shape-btn').forEach((b) => b.addEventListener('click', () => addShape(b.dataset.shape)));
     // Font: live update on input, commit an undo entry on change.
     el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));
