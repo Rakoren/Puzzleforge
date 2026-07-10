@@ -436,14 +436,18 @@
   }
 
   // --- Insert a freshly generated puzzle page ---
-  const PUZ_LABELS = { wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku', maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble', crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia', coloring: 'Coloring', drawing: 'Drawing' };
+  const PUZ_LABELS = { wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku', maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble', crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia', logicgrid: 'Logic Grid', wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', coloring: 'Coloring', drawing: 'Drawing' };
   let puzTypesLoaded = false;
   async function loadPuzzleTypes() {
     if (puzTypesLoaded || !el.puzType) return;
     try {
       const meta = await (await fetch('/api/meta')).json();
+      // bleedguard = the blank filler (its own menu item); breather = an
+      // auto-inserted kids rest page. Neither is a user-selectable page.
+      const HIDDEN = new Set(['bleedguard', 'breather']);
       (meta.types || []).forEach((t) => {
         const id = typeof t === 'string' ? t : t.id;
+        if (HIDDEN.has(id)) return;
         const label = (typeof t === 'object' && t.label) || PUZ_LABELS[id] || id;
         const o = document.createElement('option'); o.value = id; o.textContent = label; el.puzType.appendChild(o);
       });

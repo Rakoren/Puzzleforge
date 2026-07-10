@@ -124,6 +124,7 @@
 
       const type = document.createElement('select');
       for (const t of meta.types) {
+        if (t === 'bleedguard' || t === 'breather') continue; // internal fillers
         const o = document.createElement('option');
         o.value = t;
         o.textContent = TYPE_NAMES[t] || t;
