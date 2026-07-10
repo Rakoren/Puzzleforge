@@ -26,6 +26,10 @@ const app = express();
 // Larger limit so the Cover Builder can accept a full-bleed front image as a data URL.
 app.use(express.json({ limit: '16mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Browsers auto-request /favicon.ico; serve the SVG brand mark so it doesn't 404.
+app.get('/favicon.ico', (req, res) => {
+  res.type('image/svg+xml').sendFile(path.join(__dirname, 'public', 'favicon.svg'));
+});
 // The engine's element renderer is shared with the editor so on-screen objects
 // and exported PDF pixels match exactly.
 app.get('/element-html.js', (req, res) => {
