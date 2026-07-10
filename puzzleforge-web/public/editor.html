@@ -53,15 +53,17 @@
       <section class="ribbon-panel active" data-panel="home">
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="cutBtn" class="ghost">✂ Cut</button>
-            <button id="copyBtn" class="ghost">⧉ Copy</button>
-            <button id="pasteBtn" class="ghost">📋 Paste</button>
-            <button id="fmtPainter" class="ghost" title="Format Painter — copy this object's look, then click another to apply it">🖌 Painter</button>
+            <button id="pasteBtn" class="rbig" title="Paste (Ctrl+V)"><span class="rbig-ico">📋</span>Paste</button>
+            <span class="rmini-col">
+              <button id="cutBtn" class="rmini" title="Cut (Ctrl+X)"><span class="rmini-ico">✂</span>Cut</button>
+              <button id="copyBtn" class="rmini" title="Copy (Ctrl+C)"><span class="rmini-ico">⧉</span>Copy</button>
+              <button id="fmtPainter" class="rmini" title="Format Painter — copy this object's look, then click another to apply it"><span class="rmini-ico">🖌</span>Format Painter</button>
+            </span>
           </div>
           <div class="rgroup-name">Clipboard</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body">
+          <div class="rgroup-body font-body">
             <select id="fontFamily" class="mini" title="Font">
               <option value="sans">Sans</option>
               <option value="serif">Serif</option>
@@ -81,7 +83,7 @@
           <div class="rgroup-name">Font</div>
         </div>
         <div class="rgroup">
-          <div class="rgroup-body">
+          <div class="rgroup-body para-body">
             <button class="iconbtn palign" data-align="left" title="Align left">⯇</button>
             <button class="iconbtn palign" data-align="center" title="Center">≡</button>
             <button class="iconbtn palign" data-align="right" title="Align right">⯈</button>
@@ -97,10 +99,10 @@
         </div>
         <div class="rgroup">
           <div class="rgroup-body objects-body">
-            <button id="hAddText" class="ghost objbtn" title="Draw a text box"><span class="objbtn-ico">🄰</span>Text</button>
-            <label class="upload ghost objbtn" title="Insert a picture from your device"><span class="objbtn-ico">🖼</span>Pictures<input id="hAddImage" type="file" accept="image/*" hidden></label>
+            <button id="hAddText" class="rbig" title="Draw a text box"><span class="rbig-ico">🄰</span>Text</button>
+            <label class="upload rbig" title="Insert a picture from your device"><span class="rbig-ico">🖼</span>Pictures<input id="hAddImage" type="file" accept="image/*" hidden></label>
             <span class="rdrop" id="tableDrop">
-              <button class="ghost objbtn rdrop-btn" id="tableDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a table"><span class="objbtn-ico">▦</span>Table&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="tableDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a table"><span class="rbig-ico">▦</span>Table&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu tablepick-menu" hidden>
                 <div class="tablepick-grid" id="tablepickGrid"></div>
                 <div class="tablepick-label" id="tablepickLabel">Insert Table</div>
@@ -108,7 +110,7 @@
               </div>
             </span>
             <span class="rdrop" id="shapeDrop">
-              <button class="ghost objbtn rdrop-btn" id="shapeDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a shape"><span class="objbtn-ico">⬠</span>Shapes&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="shapeDropBtn" aria-haspopup="true" aria-expanded="false" title="Insert a shape"><span class="rbig-ico">⬠</span>Shapes&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu shapegal-menu" id="shapeGallery" hidden></div>
             </span>
           </div>
@@ -116,63 +118,69 @@
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="hForward" class="ghost">Bring forward</button>
-            <button id="hBackward" class="ghost">Send back</button>
-            <button id="hGroup" class="ghost">Group</button>
-            <button id="hUngroup" class="ghost">Ungroup</button>
             <span class="rdrop" id="wrapDrop">
-              <button class="ghost rdrop-btn" id="wrapDropBtn" aria-haspopup="true" aria-expanded="false" title="How this object layers with the puzzle & text">◲ Wrap Text&nbsp;<span class="rdrop-caret">▾</span></button>
+              <button class="rbig rdrop-btn" id="wrapDropBtn" aria-haspopup="true" aria-expanded="false" title="How this object layers with the puzzle & text"><span class="rbig-ico">◲</span>Wrap&nbsp;Text&nbsp;<span class="rdrop-caret">▾</span></button>
               <div class="rdrop-menu" hidden>
                 <button type="button" data-act="wfront">▤ In Front of Puzzle</button>
                 <button type="button" data-act="wbehind">▥ Behind Puzzle</button>
               </div>
             </span>
-            <span class="rdrop" id="alignDrop">
-              <button class="ghost rdrop-btn" id="alignDropBtn" aria-haspopup="true" aria-expanded="false" title="Align or distribute the selection">⯐ Align&nbsp;<span class="rdrop-caret">▾</span></button>
-              <div class="rdrop-menu" hidden>
-                <button type="button" data-act="aleft">⯇ Align Left</button>
-                <button type="button" data-act="acenter">≡ Align Center</button>
-                <button type="button" data-act="aright">⯈ Align Right</button>
-                <button type="button" data-act="atop">⤒ Align Top</button>
-                <button type="button" data-act="amiddle">⇕ Align Middle</button>
-                <button type="button" data-act="abottom">⤓ Align Bottom</button>
-                <button type="button" data-act="disth">⇿ Distribute Horizontally</button>
-                <button type="button" data-act="distv">⇳ Distribute Vertically</button>
-              </div>
-            </span>
-            <span class="rdrop" id="rotateDrop">
-              <button class="ghost rdrop-btn" id="rotateDropBtn" aria-haspopup="true" aria-expanded="false" title="Rotate or flip the selection">⟳ Rotate&nbsp;<span class="rdrop-caret">▾</span></button>
-              <div class="rdrop-menu" hidden>
-                <button type="button" data-act="rright">⟳ Rotate Right 90°</button>
-                <button type="button" data-act="rleft">⟲ Rotate Left 90°</button>
-                <button type="button" data-act="flipv">⇅ Flip Vertical</button>
-                <button type="button" data-act="fliph">⇆ Flip Horizontal</button>
-                <button type="button" data-act="free">⌖ Free Rotate…</button>
-              </div>
+            <span class="rmini-grid">
+              <button id="hForward" class="rmini" title="Bring forward"><span class="rmini-ico">⭱</span>Bring Forward</button>
+              <button id="hBackward" class="rmini" title="Send back"><span class="rmini-ico">⭳</span>Send Backward</button>
+              <span class="rdrop" id="alignDrop">
+                <button class="rmini rdrop-btn" id="alignDropBtn" aria-haspopup="true" aria-expanded="false" title="Align or distribute the selection"><span class="rmini-ico">⯐</span>Align&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="aleft">⯇ Align Left</button>
+                  <button type="button" data-act="acenter">≡ Align Center</button>
+                  <button type="button" data-act="aright">⯈ Align Right</button>
+                  <button type="button" data-act="atop">⤒ Align Top</button>
+                  <button type="button" data-act="amiddle">⇕ Align Middle</button>
+                  <button type="button" data-act="abottom">⤓ Align Bottom</button>
+                  <button type="button" data-act="disth">⇿ Distribute Horizontally</button>
+                  <button type="button" data-act="distv">⇳ Distribute Vertically</button>
+                </div>
+              </span>
+              <button id="hGroup" class="rmini" title="Group"><span class="rmini-ico">⊞</span>Group</button>
+              <button id="hUngroup" class="rmini" title="Ungroup"><span class="rmini-ico">⊟</span>Ungroup</button>
+              <span class="rdrop" id="rotateDrop">
+                <button class="rmini rdrop-btn" id="rotateDropBtn" aria-haspopup="true" aria-expanded="false" title="Rotate or flip the selection"><span class="rmini-ico">⟳</span>Rotate&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="rright">⟳ Rotate Right 90°</button>
+                  <button type="button" data-act="rleft">⟲ Rotate Left 90°</button>
+                  <button type="button" data-act="flipv">⇅ Flip Vertical</button>
+                  <button type="button" data-act="fliph">⇆ Flip Horizontal</button>
+                  <button type="button" data-act="free">⌖ Free Rotate…</button>
+                </div>
+              </span>
             </span>
           </div>
           <div class="rgroup-name">Arrange</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="findReplaceBtn" class="ghost">🔍 Find &amp; Replace</button>
-            <button id="selectAllBtn" class="ghost">Select all</button>
+            <span class="rmini-col">
+              <button id="findReplaceBtn" class="rmini" title="Find &amp; Replace (Ctrl+F)"><span class="rmini-ico">🔍</span>Find &amp; Replace</button>
+              <button id="selectAllBtn" class="rmini" title="Select all (Ctrl+A)"><span class="rmini-ico">▣</span>Select All</button>
+            </span>
           </div>
           <div class="rgroup-name">Editing</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="breakApartBtn" class="ghost" title="Turn the puzzle's title & word list into editable text objects (the grid stays protected)">✂ Break apart puzzle</button>
+            <button id="breakApartBtn" class="rbig" title="Turn the puzzle's title & word list into editable text objects (the grid stays protected)"><span class="rbig-ico">✂</span>Break&nbsp;Apart</button>
           </div>
           <div class="rgroup-name">Puzzle</div>
         </div>
         <div class="rgroup">
           <div class="rgroup-body">
-            <button id="dupObj" class="ghost">⧉ Duplicate</button>
-            <button id="deleteObj" class="ghost del">🗑 Delete</button>
-            <button id="lockObj" class="ghost">🔒 Lock</button>
-            <button id="reroll" class="ghost">🎲 Reroll</button>
-            <button id="resetLayout" class="ghost">⟲ Reset</button>
+            <span class="rmini-grid">
+              <button id="dupObj" class="rmini" title="Duplicate (Ctrl+D)"><span class="rmini-ico">⧉</span>Duplicate</button>
+              <button id="deleteObj" class="rmini del" title="Delete"><span class="rmini-ico">🗑</span>Delete</button>
+              <button id="lockObj" class="rmini" title="Lock / unlock"><span class="rmini-ico">🔒</span>Lock</button>
+              <button id="reroll" class="rmini" title="Reroll this puzzle"><span class="rmini-ico">🎲</span>Reroll</button>
+              <button id="resetLayout" class="rmini" title="Reset the page layout"><span class="rmini-ico">⟲</span>Reset</button>
+            </span>
           </div>
           <div class="rgroup-name">Page</div>
         </div>

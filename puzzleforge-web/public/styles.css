@@ -286,7 +286,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .ribbon-panel.active { display: flex; }
 .ribbon-inline { display: flex; }
 
-.rgroup { display: flex; flex-direction: column; padding: 2px 12px; border-right: 1px solid var(--line); }
+.rgroup { display: flex; flex-direction: column; padding: 2px 7px; border-right: 1px solid var(--line); }
 .rgroup:last-child { border-right: none; }
 .rgroup-body { display: flex; align-items: center; gap: 6px; flex: 1; flex-wrap: wrap; }
 .rgroup-body.col { flex-direction: column; align-items: flex-start; gap: 5px; }
@@ -305,8 +305,46 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .ribbon .mini-color { width: 34px; height: 28px; padding: 2px; }
 .qa-sep { width: 1px; align-self: stretch; background: var(--line); margin: 4px 4px; }
 .shape-mini { display: inline-flex; gap: 3px; }
-.palign.on, .ghost.on, .fmtPainter.on { background: #eef1fe; border-color: var(--brand); color: var(--brand); }
-.theme-dark .palign.on, .theme-dark .ghost.on { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
+.palign.on, .ghost.on, .iconbtn.on, .fmtPainter.on { background: #eef1fe; border-color: var(--brand); color: var(--brand); }
+.theme-dark .palign.on, .theme-dark .ghost.on, .theme-dark .iconbtn.on { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
+
+/* --- MS-Publisher-style ribbon buttons ---------------------------------
+   Flat (no pill border until hover). Two kinds:
+   • .rbig  — large, icon on top / label below (Paste, Objects, Wrap Text…)
+   • .rmini — small, icon left / label right; stacked 3-per-column so a group
+     stays narrow while keeping its labels. */
+.ribbon .rbig, .ribbon .rmini {
+  border: 1px solid transparent; border-radius: 5px; background: transparent;
+  color: var(--ink); cursor: pointer; white-space: nowrap; line-height: 1.15;
+  font-family: inherit;
+}
+.ribbon .rbig:hover, .ribbon .rmini:hover { background: #eef1fe; border-color: #dbe3ff; }
+.ribbon .rbig { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  min-width: 50px; max-width: 82px; min-height: 60px; padding: 4px 8px; font-size: 11px; text-align: center; }
+.ribbon .rbig .rbig-ico { font-size: 22px; line-height: 1; }
+.ribbon .rmini { display: inline-flex; align-items: center; gap: 6px; padding: 3px 7px; font-size: 12px; text-align: left; }
+.ribbon .rmini .rmini-ico { width: 16px; flex: none; text-align: center; font-size: 13px; }
+.ribbon .rmini.del { color: #c92a2a; }
+.ribbon .rbig .rdrop-caret, .ribbon .rmini .rdrop-caret { font-size: 9px; margin-left: 1px; }
+/* Small commands stacked in a column (Clipboard, Editing) or a 3-row grid
+   that fills column-first (Arrange, Page). */
+.ribbon .rmini-col { display: inline-flex; flex-direction: column; gap: 2px; justify-content: center; }
+.ribbon .rmini-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(3, auto); gap: 2px 8px; align-content: center; }
+.ribbon .rmini-grid .rdrop { display: flex; }
+.ribbon .rmini-grid .rdrop .rmini, .ribbon .rmini-grid > .rmini { width: 100%; }
+.ribbon .rbig.on, .ribbon .rmini.on { background: #eef1fe; border-color: var(--brand); color: var(--brand); }
+.theme-dark .ribbon .rbig:hover, .theme-dark .ribbon .rmini:hover { background: #2f3b57; border-color: #3d4a63; }
+.theme-dark .ribbon .rbig.on, .theme-dark .ribbon .rmini.on { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
+/* Flatten the Font/Paragraph toggle buttons to match (leave gallery icons alone). */
+.ribbon .iconbtn:not(.shape-btn) { background: transparent; border-color: transparent; }
+.ribbon .iconbtn:not(.shape-btn):hover { background: #eef1fe; border-color: #dbe3ff; }
+.theme-dark .ribbon .iconbtn:not(.shape-btn):hover { background: #2f3b57; border-color: #3d4a63; }
+.ribbon .iconbtn.on { background: #eef1fe; border-color: var(--brand); color: var(--brand); }
+.theme-dark .ribbon .iconbtn.on { background: #2f3b57; border-color: var(--brand); color: #cdd6ff; }
+/* Fixed widths so the control-heavy groups wrap into tidy 2-row blocks
+   instead of collapsing to one-control-per-row when flexbox hands them slack. */
+.ribbon .font-body { width: 210px; align-content: center; gap: 4px 4px; }
+.ribbon .para-body { width: 100px; align-content: center; gap: 4px 4px; }
 .ribbon .ghost { padding: 6px 10px; font-size: 12px; white-space: nowrap; }
 .ribbon .del { color: #c92a2a; border-color: #f2c2c2; }
 .ribbon .zoombar { padding: 3px 5px; }
@@ -573,7 +611,7 @@ body.theme-dark {
 .theme-dark .rdrop-menu button:hover { background: #2f3b57; color: #cdd6ff; }
 
 /* Home → Objects group: Text / Pictures / Table / Shapes */
-.objects-body { gap: 4px; }
+.objects-body { gap: 2px; flex-wrap: nowrap; }
 .objbtn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px; min-width: 52px; padding: 5px 8px; font-size: 11px; line-height: 1.1; }
 .objbtn .objbtn-ico { font-size: 17px; line-height: 1; }
