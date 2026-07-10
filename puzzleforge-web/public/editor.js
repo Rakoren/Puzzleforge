@@ -1451,7 +1451,15 @@
   function copySel() { clipboard = sels.filter((r) => r.group === 'el').map((r) => { const { _node, ...c } = r; return c; }); }
   function paste() { if (!clipboard.length) return; pushUndo(); const made = []; clipboard.forEach((c) => { const e = { ...c, group: 'el', id: uid++, x: num(c.x, 0) + 16, y: num(c.y, 0) + 16, z: num(c.z, 100) + 1 }; curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); made.push(e); }); setSel(made); }
   function deleteSel() { const els = sels.filter((r) => r.group === 'el'); if (!els.length) return; pushUndo(); const arr = curModel().elements; els.forEach((r) => { const i = arr.indexOf(r); if (i >= 0) arr.splice(i, 1); if (r._node) r._node.remove(); }); setSel([]); }
-  function hideComp() { const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'piece') return; pushUndo(); o.hidden = true; o._node.style.display = 'none'; setSel([]); }
+  function hideComp() {
+    const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'piece') return;
+    pushUndo(); o.hidden = true; setSel([]);
+    // On content pages pieces sit in document flow, so hiding one reflows the
+    // rest (matching the PDF, which drops hidden pieces). Re-render so the
+    // remaining pieces' measured bases — and thus their selection boxes — track
+    // their new positions instead of pointing at where they used to be.
+    renderPage();
+  }
   function resetSize() { if (!sels.length) return; pushUndo(); sels.forEach((r) => { setScale(r, 1); setRot(r, 0); }); drawSel(); syncSelUI(); }
   function nudge(dx, dy) { if (!sels.length) return; sels.forEach((r) => { if (!r.locked) { const b = box(r); moveTo(r, b.x + dx, b.y + dy); } }); drawSel(); syncSelUI(); }
   function setMeasure(prop, val) { const o = sels.length === 1 && sels[0]; if (!o) return; pushUndo(); const b = box(o); if (prop === 'x') moveTo(o, val, b.y); else if (prop === 'y') moveTo(o, b.x, val); else if (prop === 'scale') setScale(o, val); else if (prop === 'rot') setRot(o, val); drawSel(); syncSelUI(); }
