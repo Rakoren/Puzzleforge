@@ -2704,9 +2704,12 @@
     const active = document.querySelector('.rtab.active');
     const cur = active ? active.dataset.tab : 'home';
     if (has) {
+      // Reveal the contextual Format tab at the end of the strip and relabel it
+      // for the object type — but DON'T steal focus. Selecting an object keeps
+      // you on your current ribbon so you can browse tabs (Home, Insert…) with
+      // the object still selected; click Format when you want its tools.
       el.ctxTab.textContent = (one && CTX_LABELS[one.kind]) || 'Format';
       el.ctxTab.classList.add('avail');
-      if (cur !== 'format') { ribbonPrevTab = cur; ribbonActivate('format'); }
     } else {
       el.ctxTab.classList.remove('avail');
       if (cur === 'format') ribbonActivate(ribbonPrevTab || 'home');
