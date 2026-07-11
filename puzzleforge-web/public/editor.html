@@ -558,25 +558,34 @@
           </div>
           <div class="rgroup" id="measurePanel">
             <div class="rgroup-body">
-              <label class="m"><span>X</span><input id="mX" type="number"></label>
-              <label class="m"><span>Y</span><input id="mY" type="number"></label>
-              <label class="m" id="mWField"><span>W</span><input id="mW" type="number" min="8"></label>
-              <label class="m" id="mHField"><span>H</span><input id="mH" type="number" min="4"></label>
-              <label class="m"><span>Size %</span><input id="mScale" type="number" min="15" max="800"></label>
-              <label class="m"><span>Angle°</span><input id="mRot" type="number" min="-180" max="180"></label>
+              <span class="rdrop" id="fmtPosDrop">
+                <button class="rmini rdrop-btn" id="fmtPosDropBtn" aria-haspopup="true" aria-expanded="false" title="Position &amp; size"><span class="rmini-ico">⤢</span>Position&nbsp;&amp;<br>Size&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <label class="rdrop-field"><span>X</span><input id="mX" type="number"></label>
+                  <label class="rdrop-field"><span>Y</span><input id="mY" type="number"></label>
+                  <label class="rdrop-field" id="mWField"><span>Width</span><input id="mW" type="number" min="8"></label>
+                  <label class="rdrop-field" id="mHField"><span>Height</span><input id="mH" type="number" min="4"></label>
+                  <label class="rdrop-field"><span>Size %</span><input id="mScale" type="number" min="15" max="800"></label>
+                  <label class="rdrop-field"><span>Angle°</span><input id="mRot" type="number" min="-180" max="180"></label>
+                </div>
+              </span>
             </div>
-            <div class="rgroup-name">Position &amp; size</div>
+            <div class="rgroup-name">Size</div>
           </div>
-          <div class="rgroup" id="shapeProps">
+          <div class="rgroup shp-group" id="shapeProps">
             <div class="rgroup-body">
-              <label class="m"><span>Fill</span><input id="fillColor" type="color" value="#ffd43b"></label>
-              <label class="m"><span>Outline</span><input id="strokeColor" type="color" value="#222222"></label>
-              <label class="m"><span>Line px</span><input id="strokeW" type="number" min="0" max="40" value="2"></label>
-              <label class="m"><span>&nbsp;</span>
-                <label class="checkbox"><input type="checkbox" id="noFill"> No fill</label>
-              </label>
+              <span class="rdrop" id="shapeFillDrop">
+                <button class="rmini rdrop-btn" id="shapeFillDropBtn" aria-haspopup="true" aria-expanded="false" title="Shape fill &amp; outline"><span class="rmini-ico">🎨</span>Shape&nbsp;<br>Styles&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <label class="rdrop-field"><span>Fill</span><input id="fillColor" type="color" value="#ffd43b"></label>
+                  <label class="rdrop-check"><input type="checkbox" id="noFill"> No fill</label>
+                  <div class="rdrop-sep"></div>
+                  <label class="rdrop-field"><span>Outline</span><input id="strokeColor" type="color" value="#222222"></label>
+                  <label class="rdrop-field"><span>Line px</span><input id="strokeW" type="number" min="0" max="40" value="2"></label>
+                </div>
+              </span>
             </div>
-            <div class="rgroup-name">Shape</div>
+            <div class="rgroup-name">Shape Styles</div>
           </div>
           <div class="rgroup" id="tableProps">
             <div class="rgroup-body">
@@ -606,15 +615,6 @@
           </div>
           <div class="rgroup">
             <div class="rgroup-body">
-              <button id="groupBtn" class="ghost" title="Group (Ctrl+G)">⧈ Group</button>
-              <button id="ungroupBtn" class="ghost" title="Ungroup (Ctrl+Shift+G)">⧉ Ungroup</button>
-              <button id="resetPos" class="ghost">Reset size</button>
-              <button id="hideObj" class="ghost">Hide piece</button>
-            </div>
-            <div class="rgroup-name">Object</div>
-          </div>
-          <div class="rgroup">
-            <div class="rgroup-body">
               <div class="align-grid">
                 <button class="iconbtn" data-align="left" title="Align left">⇤</button>
                 <button class="iconbtn" data-align="centerh" title="Center across">⇆</button>
@@ -623,30 +623,36 @@
                 <button class="iconbtn" data-align="middle" title="Align middle">⇅</button>
                 <button class="iconbtn" data-align="bottom" title="Align bottom">⤓</button>
               </div>
-            </div>
-            <div class="rgroup-name">Align</div>
-          </div>
-          <div class="rgroup">
-            <div class="rgroup-body">
-              <span class="rmini-col">
-                <button id="toFront" class="rmini" title="Bring to front"><span class="rmini-ico">⤒</span>To Front</button>
-                <button id="forward" class="rmini" title="Bring forward"><span class="rmini-ico">↑</span>Forward</button>
-                <button id="backward" class="rmini" title="Send backward"><span class="rmini-ico">↓</span>Backward</button>
-                <button id="toBack" class="rmini" title="Send to back"><span class="rmini-ico">⤓</span>To Back</button>
-              </span>
-            </div>
-            <div class="rgroup-name">Order</div>
-          </div>
-          <div class="rgroup">
-            <div class="rgroup-body">
-              <span class="rmini-col">
-                <button id="flipH" class="rmini" title="Flip horizontal"><span class="rmini-ico">⇋</span>Flip H</button>
-                <button id="flipV" class="rmini" title="Flip vertical"><span class="rmini-ico">⇅</span>Flip V</button>
-                <button id="distH" class="rmini" title="Distribute horizontally (3+ objects)"><span class="rmini-ico">⇿</span>Distribute H</button>
-                <button id="distV" class="rmini" title="Distribute vertically (3+ objects)"><span class="rmini-ico">⇳</span>Distribute V</button>
+              <span class="rdrop" id="fmtArrangeDrop">
+                <button class="rmini rdrop-btn" id="fmtArrangeDropBtn" aria-haspopup="true" aria-expanded="false" title="Order, rotate, flip &amp; distribute"><span class="rmini-ico">⯐</span>Order&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="ofront">⤒ Bring to Front</button>
+                  <button type="button" data-act="oforward">↑ Bring Forward</button>
+                  <button type="button" data-act="obackward">↓ Send Backward</button>
+                  <button type="button" data-act="oback">⤓ Send to Back</button>
+                  <div class="rdrop-sep"></div>
+                  <button type="button" data-act="rright">⟳ Rotate Right 90°</button>
+                  <button type="button" data-act="rleft">⟲ Rotate Left 90°</button>
+                  <button type="button" data-act="fliph">⇆ Flip Horizontal</button>
+                  <button type="button" data-act="flipv">⇅ Flip Vertical</button>
+                  <div class="rdrop-sep"></div>
+                  <button type="button" data-act="disth">⇿ Distribute Horizontally</button>
+                  <button type="button" data-act="distv">⇳ Distribute Vertically</button>
+                </div>
               </span>
             </div>
             <div class="rgroup-name">Arrange</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-col">
+                <button id="groupBtn" class="rmini" title="Group (Ctrl+G)"><span class="rmini-ico">⧈</span>Group</button>
+                <button id="ungroupBtn" class="rmini" title="Ungroup (Ctrl+Shift+G)"><span class="rmini-ico">⧉</span>Ungroup</button>
+                <button id="resetPos" class="rmini" title="Reset size"><span class="rmini-ico">⟲</span>Reset Size</button>
+                <button id="hideObj" class="rmini" title="Hide piece"><span class="rmini-ico">🚫</span>Hide</button>
+              </span>
+            </div>
+            <div class="rgroup-name">Object</div>
           </div>
         </div>
       </section>

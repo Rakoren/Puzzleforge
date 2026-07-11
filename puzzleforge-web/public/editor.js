@@ -371,6 +371,15 @@
       setMargins(act);
     } else if (dropId === 'bgDrop') {
       setBgType(act);
+    } else if (dropId === 'fmtArrangeDrop') {
+      const orders = { ofront: 'front', oforward: 'forward', obackward: 'backward', oback: 'back' };
+      if (orders[act]) reorder(orders[act]);
+      else if (act === 'rright') rotateBy(90);
+      else if (act === 'rleft') rotateBy(-90);
+      else if (act === 'fliph') flip('h');
+      else if (act === 'flipv') flip('v');
+      else if (act === 'disth') distribute('x');
+      else if (act === 'distv') distribute('y');
     } else if (dropId === 'tbDirDrop') {
       const o = selText(); if (o) { pushUndo(); o.rot = act === 'd90' ? 90 : act === 'd270' ? 270 : 0; applyElTf(o); drawSel(); syncSelUI(); }
     } else if (dropId === 'tbEffectsDrop') {
@@ -1131,8 +1140,8 @@
     if (el.tableProps) el.tableProps.style.display = isTable ? '' : 'none';
     if (el.qrProps) el.qrProps.style.display = isQr ? '' : 'none';
     el.mWField.style.display = isEl && !isTable ? '' : 'none'; el.mHField.style.display = isShape ? '' : 'none';
-    el.flipH.style.display = isImg || isShape ? '' : 'none'; el.flipV.style.display = isImg || isShape ? '' : 'none'; el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
-    el.hideObj.style.display = one && !isEl ? '' : 'none'; el.distH.style.display = sels.length >= 3 ? '' : 'none'; el.distV.style.display = sels.length >= 3 ? '' : 'none';
+    el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
+    el.hideObj.style.display = one && !isEl ? '' : 'none';
     el.lockObj.textContent = one && one.locked ? 'Unlock' : 'Lock';
     el.groupBtn.style.display = sels.length >= 2 ? '' : 'none';
     el.ungroupBtn.style.display = sels.some((r) => r.gid) ? '' : 'none';
@@ -2842,9 +2851,7 @@
     el.mScale.addEventListener('change', () => setMeasure('scale', Math.max(0.15, (Number(el.mScale.value) || 100) / 100)));
     el.mRot.addEventListener('change', () => setMeasure('rot', Number(el.mRot.value) || 0));
     document.querySelectorAll('.align-grid .iconbtn').forEach((b) => b.addEventListener('click', () => alignSel(b.dataset.align)));
-    el.distH.addEventListener('click', () => distribute('x')); el.distV.addEventListener('click', () => distribute('y'));
-    el.toFront.addEventListener('click', () => reorder('front')); el.forward.addEventListener('click', () => reorder('forward')); el.backward.addEventListener('click', () => reorder('backward')); el.toBack.addEventListener('click', () => reorder('back'));
-    el.flipH.addEventListener('click', () => flip('h')); el.flipV.addEventListener('click', () => flip('v')); el.lockObj.addEventListener('click', toggleLock);
+    el.lockObj.addEventListener('click', toggleLock);
     el.dupObj.addEventListener('click', duplicate); el.resetPos.addEventListener('click', resetSize); el.hideObj.addEventListener('click', hideComp); el.deleteObj.addEventListener('click', deleteSel);
     el.border.addEventListener('change', setBorder);
     el.gridToggle.addEventListener('change', () => { if (gridEl) gridEl.style.display = el.gridToggle.checked ? '' : 'none'; });
