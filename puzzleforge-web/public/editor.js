@@ -17,10 +17,12 @@
     viewNormal: $('viewNormal'), viewMaster: $('viewMaster'), viewSingle: $('viewSingle'), viewSpread: $('viewSpread'),
     addText: $('addText'), addImage: $('addImage'), addPicPlaceholder: $('addPicPlaceholder'), addTable: $('addTable'), addQr: $('addQr'),
     addCalendarBtn: $('addCalendarBtn'), insLinkBtn: $('insLinkBtn'), insBookmarkBtn: $('insBookmarkBtn'),
-    qrProps: $('qrProps'), qrUrl: $('qrUrl'), qrEcl: $('qrEcl'), qrFg: $('qrFg'),
+    qrControls: $('qrControls'), qrNone: $('qrNone'), qrUrl: $('qrUrl'), qrFg: $('qrFg'), qrBg: $('qrBg'),
+    qrTransparent: $('qrTransparent'), qrW: $('qrW'), qrTest: $('qrTest'), qrEclDropBtn: $('qrEclDropBtn'),
+    qrForward: $('qrForward'), qrBackward: $('qrBackward'), qrDup: $('qrDup'), qrReset: $('qrReset'), qrHide: $('qrHide'),
     tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
     tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
-    ctxTab: $('ctxTab'), ctxTab2: $('ctxTab2'), ctxTabTD: $('ctxTabTD'), ctxTabTL: $('ctxTabTL'), ctxTabPic: $('ctxTabPic'),
+    ctxTab: $('ctxTab'), ctxTab2: $('ctxTab2'), ctxTabTD: $('ctxTabTD'), ctxTabTL: $('ctxTabTL'), ctxTabPic: $('ctxTabPic'), ctxTabQr: $('ctxTabQr'),
     picControls: $('picControls'), picNone: $('picNone'), picChange: $('picChange'), picReset: $('picReset'),
     picForward: $('picForward'), picBackward: $('picBackward'), picFlipH: $('picFlipH'), picFlipV: $('picFlipV'), picW: $('picW'), picCaptionText: $('picCaptionText'),
     picCropBtn: $('picCropBtn'), picCropReset: $('picCropReset'), picCropFill: $('picCropFill'),
@@ -354,7 +356,11 @@
       else if (act === 'dup') { if (cur >= 0) duplicatePage(cur); }
       else if (act === 'tpl') openTplPicker();
       else if (act === 'puzzle') openPuzzleInsert();
-    } else if (dropId === 'alignDrop' || dropId === 'sfAlignDrop' || dropId === 'tlAlignDrop' || dropId === 'picAlignDrop') {
+    } else if (dropId === 'qrEclDrop') {
+      setQrEcl(act);
+    } else if (dropId === 'qrColorsDrop') {
+      if (act === 'reset') applyQrStyle({ fg: '#000000', bg: '#ffffff' });
+    } else if (dropId === 'alignDrop' || dropId === 'sfAlignDrop' || dropId === 'tlAlignDrop' || dropId === 'picAlignDrop' || dropId === 'qrAlignDrop') {
       const m = { aleft: 'left', acenter: 'centerh', aright: 'right', atop: 'top', amiddle: 'middle', abottom: 'bottom' };
       if (m[act]) alignSel(m[act]);
       else if (act === 'disth') distribute('x');
@@ -1178,6 +1184,7 @@
     syncShapeFormatUI();
     syncTableTabsUI();
     syncPictureUI();
+    syncQrUI(one);
     if (!has) return;
     document.querySelectorAll('.tb-group').forEach((g) => { g.style.display = isText ? '' : 'none'; });
     // Generic Size / Arrange / Object groups live on the Shape Format tab for a
@@ -1186,7 +1193,6 @@
     el.measurePanel.style.display = one && !isText ? '' : 'none';
     el.shapeProps.style.display = isShape ? '' : 'none';
     if (el.tableProps) el.tableProps.style.display = isTable ? '' : 'none';
-    if (el.qrProps) el.qrProps.style.display = isQr ? '' : 'none';
     el.mWField.style.display = isEl && !isTable ? '' : 'none'; el.mHField.style.display = isShape ? '' : 'none';
     el.dupObj.style.display = isEl ? '' : 'none'; el.deleteObj.style.display = isEl ? '' : 'none';
     el.hideObj.style.display = one && !isEl ? '' : 'none';
@@ -1206,11 +1212,6 @@
         el.tblBorder.value = /^#/.test(one.borderColor || '') ? one.borderColor : '#333333';
         el.tblHeaderFill.value = /^#/.test(one.headerFill || '') ? one.headerFill : '#eef1fe';
         el.tblHeader.checked = !!one.header;
-      }
-      if (isQr && el.qrUrl) {
-        el.qrUrl.value = one.url || '';
-        el.qrEcl.value = ['L', 'M', 'Q', 'H'].includes(one.ecl) ? one.ecl : 'M';
-        el.qrFg.value = /^#/.test(one.fg || '') ? one.fg : '#000000';
       }
     }
   }
@@ -1876,6 +1877,40 @@
   }
   const selQr = () => { const o = sels.length === 1 && sels[0]; return o && o.kind === 'qr' ? o : null; };
   function reencodeQr(q) { q.modules = qrModules(q.url, q.ecl); q._node.innerHTML = elHtml(q); requestAnimationFrame(drawSel); }
+  // Re-render a QR node in place (colour/size change — no re-encode needed).
+  function qrRender(q) { q._node.innerHTML = elHtml(q); requestAnimationFrame(drawSel); }
+  const QR_ECL_LABEL = { L: 'L — Low', M: 'M — Medium', Q: 'Q — Quartile', H: 'H — High' };
+  function setQrEcl(v) { const q = selQr(); if (!q || !QR_ECL_LABEL[v]) return; pushUndo(); q.ecl = v; reencodeQr(q); syncQrUI(q); }
+  // Colour presets shown in the Styles gallery (same swatch pattern as Picture/WordArt).
+  const QR_STYLES = [
+    { fg: '#000000', bg: '#ffffff' }, { fg: '#1f2937', bg: '#f8fafc' },
+    { fg: '#1d4ed8', bg: '#ffffff' }, { fg: '#047857', bg: '#ffffff' },
+    { fg: '#7c3aed', bg: '#ffffff' }, { fg: '#ffffff', bg: '#111827' },
+  ];
+  function applyQrStyle(st) { const q = selQr(); if (!q) return; pushUndo(); q.fg = st.fg; q.bg = st.bg; qrRender(q); syncQrUI(q); }
+  function buildQrStyleGallery() {
+    const host = document.getElementById('qrStyleGallery'); if (!host) return; host.innerHTML = '';
+    QR_STYLES.forEach((st) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pic-style-sw'; b.title = 'Apply QR colours';
+      const im = document.createElement('span'); im.className = 'pic-style-img qr-style-img';
+      im.style.background = st.bg; im.style.color = st.fg;
+      b.appendChild(im); b.addEventListener('click', () => applyQrStyle(st)); host.appendChild(b);
+    });
+  }
+  function syncQrUI(one) {
+    if (!el.qrControls) return;
+    const q = one && one.kind === 'qr' ? one : null;
+    el.qrControls.classList.toggle('hidden', !q); if (el.qrNone) el.qrNone.classList.toggle('hidden', !!q);
+    if (!q) return;
+    if (el.qrUrl) el.qrUrl.value = q.url || '';
+    const ecl = QR_ECL_LABEL[q.ecl] ? q.ecl : 'M';
+    if (el.qrEclDropBtn) { const lab = el.qrEclDropBtn.childNodes[el.qrEclDropBtn.childNodes.length - 2]; if (lab) lab.textContent = 'Correction (' + ecl + ') '; }
+    const transparent = q.bg === 'none';
+    if (el.qrFg) el.qrFg.value = /^#/.test(q.fg || '') ? q.fg : '#000000';
+    if (el.qrBg) { el.qrBg.value = /^#/.test(q.bg || '') ? q.bg : '#ffffff'; el.qrBg.disabled = transparent; }
+    if (el.qrTransparent) el.qrTransparent.checked = transparent;
+    if (el.qrW) el.qrW.value = Math.round(num(q.w, 140));
+  }
   const selTable = () => { const o = sels.length === 1 && sels[0]; return o && o.kind === 'table' ? o : null; };
   function ensureCells(t) {
     if (!Array.isArray(t.cells)) t.cells = [];
@@ -2541,6 +2576,7 @@
         rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
         borderColor: e.borderColor, borderW: e.borderW, headerFill: e.headerFill, cellPad: e.cellPad, cellFill: e.cellFill,
         spans: e.spans, diags: e.diags,
+        url: e.url, ecl: e.ecl, fg: e.fg, bg: e.bg, modules: e.modules,
         behind: e.behind || undefined, field: e.field || undefined,
         gid: e.gid,
       }));
@@ -3119,14 +3155,15 @@
   // (Publisher has no standalone Arrange tab).
   // A text box also carries the object-specific tab (Text Box); other kinds get
   // their own single tab. Plain shapes use only Shape Format.
-  const CTX_LABELS = { text: 'Text Box', qr: 'QR Code' };
+  const CTX_LABELS = { text: 'Text Box' };
   function updateContextTab() {
     if (!ribbonActivate || !el.ctxTab) return;
     const one = sels.length === 1 ? sels[0] : null;
     const kind = one && one.kind;
     const isTable = kind === 'table';
     const isImg = kind === 'image';
-    // Primary object tab (Text Box / QR) — not for shapes, tables, or pictures.
+    const isQr = kind === 'qr';
+    // Primary object tab (Text Box) — not for shapes, tables, pictures, or QR.
     const hasPrimary = !!(kind && CTX_LABELS[kind]);
     // Shape Format (frame) tab — text boxes and shapes.
     const hasShapeFmt = kind === 'text' || kind === 'shape';
@@ -3136,12 +3173,13 @@
     if (el.ctxTabTD) el.ctxTabTD.classList.toggle('avail', isTable);
     if (el.ctxTabTL) el.ctxTabTL.classList.toggle('avail', isTable);
     if (el.ctxTabPic) el.ctxTabPic.classList.toggle('avail', isImg);
+    if (el.ctxTabQr) el.ctxTabQr.classList.toggle('avail', isQr);
     // If we're on a contextual tab that no longer applies, fall back gracefully.
     const active = document.querySelector('.rtab.active');
     const cur = active ? active.dataset.tab : 'home';
-    const ok = { format: hasPrimary, shapeformat: hasShapeFmt, tabledesign: isTable, tablelayout: isTable, pictureformat: isImg };
+    const ok = { format: hasPrimary, shapeformat: hasShapeFmt, tabledesign: isTable, tablelayout: isTable, pictureformat: isImg, qrformat: isQr };
     if (cur in ok && !ok[cur]) {
-      ribbonActivate(isTable ? 'tabledesign' : isImg ? 'pictureformat' : hasPrimary ? 'format' : hasShapeFmt ? 'shapeformat' : (ribbonPrevTab || 'home'));
+      ribbonActivate(isTable ? 'tabledesign' : isImg ? 'pictureformat' : isQr ? 'qrformat' : hasPrimary ? 'format' : hasShapeFmt ? 'shapeformat' : (ribbonPrevTab || 'home'));
     }
   }
 
@@ -3255,11 +3293,22 @@
     if (el.tblBorder) el.tblBorder.addEventListener('input', () => { const t = selTable(); if (t) { t.borderColor = el.tblBorder.value; redrawTable(t); } });
     if (el.tblHeaderFill) el.tblHeaderFill.addEventListener('input', () => { const t = selTable(); if (t) { t.headerFill = el.tblHeaderFill.value; redrawTable(t); } });
     if (el.tblHeader) el.tblHeader.addEventListener('change', () => { const t = selTable(); if (t) { pushUndo(); t.header = el.tblHeader.checked; redrawTable(t); } });
-    // QR codes
+    // QR codes — Insert button + QR Code contextual tab
     if (el.addQr) el.addQr.addEventListener('click', addQr);
+    buildQrStyleGallery();
     if (el.qrUrl) el.qrUrl.addEventListener('change', () => { const q = selQr(); if (q) { pushUndo(); q.url = el.qrUrl.value.trim(); reencodeQr(q); } });
-    if (el.qrEcl) el.qrEcl.addEventListener('change', () => { const q = selQr(); if (q) { pushUndo(); q.ecl = el.qrEcl.value; reencodeQr(q); } });
-    if (el.qrFg) el.qrFg.addEventListener('input', () => { const q = selQr(); if (q) { q.fg = el.qrFg.value; q._node.innerHTML = elHtml(q); requestAnimationFrame(drawSel); } });
+    if (el.qrFg) el.qrFg.addEventListener('input', () => { const q = selQr(); if (q) { q.fg = el.qrFg.value; qrRender(q); } });
+    if (el.qrFg) el.qrFg.addEventListener('change', () => { if (selQr()) pushUndo(); });
+    if (el.qrBg) el.qrBg.addEventListener('input', () => { const q = selQr(); if (q) { q.bg = el.qrBg.value; qrRender(q); } });
+    if (el.qrBg) el.qrBg.addEventListener('change', () => { if (selQr()) pushUndo(); });
+    if (el.qrTransparent) el.qrTransparent.addEventListener('change', () => { const q = selQr(); if (q) { pushUndo(); q.bg = el.qrTransparent.checked ? 'none' : (/^#/.test(el.qrBg.value) ? el.qrBg.value : '#ffffff'); qrRender(q); syncQrUI(q); } });
+    if (el.qrTest) el.qrTest.addEventListener('click', () => { const q = selQr(); if (q && q.url) window.open(q.url, '_blank', 'noopener'); else setStatus('This QR code has no link yet.', ''); });
+    if (el.qrW) el.qrW.addEventListener('change', () => { const q = selQr(); if (q) { pushUndo(); q.w = Math.max(24, Number(el.qrW.value) || num(q.w, 140)); qrRender(q); syncSelUI(); } });
+    if (el.qrForward) el.qrForward.addEventListener('click', () => reorder('forward'));
+    if (el.qrBackward) el.qrBackward.addEventListener('click', () => reorder('backward'));
+    if (el.qrDup) el.qrDup.addEventListener('click', duplicate);
+    if (el.qrReset) el.qrReset.addEventListener('click', resetSize);
+    if (el.qrHide) el.qrHide.addEventListener('click', hideComp);
     el.groupBtn.addEventListener('click', groupSel); el.ungroupBtn.addEventListener('click', ungroupSel);
     el.borderAll.addEventListener('click', () => { pageModels.forEach((pm) => { pm._border = el.border.value; }); renderPage(); setStatus(el.border.value ? 'Border applied to all pages.' : 'Border override cleared on all pages.', 'ok'); });
     el.mX.addEventListener('change', () => setMeasure('x', Number(el.mX.value) || 0));

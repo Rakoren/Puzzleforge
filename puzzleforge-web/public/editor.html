@@ -48,6 +48,7 @@
       <button class="rtab rtab-context" data-tab="tabledesign" id="ctxTabTD" role="tab">Table Design</button>
       <button class="rtab rtab-context" data-tab="tablelayout" id="ctxTabTL" role="tab">Table Layout</button>
       <button class="rtab rtab-context" data-tab="pictureformat" id="ctxTabPic" role="tab">Picture Format</button>
+      <button class="rtab rtab-context" data-tab="qrformat" id="ctxTabQr" role="tab">QR Code</button>
       <button class="rtab rtab-context" data-tab="format" id="ctxTab" role="tab">Text Box</button>
     </div>
 
@@ -686,18 +687,6 @@
             </div>
             <div class="rgroup-name">Table</div>
           </div>
-          <div class="rgroup" id="qrProps">
-            <div class="rgroup-body">
-              <label class="m qr-url"><span>Links to</span><input id="qrUrl" type="text" placeholder="https://…"></label>
-              <label class="m"><span>Level</span>
-                <select id="qrEcl" title="Error correction: higher survives more damage but is denser">
-                  <option value="L">L</option><option value="M" selected>M</option><option value="Q">Q</option><option value="H">H</option>
-                </select>
-              </label>
-              <label class="m"><span>Dark</span><input id="qrFg" type="color" value="#000000"></label>
-            </div>
-            <div class="rgroup-name">QR code</div>
-          </div>
           <div class="rgroup gen-group">
             <div class="rgroup-body">
               <div class="align-grid">
@@ -1081,6 +1070,84 @@
             <div class="rgroup-body">
               <span class="rmini-col size-fields">
                 <label class="m"><span>Width</span><input id="picW" type="number" min="16"></label>
+              </span>
+            </div>
+            <div class="rgroup-name">Size</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- QR CODE (contextual: linked QR object — Data · Colours · Arrange · Size) -->
+      <section class="ribbon-panel" data-panel="qrformat">
+        <div id="qrNone" class="rhint">Select a QR code to edit its link, correction level, and colours.</div>
+        <div id="qrControls" class="ribbon-inline hidden">
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rdrop" id="qrLinkDrop">
+                <button class="rbig rdrop-btn" id="qrLinkDropBtn" aria-haspopup="true" aria-expanded="false" title="Edit the link or text this QR encodes"><span class="rbig-ico">🔗</span>Edit&nbsp;<br>Link&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" id="qrLinkMenu" hidden>
+                  <label class="rdrop-field qr-url"><span>Links to</span><input id="qrUrl" type="text" placeholder="https://…"></label>
+                  <div class="rdrop-note">A phone camera opens this address when it scans the printed code.</div>
+                </div>
+              </span>
+              <span class="rmini-col">
+                <span class="rdrop" id="qrEclDrop">
+                  <button class="rmini rdrop-btn" id="qrEclDropBtn" aria-haspopup="true" aria-expanded="false" title="Error correction: higher survives more damage but packs the code denser"><span class="rmini-ico">◈</span>Correction&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" id="qrEclMenu" hidden>
+                    <button type="button" data-act="L">L — Low (~7%)</button>
+                    <button type="button" data-act="M">M — Medium (~15%)</button>
+                    <button type="button" data-act="Q">Q — Quartile (~25%)</button>
+                    <button type="button" data-act="H">H — High (~30%)</button>
+                  </div>
+                </span>
+                <button id="qrTest" class="rmini" title="Open this link in a new tab to check it"><span class="rmini-ico">🔎</span>Test Link</button>
+              </span>
+            </div>
+            <div class="rgroup-name">Data</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <div class="wordart-gallery" id="qrStyleGallery"></div>
+              <span class="rdrop" id="qrColorsDrop">
+                <button class="rmini rdrop-btn" id="qrColorsDropBtn" aria-haspopup="true" aria-expanded="false" title="Dark &amp; light colours"><span class="rmini-ico">🎨</span>Colours&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" id="qrColorsMenu" hidden>
+                  <label class="rdrop-field"><span>Dark</span><input id="qrFg" type="color" value="#000000"></label>
+                  <label class="rdrop-field"><span>Light</span><input id="qrBg" type="color" value="#ffffff"></label>
+                  <label class="rdrop-check"><input type="checkbox" id="qrTransparent"> Transparent background</label>
+                  <div class="rdrop-sep"></div>
+                  <button type="button" class="rdrop-item" data-act="reset">↺ Black on white</button>
+                </div>
+              </span>
+            </div>
+            <div class="rgroup-name">Styles</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-grid">
+                <button id="qrForward" class="rmini" title="Bring forward"><span class="rmini-ico">⭱</span>Bring Forward</button>
+                <button id="qrBackward" class="rmini" title="Send backward"><span class="rmini-ico">⭳</span>Send Backward</button>
+                <span class="rdrop" id="qrAlignDrop">
+                  <button class="rmini rdrop-btn" id="qrAlignDropBtn" aria-haspopup="true" aria-expanded="false" title="Align on the page"><span class="rmini-ico">⯐</span>Align&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="aleft">⯇ Align Left</button>
+                    <button type="button" data-act="acenter">≡ Align Center</button>
+                    <button type="button" data-act="aright">⯈ Align Right</button>
+                    <button type="button" data-act="atop">⤒ Align Top</button>
+                    <button type="button" data-act="amiddle">⇕ Align Middle</button>
+                    <button type="button" data-act="abottom">⤓ Align Bottom</button>
+                  </div>
+                </span>
+                <button id="qrDup" class="rmini" title="Duplicate"><span class="rmini-ico">⧉</span>Duplicate</button>
+                <button id="qrReset" class="rmini" title="Reset size"><span class="rmini-ico">⟲</span>Reset Size</button>
+                <button id="qrHide" class="rmini" title="Hide"><span class="rmini-ico">🚫</span>Hide</button>
+              </span>
+            </div>
+            <div class="rgroup-name">Arrange</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-col size-fields">
+                <label class="m"><span>Size</span><input id="qrW" type="number" min="24"></label>
               </span>
             </div>
             <div class="rgroup-name">Size</div>
