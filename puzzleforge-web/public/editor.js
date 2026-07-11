@@ -14,6 +14,7 @@
     undo: $('undo'), redo: $('redo'), zoomOut: $('zoomOut'), zoomIn: $('zoomIn'), zoomFit: $('zoomFit'), zoomLabel: $('zoomLabel'),
     zoom100: $('zoom100'), zoomWhole: $('zoomWhole'), zoomWidth: $('zoomWidth'),
     rulerToggle: $('rulerToggle'), navToggle: $('navToggle'), boundToggle: $('boundToggle'), editorMain: $('editorMain'), spreadToggle: $('spreadToggle'),
+    viewNormal: $('viewNormal'), viewMaster: $('viewMaster'), viewSingle: $('viewSingle'), viewSpread: $('viewSpread'),
     addText: $('addText'), addImage: $('addImage'), addPicPlaceholder: $('addPicPlaceholder'), addTable: $('addTable'), addQr: $('addQr'),
     addCalendarBtn: $('addCalendarBtn'), insLinkBtn: $('insLinkBtn'), insBookmarkBtn: $('insBookmarkBtn'),
     qrProps: $('qrProps'), qrUrl: $('qrUrl'), qrEcl: $('qrEcl'), qrFg: $('qrFg'),
@@ -900,8 +901,17 @@
   function toggleSpread() {
     spreadMode = el.spreadToggle.checked;
     if (spreadMode) zoom = Math.min(zoom, fitSpread());
-    renderPage();
+    renderPage(); updateViewButtons();
     setStatus(spreadMode ? 'Two-page spread — the facing page is a live preview; click it to edit it.' : 'Single-page view.', 'ok');
+  }
+  // Drive the View-tab Single/Spread buttons (they set the hidden checkbox).
+  function setSpreadMode(on) { el.spreadToggle.checked = on; toggleSpread(); }
+  // Reflect Normal/Master and Single/Spread active state on the View buttons.
+  function updateViewButtons() {
+    if (el.viewNormal) el.viewNormal.classList.toggle('on', !masterMode);
+    if (el.viewMaster) el.viewMaster.classList.toggle('on', masterMode);
+    if (el.viewSingle) el.viewSingle.classList.toggle('on', !spreadMode);
+    if (el.viewSpread) el.viewSpread.classList.toggle('on', spreadMode);
   }
   // Align the ruler tick gradients + draw inch numbers against the page's actual
   // on-screen position (the page is centred in the scroll area, so we can't just
@@ -1709,6 +1719,7 @@
     if (el.masterBanner) el.masterBanner.hidden = !masterMode;
     if (el.editMasterBtn) { el.editMasterBtn.classList.toggle('on', masterMode); el.editMasterBtn.textContent = masterMode ? '✓ Editing Master' : '✎ Edit Master Page'; }
     document.body.classList.toggle('master-editing', masterMode);
+    updateViewButtons();
   }
   function enterMaster() {
     if (masterMode) return;
@@ -2683,8 +2694,8 @@
   // until an object is selected, then it appears and relabels itself for the
   // object type — Picture Format (image), Table, Text Box, or Drawing Tools
   // (shape). It auto-activates on selection and returns to the previous tab when
-  // the selection clears. Selecting doesn't steal focus from the Arrange tab,
-  // where align/order tools are used against a live selection.
+  // the selection clears. The align/order/arrange tools live on this Format tab
+  // (Publisher has no standalone Arrange tab).
   const CTX_LABELS = { image: 'Picture Format', table: 'Table', text: 'Text Box', shape: 'Drawing Tools', qr: 'QR Code' };
   function updateContextTab() {
     if (!ribbonActivate || !el.ctxTab) return;
@@ -2695,7 +2706,7 @@
     if (has) {
       el.ctxTab.textContent = (one && CTX_LABELS[one.kind]) || 'Format';
       el.ctxTab.classList.add('avail');
-      if (cur !== 'format' && cur !== 'arrange') { ribbonPrevTab = cur; ribbonActivate('format'); }
+      if (cur !== 'format') { ribbonPrevTab = cur; ribbonActivate('format'); }
     } else {
       el.ctxTab.classList.remove('avail');
       if (cur === 'format') ribbonActivate(ribbonPrevTab || 'home');
@@ -2895,6 +2906,10 @@
     if (el.navToggle) el.navToggle.addEventListener('change', toggleNav);
     if (el.boundToggle) el.boundToggle.addEventListener('change', toggleBounds);
     if (el.spreadToggle) el.spreadToggle.addEventListener('change', toggleSpread);
+    if (el.viewSingle) el.viewSingle.addEventListener('click', () => setSpreadMode(false));
+    if (el.viewSpread) el.viewSpread.addEventListener('click', () => setSpreadMode(true));
+    if (el.viewNormal) el.viewNormal.addEventListener('click', exitMaster);
+    if (el.viewMaster) el.viewMaster.addEventListener('click', enterMaster);
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
     el.stageScroll.addEventListener('scroll', syncRulers);
     el.stageInner.addEventListener('pointerdown', (e) => {

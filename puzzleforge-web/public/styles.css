@@ -353,6 +353,12 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .ribbon-panel[data-panel="design"] .rbig { min-width: 46px; max-width: 84px; padding: 3px 6px; }
 .ribbon-panel[data-panel="design"] .rbig .rbig-ico { font-size: 20px; }
 .ribbon .rbig .rbig-aa { font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 600; }
+/* View tab is a single row of icon-over-label buttons too. */
+.ribbon-panel[data-panel="view"] .rgroup-body { flex-wrap: nowrap; align-items: center; }
+.ribbon-panel[data-panel="view"] .rbig { min-width: 46px; max-width: 84px; padding: 3px 6px; }
+.ribbon-panel[data-panel="view"] .rbig .rbig-ico { font-size: 20px; }
+.show-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; }
+.show-checks .checkbox { font-size: 12.5px; }
 .ribbon-panel[data-panel="design"] .rmini-col.align-to { gap: 3px; }
 .ribbon-panel[data-panel="design"] .rmini-col.align-to .design-info { font-size: 11px; }
 .ribbon-panel[data-panel="design"] .rmini-col.align-to .checkbox { font-size: 12px; }

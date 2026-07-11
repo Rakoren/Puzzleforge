@@ -40,8 +40,7 @@
       <button class="rtab active" data-tab="home" role="tab">Home</button>
       <button class="rtab" data-tab="insert" role="tab">Insert</button>
       <button class="rtab" data-tab="design" role="tab">Page Design</button>
-      <button class="rtab" data-tab="arrange" role="tab">Arrange</button>
-      <button class="rtab" data-tab="mailings" role="tab">Mailings</button>
+      <button class="rtab" data-tab="team" role="tab">Team</button>
       <button class="rtab" data-tab="review" role="tab">Review</button>
       <button class="rtab rtab-context" data-tab="format" id="ctxTab" role="tab">Format</button>
       <button class="rtab" data-tab="view" role="tab">View</button>
@@ -418,47 +417,8 @@
       </section>
 
       <!-- ARRANGE -->
-      <section class="ribbon-panel" data-panel="arrange">
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <div class="align-grid">
-              <button class="iconbtn" data-align="left" title="Left">⇤</button>
-              <button class="iconbtn" data-align="centerh" title="Center across">⇆</button>
-              <button class="iconbtn" data-align="right" title="Right">⇥</button>
-              <button class="iconbtn" data-align="top" title="Top">⤒</button>
-              <button class="iconbtn" data-align="middle" title="Middle">⇅</button>
-              <button class="iconbtn" data-align="bottom" title="Bottom">⤓</button>
-            </div>
-          </div>
-          <div class="rgroup-name">Align (page / selection)</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <button id="distH" class="ghost" title="Distribute horizontally">⇿ Distribute</button>
-            <button id="distV" class="ghost" title="Distribute vertically">⇳ Distribute</button>
-          </div>
-          <div class="rgroup-name">Distribute</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <button id="toFront" class="ghost">To front</button>
-            <button id="forward" class="ghost">Forward</button>
-            <button id="backward" class="ghost">Back</button>
-            <button id="toBack" class="ghost">To back</button>
-          </div>
-          <div class="rgroup-name">Order</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <button id="flipH" class="ghost">Flip H</button>
-            <button id="flipV" class="ghost">Flip V</button>
-          </div>
-          <div class="rgroup-name">Rotate &amp; flip</div>
-        </div>
-      </section>
-
-      <!-- MAILINGS (team & handoffs) -->
-      <section class="ribbon-panel" data-panel="mailings">
+      <!-- TEAM (workspace, collaboration & handoffs) -->
+      <section class="ribbon-panel" data-panel="team">
         <div class="rgroup">
           <div class="rgroup-body col">
             <button id="shareTeamBtn" class="primary" title="Publish this book to your team workspace so everyone on the LAN can open it">☁ Share to team</button>
@@ -596,13 +556,79 @@
             </div>
             <div class="rgroup-name">Object</div>
           </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <div class="align-grid">
+                <button class="iconbtn" data-align="left" title="Align left">⇤</button>
+                <button class="iconbtn" data-align="centerh" title="Center across">⇆</button>
+                <button class="iconbtn" data-align="right" title="Align right">⇥</button>
+                <button class="iconbtn" data-align="top" title="Align top">⤒</button>
+                <button class="iconbtn" data-align="middle" title="Align middle">⇅</button>
+                <button class="iconbtn" data-align="bottom" title="Align bottom">⤓</button>
+              </div>
+            </div>
+            <div class="rgroup-name">Align</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-col">
+                <button id="toFront" class="rmini" title="Bring to front"><span class="rmini-ico">⤒</span>To Front</button>
+                <button id="forward" class="rmini" title="Bring forward"><span class="rmini-ico">↑</span>Forward</button>
+                <button id="backward" class="rmini" title="Send backward"><span class="rmini-ico">↓</span>Backward</button>
+                <button id="toBack" class="rmini" title="Send to back"><span class="rmini-ico">⤓</span>To Back</button>
+              </span>
+            </div>
+            <div class="rgroup-name">Order</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-col">
+                <button id="flipH" class="rmini" title="Flip horizontal"><span class="rmini-ico">⇋</span>Flip H</button>
+                <button id="flipV" class="rmini" title="Flip vertical"><span class="rmini-ico">⇅</span>Flip V</button>
+                <button id="distH" class="rmini" title="Distribute horizontally (3+ objects)"><span class="rmini-ico">⇿</span>Distribute H</button>
+                <button id="distV" class="rmini" title="Distribute vertically (3+ objects)"><span class="rmini-ico">⇳</span>Distribute V</button>
+              </span>
+            </div>
+            <div class="rgroup-name">Arrange</div>
+          </div>
         </div>
       </section>
 
-      <!-- VIEW -->
+      <!-- VIEW (Publisher-style: Views · Layout · Show · Zoom) -->
       <section class="ribbon-panel" data-panel="view">
         <div class="rgroup">
           <div class="rgroup-body">
+            <button id="viewNormal" class="rbig on" title="Normal editing view"><span class="rbig-ico">📄</span>Normal</button>
+            <button id="viewMaster" class="rbig" title="Edit the master page (page numbers, headers, frames)"><span class="rbig-ico">🗐</span>Master<br>Page</button>
+          </div>
+          <div class="rgroup-name">Views</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="viewSingle" class="rbig on" title="Single-page view"><span class="rbig-ico">▯</span>Single<br>Page</button>
+            <button id="viewSpread" class="rbig" title="Two-page spread (facing pages)"><span class="rbig-ico">▭▭</span>Two-Page<br>Spread</button>
+            <input type="checkbox" id="spreadToggle" hidden>
+          </div>
+          <div class="rgroup-name">Layout</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <span class="show-checks">
+              <label class="checkbox"><input type="checkbox" id="boundToggle"> Boundaries</label>
+              <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Guides</label>
+              <label class="checkbox"><input type="checkbox" id="gridToggle"> Grid</label>
+              <label class="checkbox"><input type="checkbox" id="rulerToggle" checked> Rulers</label>
+              <label class="checkbox"><input type="checkbox" id="navToggle" checked> Page Navigation</label>
+              <label class="checkbox"><input type="checkbox" id="darkToggle" checked> Dark Theme</label>
+            </span>
+          </div>
+          <div class="rgroup-name">Show</div>
+        </div>
+        <div class="rgroup">
+          <div class="rgroup-body">
+            <button id="zoom100" class="rbig" title="Actual size (100%)"><span class="rbig-ico rbig-aa">100</span>100%</button>
+            <button id="zoomWhole" class="rbig" title="Fit the whole page in view"><span class="rbig-ico">▭</span>Whole<br>Page</button>
+            <button id="zoomWidth" class="rbig" title="Fit the page to the window width"><span class="rbig-ico">↔</span>Page<br>Width</button>
             <span class="zoombar">
               <button id="zoomOut" class="iconbtn" title="Zoom out">−</button>
               <span id="zoomLabel" class="zoom-label">100%</span>
@@ -611,41 +637,6 @@
             </span>
           </div>
           <div class="rgroup-name">Zoom</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body">
-            <button id="zoom100" class="ghost" title="Actual size (100%)">100%</button>
-            <button id="zoomWhole" class="ghost" title="Fit the whole page in view">▭ Whole Page</button>
-            <button id="zoomWidth" class="ghost" title="Fit the page to the window width">↔ Page Width</button>
-          </div>
-          <div class="rgroup-name">Fit</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body col">
-            <label class="checkbox"><input type="checkbox" id="spreadToggle"> Two-page spread</label>
-          </div>
-          <div class="rgroup-name">Layout</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body col">
-            <label class="checkbox"><input type="checkbox" id="rulerToggle" checked> Rulers</label>
-            <label class="checkbox"><input type="checkbox" id="navToggle" checked> Page navigation</label>
-            <label class="checkbox"><input type="checkbox" id="boundToggle"> Boundaries</label>
-          </div>
-          <div class="rgroup-name">Show</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body col">
-            <label class="checkbox"><input type="checkbox" id="snapToggle" checked> Guides &amp; snapping</label>
-            <label class="checkbox"><input type="checkbox" id="gridToggle"> Grid &amp; snap to grid</label>
-          </div>
-          <div class="rgroup-name">Guides</div>
-        </div>
-        <div class="rgroup">
-          <div class="rgroup-body col">
-            <label class="checkbox"><input type="checkbox" id="darkToggle" checked> Dark theme</label>
-          </div>
-          <div class="rgroup-name">Theme</div>
         </div>
       </section>
 
