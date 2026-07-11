@@ -1,8 +1,8 @@
 # PuzzleForge — Product Requirements Document
 
 **Version:** 0.3 (Active Development)
-**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace); Tier 3 puzzle types (Logic Grid, Word Ladder, Word Wheel, Cipher); KDP-verified pre-flight export gate live
-**Last full docs sync:** 2026-07-05
+**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace) with **Publisher-parity contextual ribbons** (Shape Format / Table Design / Table Layout / Picture Format / QR Code / Text Box) and their tools — interactive crop, linked text-box flow, advanced OpenType typography, picture compress/swap; Tier 3 puzzle types (Logic Grid, Word Ladder, Word Wheel, Cipher); KDP-verified pre-flight export gate live
+**Last full docs sync:** 2026-07-11
 **Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
 **Author:** Rakoren
@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (131 tests passing)
+### Engine (138 tests passing)
 
 **14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -158,13 +158,20 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 - "Start from a template" gallery in the Book Builder — six ready-to-publish books (Large-Print Senior Word Search, Kids Animal Activity Book, Travel Pocket Puzzles, Sudoku Workout, Brain Training Variety, Coffee Break Crosswords), each a full config (puzzle mix + trim + cover colors + KDP metadata) that drops into the builder and is editable from there. Zero-to-book on-ramp.
 
 **Page Editor (`editor.html/js`) — a full MS-Publisher-style desktop-publishing app:**
-- **Ribbon UI** — Home / Insert / Page Design / Arrange / Mailings / Review / View / Help tabs, plus **contextual tabs** that appear only when the matching object is selected (Picture Format / Table / Text Box / Drawing Tools)
+- **Ribbon UI** — Home / Insert / Page Design / Team / Review / View / Help tabs, each a single dense Publisher-style row, plus **contextual tabs** that appear only when the matching object is selected: **Shape Format**, **Table Design**, **Table Layout**, **Picture Format**, **QR Code**, and **Text Box** (a text box shows Shape Format + Text Box together, a table shows Table Design + Table Layout, matching Publisher)
+- **Contextual tab tools (Publisher-parity):**
+  - **Text Box** — Text Fit, Text Direction, Hyphenation, Font/Alignment/WordArt with Text Fill & Outline colour palettes, Columns, Margins, Drop Cap, Number Style, Ligatures, **Stylistic Sets / Swash / Stylistic & Contextual Alternates** (OpenType `font-feature-settings`), and **Linking** — Create / Break Link + Previous / Next that flow a box's overflow into the next box (true text flow with a draggable flow-region height)
+  - **Picture Format** — Corrections, Recolor washes, Picture Border / Effects / Styles, Caption, **interactive Crop** (drag-handle crop with a `{l,t,r,b}` model), **Compress Pictures** (downsample to 300/220/150/96 ppi, optional delete-cropped-areas), and **Swap** (exchange two pictures' contents while each keeps its frame)
+  - **Table Design / Layout** — styles, borders, header/cell fills, insert/delete rows & columns, cell **merge / split**, and **diagonal split** cells
+  - **Shape Format** — fill/outline styles, text-box frame (fill/border/radius/shadow), arrange, size
+  - **QR Code** — edit link, error-correction level, dark/light (or transparent) colours, colour presets, test-link, size
 - **Break-apart puzzle** — title / instructions / word-list become individually editable objects (word list can convert to a table); the grid stays protected
 - **Free elements** — text, images, shapes (rect/ellipse/triangle/star/line + **speech/thought chat bubbles**), and **editable multi-column tables**; z-order incl. send-behind-the-puzzle
 - **Master pages** (page numbers / headers / repeating frames) and **two-page facing spreads**
 - Desktop-publishing toolset: undo/redo, zoom + rulers, numeric X/Y/size/angle, rotation, smart snapping + snap-to-grid, multi-select, align/distribute, group/ungroup, arrange, flip, lock, copy/paste, nudge
+- **Custom font upload** (`@font-face` data-URLs sanitized server-side and embedded in the exported PDF) — 12 web-safe families plus your own
 - **Word-list consistency pre-flight** — flags mismatches between an edited word list and the grid
-- Editor == PDF parity: a shared renderer (`element-html.js`) draws every object identically on screen and in the exported PDF (vector-sharp at 300 DPI)
+- Editor == PDF parity: a shared renderer (`element-html.js`) draws every object identically on screen and in the exported PDF (vector-sharp at 300 DPI). Every contextual-tab tool above — crop, text flow, typography, compress, table spans — renders through this same renderer, so what you see prints
 
 **Book library + autosave:**
 - **My Books** dashboard (`library.html`, IndexedDB) — every project saved locally, change-detecting autosave, reopen/duplicate/delete
@@ -1120,9 +1127,37 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
   flip H/V, lock, duplicate/copy/paste, arrow-key nudge
 - ✅ Export — engine composes placed pieces + elements per page
   (`pageState[i].layout`) via the normal book pipeline; vector-sharp at 300 DPI
-- ✅ **Full MS-Publisher-style ribbon** — Home / Insert / Page Design / Arrange /
-  Mailings / Review / View / Help, plus **contextual tabs** (Picture Format /
-  Table / Text Box / Drawing Tools) that appear only when the object is selected
+- ✅ **Full MS-Publisher-style ribbon** — Home / Insert / Page Design / Team /
+  Review / View / Help, each a single dense one-row ribbon (multi-button groups
+  collapse into dropdowns to match Publisher's density), plus **contextual tabs**
+  that appear only when the object is selected: **Shape Format**, **Table Design**,
+  **Table Layout**, **Picture Format**, **QR Code**, **Text Box** (Publisher shows
+  two at once for a text box or table — Shape Format + Text Box, Table Design +
+  Table Layout — and this matches that)
+- ✅ **Picture Format contextual tab** — Corrections, Recolor washes, Picture
+  Border / Effects / Styles, Caption (all via CSS filters that render in the PDF)
+- ✅ **Interactive crop** — drag the 8 handles with a live darkened mask; a
+  `{l,t,r,b}` edge-fraction model plus captured natural size, so the crop clips
+  identically in the editor viewport and the exported PDF
+- ✅ **Compress Pictures / Swap** — Compress downsamples the stored image to a
+  target print resolution (300/220/150/96 ppi, since the page is 96 CSS-ppi),
+  optionally baking the crop, and keeps PNG/GIF/WebP alpha; Swap exchanges two
+  pictures' contents (image + crop + adjustments) while each keeps its own frame
+- ✅ **QR Code contextual tab** — dedicated tab to edit the link, error-correction
+  level, dark/light (or transparent) colours, colour presets, test-link and size
+  (also fixed a serialization gap where QR data was lost on save/export)
+- ✅ **Table Design / Table Layout tabs** — styles, borders, header/cell fills,
+  insert/delete rows & columns, cell **merge / split**, and **diagonal-split** cells
+- ✅ **Text Box + Shape Format tabs** — Font/Alignment/WordArt with Text Fill &
+  Outline palettes, Text Fit, Text Direction, Columns, Margins, Drop Cap, Number
+  Style, Ligatures; the text-box frame (fill/border/radius/shadow) on Shape Format
+- ✅ **Advanced OpenType typography** — Stylistic Sets, Swash, and Stylistic /
+  Contextual Alternates via `font-feature-settings` (renders on screen and in the
+  PDF for any font that ships the feature; custom uploads especially)
+- ✅ **Linked text boxes (text flow)** — Create / Break Link + Previous / Next
+  flow a box's overflow into the next box; chains are keyed by serialization-safe
+  scalars, each box persists its own computed slice + flow-region height, so the
+  PDF reproduces the flow with no server-side measurement
 - ✅ **Break-apart puzzle** — title / instructions / word-list become editable
   objects (word list → table); the grid stays protected. Send-behind z-order.
 - ✅ **Shapes incl. speech/thought chat bubbles**, and **editable multi-column tables**
@@ -1133,12 +1168,14 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - ✅ **Self-hosted LAN team workspace** (`workspace.js`) — shared roster, shared
   books, live comments via SSE, "Save to my library" fork + notifications
 - ✅ Grouping/ungrouping; page add / duplicate / delete / reorder in the sidebar; responsive mobile view
-- 🔲 Marquee (rubber-band) select, draggable ruler guides, on-canvas rotation handle
+- 🔲 Marquee (rubber-band) select
 - 🔲 Filler page swap inline; layers panel; multiple named master pages
+- 🔲 Cross-page text-box linking (chains are per-page today; cross-page flow needs a global element registry)
+- 🔲 Swap-formatting-only variant; text-box Stylistic Set gallery previews
 - 🔲 **Switchable editor "skins"** (future) — the layout model (`pageState`) is
   decoupled from the editor chrome, so a future setting could re-skin the editor
   to look/behave like MS Publisher, InDesign, Canva, etc. over the same data
-- **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner. *(Shipped: the QR foundation — `engine/qr.js` encodes offline via `qrcode-generator`; the shared `element-html.js` draws it as a crisp vector so it stays scannable at any print size; placeable/editable in the Page Editor as a QR element pointing at any URL, editor==PDF. Per-page hint/answer landing pages + book-level auto-QR still to come.)*
+- **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner. *(Shipped: the QR foundation — `engine/qr.js` encodes offline via `qrcode-generator`; the shared `element-html.js` draws it as a crisp vector so it stays scannable at any print size; placeable/editable in the Page Editor as a QR element pointing at any URL, editor==PDF. Now with a **dedicated QR Code contextual tab** — link, error-correction level, dark/light-or-transparent colours, colour presets, test-link, size — and a fixed serialization gap so QR data survives save/export. Per-page hint/answer landing pages + book-level auto-QR still to come.)*
 - **ComfyUI visibility** — WebSocket progress display, live latent preview, workflow debug panel
 - **ComfyUI prompt helper** — Claude-powered prompt optimizer, context-aware per preset, positive + negative prompt output, "explain changes" toggle
 - **Publish Checklist** — pre-flight checklist with 🔴 blockers / 🟡 warnings / 🟢 passes, structural + KDP compliance checks (logic), content quality checks (Claude API), "Fix it" shortcuts per item, auto-runs on export. *(Shipped: `engine/checklist.js` — structural/print checks verified against KDP's published rules (July 2026): page count 24–828, even, gutter table per page count, trim set; plus image ≥300 DPI (`engine/imagesize.js`) and content-inside-safe-area checks, answer-key completeness, word-list match, difficulty/audience coherence, bleed guards, copyright/back-matter. **Export gate**: the KDP bundle / PDF download runs the checklist first and blocks on 🔴 blockers unless the user overrides (warnings never block). Fixed a stale `hasPuzzleContent` whitelist that had false-flagged sudoku/logic-grid/etc. as "empty". Still to come: Claude content-quality checks, "Fix it" jumps, cover-image DPI, server-side gate enforcement.)*
