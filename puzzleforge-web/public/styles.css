@@ -647,6 +647,8 @@ body.theme-dark {
 .td-fmt-h { display: block; height: 9px; border: 1px solid #333; }
 .td-fmt-b { display: block; flex: 1; border: 1px solid #333; border-top: none; }
 .tbl-headerchk { white-space: nowrap; }
+/* Selected table cells (for Merge / Split / Diagonals) */
+#stageInner td.cell-sel { outline: 2px solid var(--brand); outline-offset: -2px; background-image: linear-gradient(rgba(60,80,200,.14), rgba(60,80,200,.14)); }
 .align-mini { display: inline-flex; gap: 2px; }
 .rmini-field { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 4px; white-space: nowrap; }
 .rmini-field .mini-color { width: 30px; height: 24px; }

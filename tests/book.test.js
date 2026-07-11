@@ -109,7 +109,7 @@ test('table elements render as an HTML table with header styling and escaped cel
   });
   assert.match(html, /<table[^>]*table-layout:fixed/);
   assert.match(html, /width:140px/);            // 80 + 60
-  assert.match(html, /font-weight:700;background:#eeeeee/); // header row
+  assert.match(html, /font-weight:700;background-color:#eeeeee/); // header row
   assert.match(html, /A &amp; B/);              // escaped
   assert.match(html, /&lt;10&gt;/);             // escaped
   assert.ok(!html.includes('<10>'));            // no raw HTML injection

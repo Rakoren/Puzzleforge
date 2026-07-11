@@ -24,6 +24,7 @@
     tdControls: $('tdControls'), tdNone: $('tdNone'), tdBorderW: $('tdBorderW'), tdHeader: $('tdHeader'),
     tlControls: $('tlControls'), tlNone: $('tlNone'), tlEditText: $('tlEditText'), tlForward: $('tlForward'), tlBackward: $('tlBackward'),
     tlInsAbove: $('tlInsAbove'), tlInsBelow: $('tlInsBelow'), tlInsLeft: $('tlInsLeft'), tlInsRight: $('tlInsRight'),
+    tlMerge: $('tlMerge'), tlSplit: $('tlSplit'), tlDiagonal: $('tlDiagonal'),
     sfControls: $('sfControls'), sfNone: $('sfNone'), sfEditText: $('sfEditText'),
     sfForward: $('sfForward'), sfBackward: $('sfBackward'), sfGroup: $('sfGroup'), sfUngroup: $('sfUngroup'), sfH: $('sfH'), sfW: $('sfW'),
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
@@ -1076,7 +1077,7 @@
     e._node = node; node._ref = e; applyElTf(e);
     node.addEventListener('pointerdown', (ev) => onPointerDown(ev, e));
     if (e.kind === 'text') node.addEventListener('dblclick', () => editText(e));
-    if (e.kind === 'table') node.addEventListener('dblclick', (ev) => editTableCell(e, ev));
+    if (e.kind === 'table') { node.addEventListener('dblclick', (ev) => editTableCell(e, ev)); node.addEventListener('pointerdown', (ev) => onTableCellDown(e, ev), true); }
     if (e.kind === 'image') node.addEventListener('dblclick', () => pickImageFor(e));
     return node;
   }
@@ -1741,11 +1742,57 @@
     if (!Array.isArray(t.cells)) t.cells = [];
     for (let r = 0; r < t.rows; r++) { if (!Array.isArray(t.cells[r])) t.cells[r] = []; for (let c = 0; c < t.cols; c++) if (t.cells[r][c] == null) t.cells[r][c] = ''; }
   }
-  function redrawTable(t) { t._node.innerHTML = elHtml(t); requestAnimationFrame(drawSel); }
+  function redrawTable(t) { t._node.innerHTML = elHtml(t); highlightCells(t); requestAnimationFrame(drawSel); }
+  // Cell-range selection inside a selected table (click a cell, Shift-click to
+  // extend), used by Merge / Split / Diagonals on the Table Layout tab.
+  function onTableCellDown(t, ev) {
+    if (ev.button !== 0) return;
+    if (!(sels.length === 1 && sels[0] === t)) return; // not in cell mode → let the element drag
+    const td = ev.target.closest && ev.target.closest('td'); if (!td) return;
+    ev.stopImmediatePropagation();
+    const r = Number(td.dataset.r), c = Number(td.dataset.c);
+    if (ev.shiftKey && t._sel) { t._sel.r1 = r; t._sel.c1 = c; } else t._sel = { r0: r, c0: c, r1: r, c1: c };
+    highlightCells(t);
+  }
+  function highlightCells(t) {
+    if (!t || !t._node) return; const sel = t._sel;
+    t._node.querySelectorAll('td.cell-sel').forEach((td) => td.classList.remove('cell-sel'));
+    if (!sel) return;
+    const minR = Math.min(sel.r0, sel.r1), maxR = Math.max(sel.r0, sel.r1), minC = Math.min(sel.c0, sel.c1), maxC = Math.max(sel.c0, sel.c1);
+    t._node.querySelectorAll('td[data-r]').forEach((td) => { const r = +td.dataset.r, c = +td.dataset.c; if (r >= minR && r <= maxR && c >= minC && c <= maxC) td.classList.add('cell-sel'); });
+  }
+  function mergeTableCells() {
+    const t = selTable(); if (!t || !t._sel) { setStatus('Click a cell, then Shift-click another, to pick a range to merge.', ''); return; }
+    const s = t._sel; const minR = Math.min(s.r0, s.r1), maxR = Math.max(s.r0, s.r1), minC = Math.min(s.c0, s.c1), maxC = Math.max(s.c0, s.c1);
+    if (minR === maxR && minC === maxC) { setStatus('Select two or more cells to merge (Shift-click a second cell).', ''); return; }
+    pushUndo(); ensureCells(t);
+    t.spans = (t.spans || []).filter((sp) => { const er = sp[0] + sp[2] - 1, ec = sp[1] + sp[3] - 1; return (er < minR || sp[0] > maxR || ec < minC || sp[1] > maxC); });
+    const parts = [];
+    for (let r = minR; r <= maxR; r++) for (let c = minC; c <= maxC; c++) { const v = (t.cells[r] && t.cells[r][c]) || ''; if (v) parts.push(v); if (!(r === minR && c === minC)) t.cells[r][c] = ''; }
+    t.cells[minR][minC] = parts.join(' ');
+    t.spans.push([minR, minC, maxR - minR + 1, maxC - minC + 1]);
+    t._sel = { r0: minR, c0: minC, r1: minR, c1: minC };
+    redrawTable(t); setStatus('Cells merged.', 'ok');
+  }
+  function splitTableCells() {
+    const t = selTable(); if (!t || !t._sel) { setStatus('Click the merged cell to split first.', ''); return; }
+    const r = Math.min(t._sel.r0, t._sel.r1), c = Math.min(t._sel.c0, t._sel.c1);
+    pushUndo();
+    t.spans = (t.spans || []).filter((sp) => !(sp[0] <= r && r < sp[0] + sp[2] && sp[1] <= c && c < sp[1] + sp[3]));
+    redrawTable(t); setStatus('Cell split.', 'ok');
+  }
+  function toggleTableDiagonal() {
+    const t = selTable(); if (!t || !t._sel) { setStatus('Click a cell first, then add a diagonal.', ''); return; }
+    const r = Math.min(t._sel.r0, t._sel.r1), c = Math.min(t._sel.c0, t._sel.c1);
+    pushUndo(); t.diags = t.diags || [];
+    const i = t.diags.findIndex((d) => d[0] === r && d[1] === c);
+    if (i >= 0) t.diags.splice(i, 1); else t.diags.push([r, c]);
+    redrawTable(t);
+  }
   function tableOp(fn) { const t = selTable(); if (!t) return; pushUndo(); ensureCells(t); fn(t); ensureCells(t); redrawTable(t); syncSelUI(); }
   function editTableCell(t, ev) {
     const td = ev.target.closest('td'); if (!td) return;
-    const r = td.parentNode.rowIndex, c = td.cellIndex;
+    const r = Number(td.dataset.r), c = Number(td.dataset.c);
     ensureCells(t);
     td.setAttribute('contenteditable', 'true'); td.focus();
     // Put the caret at the end of the cell.
@@ -1784,10 +1831,12 @@
     buildColorMenu(document.getElementById('tdHeaderFillMenu'), { apply: (c) => tblSet('headerFill', c), noneLabel: '✕ No Fill', onNone: () => tblSet('headerFill', 'none') });
     buildColorMenu(document.getElementById('tdLineColorMenu'), { apply: (c) => tblSet('borderColor', c), noneLabel: 'Automatic (dark)', onNone: () => tblSet('borderColor', '#333333') });
   }
-  function tblInsRow(where) { tableOp((t) => { ensureCells(t); const row = Array(t.cols).fill(''); if (where === 'above') t.cells.unshift(row); else t.cells.push(row); t.rows++; }); }
-  function tblInsCol(where) { tableOp((t) => { ensureCells(t); t.cells.forEach((r) => { if (where === 'left') r.unshift(''); else r.push(''); }); if (where === 'left') t.colW.unshift(90); else t.colW.push(90); t.cols++; }); }
-  function tblDelRow() { tableOp((t) => { if (t.rows > 1) { t.rows--; t.cells.pop(); } }); }
-  function tblDelCol() { tableOp((t) => { if (t.cols > 1) { t.cols--; t.colW.pop(); t.cells.forEach((r) => r.pop()); } }); }
+  // Structural edits clear merges/diagonals (their row/col indices would shift).
+  const tblClearSpans = (t) => { t.spans = []; t.diags = []; t._sel = null; };
+  function tblInsRow(where) { tableOp((t) => { ensureCells(t); const row = Array(t.cols).fill(''); if (where === 'above') t.cells.unshift(row); else t.cells.push(row); t.rows++; tblClearSpans(t); }); }
+  function tblInsCol(where) { tableOp((t) => { ensureCells(t); t.cells.forEach((r) => { if (where === 'left') r.unshift(''); else r.push(''); }); if (where === 'left') t.colW.unshift(90); else t.colW.push(90); t.cols++; tblClearSpans(t); }); }
+  function tblDelRow() { tableOp((t) => { if (t.rows > 1) { t.rows--; t.cells.pop(); tblClearSpans(t); } }); }
+  function tblDelCol() { tableOp((t) => { if (t.cols > 1) { t.cols--; t.colW.pop(); t.cells.forEach((r) => r.pop()); tblClearSpans(t); } }); }
   function syncTableTabsUI() {
     const t = selTable();
     if (el.tdNone) el.tdNone.classList.toggle('hidden', !!t);
@@ -2350,6 +2399,7 @@
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
         borderColor: e.borderColor, borderW: e.borderW, headerFill: e.headerFill, cellPad: e.cellPad, cellFill: e.cellFill,
+        spans: e.spans, diags: e.diags,
         behind: e.behind || undefined, field: e.field || undefined,
         gid: e.gid,
       }));
@@ -3021,6 +3071,9 @@
     if (el.tdBorderW) el.tdBorderW.addEventListener('change', () => tblSet('borderW', Math.max(0, Math.min(8, Number(el.tdBorderW.value) || 0))));
     if (el.tdHeader) el.tdHeader.addEventListener('change', () => tblSet('header', el.tdHeader.checked));
     document.querySelectorAll('.tbl-align').forEach((b) => b.addEventListener('click', () => tblSet('align', b.dataset.talign)));
+    if (el.tlMerge) el.tlMerge.addEventListener('click', mergeTableCells);
+    if (el.tlSplit) el.tlSplit.addEventListener('click', splitTableCells);
+    if (el.tlDiagonal) el.tlDiagonal.addEventListener('click', toggleTableDiagonal);
     // Home Clipboard / Objects / Arrange / Editing
     el.cutBtn.addEventListener('click', cutSel); el.copyBtn.addEventListener('click', copySel); el.pasteBtn.addEventListener('click', paste);
     el.fmtPainter.addEventListener('click', togglePainter);

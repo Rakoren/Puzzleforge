@@ -120,13 +120,30 @@
     let totalW = 0, cg = '<colgroup>';
     for (let c = 0; c < cols; c++) { const w = Math.max(16, num(colW[c], defW)); totalW += w; cg += `<col style="width:${w}px">`; }
     cg += '</colgroup>';
+    // Merged cells: each span is [row, col, rowspan, colspan]; cells inside a
+    // span (other than its top-left) are "covered" and not emitted.
+    const spans = Array.isArray(e.spans) ? e.spans : [];
+    const covered = new Set(); const spanAt = {};
+    for (const s of spans) {
+      const sr = num(s[0], 0), sc = num(s[1], 0), rs = Math.max(1, num(s[2], 1)), cs = Math.max(1, num(s[3], 1));
+      if (sr < 0 || sc < 0 || sr >= rows || sc >= cols) continue;
+      spanAt[sr + ',' + sc] = { rs: Math.min(rs, rows - sr), cs: Math.min(cs, cols - sc) };
+      for (let dr = 0; dr < rs; dr++) for (let dc = 0; dc < cs; dc++) { if (!dr && !dc) continue; covered.add((sr + dr) + ',' + (sc + dc)); }
+    }
+    const diagSet = new Set((Array.isArray(e.diags) ? e.diags : []).map((d) => num(d[0], -1) + ',' + num(d[1], -1)));
     let body = '';
     for (let r = 0; r < rows; r++) {
       body += '<tr>';
       for (let c = 0; c < cols; c++) {
+        const key = r + ',' + c;
+        if (covered.has(key)) continue;
+        const sp = spanAt[key];
         const isH = header && r === 0;
-        const cs = `border:${bW}px solid ${bC};padding:${pad}px;text-align:${align};vertical-align:top;` + (isH ? `font-weight:700;background:${hFill};` : (cFill ? `background:${cFill};` : ''));
-        body += `<td style="${cs}">${esc((cells[r] && cells[r][c]) || '')}</td>`;
+        const spanAttr = sp ? ` colspan="${sp.cs}" rowspan="${sp.rs}"` : '';
+        let cs = `border:${bW}px solid ${bC};padding:${pad}px;text-align:${align};vertical-align:top;`
+          + (isH ? `font-weight:700;background-color:${hFill};` : (cFill ? `background-color:${cFill};` : ''));
+        if (diagSet.has(key)) cs += `background-image:linear-gradient(to top right, transparent calc(50% - ${Math.max(0.5, bW)}px), ${bC} calc(50% - ${Math.max(0.5, bW)}px), ${bC} calc(50% + ${Math.max(0.5, bW)}px), transparent calc(50% + ${Math.max(0.5, bW)}px));`;
+        body += `<td data-r="${r}" data-c="${c}"${spanAttr} style="${cs}">${esc((cells[r] && cells[r][c]) || '')}</td>`;
       }
       body += '</tr>';
     }
