@@ -617,6 +617,18 @@ body.theme-dark {
 .color-opt { display: block; width: 100%; text-align: left; padding: 6px 8px; font-size: 12.5px; }
 .color-row.wt-row { grid-template-columns: repeat(3, 1fr); }
 .wt-btn { padding: 4px 6px; font-size: 12px; border: 1px solid var(--line); border-radius: 5px; }
+/* Shape Format tab (2nd contextual): same dense rules as the Text Box tab */
+.ribbon-panel[data-panel="shapeformat"] .rgroup-body { flex-wrap: nowrap; align-items: center; }
+.ribbon-panel[data-panel="shapeformat"] .rbig { min-width: 42px; max-width: 74px; padding: 2px 5px; font-size: 10px; min-height: 46px; }
+.ribbon-panel[data-panel="shapeformat"] .rbig .rbig-ico { font-size: 16px; }
+.ribbon-panel[data-panel="shapeformat"] .rmini { padding: 2px 6px; font-size: 11.5px; }
+.ribbon-panel[data-panel="shapeformat"] .rmini-col { gap: 2px; }
+#sfShapeGallery, #sfStyleGallery { display: grid; grid-template-columns: repeat(3, auto); gap: 3px; align-content: center; }
+.sf-style-sw { width: 30px; height: 26px; border-radius: 4px; cursor: pointer; padding: 0; }
+.sf-style-sw:hover { outline: 2px solid var(--brand); outline-offset: 1px; }
+.size-fields.rmini-col .m { flex-direction: row; align-items: center; gap: 6px; }
+.size-fields .m > span { width: 42px; font-size: 11px; }
+.size-fields .m input { width: 64px; }
 .align-mini { display: inline-flex; gap: 2px; }
 .rmini-field { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 4px; white-space: nowrap; }
 .rmini-field .mini-color { width: 30px; height: 24px; }

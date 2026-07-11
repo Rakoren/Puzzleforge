@@ -301,7 +301,12 @@
       `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:${Math.max(0.8, Math.min(3, num(e.lineHeight, 1.25)))};` +
       (e.hyphens ? 'hyphens:auto;-webkit-hyphens:auto;' : '') +
       (cols > 1 ? `column-count:${cols};column-gap:16px;` : '') +
-      (pad > 0 ? `padding:${pad}px;box-sizing:border-box;` : '') +
+      // Text-box frame (Shape Format tab): background fill, border, radius, shadow.
+      ((pad > 0 || (e.boxStroke && e.boxStroke !== 'none')) ? `padding:${pad}px;box-sizing:border-box;` : '') +
+      (e.boxFill && e.boxFill !== 'none' ? `background:${color(e.boxFill, '#ffffff')};` : '') +
+      (e.boxStroke && e.boxStroke !== 'none' ? `border:${Math.max(0, Math.min(20, num(e.boxStrokeW, 1)))}px solid ${color(e.boxStroke, '#333')};` : '') +
+      (num(e.boxRadius, 0) ? `border-radius:${Math.max(0, Math.min(200, num(e.boxRadius, 0)))}px;` : '') +
+      (e.boxShadow ? `box-shadow:3px 3px 7px ${color(e.boxShadow, '#00000033')};` : '') +
       (NUMSTYLE[e.numStyle] ? `font-variant-numeric:${NUMSTYLE[e.numStyle]};` : '') +
       (LIG[e.ligatures] ? `font-variant-ligatures:${LIG[e.ligatures]};` : '') +
       // WordArt: outline (text-stroke) + drop shadow. Chromium renders both on
