@@ -312,17 +312,31 @@
         // which Chromium applies identically on screen and in the exported PDF.
         const filt = imgFilter(e);
         const rad = num(e.picRadius, 0) ? `border-radius:${Math.max(0, Math.min(200, num(e.picRadius, 0)))}px;` : '';
-        const imgCss = `width:100%;display:block;pointer-events:none;${fx}${filt ? `filter:${filt};` : ''}${rad}`;
-        const wrapCss = `position:relative;width:${w}px;box-sizing:border-box;pointer-events:none;`
-          + (e.picBorder && e.picBorder !== 'none' ? `border:${Math.max(0, Math.min(20, num(e.picBorderW, 1)))}px solid ${color(e.picBorder, '#333')};` : '')
+        const frame = (e.picBorder && e.picBorder !== 'none' ? `border:${Math.max(0, Math.min(20, num(e.picBorderW, 1)))}px solid ${color(e.picBorder, '#333')};` : '')
           + rad + (e.picShadow ? `box-shadow:3px 3px 8px ${color(e.picShadow, '#00000040')};` : '');
-        let cap = '';
+        // Crop: {l,t,r,b} fractions hide parts of the image. The frame becomes an
+        // overflow-clipped viewport with the full image positioned inside it.
+        const cr = e.crop, aspect = (num(e.natW, 0) && num(e.natH, 0)) ? num(e.natH) / num(e.natW) : 0;
+        const cropped = cr && aspect && (num(cr.l, 0) || num(cr.t, 0) || num(cr.r, 0) || num(cr.b, 0));
+        let picHtml;
+        if (cropped) {
+          const l = Math.max(0, Math.min(0.95, num(cr.l, 0))), t = Math.max(0, Math.min(0.95, num(cr.t, 0)));
+          const r = Math.max(0, Math.min(0.95, num(cr.r, 0))), bt = Math.max(0, Math.min(0.95, num(cr.b, 0)));
+          const fullW = w, fullH = w * aspect;
+          const vw = Math.max(4, fullW * (1 - l - r)), vh = Math.max(4, fullH * (1 - t - bt));
+          const imgCss = `position:absolute;width:${fullW}px;left:${(-l * fullW).toFixed(2)}px;top:${(-t * fullH).toFixed(2)}px;pointer-events:none;${fx}${filt ? `filter:${filt};` : ''}`;
+          picHtml = `<div style="position:relative;width:${vw.toFixed(2)}px;height:${vh.toFixed(2)}px;overflow:hidden;box-sizing:border-box;pointer-events:none;${frame}"><img src="${e.src}" style="${imgCss}" alt=""></div>`;
+        } else {
+          const imgCss = `width:100%;display:block;pointer-events:none;${fx}${filt ? `filter:${filt};` : ''}${rad}`;
+          picHtml = `<div style="position:relative;width:${w}px;box-sizing:border-box;pointer-events:none;${frame}"><img src="${e.src}" style="${imgCss}" alt=""></div>`;
+        }
         if (e.caption && e.captionStyle && e.captionStyle !== 'none') {
           const ov = e.captionStyle === 'overlay';
           const cfs = Math.max(9, Math.round(w * 0.06));
-          cap = `<div style="${ov ? 'position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;' : 'background:#f1f3f5;color:#333;'}padding:4px 8px;font-size:${cfs}px;text-align:center;font-family:${FONTS.sans};box-sizing:border-box;">${esc(e.caption)}</div>`;
+          const cap = `<div style="${ov ? 'position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;' : 'background:#f1f3f5;color:#333;'}padding:4px 8px;font-size:${cfs}px;text-align:center;font-family:${FONTS.sans};box-sizing:border-box;">${esc(e.caption)}</div>`;
+          return `<div style="position:relative;width:max-content;pointer-events:none;">${picHtml}${cap}</div>`;
         }
-        return `<div style="${wrapCss}"><img src="${e.src}" style="${imgCss}" alt="">${cap}</div>`;
+        return picHtml;
       }
       // No image yet: a picture placeholder frame (double-click in the editor to
       // fill it). Rendered with inline styles so it looks the same in the PDF.

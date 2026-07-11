@@ -23,6 +23,7 @@
     ctxTab: $('ctxTab'), ctxTab2: $('ctxTab2'), ctxTabTD: $('ctxTabTD'), ctxTabTL: $('ctxTabTL'), ctxTabPic: $('ctxTabPic'),
     picControls: $('picControls'), picNone: $('picNone'), picChange: $('picChange'), picReset: $('picReset'),
     picForward: $('picForward'), picBackward: $('picBackward'), picFlipH: $('picFlipH'), picFlipV: $('picFlipV'), picW: $('picW'), picCaptionText: $('picCaptionText'),
+    picCropBtn: $('picCropBtn'), picCropReset: $('picCropReset'), picCropFill: $('picCropFill'),
     tdControls: $('tdControls'), tdNone: $('tdNone'), tdBorderW: $('tdBorderW'), tdHeader: $('tdHeader'),
     tlControls: $('tlControls'), tlNone: $('tlNone'), tlEditText: $('tlEditText'), tlForward: $('tlForward'), tlBackward: $('tlBackward'),
     tlInsAbove: $('tlInsAbove'), tlInsBelow: $('tlInsBelow'), tlInsLeft: $('tlInsLeft'), tlInsRight: $('tlInsRight'),
@@ -1114,7 +1115,7 @@
 
   // --- selection ---
   const isSel = (r) => sels.indexOf(r) >= 0;
-  function setSel(a) { sels = a.slice(); syncSelUI(); drawSel(); }
+  function setSel(a) { if (cropTarget && a[0] !== cropTarget) endCrop(true); sels = a.slice(); syncSelUI(); drawSel(); }
   const primary = () => sels[sels.length - 1];
   // Which resize handles an object gets: shapes resize freely on all 8;
   // text/images resize width on the sides and scale on the corners; puzzle
@@ -1126,6 +1127,7 @@
   }
   function drawSel() {
     if (!selLayer) return; selLayer.innerHTML = '';
+    if (cropTarget) return; // crop overlay replaces the selection handles
     sels.forEach((ref) => {
       if (!ref._node) return; const b = box(ref);
       const d = document.createElement('div'); d.className = 'pf-selbox'; d.style.transform = `translate(${b.x}px,${b.y}px) rotate(${num(ref.rot, 0)}deg)`; d.style.width = b.w + 'px'; d.style.height = b.h + 'px';
@@ -1520,9 +1522,9 @@
   }
   function toggleLock() { const o = sels.length === 1 && sels[0]; if (!o) return; pushUndo(); o.locked = !o.locked; syncSelUI(); }
 
-  function addElement(e) { pushUndo(); curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); }
+  function addElement(e) { pushUndo(); curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); setSel([e]); return e; }
   function addText() { const pm = curModel(); addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2), scale: 1, rot: 0, z: 100, text: 'Your text', fontSize: 28, color: '#222222', align: 'left', w: 240, fontFamily: (pm && pm._font) || 'sans' }); }
-  function addImageFile(file) { const r = new FileReader(); r.onload = () => addElement({ group: 'el', id: uid++, kind: 'image', x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 80), scale: 1, rot: 0, z: 100, src: r.result, width: 160 }); r.readAsDataURL(file); }
+  function addImageFile(file) { const r = new FileReader(); r.onload = () => { const o = addElement({ group: 'el', id: uid++, kind: 'image', x: Math.round(dims.usableWidth / 2 - 80), y: Math.round(dims.usableHeight / 2 - 80), scale: 1, rot: 0, z: 100, src: r.result, width: 160 }); captureNatSize(o); }; r.readAsDataURL(file); }
   // An empty picture frame — double-click it (or use Insert → Picture) to fill.
   function addPicturePlaceholder() {
     addElement({ group: 'el', id: uid++, kind: 'image', placeholder: true, x: Math.round(dims.usableWidth / 2 - 100), y: Math.round(dims.usableHeight / 2 - 70), scale: 1, rot: 0, z: 100, width: 200, h: 140 });
@@ -1533,7 +1535,7 @@
     inp.addEventListener('change', () => {
       const f = inp.files && inp.files[0]; if (!f) return;
       const r = new FileReader();
-      r.onload = () => { pushUndo(); e.src = r.result; e.placeholder = false; e._node.innerHTML = elHtml(e); requestAnimationFrame(drawSel); };
+      r.onload = () => { pushUndo(); e.src = r.result; e.placeholder = false; delete e.crop; captureNatSize(e); e._node.innerHTML = elHtml(e); requestAnimationFrame(drawSel); };
       r.readAsDataURL(f);
     });
     inp.click();
@@ -1588,6 +1590,85 @@
     if (!o) return;
     if (el.picW) el.picW.value = Math.round(num(o.width, 160));
     if (el.picCaptionText) el.picCaptionText.value = o.caption || '';
+  }
+  // Record the natural pixel size of a picture (needed to compute crop aspect).
+  function captureNatSize(o) {
+    if (!o || !o.src) return;
+    const img = new Image();
+    img.onload = () => { o.natW = img.naturalWidth; o.natH = img.naturalHeight; };
+    img.src = o.src;
+  }
+  // --- Interactive crop -----------------------------------------------------
+  const clampF = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const round4 = (v) => Math.round(v * 1e4) / 1e4;
+  function imgFilterCss(o) { const parts = []; if (num(o.brightness, 1) !== 1) parts.push(`brightness(${o.brightness})`); if (num(o.contrast, 1) !== 1) parts.push(`contrast(${o.contrast})`); if (RECOLOR_FILTERS[o.recolor]) parts.push(RECOLOR_FILTERS[o.recolor]); return parts.length ? `filter:${parts.join(' ')};` : ''; }
+  let cropTarget = null, cropAnchor = null, cropLayer = null;
+  function startCrop() {
+    const o = selImage(); if (!o) { setStatus('Select a picture to crop.', ''); return; }
+    if (cropTarget) { endCrop(true); return; }
+    if (!num(o.natW, 0) || !num(o.natH, 0)) { captureNatSize(o); setStatus('Picture still loading — try Crop again in a moment.', ''); return; }
+    const cr = o.crop || { l: 0, t: 0, r: 0, b: 0 };
+    const fullW = num(o.width, 160), fullH = fullW * (o.natH / o.natW), sc = num(o.scale, 1);
+    cropAnchor = { fx: o.x - num(cr.l, 0) * fullW * sc, fy: o.y - num(cr.t, 0) * fullH * sc, fullW, fullH, sc, crop: { l: num(cr.l, 0), t: num(cr.t, 0), r: num(cr.r, 0), b: num(cr.b, 0) } };
+    cropTarget = o; document.body.classList.add('cropping');
+    if (el.picCropBtn) el.picCropBtn.classList.add('on');
+    renderCropOverlay();
+    setStatus('Drag the handles to crop — click Crop again or press Enter to apply, Esc to cancel.', '');
+  }
+  function endCrop(apply) {
+    if (!cropTarget) return; const o = cropTarget, a = cropAnchor;
+    if (apply) {
+      pushUndo();
+      o.crop = { l: round4(a.crop.l), t: round4(a.crop.t), r: round4(a.crop.r), b: round4(a.crop.b) };
+      o.x = Math.round(a.fx + o.crop.l * a.fullW * a.sc); o.y = Math.round(a.fy + o.crop.t * a.fullH * a.sc);
+      picRerender(o);
+    }
+    cropTarget = null; cropAnchor = null;
+    if (cropLayer) { cropLayer.remove(); cropLayer = null; }
+    document.body.classList.remove('cropping');
+    if (el.picCropBtn) el.picCropBtn.classList.remove('on');
+    drawSel(); syncSelUI();
+  }
+  function renderCropOverlay() {
+    if (!cropTarget) return; const a = cropAnchor, o = cropTarget;
+    if (cropLayer) cropLayer.remove();
+    cropLayer = document.createElement('div'); cropLayer.className = 'pf-crop-layer';
+    cropLayer.style.cssText = `position:absolute;left:0;top:0;transform:translate(${a.fx}px,${a.fy}px) scale(${a.sc});transform-origin:top left;z-index:60;`;
+    const box = document.createElement('div'); box.style.cssText = `position:absolute;left:0;top:0;width:${a.fullW}px;height:${a.fullH}px;overflow:hidden;`;
+    const img = document.createElement('img'); img.src = o.src; img.style.cssText = `position:absolute;left:0;top:0;width:${a.fullW}px;height:${a.fullH}px;${imgFilterCss(o)}`;
+    box.appendChild(img);
+    const { l, t, r, b } = a.crop; const vw = a.fullW * (1 - l - r), vh = a.fullH * (1 - t - b);
+    const rect = document.createElement('div'); rect.className = 'pf-crop-rect';
+    rect.style.cssText = `position:absolute;left:${l * a.fullW}px;top:${t * a.fullH}px;width:${vw}px;height:${vh}px;`;
+    [['nw', 0, 0], ['n', 0.5, 0], ['ne', 1, 0], ['e', 1, 0.5], ['se', 1, 1], ['s', 0.5, 1], ['sw', 0, 1], ['w', 0, 0.5]].forEach(([d, hx, hy]) => {
+      const h = document.createElement('div'); h.className = 'pf-crop-h'; h.style.left = `calc(${hx * 100}% - 7px)`; h.style.top = `calc(${hy * 100}% - 7px)`;
+      h.addEventListener('pointerdown', (ev) => startCropDrag(ev, d)); rect.appendChild(h);
+    });
+    box.appendChild(rect); cropLayer.appendChild(box); el.stageInner.appendChild(cropLayer);
+  }
+  function startCropDrag(ev, dir) {
+    ev.stopPropagation(); ev.preventDefault(); const a = cropAnchor; if (!a) return;
+    const sx = ev.clientX, sy = ev.clientY, c0 = { ...a.crop };
+    const move = (e) => {
+      const dxl = (e.clientX - sx) / zoom / a.sc / a.fullW, dyl = (e.clientY - sy) / zoom / a.sc / a.fullH;
+      let { l, t, r, b } = c0;
+      if (dir.includes('w')) l = clampF(c0.l + dxl, 0, 1 - c0.r - 0.05);
+      if (dir.includes('e')) r = clampF(c0.r - dxl, 0, 1 - c0.l - 0.05);
+      if (dir.includes('n')) t = clampF(c0.t + dyl, 0, 1 - c0.b - 0.05);
+      if (dir.includes('s')) b = clampF(c0.b - dyl, 0, 1 - c0.t - 0.05);
+      a.crop = { l, t, r, b }; renderCropOverlay();
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }
+  function resetCrop() { const o = selImage(); if (!o) return; if (cropTarget === o) endCrop(false); pushUndo(); delete o.crop; picRerender(o); syncSelUI(); }
+  function cropToSquare() {
+    const o = selImage(); if (!o) return; if (!num(o.natW, 0) || !num(o.natH, 0)) { captureNatSize(o); return; }
+    const aspect = o.natH / o.natW; pushUndo();
+    // trim the longer axis to a centered square
+    if (aspect > 1) { const cut = (1 - 1 / aspect) / 2; o.crop = { l: 0, r: 0, t: cut, b: cut }; }
+    else { const cut = (1 - aspect) / 2; o.crop = { l: cut, r: cut, t: 0, b: 0 }; }
+    picRerender(o); syncSelUI();
   }
   function addShape(shape) {
     const line = shape === 'line';
@@ -2454,6 +2535,7 @@
         boxFill: e.boxFill, boxStroke: e.boxStroke, boxStrokeW: e.boxStrokeW, boxRadius: e.boxRadius, boxShadow: e.boxShadow,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV, placeholder: e.placeholder || undefined,
         brightness: e.brightness, contrast: e.contrast, recolor: e.recolor, picBorder: e.picBorder, picBorderW: e.picBorderW, picRadius: e.picRadius, picShadow: e.picShadow, caption: e.caption, captionStyle: e.captionStyle,
+        crop: e.crop, natW: e.natW, natH: e.natH,
         link: e.link || undefined, bookmark: e.bookmark || undefined,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
@@ -3137,7 +3219,10 @@
     if (el.tlDiagonal) el.tlDiagonal.addEventListener('click', toggleTableDiagonal);
     // Picture Format tab
     buildPicMenus(); buildPicStyleGallery(); buildPicBorderMenu();
-    if (el.picChange) el.picChange.addEventListener('change', () => { const o = selImage(); const f = el.picChange.files && el.picChange.files[0]; if (o && f) { const r = new FileReader(); r.onload = () => { pushUndo(); o.src = r.result; o.placeholder = false; picRerender(o); }; r.readAsDataURL(f); } el.picChange.value = ''; });
+    if (el.picChange) el.picChange.addEventListener('change', () => { const o = selImage(); const f = el.picChange.files && el.picChange.files[0]; if (o && f) { const r = new FileReader(); r.onload = () => { pushUndo(); o.src = r.result; o.placeholder = false; delete o.crop; captureNatSize(o); picRerender(o); }; r.readAsDataURL(f); } el.picChange.value = ''; });
+    if (el.picCropBtn) el.picCropBtn.addEventListener('click', startCrop);
+    if (el.picCropReset) el.picCropReset.addEventListener('click', resetCrop);
+    if (el.picCropFill) el.picCropFill.addEventListener('click', cropToSquare);
     if (el.picReset) el.picReset.addEventListener('click', picResetAdjust);
     if (el.picForward) el.picForward.addEventListener('click', () => reorder('forward'));
     if (el.picBackward) el.picBackward.addEventListener('click', () => reorder('backward'));
@@ -3330,6 +3415,7 @@
     return openBook({ config: bookConfig });
   }
   function onKey(e) {
+    if (cropTarget) { if (e.key === 'Enter') { e.preventDefault(); endCrop(true); } else if (e.key === 'Escape') { e.preventDefault(); endCrop(false); } return; }
     if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
     if (el.changeTplModal && !el.changeTplModal.hidden) { if (e.key === 'Escape') closeChangeTpl(); return; }
     if (el.puzModal && !el.puzModal.hidden) { if (e.key === 'Escape') closePuzzleInsert(); return; }
