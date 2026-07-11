@@ -36,7 +36,7 @@
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
     mW: $('mW'), mH: $('mH'), mWField: $('mWField'), mHField: $('mHField'),
     fontSize: $('fontSize'), objColor: $('objColor'), tbHyphenBtn: $('tbHyphenBtn'),
-    tbLinkCreate: $('tbLinkCreate'), tbLinkBreak: $('tbLinkBreak'), tbLinkPrev: $('tbLinkPrev'), tbLinkNext: $('tbLinkNext'),
+    tbLinkCreate: $('tbLinkCreate'), tbLinkBreak: $('tbLinkBreak'), tbLinkPrev: $('tbLinkPrev'), tbLinkNext: $('tbLinkNext'), tbStyDrop: $('tbStyDrop'),
     fontFamily: $('fontFamily'), boldBtn: $('boldBtn'), italicBtn: $('italicBtn'), underBtn: $('underBtn'),
     fontGrow: $('fontGrow'), fontShrink: $('fontShrink'), caseBtn: $('caseBtn'), clearFmt: $('clearFmt'), lineSpacing: $('lineSpacing'),
     cutBtn: $('cutBtn'), copyBtn: $('copyBtn'), pasteBtn: $('pasteBtn'), fmtPainter: $('fmtPainter'),
@@ -422,6 +422,13 @@
       applyTextPropU('numStyle', act === 'default' ? undefined : act);
     } else if (dropId === 'tbLigDrop') {
       applyTextPropU('ligatures', act === 'standard' ? undefined : act);
+    } else if (dropId === 'tbStyDrop') {
+      const o = selText(); if (!o) return; pushUndo();
+      if (/^ss\d$/.test(act)) o.stySet = Number(act.slice(2)) || undefined;
+      else if (act === 'swash') o.swash = !o.swash;
+      else if (act === 'salt') o.styAlt = !o.styAlt;
+      else if (act === 'calt') { if (o.contextual === false) delete o.contextual; else o.contextual = false; }
+      o._node.innerHTML = elHtml(o); drawSel(); syncFontUI(o);
     } else if (dropId === 'tbEffectsDrop') {
       const o = selText(); if (!o) return; pushUndo();
       if (act === 'shadow') { if (o.textShadow) delete o.textShadow; else o.textShadow = '#00000040'; }
@@ -1168,6 +1175,16 @@
       setVal('.js-font-family', one.fontFamily || 'sans');
       setVal('.js-line-spacing', String(num(one.lineHeight, 1.25)));
       if (el.tbHyphenBtn) el.tbHyphenBtn.classList.toggle('on', !!one.hyphens);
+      // Typography → Stylistic Sets menu: mark the active set and toggles.
+      const styMenu = el.tbStyDrop && el.tbStyDrop.querySelector('.rdrop-menu');
+      if (styMenu) {
+        const ss = Math.round(num(one.stySet, 0));
+        styMenu.querySelectorAll('[data-act]').forEach((b) => {
+          const a = b.dataset.act;
+          const on = a === 'ss' + ss || (a === 'swash' && one.swash) || (a === 'salt' && one.styAlt) || (a === 'calt' && one.contextual !== false);
+          b.classList.toggle('rdrop-on', !!on);
+        });
+      }
     }
   }
   function syncShapeFormatUI() {
@@ -2689,6 +2706,7 @@
         fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline, lineHeight: e.lineHeight,
         textStroke: e.textStroke, textStrokeW: e.textStrokeW, textShadow: e.textShadow,
         columns: e.columns, pad: e.pad, numStyle: e.numStyle, ligatures: e.ligatures, dropCap: e.dropCap, hyphens: e.hyphens,
+        stySet: e.stySet, swash: e.swash, styAlt: e.styAlt, contextual: e.contextual,
         chainId: e.chainId, chainOrder: e.chainOrder, flowText: e.flowText, flowH: e.flowH,
         boxFill: e.boxFill, boxStroke: e.boxStroke, boxStrokeW: e.boxStrokeW, boxRadius: e.boxRadius, boxShadow: e.boxShadow,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV, placeholder: e.placeholder || undefined,

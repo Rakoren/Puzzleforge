@@ -355,6 +355,18 @@
     // Typography (OpenType features Chromium renders on screen and in the PDF).
     const NUMSTYLE = { linprop: 'lining-nums proportional-nums', lintab: 'lining-nums tabular-nums', oldprop: 'oldstyle-nums proportional-nums', oldtab: 'oldstyle-nums tabular-nums' };
     const LIG = { disc: 'common-ligatures discretionary-ligatures', none: 'none' };
+    const fontFeatures = (t) => {
+      // Single-quote the OpenType tags: the whole style string is wrapped in a
+      // double-quoted HTML style="…" attribute, so double quotes here would
+      // truncate the attribute in both the editor and the PDF.
+      const f = [];
+      const ss = Math.round(num(t.stySet, 0));
+      if (ss >= 1 && ss <= 20) f.push(`'ss${String(ss).padStart(2, '0')}' 1`);
+      if (t.swash) f.push("'swsh' 1");
+      if (t.styAlt) f.push("'salt' 1");
+      if (t.contextual === false) f.push("'calt' 0"); // calt defaults on; only emit to disable
+      return f.join(',');
+    };
     const css =
       `font-size:${num(e.fontSize, 24)}px;color:${fill};` +
       `font-family:${fontStack(e.fontFamily)};` +
@@ -376,6 +388,10 @@
       (e.boxShadow ? `box-shadow:3px 3px 7px ${color(e.boxShadow, '#00000033')};` : '') +
       (NUMSTYLE[e.numStyle] ? `font-variant-numeric:${NUMSTYLE[e.numStyle]};` : '') +
       (LIG[e.ligatures] ? `font-variant-ligatures:${LIG[e.ligatures]};` : '') +
+      // Advanced OpenType (Typography group): stylistic sets, swash, stylistic
+      // & contextual alternates. Chromium applies these on screen and in the
+      // PDF for any font that ships the feature (custom uploads especially).
+      (fontFeatures(e) ? `font-feature-settings:${fontFeatures(e)};` : '') +
       // WordArt: outline (text-stroke) + drop shadow. Chromium renders both on
       // screen and in the PDF, so styled titles print exactly as designed.
       (e.textStroke ? `-webkit-text-stroke:${Math.max(0, num(e.textStrokeW, 1))}px ${color(e.textStroke, '#222')};` : '') +

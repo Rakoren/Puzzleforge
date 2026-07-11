@@ -684,6 +684,9 @@ body.theme-dark {
 .pf-crop-rect { pointer-events: none; box-shadow: 0 0 0 9999px rgba(0, 0, 0, .5); outline: 1px solid #fff; }
 .pf-crop-h { position: absolute; width: 14px; height: 14px; background: #fff; border: 2px solid var(--brand); border-radius: 2px; pointer-events: auto; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
 body.cropping .pf-node, body.cropping .pf-selbox { /* keep selection visuals out of the way while cropping */ }
+/* Active item in an applied dropdown (e.g. Typography → Stylistic Sets) */
+.rdrop-menu button.rdrop-on { font-weight: 600; }
+.rdrop-menu button.rdrop-on::before { content: "✓ "; color: var(--brand, #4c6ef5); }
 /* Linked text boxes (flow) */
 body.pf-linking #stageInner, body.pf-linking .pf-node { cursor: crosshair; }
 .pf-node.pf-overflow { outline: 2px dashed #e8590c; outline-offset: 1px; }
