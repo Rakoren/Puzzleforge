@@ -362,6 +362,10 @@
       `text-decoration:${e.underline ? 'underline' : 'none'};` +
       `text-align:${['left', 'center', 'right', 'justify'].includes(e.align) ? e.align : 'left'};` +
       `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:${Math.max(0.8, Math.min(3, num(e.lineHeight, 1.25)))};` +
+      // Linked text box (flow chain): a fixed region that clips its overflow so
+      // the continuation shows in the next box. The editor pre-computes each
+      // box's slice, so the PDF renders the identical flow with no reflow here.
+      (num(e.flowH, 0) ? `height:${Math.max(12, num(e.flowH, 0))}px;overflow:hidden;box-sizing:border-box;` : '') +
       (e.hyphens ? 'hyphens:auto;-webkit-hyphens:auto;' : '') +
       (cols > 1 ? `column-count:${cols};column-gap:16px;` : '') +
       // Text-box frame (Shape Format tab): background fill, border, radius, shadow.

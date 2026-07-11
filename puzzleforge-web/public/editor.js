@@ -36,6 +36,7 @@
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
     mW: $('mW'), mH: $('mH'), mWField: $('mWField'), mHField: $('mHField'),
     fontSize: $('fontSize'), objColor: $('objColor'), tbHyphenBtn: $('tbHyphenBtn'),
+    tbLinkCreate: $('tbLinkCreate'), tbLinkBreak: $('tbLinkBreak'), tbLinkPrev: $('tbLinkPrev'), tbLinkNext: $('tbLinkNext'),
     fontFamily: $('fontFamily'), boldBtn: $('boldBtn'), italicBtn: $('italicBtn'), underBtn: $('underBtn'),
     fontGrow: $('fontGrow'), fontShrink: $('fontShrink'), caseBtn: $('caseBtn'), clearFmt: $('clearFmt'), lineSpacing: $('lineSpacing'),
     cutBtn: $('cutBtn'), copyBtn: $('copyBtn'), pasteBtn: $('pasteBtn'), fmtPainter: $('fmtPainter'),
@@ -1128,6 +1129,8 @@
   // pieces scale on the corners only.
   function handleDirs(ref) {
     if (ref.kind === 'shape') return ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+    // A linked (flow) text box also gets a bottom handle to size its region.
+    if (ref.kind === 'text' && ref.chainId) return ['nw', 'ne', 'se', 'sw', 'e', 'w', 's'];
     if (ref.kind === 'text' || ref.kind === 'image') return ['nw', 'ne', 'se', 'sw', 'e', 'w'];
     return ['nw', 'ne', 'se', 'sw'];
   }
@@ -1306,6 +1309,8 @@
   function onPointerDown(ev, ref) {
     // A cell (or text box) mid-edit: let the browser place the caret, don't drag.
     if (ev.target && ev.target.isContentEditable) return;
+    // Picking a link target (Text Box → Linking → Create Link).
+    if (linkPickMode) { ev.preventDefault(); ev.stopPropagation(); finishLink(ref); return; }
     ev.preventDefault(); hideCtx();
     if (painter && ev.button !== 2 && applyPainter(ref)) { setSel([ref]); return; }
     if (ev.button === 2) { if (!isSel(ref)) setSel(expandGroups([ref])); return; }
@@ -1350,6 +1355,10 @@
         ref._node.innerHTML = elHtml(ref);
         const nb = box(ref);
         moveTo(ref, dir.includes('w') ? right - nb.w : b0.x, dir.includes('n') ? bottom - nb.h : b0.y);
+      } else if (dir === 's' && ref.kind === 'text' && ref.chainId) {
+        // Bottom handle on a linked box sets the flow region height; text reflows.
+        ref.flowH = Math.max(24, Math.round((py - b0.y) / num(ref.scale, 1)));
+        reflowChain(ref.chainId);
       } else if ((dir === 'e' || dir === 'w') && (ref.kind === 'text' || ref.kind === 'image')) {
         // Side handles set the text box / image width.
         const w = Math.max(20, Math.round((dir === 'e' ? px - b0.x : right - px) / num(ref.scale, 1)));
@@ -2418,7 +2427,113 @@
     ctxEl.style.left = Math.min(ev.clientX, window.innerWidth - mw - 8) + 'px';
     ctxEl.style.top = Math.min(ev.clientY, window.innerHeight - mh - 8) + 'px';
   }
-  function editText(ref) { const bx = ref._node.querySelector('.pf-textbox'); bx.setAttribute('contenteditable', 'true'); bx.focus(); pushUndo(); const done = () => { bx.removeAttribute('contenteditable'); ref.text = bx.innerText; bx.removeEventListener('blur', done); }; bx.addEventListener('blur', done); }
+  function editText(ref) {
+    // A linked text box edits the whole chain's text through its head box.
+    if (ref.chainId && chainBoxes(ref.chainId).length > 1) { editFlow(ref.chainId); return; }
+    const bx = ref._node.querySelector('.pf-textbox'); bx.setAttribute('contenteditable', 'true'); bx.focus(); pushUndo();
+    const done = () => { bx.removeAttribute('contenteditable'); ref.text = bx.innerText; bx.removeEventListener('blur', done); };
+    bx.addEventListener('blur', done);
+  }
+
+  // --- linked text boxes (Publisher-style flow) -----------------------------
+  // A chain is a set of text boxes sharing a `chainId`, ordered by `chainOrder`.
+  // The head (order 0) holds the authoritative full text in `flowText`; every
+  // box's `.text` is the visible slice, recomputed by reflow. Non-tail boxes
+  // carry a fixed `flowH` so overflow spills into the next box; the tail is
+  // auto-height. Chains are keyed by scalars (no element-id pointers) so they
+  // survive the recipe round-trip. `.text` + `flowH` per box give the exported
+  // PDF identical flow with no server-side measurement.
+  let flowSeq = 1;
+  let linkPickMode = null; // source box while picking a link target
+  const chainBoxes = (cid) => curModel().elements
+    .filter((e) => e.kind === 'text' && e.chainId === cid)
+    .sort((a, b) => num(a.chainOrder, 0) - num(b.chainOrder, 0));
+  function splitToFit(b, text) {
+    const bx = b._node && b._node.querySelector('.pf-textbox');
+    const cap = num(b.flowH, 0);
+    if (!bx || !cap) return { head: text, tail: '' };
+    const measure = (s) => { bx.textContent = s; return bx.scrollHeight; };
+    if (measure(text) <= cap + 1) return { head: text, tail: '' };
+    const toks = text.split(/(\s+)/); // keep whitespace so slices rejoin exactly
+    let lo = 1, hi = toks.length, best = 1;
+    while (lo <= hi) { const mid = (lo + hi) >> 1; if (measure(toks.slice(0, mid).join('')) <= cap + 1) { best = mid; lo = mid + 1; } else hi = mid - 1; }
+    return { head: toks.slice(0, best).join(''), tail: toks.slice(best).join('') };
+  }
+  function reflowChain(cid) {
+    const boxes = chainBoxes(cid); if (!boxes.length) return;
+    let rest = boxes[0].flowText || '';
+    boxes.forEach((b, i) => {
+      if (i === boxes.length - 1) { b.text = rest; rest = ''; }
+      else { const s = splitToFit(b, rest); b.text = s.head; rest = s.tail; }
+      b._node.innerHTML = elHtml(b);
+    });
+    // Overflow indicator: text beyond the (auto-height) tail is rare, but a
+    // non-tail with too-small flowH could still clip — flag the tail if content
+    // exceeds its box.
+    const tail = boxes[boxes.length - 1];
+    boxes.forEach((b) => b._node.classList.remove('pf-overflow'));
+    const tb = tail._node.querySelector('.pf-textbox');
+    if (num(tail.flowH, 0) && tb && tb.scrollHeight > tb.clientHeight + 1) tail._node.classList.add('pf-overflow');
+    requestAnimationFrame(drawSel);
+  }
+  // Freeze non-tail heights (so they can overflow) and collapse a 1-box chain
+  // back to a plain auto box, then reflow.
+  function normalizeAndReflow(cid) {
+    const boxes = chainBoxes(cid);
+    if (boxes.length < 2) {
+      const b = boxes[0];
+      if (b) { delete b.chainId; delete b.chainOrder; delete b.flowText; delete b.flowH; b._node.innerHTML = elHtml(b); requestAnimationFrame(drawSel); }
+      return;
+    }
+    boxes.forEach((b, i) => { b.chainOrder = i; if (i < boxes.length - 1) { if (!num(b.flowH, 0)) b.flowH = Math.max(24, Math.round(b._node.offsetHeight / num(b.scale, 1))); } else delete b.flowH; });
+    reflowChain(cid);
+  }
+  function editFlow(cid) {
+    const boxes = chainBoxes(cid); const head = boxes[0]; if (!head) return;
+    const bx = head._node.querySelector('.pf-textbox'); if (!bx) return;
+    pushUndo();
+    bx.style.height = 'auto'; bx.style.overflow = 'visible'; // unclip while editing
+    bx.textContent = head.flowText || '';
+    bx.setAttribute('contenteditable', 'true'); bx.focus();
+    const done = () => { bx.removeAttribute('contenteditable'); head.flowText = bx.innerText; bx.removeEventListener('blur', done); reflowChain(cid); };
+    bx.addEventListener('blur', done);
+  }
+  function startCreateLink() {
+    const o = selText(); if (!o) { setStatus('Select a text box first, then Create Link.', ''); return; }
+    if (linkPickMode) { cancelLink(); return; }
+    linkPickMode = o; document.body.classList.add('pf-linking');
+    setStatus('Click another text box to flow the overflow into (Esc to cancel).', '');
+  }
+  function cancelLink() { linkPickMode = null; document.body.classList.remove('pf-linking'); }
+  function finishLink(tgt) {
+    const src = linkPickMode; cancelLink(); if (!src || tgt === src) return;
+    if (tgt.kind !== 'text') { setStatus('Links can only flow into another text box.', ''); return; }
+    if (tgt.chainId) { setStatus('That text box is already part of a link chain.', ''); return; }
+    pushUndo();
+    let cid = src.chainId;
+    if (!cid) { cid = 'flow' + (flowSeq++); src.chainId = cid; src.chainOrder = 0; src.flowText = src.text || ''; }
+    const boxes = chainBoxes(cid);
+    const maxOrd = boxes.reduce((m, b) => Math.max(m, num(b.chainOrder, 0)), 0);
+    tgt.chainId = cid; tgt.chainOrder = maxOrd + 1;
+    const head = chainBoxes(cid)[0];
+    if (tgt.text) head.flowText = (head.flowText || '') + (head.flowText ? '\n' : '') + tgt.text;
+    normalizeAndReflow(cid); setSel([src]); setStatus('Text boxes linked — drag the bottom edge to size the flow region.', 'ok');
+  }
+  function breakLink() {
+    const o = selText(); if (!o || !o.chainId) { setStatus('This text box isn’t linked.', ''); return; }
+    pushUndo();
+    const cid = o.chainId; const boxes = chainBoxes(cid); const idx = boxes.indexOf(o);
+    const before = boxes.slice(0, idx + 1), after = boxes.slice(idx + 1);
+    // Downstream boxes become a fresh chain (slices rejoin exactly, join('')).
+    if (after.length) { const ncid = 'flow' + (flowSeq++); after.forEach((b, i) => { b.chainId = ncid; b.chainOrder = i; }); after[0].flowText = after.map((b) => b.text).join(''); normalizeAndReflow(ncid); }
+    before[0].flowText = before.map((b) => b.text).join(''); normalizeAndReflow(cid);
+    syncSelUI(); setStatus('Link broken.', 'ok');
+  }
+  function flowNav(dir) {
+    const o = selText(); if (!o || !o.chainId) return;
+    const boxes = chainBoxes(o.chainId); const t = boxes[boxes.indexOf(o) + (dir > 0 ? 1 : -1)];
+    if (t) setSel([t]);
+  }
   function applyTextProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'text') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); syncFontUI(o); }
   const applyTextPropU = (prop, val) => { const o = sels.length === 1 && sels[0]; if (o && o.kind === 'text') { pushUndo(); applyTextProp(prop, val); } };
   const selText = () => { const o = sels.length === 1 && sels[0]; return o && o.kind === 'text' ? o : null; };
@@ -2473,10 +2588,17 @@
     if (count) { renderPage(); el.frStatus.textContent = `Replaced ${count} occurrence${count !== 1 ? 's' : ''} across ${pagesTouched.size} page${pagesTouched.size !== 1 ? 's' : ''}.`; el.frStatus.className = 'pf-pub-status ok'; }
     else { el.frStatus.textContent = 'No matches found.'; el.frStatus.className = 'pf-pub-status'; }
   }
-  function duplicate() { const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo(); const { _node, ...c } = o; c.id = uid++; c.x = num(o.x, 0) + 16; c.y = num(o.y, 0) + 16; c.z = num(o.z, 100) + 1; curModel().elements.push(c); el.stageInner.insertBefore(makeEl(c), selLayer); setSel([c]); }
+  function duplicate() { const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'el') return; pushUndo(); const { _node, ...c } = o; c.id = uid++; c.x = num(o.x, 0) + 16; c.y = num(o.y, 0) + 16; c.z = num(o.z, 100) + 1; delete c.chainId; delete c.chainOrder; delete c.flowText; delete c.flowH; curModel().elements.push(c); el.stageInner.insertBefore(makeEl(c), selLayer); setSel([c]); }
   function copySel() { clipboard = sels.filter((r) => r.group === 'el').map((r) => { const { _node, ...c } = r; return c; }); }
   function paste() { if (!clipboard.length) return; pushUndo(); const made = []; clipboard.forEach((c) => { const e = { ...c, group: 'el', id: uid++, x: num(c.x, 0) + 16, y: num(c.y, 0) + 16, z: num(c.z, 100) + 1 }; curModel().elements.push(e); el.stageInner.insertBefore(makeEl(e), selLayer); made.push(e); }); setSel(made); }
-  function deleteSel() { const els = sels.filter((r) => r.group === 'el'); if (!els.length) return; pushUndo(); const arr = curModel().elements; els.forEach((r) => { const i = arr.indexOf(r); if (i >= 0) arr.splice(i, 1); if (r._node) r._node.remove(); }); setSel([]); }
+  function deleteSel() {
+    const els = sels.filter((r) => r.group === 'el'); if (!els.length) return; pushUndo();
+    const arr = curModel().elements;
+    const affected = new Set(els.map((r) => r.chainId).filter(Boolean));
+    els.forEach((r) => { const i = arr.indexOf(r); if (i >= 0) arr.splice(i, 1); if (r._node) r._node.remove(); });
+    setSel([]);
+    affected.forEach((cid) => normalizeAndReflow(cid)); // heal / collapse broken chains
+  }
   function hideComp() {
     const o = sels.length === 1 && sels[0]; if (!o || o.group !== 'piece') return;
     pushUndo(); o.hidden = true; setSel([]);
@@ -2567,6 +2689,7 @@
         fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline, lineHeight: e.lineHeight,
         textStroke: e.textStroke, textStrokeW: e.textStrokeW, textShadow: e.textShadow,
         columns: e.columns, pad: e.pad, numStyle: e.numStyle, ligatures: e.ligatures, dropCap: e.dropCap, hyphens: e.hyphens,
+        chainId: e.chainId, chainOrder: e.chainOrder, flowText: e.flowText, flowH: e.flowH,
         boxFill: e.boxFill, boxStroke: e.boxStroke, boxStrokeW: e.boxStrokeW, boxRadius: e.boxRadius, boxShadow: e.boxShadow,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV, placeholder: e.placeholder || undefined,
         brightness: e.brightness, contrast: e.contrast, recolor: e.recolor, picBorder: e.picBorder, picBorderW: e.picBorderW, picRadius: e.picRadius, picShadow: e.picShadow, caption: e.caption, captionStyle: e.captionStyle,
@@ -3231,6 +3354,10 @@
     each('.js-underline', (b) => b.addEventListener('click', () => tstyle('underline')));
     // Text Box tab: outline colour + WordArt gallery + effects
     if (el.tbHyphenBtn) el.tbHyphenBtn.addEventListener('click', () => { const o = selText(); if (o) applyTextPropU('hyphens', !o.hyphens); });
+    if (el.tbLinkCreate) el.tbLinkCreate.addEventListener('click', startCreateLink);
+    if (el.tbLinkBreak) el.tbLinkBreak.addEventListener('click', breakLink);
+    if (el.tbLinkPrev) el.tbLinkPrev.addEventListener('click', () => flowNav(-1));
+    if (el.tbLinkNext) el.tbLinkNext.addEventListener('click', () => flowNav(1));
     buildWordArtGallery(); buildFillOutlineMenus();
     buildShapeStyleMenus(); buildShapeStyleGallery(); buildSfShapeGallery(); buildSfChangeMenu();
     if (el.sfEditText) el.sfEditText.addEventListener('click', () => { const o = sfSel(); if (o && o.kind === 'text') editText(o); });
@@ -3464,6 +3591,7 @@
     return openBook({ config: bookConfig });
   }
   function onKey(e) {
+    if (linkPickMode && e.key === 'Escape') { e.preventDefault(); cancelLink(); setStatus('Link cancelled.', ''); return; }
     if (cropTarget) { if (e.key === 'Enter') { e.preventDefault(); endCrop(true); } else if (e.key === 'Escape') { e.preventDefault(); endCrop(false); } return; }
     if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
     if (el.changeTplModal && !el.changeTplModal.hidden) { if (e.key === 'Escape') closeChangeTpl(); return; }
