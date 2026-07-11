@@ -64,21 +64,21 @@
         </div>
         <div class="rgroup">
           <div class="rgroup-body font-body">
-            <select id="fontFamily" class="mini" title="Font">
+            <select id="fontFamily" class="mini js-font-family" title="Font">
               <option value="sans">Sans</option>
               <option value="serif">Serif</option>
               <option value="mono">Mono</option>
               <option value="hand">Handwritten</option>
             </select>
-            <input id="fontSize" class="mini-num" type="number" min="6" max="200" value="24" title="Font size">
-            <button id="fontGrow" class="iconbtn" title="Grow font">A˄</button>
-            <button id="fontShrink" class="iconbtn" title="Shrink font">A˅</button>
-            <button id="boldBtn" class="iconbtn tstyle" title="Bold"><b>B</b></button>
-            <button id="italicBtn" class="iconbtn tstyle" title="Italic"><i>I</i></button>
-            <button id="underBtn" class="iconbtn tstyle" title="Underline"><u>U</u></button>
-            <input id="objColor" class="mini-color" type="color" value="#222222" title="Text color">
-            <button id="caseBtn" class="iconbtn" title="Change case (UPPER / lower / Title)">Aa</button>
-            <button id="clearFmt" class="iconbtn" title="Clear text formatting">⌫</button>
+            <input id="fontSize" class="mini-num js-font-size" type="number" min="6" max="200" value="24" title="Font size">
+            <button id="fontGrow" class="iconbtn js-font-grow" title="Grow font">A˄</button>
+            <button id="fontShrink" class="iconbtn js-font-shrink" title="Shrink font">A˅</button>
+            <button id="boldBtn" class="iconbtn tstyle js-bold" title="Bold"><b>B</b></button>
+            <button id="italicBtn" class="iconbtn tstyle js-italic" title="Italic"><i>I</i></button>
+            <button id="underBtn" class="iconbtn tstyle js-underline" title="Underline"><u>U</u></button>
+            <input id="objColor" class="mini-color js-font-color" type="color" value="#222222" title="Text color">
+            <button id="caseBtn" class="iconbtn js-font-case" title="Change case (UPPER / lower / Title)">Aa</button>
+            <button id="clearFmt" class="iconbtn js-font-clear" title="Clear text formatting">⌫</button>
           </div>
           <div class="rgroup-name">Font</div>
         </div>
@@ -87,7 +87,7 @@
             <button class="iconbtn palign" data-align="left" title="Align left">⯇</button>
             <button class="iconbtn palign" data-align="center" title="Center">≡</button>
             <button class="iconbtn palign" data-align="right" title="Align right">⯈</button>
-            <select id="lineSpacing" class="mini" title="Line spacing">
+            <select id="lineSpacing" class="mini js-line-spacing" title="Line spacing">
               <option value="1">1.0</option>
               <option value="1.15">1.15</option>
               <option value="1.25" selected>1.25</option>
@@ -499,6 +499,63 @@
       <section class="ribbon-panel" data-panel="format">
         <div id="selNone" class="rhint">Select an object on the page to format it. Shift-click to select multiple.</div>
         <div id="selControls" class="ribbon-inline hidden">
+          <!-- Text Box tools (Publisher-style: Font · Alignment · WordArt Styles) -->
+          <div class="rgroup tb-group">
+            <div class="rgroup-body font-body">
+              <select class="mini js-font-family" title="Font">
+                <option value="sans">Sans</option><option value="serif">Serif</option><option value="mono">Mono</option><option value="hand">Handwritten</option>
+              </select>
+              <input class="mini-num js-font-size" type="number" min="6" max="200" value="24" title="Font size">
+              <button class="iconbtn js-font-grow" title="Grow font">A˄</button>
+              <button class="iconbtn js-font-shrink" title="Shrink font">A˅</button>
+              <button class="iconbtn tstyle js-bold" title="Bold"><b>B</b></button>
+              <button class="iconbtn tstyle js-italic" title="Italic"><i>I</i></button>
+              <button class="iconbtn tstyle js-underline" title="Underline"><u>U</u></button>
+              <input class="mini-color js-font-color" type="color" value="#222222" title="Text color">
+              <button class="iconbtn js-font-case" title="Change case (UPPER / lower / Title)">Aa</button>
+              <button class="iconbtn js-font-clear" title="Clear text formatting">⌫</button>
+            </div>
+            <div class="rgroup-name">Font</div>
+          </div>
+          <div class="rgroup tb-group">
+            <div class="rgroup-body">
+              <span class="align-mini">
+                <button class="iconbtn palign" data-align="left" title="Align left">⯇</button>
+                <button class="iconbtn palign" data-align="center" title="Center">≡</button>
+                <button class="iconbtn palign" data-align="right" title="Align right">⯈</button>
+              </span>
+              <select class="mini js-line-spacing" title="Line spacing">
+                <option value="1">1.0</option><option value="1.15">1.15</option><option value="1.25" selected>1.25</option><option value="1.5">1.5</option><option value="2">2.0</option>
+              </select>
+              <span class="rdrop" id="tbDirDrop">
+                <button class="rmini rdrop-btn" id="tbDirDropBtn" aria-haspopup="true" aria-expanded="false" title="Text direction"><span class="rmini-ico">⟲</span>Direction&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="d0">→ Horizontal</button>
+                  <button type="button" data-act="d90">↓ Rotate 90°</button>
+                  <button type="button" data-act="d270">↑ Rotate 270°</button>
+                </div>
+              </span>
+            </div>
+            <div class="rgroup-name">Alignment</div>
+          </div>
+          <div class="rgroup tb-group">
+            <div class="rgroup-body">
+              <div class="wordart-gallery" id="wordartGallery"></div>
+              <span class="rmini-col">
+                <label class="rmini-field"><span class="rmini-ico">🄰</span>Text Fill<input class="mini-color js-font-color" type="color" value="#222222" title="Text fill colour"></label>
+                <label class="rmini-field"><span class="rmini-ico">🅰</span>Outline<input id="tbOutline" class="mini-color" type="color" value="#222222" title="Text outline colour"></label>
+                <span class="rdrop" id="tbEffectsDrop">
+                  <button class="rmini rdrop-btn" id="tbEffectsDropBtn" aria-haspopup="true" aria-expanded="false" title="Text effects"><span class="rmini-ico">✦</span>Effects&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="outline">▢ Toggle outline</button>
+                    <button type="button" data-act="shadow">◍ Toggle shadow</button>
+                    <button type="button" data-act="none">✕ Clear effects</button>
+                  </div>
+                </span>
+              </span>
+            </div>
+            <div class="rgroup-name">WordArt Styles</div>
+          </div>
           <div class="rgroup" id="measurePanel">
             <div class="rgroup-body">
               <label class="m"><span>X</span><input id="mX" type="number"></label>

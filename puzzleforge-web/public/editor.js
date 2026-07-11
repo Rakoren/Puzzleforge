@@ -24,7 +24,7 @@
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
     mW: $('mW'), mH: $('mH'), mWField: $('mWField'), mHField: $('mHField'),
-    fontSize: $('fontSize'), objColor: $('objColor'),
+    fontSize: $('fontSize'), objColor: $('objColor'), tbOutline: $('tbOutline'),
     fontFamily: $('fontFamily'), boldBtn: $('boldBtn'), italicBtn: $('italicBtn'), underBtn: $('underBtn'),
     fontGrow: $('fontGrow'), fontShrink: $('fontShrink'), caseBtn: $('caseBtn'), clearFmt: $('clearFmt'), lineSpacing: $('lineSpacing'),
     cutBtn: $('cutBtn'), copyBtn: $('copyBtn'), pasteBtn: $('pasteBtn'), fmtPainter: $('fmtPainter'),
@@ -371,6 +371,14 @@
       setMargins(act);
     } else if (dropId === 'bgDrop') {
       setBgType(act);
+    } else if (dropId === 'tbDirDrop') {
+      const o = selText(); if (o) { pushUndo(); o.rot = act === 'd90' ? 90 : act === 'd270' ? 270 : 0; applyElTf(o); drawSel(); syncSelUI(); }
+    } else if (dropId === 'tbEffectsDrop') {
+      const o = selText(); if (!o) return; pushUndo();
+      if (act === 'outline') { if (o.textStroke) { delete o.textStroke; delete o.textStrokeW; } else { o.textStroke = el.tbOutline ? el.tbOutline.value : '#222222'; o.textStrokeW = 1.5; } }
+      else if (act === 'shadow') { if (o.textShadow) delete o.textShadow; else o.textShadow = '#00000040'; }
+      else if (act === 'none') { delete o.textStroke; delete o.textStrokeW; delete o.textShadow; }
+      o._node.innerHTML = elHtml(o); drawSel();
     }
   }
 
@@ -1097,13 +1105,18 @@
   }
   function syncFontUI(one) {
     const isText = one && one.kind === 'text';
-    el.boldBtn.classList.toggle('on', isText && !!one.bold);
-    el.italicBtn.classList.toggle('on', isText && !!one.italic);
-    el.underBtn.classList.toggle('on', isText && !!one.underline);
+    const setOn = (sel, on) => document.querySelectorAll(sel).forEach((b) => b.classList.toggle('on', !!on));
+    setOn('.js-bold', isText && one.bold);
+    setOn('.js-italic', isText && one.italic);
+    setOn('.js-underline', isText && one.underline);
     document.querySelectorAll('.palign').forEach((b) => b.classList.toggle('on', isText && (one.align || 'left') === b.dataset.align));
     if (isText) {
-      el.fontSize.value = num(one.fontSize, 24); el.objColor.value = one.color || '#222222';
-      el.fontFamily.value = one.fontFamily || 'sans'; el.lineSpacing.value = String(num(one.lineHeight, 1.25));
+      const setVal = (sel, v) => document.querySelectorAll(sel).forEach((i) => { i.value = v; });
+      setVal('.js-font-size', num(one.fontSize, 24));
+      setVal('.js-font-color', one.color || '#222222');
+      setVal('.js-font-family', one.fontFamily || 'sans');
+      setVal('.js-line-spacing', String(num(one.lineHeight, 1.25)));
+      if (el.tbOutline) el.tbOutline.value = /^#/.test(one.textStroke || '') ? one.textStroke : '#222222';
     }
   }
   function syncSelUI() {
@@ -1112,6 +1125,7 @@
     syncFontUI(one);
     updateContextTab();
     if (!has) return;
+    document.querySelectorAll('.tb-group').forEach((g) => { g.style.display = isText ? '' : 'none'; });
     el.measurePanel.style.display = one ? '' : 'none';
     el.shapeProps.style.display = isShape ? '' : 'none';
     if (el.tableProps) el.tableProps.style.display = isTable ? '' : 'none';
@@ -1792,6 +1806,30 @@
     if (!preset) return;
     addElement({ group: 'el', id: uid++, kind: 'text', x: Math.round(dims.usableWidth / 2 - 160), y: Math.round(dims.usableHeight * 0.3),
       scale: 1, rot: 0, z: 110, text: 'Your Title', align: 'center', w: 320, lineHeight: 1.15, ...preset.style });
+  }
+  // Apply a WordArt preset's style to the SELECTED text box (the Insert-tab
+  // WordArt inserts a new box; this restyles the current one, like Publisher).
+  function applyWordArt(preset) {
+    const o = selText(); if (!o || !preset) return; pushUndo();
+    Object.assign(o, preset.style);
+    o._node.innerHTML = elHtml(o); drawSel(); syncFontUI(o);
+  }
+  function setTextOutline(color) {
+    const o = selText(); if (!o) return; pushUndo();
+    o.textStroke = color; if (!num(o.textStrokeW, 0)) o.textStrokeW = 1.5;
+    o._node.innerHTML = elHtml(o); drawSel();
+  }
+  function buildWordArtGallery() {
+    const host = document.getElementById('wordartGallery'); if (!host) return;
+    host.innerHTML = '';
+    WORDART.forEach((w) => {
+      const s = w.style;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'wordart-swatch'; b.title = w.name; b.textContent = 'A';
+      b.style.color = s.color || '#222'; b.style.fontFamily = fontStackFor(s.fontFamily || 'sans'); b.style.fontWeight = s.bold ? '700' : '400';
+      if (s.textStroke) b.style.webkitTextStroke = `1px ${s.textStroke}`;
+      b.addEventListener('click', () => applyWordArt(w));
+      host.appendChild(b);
+    });
   }
   function addSymbol(sym) {
     if (!sym) return;
@@ -2746,21 +2784,25 @@
     if (el.insBookmarkBtn) el.insBookmarkBtn.addEventListener('click', bookmarkSel);
     document.querySelectorAll('.shape-btn').forEach((b) => b.addEventListener('click', () => addShape(b.dataset.shape)));
     // Font: live update on input, commit an undo entry on change.
-    el.fontSize.addEventListener('input', () => applyTextProp('fontSize', Number(el.fontSize.value) || 24));
-    el.fontSize.addEventListener('change', () => { if (selText()) pushUndo(); });
-    el.objColor.addEventListener('input', () => applyTextProp('color', el.objColor.value));
-    el.objColor.addEventListener('change', () => { if (selText()) pushUndo(); });
-    el.fontFamily.addEventListener('change', () => applyTextPropU('fontFamily', el.fontFamily.value));
-    el.fontGrow.addEventListener('click', () => fontStep(2));
-    el.fontShrink.addEventListener('click', () => fontStep(-2));
-    el.caseBtn.addEventListener('click', changeCase);
-    el.clearFmt.addEventListener('click', clearTextFmt);
-    el.lineSpacing.addEventListener('change', () => applyTextPropU('lineHeight', Number(el.lineSpacing.value) || 1.25));
-    document.querySelectorAll('.palign').forEach((b) => b.addEventListener('click', () => applyTextPropU('align', b.dataset.align)));
+    // Font controls live on BOTH the Home tab and the contextual Text Box
+    // Format tab, so wire every matching control by class (shared behaviour).
+    const each = (sel, fn) => document.querySelectorAll(sel).forEach(fn);
+    each('.js-font-size', (i) => { i.addEventListener('input', () => applyTextProp('fontSize', Number(i.value) || 24)); i.addEventListener('change', () => { if (selText()) pushUndo(); }); });
+    each('.js-font-color', (c) => { c.addEventListener('input', () => applyTextProp('color', c.value)); c.addEventListener('change', () => { if (selText()) pushUndo(); }); });
+    each('.js-font-family', (s) => s.addEventListener('change', () => applyTextPropU('fontFamily', s.value)));
+    each('.js-font-grow', (b) => b.addEventListener('click', () => fontStep(2)));
+    each('.js-font-shrink', (b) => b.addEventListener('click', () => fontStep(-2)));
+    each('.js-font-case', (b) => b.addEventListener('click', changeCase));
+    each('.js-font-clear', (b) => b.addEventListener('click', clearTextFmt));
+    each('.js-line-spacing', (s) => s.addEventListener('change', () => applyTextPropU('lineHeight', Number(s.value) || 1.25)));
+    each('.palign', (b) => b.addEventListener('click', () => applyTextPropU('align', b.dataset.align)));
     const tstyle = (prop) => { const o = selText(); if (o) applyTextPropU(prop, !o[prop]); };
-    el.boldBtn.addEventListener('click', () => tstyle('bold'));
-    el.italicBtn.addEventListener('click', () => tstyle('italic'));
-    el.underBtn.addEventListener('click', () => tstyle('underline'));
+    each('.js-bold', (b) => b.addEventListener('click', () => tstyle('bold')));
+    each('.js-italic', (b) => b.addEventListener('click', () => tstyle('italic')));
+    each('.js-underline', (b) => b.addEventListener('click', () => tstyle('underline')));
+    // Text Box tab: outline colour + WordArt gallery + effects
+    if (el.tbOutline) el.tbOutline.addEventListener('input', () => setTextOutline(el.tbOutline.value));
+    buildWordArtGallery();
     // Home Clipboard / Objects / Arrange / Editing
     el.cutBtn.addEventListener('click', cutSel); el.copyBtn.addEventListener('click', copySel); el.pasteBtn.addEventListener('click', paste);
     el.fmtPainter.addEventListener('click', togglePainter);
