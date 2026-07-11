@@ -1014,6 +1014,19 @@
                 <label class="upload rmini" title="Replace this picture with another"><span class="rmini-ico">🔁</span>Change Picture<input id="picChange" type="file" accept="image/*" hidden></label>
                 <button id="picReset" class="rmini" title="Remove all adjustments"><span class="rmini-ico">↺</span>Reset Picture</button>
               </span>
+              <span class="rmini-col">
+                <span class="rdrop" id="picCompressDrop">
+                  <button class="rmini rdrop-btn" id="picCompressDropBtn" aria-haspopup="true" aria-expanded="false" title="Shrink the stored image to a target print resolution"><span class="rmini-ico">🗜</span>Compress&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="ppi300">Print — 300 ppi (best)</button>
+                    <button type="button" data-act="ppi220">Print — 220 ppi</button>
+                    <button type="button" data-act="ppi150">On-screen — 150 ppi</button>
+                    <button type="button" data-act="ppi96">Web — 96 ppi (smallest)</button>
+                    <div class="rdrop-sep"></div>
+                    <label class="rdrop-check"><input type="checkbox" id="picCompressCrop" checked> Delete cropped areas</label>
+                  </div>
+                </span>
+              </span>
             </div>
             <div class="rgroup-name">Adjust</div>
           </div>
@@ -1072,6 +1085,7 @@
                 </span>
                 <button id="picFlipH" class="rmini" title="Flip horizontal"><span class="rmini-ico">⇋</span>Flip H</button>
                 <button id="picFlipV" class="rmini" title="Flip vertical"><span class="rmini-ico">⇅</span>Flip V</button>
+                <button id="picSwap" class="rmini" title="Swap this picture's contents with another (select two, or click then pick)"><span class="rmini-ico">⇄</span>Swap</button>
                 <span class="rdrop" id="picRotateDrop">
                   <button class="rmini rdrop-btn" id="picRotateDropBtn" aria-haspopup="true" aria-expanded="false" title="Rotate"><span class="rmini-ico">⟳</span>Rotate&nbsp;<span class="rdrop-caret">▾</span></button>
                   <div class="rdrop-menu" hidden>

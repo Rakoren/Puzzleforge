@@ -26,6 +26,7 @@
     picControls: $('picControls'), picNone: $('picNone'), picChange: $('picChange'), picReset: $('picReset'),
     picForward: $('picForward'), picBackward: $('picBackward'), picFlipH: $('picFlipH'), picFlipV: $('picFlipV'), picW: $('picW'), picCaptionText: $('picCaptionText'),
     picCropBtn: $('picCropBtn'), picCropReset: $('picCropReset'), picCropFill: $('picCropFill'),
+    picSwap: $('picSwap'), picCompressCrop: $('picCompressCrop'),
     tdControls: $('tdControls'), tdNone: $('tdNone'), tdBorderW: $('tdBorderW'), tdHeader: $('tdHeader'),
     tlControls: $('tlControls'), tlNone: $('tlNone'), tlEditText: $('tlEditText'), tlForward: $('tlForward'), tlBackward: $('tlBackward'),
     tlInsAbove: $('tlInsAbove'), tlInsBelow: $('tlInsBelow'), tlInsLeft: $('tlInsLeft'), tlInsRight: $('tlInsRight'),
@@ -381,6 +382,9 @@
       picEffects(act);
     } else if (dropId === 'picCaptionDrop') {
       picCaption(act);
+    } else if (dropId === 'picCompressDrop') {
+      const m = { ppi300: 300, ppi220: 220, ppi150: 150, ppi96: 96 };
+      if (m[act] != null) compressSel(m[act], el.picCompressCrop ? el.picCompressCrop.checked : true);
     } else if (dropId === 'tdBordersDrop') {
       const m = { all: 1, thin: 0.5, thick: 2, none: 0 }; if (m[act] != null) tblSet('borderW', m[act]);
     } else if (dropId === 'tlDeleteDrop') {
@@ -1328,6 +1332,8 @@
     if (ev.target && ev.target.isContentEditable) return;
     // Picking a link target (Text Box → Linking → Create Link).
     if (linkPickMode) { ev.preventDefault(); ev.stopPropagation(); finishLink(ref); return; }
+    // Picking a swap partner (Picture Format → Swap).
+    if (swapPickMode) { ev.preventDefault(); ev.stopPropagation(); const src = swapPickMode; cancelSwap(); if (ref.kind === 'image') swapContents(src, ref); else setStatus('Swap needs another picture.', ''); return; }
     ev.preventDefault(); hideCtx();
     if (painter && ev.button !== 2 && applyPainter(ref)) { setSel([ref]); return; }
     if (ev.button === 2) { if (!isSel(ref)) setSel(expandGroups([ref])); return; }
@@ -1610,6 +1616,74 @@
   function picEffects(act) { const o = selImage(); if (!o) return; pushUndo(); if (act === 'shadow') { if (o.picShadow) delete o.picShadow; else o.picShadow = '#00000040'; } else if (act === 'round') { o.picRadius = num(o.picRadius, 0) ? 0 : 14; } else { delete o.picShadow; o.picRadius = 0; } picRerender(o); }
   function picCaption(act) { const o = selImage(); if (!o) return; pushUndo(); if (act === 'none') o.captionStyle = 'none'; else o.captionStyle = act; if (el.picCaptionText && !o.caption) o.caption = el.picCaptionText.value || 'Caption'; picRerender(o); }
   function picResetAdjust() { const o = selImage(); if (!o) return; pushUndo(); delete o.brightness; delete o.contrast; delete o.recolor; picRerender(o); setStatus('Picture adjustments cleared.', 'ok'); }
+  // --- Compress Pictures ----------------------------------------------------
+  // Downsample the stored image to a target print resolution. The page renders
+  // at 96 CSS-ppi (so a picture shown at W css-px prints W/96 inches wide);
+  // the kept region needs W·ppi/96 pixels for `ppi` at that print size. PNG /
+  // GIF / WebP keep their format (alpha); anything else re-encodes to JPEG.
+  const picByteLen = (s) => { s = String(s || ''); const i = s.indexOf(','); const b = i >= 0 ? s.slice(i + 1) : s; return Math.floor(b.length * 0.75); };
+  const fmtBytes = (n) => { n = Math.max(0, Math.round(n)); return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : n + ' B'; };
+  function compressOne(o, ppi, bakeCrop) {
+    return new Promise((resolve) => {
+      if (!o || !o.src || o.placeholder) { resolve(0); return; }
+      const before = picByteLen(o.src);
+      const img = new Image();
+      img.onload = () => {
+        const nW = img.naturalWidth, nH = img.naturalHeight;
+        const cr = o.crop || { l: 0, t: 0, r: 0, b: 0 };
+        const hasCrop = !!(num(cr.l, 0) || num(cr.t, 0) || num(cr.r, 0) || num(cr.b, 0));
+        const doBake = bakeCrop && hasCrop;
+        let sx = 0, sy = 0, sw = nW, sh = nH;
+        if (doBake) { sx = Math.round(cr.l * nW); sy = Math.round(cr.t * nH); sw = Math.max(1, Math.round(nW * (1 - cr.l - cr.r))); sh = Math.max(1, Math.round(nH * (1 - cr.t - cr.b))); }
+        const fullDispW = num(o.width, 160);
+        const keepDispW = doBake ? fullDispW * (1 - cr.l - cr.r) : fullDispW;
+        const targetW = Math.max(1, Math.min(sw, Math.round(keepDispW * ppi / 96)));
+        const targetH = Math.max(1, Math.round(sh * (targetW / sw)));
+        const cv = document.createElement('canvas'); cv.width = targetW; cv.height = targetH;
+        const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+        const keepAlpha = /^data:image\/(png|gif|webp)/i.test(o.src);
+        const out = keepAlpha ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg', 0.85);
+        if (picByteLen(out) < before) { o.src = out; o.natW = targetW; o.natH = targetH; if (doBake) { delete o.crop; o.width = Math.max(8, Math.round(keepDispW)); } }
+        resolve(before - picByteLen(o.src));
+      };
+      img.onerror = () => resolve(0);
+      img.src = o.src;
+    });
+  }
+  function compressSel(ppi, bakeCrop) {
+    const imgs = sels.filter((r) => r.kind === 'image' && r.src && !r.placeholder);
+    if (!imgs.length) { setStatus('Select a picture to compress.', ''); return; }
+    pushUndo();
+    Promise.all(imgs.map((o) => compressOne(o, ppi, bakeCrop))).then((saved) => {
+      imgs.forEach((o) => picRerender(o));
+      const total = saved.reduce((a, b) => a + b, 0);
+      setStatus(total > 0 ? `Compressed ${imgs.length} picture${imgs.length > 1 ? 's' : ''} — saved ${fmtBytes(total)}.` : 'Pictures already at or below that resolution.', total > 0 ? 'ok' : '');
+      syncSelUI();
+    });
+  }
+  // --- Swap Pictures --------------------------------------------------------
+  // Exchange the contents (image + adjustments) of two pictures, each keeping
+  // its own frame: position, size, border, caption. Two selected → swap; one
+  // selected → pick the partner by clicking it.
+  let swapPickMode = null;
+  const SWAP_KEYS = ['src', 'natW', 'natH', 'crop', 'flipH', 'flipV', 'brightness', 'contrast', 'recolor', 'placeholder'];
+  function swapContents(a, b) {
+    if (!a || !b || a === b || a.kind !== 'image' || b.kind !== 'image') return;
+    pushUndo();
+    SWAP_KEYS.forEach((k) => { const t = a[k]; a[k] = b[k]; b[k] = t; });
+    picRerender(a); picRerender(b); drawSel();
+    setStatus('Picture contents swapped.', 'ok');
+  }
+  function cancelSwap() { swapPickMode = null; document.body.classList.remove('pf-linking'); }
+  function swapPictures() {
+    const imgs = sels.filter((r) => r.kind === 'image');
+    if (imgs.length === 2) { swapContents(imgs[0], imgs[1]); return; }
+    if (swapPickMode) { cancelSwap(); return; }
+    const one = selImage(); if (!one) { setStatus('Select a picture (or two) to swap.', ''); return; }
+    swapPickMode = one; document.body.classList.add('pf-linking');
+    setStatus('Click another picture to swap contents with (Esc to cancel).', '');
+  }
   function syncPictureUI() {
     const o = selImage();
     if (el.picNone) el.picNone.classList.toggle('hidden', !!o);
@@ -3404,6 +3478,7 @@
     buildPicMenus(); buildPicStyleGallery(); buildPicBorderMenu();
     if (el.picChange) el.picChange.addEventListener('change', () => { const o = selImage(); const f = el.picChange.files && el.picChange.files[0]; if (o && f) { const r = new FileReader(); r.onload = () => { pushUndo(); o.src = r.result; o.placeholder = false; delete o.crop; captureNatSize(o); picRerender(o); }; r.readAsDataURL(f); } el.picChange.value = ''; });
     if (el.picCropBtn) el.picCropBtn.addEventListener('click', startCrop);
+    if (el.picSwap) el.picSwap.addEventListener('click', swapPictures);
     if (el.picCropReset) el.picCropReset.addEventListener('click', resetCrop);
     if (el.picCropFill) el.picCropFill.addEventListener('click', cropToSquare);
     if (el.picReset) el.picReset.addEventListener('click', picResetAdjust);
@@ -3610,6 +3685,7 @@
   }
   function onKey(e) {
     if (linkPickMode && e.key === 'Escape') { e.preventDefault(); cancelLink(); setStatus('Link cancelled.', ''); return; }
+    if (swapPickMode && e.key === 'Escape') { e.preventDefault(); cancelSwap(); setStatus('Swap cancelled.', ''); return; }
     if (cropTarget) { if (e.key === 'Enter') { e.preventDefault(); endCrop(true); } else if (e.key === 'Escape') { e.preventDefault(); endCrop(false); } return; }
     if (el.tplModal && !el.tplModal.hidden) { if (e.key === 'Escape') closeTplPicker(); return; }
     if (el.changeTplModal && !el.changeTplModal.hidden) { if (e.key === 'Escape') closeChangeTpl(); return; }
