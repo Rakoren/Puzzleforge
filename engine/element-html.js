@@ -285,13 +285,44 @@
    * Render a free element's inner HTML (unpositioned — the caller wraps it and
    * applies the translate/rotate/scale transform).
    */
+  // Recolor washes (Picture Format → Recolor) approximated with CSS filters.
+  const RECOLOR = {
+    grayscale: 'grayscale(1)', sepia: 'sepia(0.75)',
+    washout: 'grayscale(.4) brightness(1.45) contrast(.7)',
+    blue: 'grayscale(1) sepia(1) hue-rotate(170deg) saturate(4)',
+    gold: 'sepia(1) saturate(2.2) hue-rotate(-12deg)',
+    green: 'grayscale(1) sepia(1) hue-rotate(75deg) saturate(2.5)',
+  };
+  function imgFilter(e) {
+    const parts = [];
+    const b = num(e.brightness, 1), c = num(e.contrast, 1);
+    if (b !== 1) parts.push(`brightness(${Math.max(0.2, Math.min(2, b))})`);
+    if (c !== 1) parts.push(`contrast(${Math.max(0.2, Math.min(2, c))})`);
+    if (RECOLOR[e.recolor]) parts.push(RECOLOR[e.recolor]);
+    return parts.join(' ');
+  }
   function elementInner(e) {
     if (!e) return '';
     if (e.kind === 'qr') return qrSvg(e);
     if (e.kind === 'image') {
       if (typeof e.src === 'string' && e.src.startsWith('data:')) {
+        const w = num(e.width, 160);
         const fx = e.flipH || e.flipV ? `transform:scale(${e.flipH ? -1 : 1},${e.flipV ? -1 : 1});` : '';
-        return `<img src="${e.src}" style="width:${num(e.width, 160)}px;display:block;pointer-events:none;${fx}" alt="">`;
+        // Corrections (brightness/contrast) + Recolor render as a CSS filter,
+        // which Chromium applies identically on screen and in the exported PDF.
+        const filt = imgFilter(e);
+        const rad = num(e.picRadius, 0) ? `border-radius:${Math.max(0, Math.min(200, num(e.picRadius, 0)))}px;` : '';
+        const imgCss = `width:100%;display:block;pointer-events:none;${fx}${filt ? `filter:${filt};` : ''}${rad}`;
+        const wrapCss = `position:relative;width:${w}px;box-sizing:border-box;pointer-events:none;`
+          + (e.picBorder && e.picBorder !== 'none' ? `border:${Math.max(0, Math.min(20, num(e.picBorderW, 1)))}px solid ${color(e.picBorder, '#333')};` : '')
+          + rad + (e.picShadow ? `box-shadow:3px 3px 8px ${color(e.picShadow, '#00000040')};` : '');
+        let cap = '';
+        if (e.caption && e.captionStyle && e.captionStyle !== 'none') {
+          const ov = e.captionStyle === 'overlay';
+          const cfs = Math.max(9, Math.round(w * 0.06));
+          cap = `<div style="${ov ? 'position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;' : 'background:#f1f3f5;color:#333;'}padding:4px 8px;font-size:${cfs}px;text-align:center;font-family:${FONTS.sans};box-sizing:border-box;">${esc(e.caption)}</div>`;
+        }
+        return `<div style="${wrapCss}"><img src="${e.src}" style="${imgCss}" alt="">${cap}</div>`;
       }
       // No image yet: a picture placeholder frame (double-click in the editor to
       // fill it). Rendered with inline styles so it looks the same in the PDF.

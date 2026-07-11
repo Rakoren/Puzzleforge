@@ -47,6 +47,7 @@
       <button class="rtab rtab-context" data-tab="shapeformat" id="ctxTab2" role="tab">Shape Format</button>
       <button class="rtab rtab-context" data-tab="tabledesign" id="ctxTabTD" role="tab">Table Design</button>
       <button class="rtab rtab-context" data-tab="tablelayout" id="ctxTabTL" role="tab">Table Layout</button>
+      <button class="rtab rtab-context" data-tab="pictureformat" id="ctxTabPic" role="tab">Picture Format</button>
       <button class="rtab rtab-context" data-tab="format" id="ctxTab" role="tab">Text Box</button>
     </div>
 
@@ -970,6 +971,107 @@
               </span>
             </div>
             <div class="rgroup-name">Arrange</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PICTURE FORMAT (contextual: image adjust / styles / arrange) -->
+      <section class="ribbon-panel" data-panel="pictureformat">
+        <div id="picNone" class="rhint">Select a picture to adjust, style, and arrange it.</div>
+        <div id="picControls" class="ribbon-inline hidden">
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-col">
+                <span class="rdrop" id="picCorrDrop">
+                  <button class="rmini rdrop-btn" id="picCorrDropBtn" aria-haspopup="true" aria-expanded="false" title="Brightness &amp; contrast"><span class="rmini-ico">☀</span>Corrections&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu pic-adjust-menu" id="picCorrMenu" hidden></div>
+                </span>
+                <span class="rdrop" id="picRecolorDrop">
+                  <button class="rmini rdrop-btn" id="picRecolorDropBtn" aria-haspopup="true" aria-expanded="false" title="Recolor wash"><span class="rmini-ico">🎨</span>Recolor&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu pic-adjust-menu" id="picRecolorMenu" hidden></div>
+                </span>
+              </span>
+              <span class="rmini-col">
+                <label class="upload rmini" title="Replace this picture with another"><span class="rmini-ico">🔁</span>Change Picture<input id="picChange" type="file" accept="image/*" hidden></label>
+                <button id="picReset" class="rmini" title="Remove all adjustments"><span class="rmini-ico">↺</span>Reset Picture</button>
+              </span>
+            </div>
+            <div class="rgroup-name">Adjust</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <div class="wordart-gallery" id="picStyleGallery"></div>
+              <span class="rmini-col">
+                <span class="rdrop" id="picBorderDrop">
+                  <button class="rmini rdrop-btn" id="picBorderDropBtn" aria-haspopup="true" aria-expanded="false" title="Picture border"><span class="rmini-ico">▭</span>Picture&nbsp;Border&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu color-menu" id="picBorderMenu" hidden></div>
+                </span>
+                <span class="rdrop" id="picEffectsDrop">
+                  <button class="rmini rdrop-btn" id="picEffectsDropBtn" aria-haspopup="true" aria-expanded="false" title="Picture effects"><span class="rmini-ico">✦</span>Picture&nbsp;Effects&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="shadow">◍ Toggle shadow</button>
+                    <button type="button" data-act="round">▢ Toggle rounded corners</button>
+                    <button type="button" data-act="none">✕ Clear effects</button>
+                  </div>
+                </span>
+                <span class="rdrop" id="picCaptionDrop">
+                  <button class="rmini rdrop-btn" id="picCaptionDropBtn" aria-haspopup="true" aria-expanded="false" title="Caption"><span class="rmini-ico">🄰</span>Caption&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <label class="rdrop-field"><span>Text</span><input id="picCaptionText" type="text" placeholder="Caption…"></label>
+                    <div class="rdrop-sep"></div>
+                    <button type="button" data-act="none">✕ No Caption</button>
+                    <button type="button" data-act="below">▭ Below Picture</button>
+                    <button type="button" data-act="overlay">▄ Overlay Bar</button>
+                  </div>
+                </span>
+              </span>
+            </div>
+            <div class="rgroup-name">Picture Styles</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rdrop" id="picWrapDrop">
+                <button class="rbig rdrop-btn" id="picWrapDropBtn" aria-haspopup="true" aria-expanded="false" title="How this picture layers with the puzzle"><span class="rbig-ico">◲</span>Wrap&nbsp;<br>Text&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="wfront">▤ In Front of Puzzle</button>
+                  <button type="button" data-act="wbehind">▥ Behind Puzzle</button>
+                </div>
+              </span>
+              <span class="rmini-grid">
+                <button id="picForward" class="rmini" title="Bring forward"><span class="rmini-ico">⭱</span>Bring Forward</button>
+                <button id="picBackward" class="rmini" title="Send backward"><span class="rmini-ico">⭳</span>Send Backward</button>
+                <span class="rdrop" id="picAlignDrop">
+                  <button class="rmini rdrop-btn" id="picAlignDropBtn" aria-haspopup="true" aria-expanded="false" title="Align on the page"><span class="rmini-ico">⯐</span>Align&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="aleft">⯇ Align Left</button>
+                    <button type="button" data-act="acenter">≡ Align Center</button>
+                    <button type="button" data-act="aright">⯈ Align Right</button>
+                    <button type="button" data-act="atop">⤒ Align Top</button>
+                    <button type="button" data-act="amiddle">⇕ Align Middle</button>
+                    <button type="button" data-act="abottom">⤓ Align Bottom</button>
+                  </div>
+                </span>
+                <button id="picFlipH" class="rmini" title="Flip horizontal"><span class="rmini-ico">⇋</span>Flip H</button>
+                <button id="picFlipV" class="rmini" title="Flip vertical"><span class="rmini-ico">⇅</span>Flip V</button>
+                <span class="rdrop" id="picRotateDrop">
+                  <button class="rmini rdrop-btn" id="picRotateDropBtn" aria-haspopup="true" aria-expanded="false" title="Rotate"><span class="rmini-ico">⟳</span>Rotate&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="rright">⟳ Rotate Right 90°</button>
+                    <button type="button" data-act="rleft">⟲ Rotate Left 90°</button>
+                    <button type="button" data-act="free">⌖ Free Rotate…</button>
+                  </div>
+                </span>
+              </span>
+            </div>
+            <div class="rgroup-name">Arrange</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-col size-fields">
+                <label class="m"><span>Width</span><input id="picW" type="number" min="16"></label>
+              </span>
+            </div>
+            <div class="rgroup-name">Size</div>
           </div>
         </div>
       </section>

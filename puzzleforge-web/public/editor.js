@@ -20,7 +20,9 @@
     qrProps: $('qrProps'), qrUrl: $('qrUrl'), qrEcl: $('qrEcl'), qrFg: $('qrFg'),
     tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
     tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
-    ctxTab: $('ctxTab'), ctxTab2: $('ctxTab2'), ctxTabTD: $('ctxTabTD'), ctxTabTL: $('ctxTabTL'),
+    ctxTab: $('ctxTab'), ctxTab2: $('ctxTab2'), ctxTabTD: $('ctxTabTD'), ctxTabTL: $('ctxTabTL'), ctxTabPic: $('ctxTabPic'),
+    picControls: $('picControls'), picNone: $('picNone'), picChange: $('picChange'), picReset: $('picReset'),
+    picForward: $('picForward'), picBackward: $('picBackward'), picFlipH: $('picFlipH'), picFlipV: $('picFlipV'), picW: $('picW'), picCaptionText: $('picCaptionText'),
     tdControls: $('tdControls'), tdNone: $('tdNone'), tdBorderW: $('tdBorderW'), tdHeader: $('tdHeader'),
     tlControls: $('tlControls'), tlNone: $('tlNone'), tlEditText: $('tlEditText'), tlForward: $('tlForward'), tlBackward: $('tlBackward'),
     tlInsAbove: $('tlInsAbove'), tlInsBelow: $('tlInsBelow'), tlInsLeft: $('tlInsLeft'), tlInsRight: $('tlInsRight'),
@@ -351,22 +353,26 @@
       else if (act === 'dup') { if (cur >= 0) duplicatePage(cur); }
       else if (act === 'tpl') openTplPicker();
       else if (act === 'puzzle') openPuzzleInsert();
-    } else if (dropId === 'alignDrop' || dropId === 'sfAlignDrop' || dropId === 'tlAlignDrop') {
+    } else if (dropId === 'alignDrop' || dropId === 'sfAlignDrop' || dropId === 'tlAlignDrop' || dropId === 'picAlignDrop') {
       const m = { aleft: 'left', acenter: 'centerh', aright: 'right', atop: 'top', amiddle: 'middle', abottom: 'bottom' };
       if (m[act]) alignSel(m[act]);
       else if (act === 'disth') distribute('x');
       else if (act === 'distv') distribute('y');
-    } else if (dropId === 'rotateDrop' || dropId === 'sfRotateDrop' || dropId === 'tlRotateDrop') {
+    } else if (dropId === 'rotateDrop' || dropId === 'sfRotateDrop' || dropId === 'tlRotateDrop' || dropId === 'picRotateDrop') {
       if (act === 'rright') rotateBy(90);
       else if (act === 'rleft') rotateBy(-90);
       else if (act === 'flipv') flip('v');
       else if (act === 'fliph') flip('h');
       else if (act === 'free') freeRotate();
-    } else if (dropId === 'wrapDrop' || dropId === 'sfWrapDrop' || dropId === 'tlWrapDrop') {
+    } else if (dropId === 'wrapDrop' || dropId === 'sfWrapDrop' || dropId === 'tlWrapDrop' || dropId === 'picWrapDrop') {
       if (act === 'wfront') reorder('front');
       else if (act === 'wbehind') reorder('back');
     } else if (dropId === 'sfEffectsDrop') {
       shapeEffects(act);
+    } else if (dropId === 'picEffectsDrop') {
+      picEffects(act);
+    } else if (dropId === 'picCaptionDrop') {
+      picCaption(act);
     } else if (dropId === 'tdBordersDrop') {
       const m = { all: 1, thin: 0.5, thick: 2, none: 0 }; if (m[act] != null) tblSet('borderW', m[act]);
     } else if (dropId === 'tlDeleteDrop') {
@@ -1169,6 +1175,7 @@
     updateContextTab();
     syncShapeFormatUI();
     syncTableTabsUI();
+    syncPictureUI();
     if (!has) return;
     document.querySelectorAll('.tb-group').forEach((g) => { g.style.display = isText ? '' : 'none'; });
     // Generic Size / Arrange / Object groups live on the Shape Format tab for a
@@ -1530,6 +1537,57 @@
       r.readAsDataURL(f);
     });
     inp.click();
+  }
+
+  // --- Picture Format tab (contextual: adjust / style / arrange a picture) ---
+  const selImage = () => { const o = sels.length === 1 && sels[0]; return o && o.kind === 'image' ? o : null; };
+  const picRerender = (o) => { o._node.innerHTML = elHtml(o); drawSel(); };
+  const RECOLOR_FILTERS = { grayscale: 'grayscale(1)', sepia: 'sepia(0.75)', washout: 'grayscale(.4) brightness(1.45) contrast(.7)', blue: 'grayscale(1) sepia(1) hue-rotate(170deg) saturate(4)', gold: 'sepia(1) saturate(2.2) hue-rotate(-12deg)', green: 'grayscale(1) sepia(1) hue-rotate(75deg) saturate(2.5)' };
+  const CORRECTIONS = [
+    { label: 'Brighten', b: 1.3, c: 1 }, { label: 'Normal', b: 1, c: 1 }, { label: 'Darken', b: 0.72, c: 1 },
+    { label: 'More Contrast', b: 1, c: 1.45 }, { label: 'Soften', b: 1.1, c: 0.78 }, { label: 'Sharpen', b: 1.05, c: 1.25 },
+  ];
+  const RECOLORS = [['', 'None'], ['grayscale', 'Grayscale'], ['sepia', 'Sepia'], ['washout', 'Washout'], ['blue', 'Blue'], ['gold', 'Gold'], ['green', 'Green']];
+  function picPreviewBtn(filter, label) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pic-sw rdrop-item'; b.title = label;
+    const sw = document.createElement('span'); sw.className = 'pic-sw-img'; sw.style.filter = filter || 'none';
+    b.appendChild(sw); return b;
+  }
+  function buildPicMenus() {
+    const corr = document.getElementById('picCorrMenu');
+    if (corr) { corr.innerHTML = ''; const g = document.createElement('div'); g.className = 'pic-grid';
+      CORRECTIONS.forEach((c) => { const b = picPreviewBtn(`brightness(${c.b}) contrast(${c.c})`, c.label); b.addEventListener('click', () => { const o = selImage(); if (o) { pushUndo(); o.brightness = c.b; o.contrast = c.c; picRerender(o); } }); g.appendChild(b); });
+      corr.appendChild(g); }
+    const rec = document.getElementById('picRecolorMenu');
+    if (rec) { rec.innerHTML = ''; const g = document.createElement('div'); g.className = 'pic-grid';
+      RECOLORS.forEach(([v, label]) => { const b = picPreviewBtn(v ? RECOLOR_FILTERS[v] : '', label); b.addEventListener('click', () => { const o = selImage(); if (o) { pushUndo(); if (v) o.recolor = v; else delete o.recolor; picRerender(o); } }); g.appendChild(b); });
+      rec.appendChild(g); }
+  }
+  const PIC_STYLES = [{}, { picBorder: '#222222', picBorderW: 3 }, { picBorder: '#ffffff', picBorderW: 4, picShadow: '#00000045' }, { picRadius: 14 }, { picRadius: 14, picBorder: '#adb5bd', picBorderW: 2 }, { picShadow: '#00000055' }];
+  function applyPicStyle(st) { const o = selImage(); if (!o) return; pushUndo(); delete o.picBorder; delete o.picBorderW; delete o.picRadius; delete o.picShadow; Object.assign(o, st); picRerender(o); }
+  function buildPicStyleGallery() {
+    const host = document.getElementById('picStyleGallery'); if (!host) return; host.innerHTML = '';
+    PIC_STYLES.forEach((st) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'pic-style-sw'; const im = document.createElement('span'); im.className = 'pic-style-img';
+      if (st.picBorder) im.style.border = `${st.picBorderW || 2}px solid ${st.picBorder}`; if (st.picRadius) im.style.borderRadius = st.picRadius + 'px'; if (st.picShadow) im.style.boxShadow = `2px 2px 5px ${st.picShadow}`;
+      b.appendChild(im); b.addEventListener('click', () => applyPicStyle(st)); host.appendChild(b); });
+  }
+  function buildPicBorderMenu() {
+    buildColorMenu(document.getElementById('picBorderMenu'), {
+      apply: (c) => { const o = selImage(); if (o) { pushUndo(); o.picBorder = c; if (!num(o.picBorderW, 0)) o.picBorderW = 2; picRerender(o); } },
+      noneLabel: '✕ No Border', onNone: () => { const o = selImage(); if (o) { pushUndo(); delete o.picBorder; delete o.picBorderW; picRerender(o); } },
+      weights: true, weight: (w) => { const o = selImage(); if (o) { pushUndo(); if (!o.picBorder) o.picBorder = '#333333'; o.picBorderW = w; picRerender(o); } }, sampleLabel: 'Sample border colour…',
+    });
+  }
+  function picEffects(act) { const o = selImage(); if (!o) return; pushUndo(); if (act === 'shadow') { if (o.picShadow) delete o.picShadow; else o.picShadow = '#00000040'; } else if (act === 'round') { o.picRadius = num(o.picRadius, 0) ? 0 : 14; } else { delete o.picShadow; o.picRadius = 0; } picRerender(o); }
+  function picCaption(act) { const o = selImage(); if (!o) return; pushUndo(); if (act === 'none') o.captionStyle = 'none'; else o.captionStyle = act; if (el.picCaptionText && !o.caption) o.caption = el.picCaptionText.value || 'Caption'; picRerender(o); }
+  function picResetAdjust() { const o = selImage(); if (!o) return; pushUndo(); delete o.brightness; delete o.contrast; delete o.recolor; picRerender(o); setStatus('Picture adjustments cleared.', 'ok'); }
+  function syncPictureUI() {
+    const o = selImage();
+    if (el.picNone) el.picNone.classList.toggle('hidden', !!o);
+    if (el.picControls) el.picControls.classList.toggle('hidden', !o);
+    if (!o) return;
+    if (el.picW) el.picW.value = Math.round(num(o.width, 160));
+    if (el.picCaptionText) el.picCaptionText.value = o.caption || '';
   }
   function addShape(shape) {
     const line = shape === 'line';
@@ -2109,7 +2167,7 @@
   }
   function applyScheme(s) {
     activeScheme = s;
-    buildFillOutlineMenus(); buildShapeStyleMenus(); buildTableMenus(); // refresh scheme swatches
+    buildFillOutlineMenus(); buildShapeStyleMenus(); buildTableMenus(); buildPicBorderMenu(); // refresh scheme swatches
     pageModels.forEach((pm) => { pm._borderColor = s.colors[0]; });
     // Immediate feedback: recolor whatever's selected to the scheme.
     if (sels.length) {
@@ -2395,6 +2453,7 @@
         columns: e.columns, pad: e.pad, numStyle: e.numStyle, ligatures: e.ligatures, dropCap: e.dropCap, hyphens: e.hyphens,
         boxFill: e.boxFill, boxStroke: e.boxStroke, boxStrokeW: e.boxStrokeW, boxRadius: e.boxRadius, boxShadow: e.boxShadow,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV, placeholder: e.placeholder || undefined,
+        brightness: e.brightness, contrast: e.contrast, recolor: e.recolor, picBorder: e.picBorder, picBorderW: e.picBorderW, picRadius: e.picRadius, picShadow: e.picShadow, caption: e.caption, captionStyle: e.captionStyle,
         link: e.link || undefined, bookmark: e.bookmark || undefined,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
@@ -2978,13 +3037,14 @@
   // (Publisher has no standalone Arrange tab).
   // A text box also carries the object-specific tab (Text Box); other kinds get
   // their own single tab. Plain shapes use only Shape Format.
-  const CTX_LABELS = { image: 'Picture Format', text: 'Text Box', qr: 'QR Code' };
+  const CTX_LABELS = { text: 'Text Box', qr: 'QR Code' };
   function updateContextTab() {
     if (!ribbonActivate || !el.ctxTab) return;
     const one = sels.length === 1 ? sels[0] : null;
     const kind = one && one.kind;
     const isTable = kind === 'table';
-    // Primary object tab (Text Box / Picture / QR) — not for shapes or tables.
+    const isImg = kind === 'image';
+    // Primary object tab (Text Box / QR) — not for shapes, tables, or pictures.
     const hasPrimary = !!(kind && CTX_LABELS[kind]);
     // Shape Format (frame) tab — text boxes and shapes.
     const hasShapeFmt = kind === 'text' || kind === 'shape';
@@ -2993,12 +3053,13 @@
     if (el.ctxTab2) el.ctxTab2.classList.toggle('avail', hasShapeFmt);
     if (el.ctxTabTD) el.ctxTabTD.classList.toggle('avail', isTable);
     if (el.ctxTabTL) el.ctxTabTL.classList.toggle('avail', isTable);
+    if (el.ctxTabPic) el.ctxTabPic.classList.toggle('avail', isImg);
     // If we're on a contextual tab that no longer applies, fall back gracefully.
     const active = document.querySelector('.rtab.active');
     const cur = active ? active.dataset.tab : 'home';
-    const ok = { format: hasPrimary, shapeformat: hasShapeFmt, tabledesign: isTable, tablelayout: isTable };
+    const ok = { format: hasPrimary, shapeformat: hasShapeFmt, tabledesign: isTable, tablelayout: isTable, pictureformat: isImg };
     if (cur in ok && !ok[cur]) {
-      ribbonActivate(isTable ? 'tabledesign' : hasPrimary ? 'format' : hasShapeFmt ? 'shapeformat' : (ribbonPrevTab || 'home'));
+      ribbonActivate(isTable ? 'tabledesign' : isImg ? 'pictureformat' : hasPrimary ? 'format' : hasShapeFmt ? 'shapeformat' : (ribbonPrevTab || 'home'));
     }
   }
 
@@ -3074,6 +3135,16 @@
     if (el.tlMerge) el.tlMerge.addEventListener('click', mergeTableCells);
     if (el.tlSplit) el.tlSplit.addEventListener('click', splitTableCells);
     if (el.tlDiagonal) el.tlDiagonal.addEventListener('click', toggleTableDiagonal);
+    // Picture Format tab
+    buildPicMenus(); buildPicStyleGallery(); buildPicBorderMenu();
+    if (el.picChange) el.picChange.addEventListener('change', () => { const o = selImage(); const f = el.picChange.files && el.picChange.files[0]; if (o && f) { const r = new FileReader(); r.onload = () => { pushUndo(); o.src = r.result; o.placeholder = false; picRerender(o); }; r.readAsDataURL(f); } el.picChange.value = ''; });
+    if (el.picReset) el.picReset.addEventListener('click', picResetAdjust);
+    if (el.picForward) el.picForward.addEventListener('click', () => reorder('forward'));
+    if (el.picBackward) el.picBackward.addEventListener('click', () => reorder('backward'));
+    if (el.picFlipH) el.picFlipH.addEventListener('click', () => flip('h'));
+    if (el.picFlipV) el.picFlipV.addEventListener('click', () => flip('v'));
+    if (el.picW) el.picW.addEventListener('change', () => { const o = selImage(); if (o) { pushUndo(); o.width = Math.max(16, Number(el.picW.value) || num(o.width, 160)); picRerender(o); syncSelUI(); } });
+    if (el.picCaptionText) el.picCaptionText.addEventListener('input', () => { const o = selImage(); if (o) { o.caption = el.picCaptionText.value; if (!o.captionStyle || o.captionStyle === 'none') o.captionStyle = 'below'; picRerender(o); } });
     // Home Clipboard / Objects / Arrange / Editing
     el.cutBtn.addEventListener('click', cutSel); el.copyBtn.addEventListener('click', copySel); el.pasteBtn.addEventListener('click', paste);
     el.fmtPainter.addEventListener('click', togglePainter);
