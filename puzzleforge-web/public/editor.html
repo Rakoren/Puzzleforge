@@ -45,6 +45,8 @@
       <button class="rtab" data-tab="view" role="tab">View</button>
       <button class="rtab" data-tab="help" role="tab">Help</button>
       <button class="rtab rtab-context" data-tab="shapeformat" id="ctxTab2" role="tab">Shape Format</button>
+      <button class="rtab rtab-context" data-tab="tabledesign" id="ctxTabTD" role="tab">Table Design</button>
+      <button class="rtab rtab-context" data-tab="tablelayout" id="ctxTabTL" role="tab">Table Layout</button>
       <button class="rtab rtab-context" data-tab="format" id="ctxTab" role="tab">Text Box</button>
     </div>
 
@@ -828,6 +830,136 @@
               </span>
             </div>
             <div class="rgroup-name">Size</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABLE DESIGN (contextual: table styling) -->
+      <section class="ribbon-panel" data-panel="tabledesign">
+        <div id="tdNone" class="rhint">Select a table to change its style, fill, and borders.</div>
+        <div id="tdControls" class="ribbon-inline hidden">
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <div class="td-format-gallery" id="tdFormatGallery"></div>
+            </div>
+            <div class="rgroup-name">Table Formats</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-col">
+                <span class="rdrop" id="tdFillDrop">
+                  <button class="rmini rdrop-btn" id="tdFillDropBtn" aria-haspopup="true" aria-expanded="false" title="Cell fill"><span class="rmini-ico">🎨</span>Fill&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu color-menu" id="tdFillMenu" hidden></div>
+                </span>
+                <span class="rdrop" id="tdHeaderFillDrop">
+                  <button class="rmini rdrop-btn" id="tdHeaderFillDropBtn" aria-haspopup="true" aria-expanded="false" title="Header row fill"><span class="rmini-ico">▤</span>Header&nbsp;Fill&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu color-menu" id="tdHeaderFillMenu" hidden></div>
+                </span>
+                <label class="rdrop-check tbl-headerchk"><input type="checkbox" id="tdHeader"> Header row</label>
+              </span>
+            </div>
+            <div class="rgroup-name">Fill</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-col">
+                <label class="m"><span>Weight</span><input id="tdBorderW" type="number" min="0" max="8" step="0.5" value="1"></label>
+                <span class="rdrop" id="tdLineColorDrop">
+                  <button class="rmini rdrop-btn" id="tdLineColorDropBtn" aria-haspopup="true" aria-expanded="false" title="Border line colour"><span class="rmini-ico">✎</span>Line&nbsp;Color&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu color-menu" id="tdLineColorMenu" hidden></div>
+                </span>
+                <span class="rdrop" id="tdBordersDrop">
+                  <button class="rmini rdrop-btn" id="tdBordersDropBtn" aria-haspopup="true" aria-expanded="false" title="Which borders to show"><span class="rmini-ico">▦</span>Borders&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="all">▦ All Borders</button>
+                    <button type="button" data-act="thin">─ Thin (½ pt)</button>
+                    <button type="button" data-act="thick">━ Thick (2 pt)</button>
+                    <button type="button" data-act="none">▢ No Borders</button>
+                  </div>
+                </span>
+              </span>
+            </div>
+            <div class="rgroup-name">Borders</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABLE LAYOUT (contextual: rows/cols, alignment, arrange) -->
+      <section class="ribbon-panel" data-panel="tablelayout">
+        <div id="tlNone" class="rhint">Select a table to add rows &amp; columns and arrange it.</div>
+        <div id="tlControls" class="ribbon-inline hidden">
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rmini-grid">
+                <button id="tlInsAbove" class="rmini" title="Insert row above"><span class="rmini-ico">⬆</span>Insert Above</button>
+                <button id="tlInsBelow" class="rmini" title="Insert row below"><span class="rmini-ico">⬇</span>Insert Below</button>
+                <button id="tlInsLeft" class="rmini" title="Insert column left"><span class="rmini-ico">⬅</span>Insert Left</button>
+                <button id="tlInsRight" class="rmini" title="Insert column right"><span class="rmini-ico">➡</span>Insert Right</button>
+                <span class="rdrop" id="tlDeleteDrop">
+                  <button class="rmini rdrop-btn" id="tlDeleteDropBtn" aria-haspopup="true" aria-expanded="false" title="Delete rows or columns"><span class="rmini-ico">🗑</span>Delete&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="row">🗑 Delete Row</button>
+                    <button type="button" data-act="col">🗑 Delete Column</button>
+                  </div>
+                </span>
+              </span>
+            </div>
+            <div class="rgroup-name">Rows &amp; Columns</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="align-grid2">
+                <button class="iconbtn tbl-align" data-talign="left" title="Align left">⯇</button>
+                <button class="iconbtn tbl-align" data-talign="center" title="Center">≡</button>
+                <button class="iconbtn tbl-align" data-talign="right" title="Align right">⯈</button>
+                <button class="iconbtn" id="tlEditText" title="Edit cell text">✎</button>
+              </span>
+              <span class="rdrop" id="tlMarginsDrop">
+                <button class="rmini rdrop-btn" id="tlMarginsDropBtn" aria-haspopup="true" aria-expanded="false" title="Cell margins (padding)"><span class="rmini-ico">▤</span>Cell&nbsp;<br>Margins&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="none">None — 0</button>
+                  <button type="button" data-act="narrow">Narrow — 3px</button>
+                  <button type="button" data-act="moderate">Moderate — 6px</button>
+                  <button type="button" data-act="wide">Wide — 12px</button>
+                </div>
+              </span>
+            </div>
+            <div class="rgroup-name">Alignment</div>
+          </div>
+          <div class="rgroup">
+            <div class="rgroup-body">
+              <span class="rdrop" id="tlWrapDrop">
+                <button class="rbig rdrop-btn" id="tlWrapDropBtn" aria-haspopup="true" aria-expanded="false" title="How this table layers with the puzzle"><span class="rbig-ico">◲</span>Wrap&nbsp;<br>Text&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="wfront">▤ In Front of Puzzle</button>
+                  <button type="button" data-act="wbehind">▥ Behind Puzzle</button>
+                </div>
+              </span>
+              <span class="rmini-grid">
+                <button id="tlForward" class="rmini" title="Bring forward"><span class="rmini-ico">⭱</span>Bring Forward</button>
+                <button id="tlBackward" class="rmini" title="Send backward"><span class="rmini-ico">⭳</span>Send Backward</button>
+                <span class="rdrop" id="tlAlignDrop">
+                  <button class="rmini rdrop-btn" id="tlAlignDropBtn" aria-haspopup="true" aria-expanded="false" title="Align on the page"><span class="rmini-ico">⯐</span>Align&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="aleft">⯇ Align Left</button>
+                    <button type="button" data-act="acenter">≡ Align Center</button>
+                    <button type="button" data-act="aright">⯈ Align Right</button>
+                    <button type="button" data-act="atop">⤒ Align Top</button>
+                    <button type="button" data-act="amiddle">⇕ Align Middle</button>
+                    <button type="button" data-act="abottom">⤓ Align Bottom</button>
+                  </div>
+                </span>
+                <span class="rdrop" id="tlRotateDrop">
+                  <button class="rmini rdrop-btn" id="tlRotateDropBtn" aria-haspopup="true" aria-expanded="false" title="Rotate or flip"><span class="rmini-ico">⟳</span>Rotate&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu" hidden>
+                    <button type="button" data-act="rright">⟳ Rotate Right 90°</button>
+                    <button type="button" data-act="rleft">⟲ Rotate Left 90°</button>
+                    <button type="button" data-act="free">⌖ Free Rotate…</button>
+                  </div>
+                </span>
+              </span>
+            </div>
+            <div class="rgroup-name">Arrange</div>
           </div>
         </div>
       </section>

@@ -112,6 +112,7 @@
     const pad = Math.max(0, Math.min(40, num(e.cellPad, 6)));
     const header = !!e.header;
     const hFill = color(e.headerFill, '#f0f0f0');
+    const cFill = (e.cellFill && e.cellFill !== 'none') ? color(e.cellFill, '#ffffff') : null;
     const fs = Math.max(6, num(e.fontSize, 15));
     const fam = fontStack(e.fontFamily);
     const col = color(e.color, '#222222');
@@ -124,7 +125,7 @@
       body += '<tr>';
       for (let c = 0; c < cols; c++) {
         const isH = header && r === 0;
-        const cs = `border:${bW}px solid ${bC};padding:${pad}px;text-align:${align};vertical-align:top;` + (isH ? `font-weight:700;background:${hFill};` : '');
+        const cs = `border:${bW}px solid ${bC};padding:${pad}px;text-align:${align};vertical-align:top;` + (isH ? `font-weight:700;background:${hFill};` : (cFill ? `background:${cFill};` : ''));
         body += `<td style="${cs}">${esc((cells[r] && cells[r][c]) || '')}</td>`;
       }
       body += '</tr>';

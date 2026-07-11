@@ -20,7 +20,10 @@
     qrProps: $('qrProps'), qrUrl: $('qrUrl'), qrEcl: $('qrEcl'), qrFg: $('qrFg'),
     tableProps: $('tableProps'), tblAddRow: $('tblAddRow'), tblDelRow: $('tblDelRow'), tblAddCol: $('tblAddCol'), tblDelCol: $('tblDelCol'),
     tblBorder: $('tblBorder'), tblHeaderFill: $('tblHeaderFill'), tblHeader: $('tblHeader'),
-    ctxTab: $('ctxTab'), ctxTab2: $('ctxTab2'),
+    ctxTab: $('ctxTab'), ctxTab2: $('ctxTab2'), ctxTabTD: $('ctxTabTD'), ctxTabTL: $('ctxTabTL'),
+    tdControls: $('tdControls'), tdNone: $('tdNone'), tdBorderW: $('tdBorderW'), tdHeader: $('tdHeader'),
+    tlControls: $('tlControls'), tlNone: $('tlNone'), tlEditText: $('tlEditText'), tlForward: $('tlForward'), tlBackward: $('tlBackward'),
+    tlInsAbove: $('tlInsAbove'), tlInsBelow: $('tlInsBelow'), tlInsLeft: $('tlInsLeft'), tlInsRight: $('tlInsRight'),
     sfControls: $('sfControls'), sfNone: $('sfNone'), sfEditText: $('sfEditText'),
     sfForward: $('sfForward'), sfBackward: $('sfBackward'), sfGroup: $('sfGroup'), sfUngroup: $('sfUngroup'), sfH: $('sfH'), sfW: $('sfW'),
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
@@ -347,22 +350,28 @@
       else if (act === 'dup') { if (cur >= 0) duplicatePage(cur); }
       else if (act === 'tpl') openTplPicker();
       else if (act === 'puzzle') openPuzzleInsert();
-    } else if (dropId === 'alignDrop' || dropId === 'sfAlignDrop') {
+    } else if (dropId === 'alignDrop' || dropId === 'sfAlignDrop' || dropId === 'tlAlignDrop') {
       const m = { aleft: 'left', acenter: 'centerh', aright: 'right', atop: 'top', amiddle: 'middle', abottom: 'bottom' };
       if (m[act]) alignSel(m[act]);
       else if (act === 'disth') distribute('x');
       else if (act === 'distv') distribute('y');
-    } else if (dropId === 'rotateDrop' || dropId === 'sfRotateDrop') {
+    } else if (dropId === 'rotateDrop' || dropId === 'sfRotateDrop' || dropId === 'tlRotateDrop') {
       if (act === 'rright') rotateBy(90);
       else if (act === 'rleft') rotateBy(-90);
       else if (act === 'flipv') flip('v');
       else if (act === 'fliph') flip('h');
       else if (act === 'free') freeRotate();
-    } else if (dropId === 'wrapDrop' || dropId === 'sfWrapDrop') {
+    } else if (dropId === 'wrapDrop' || dropId === 'sfWrapDrop' || dropId === 'tlWrapDrop') {
       if (act === 'wfront') reorder('front');
       else if (act === 'wbehind') reorder('back');
     } else if (dropId === 'sfEffectsDrop') {
       shapeEffects(act);
+    } else if (dropId === 'tdBordersDrop') {
+      const m = { all: 1, thin: 0.5, thick: 2, none: 0 }; if (m[act] != null) tblSet('borderW', m[act]);
+    } else if (dropId === 'tlDeleteDrop') {
+      if (act === 'row') tblDelRow(); else if (act === 'col') tblDelCol();
+    } else if (dropId === 'tlMarginsDrop') {
+      const m = { none: 0, narrow: 3, moderate: 6, wide: 12 }; if (m[act] != null) tblSet('cellPad', m[act]);
     } else if (dropId === 'pageNoDrop') {
       insertPageNumber(act);
     } else if (dropId === 'accentDrop') {
@@ -1158,6 +1167,7 @@
     syncFontUI(one);
     updateContextTab();
     syncShapeFormatUI();
+    syncTableTabsUI();
     if (!has) return;
     document.querySelectorAll('.tb-group').forEach((g) => { g.style.display = isText ? '' : 'none'; });
     // Generic Size / Arrange / Object groups live on the Shape Format tab for a
@@ -1752,6 +1762,44 @@
     td.addEventListener('blur', done); td.addEventListener('keydown', onk);
   }
 
+  // --- Table Design / Table Layout (two contextual tabs, Publisher-style) ---
+  function tblSet(prop, val) { const t = selTable(); if (!t) return; pushUndo(); t[prop] = val; redrawTable(t); syncSelUI(); }
+  const TABLE_FORMATS = [
+    { name: 'Plain', borderColor: '#333333', borderW: 1, header: false, headerFill: '#f0f0f0', cellFill: 'none' },
+    { name: 'Grid', borderColor: '#495057', borderW: 1, header: true, headerFill: '#e9ecef', cellFill: 'none' },
+    { name: 'Blue', borderColor: '#1c7ed6', borderW: 1, header: true, headerFill: '#d0ebff', cellFill: 'none' },
+    { name: 'Warm', borderColor: '#e8590c', borderW: 1, header: true, headerFill: '#ffe8cc', cellFill: '#fff9f0' },
+    { name: 'Green', borderColor: '#2b8a3e', borderW: 1, header: true, headerFill: '#d3f9d8', cellFill: 'none' },
+    { name: 'Minimal', borderColor: '#adb5bd', borderW: 0.5, header: true, headerFill: '#f8f9fa', cellFill: 'none' },
+  ];
+  function applyTableFormat(fmt) { const t = selTable(); if (!t) return; pushUndo(); Object.assign(t, { borderColor: fmt.borderColor, borderW: fmt.borderW, header: fmt.header, headerFill: fmt.headerFill, cellFill: fmt.cellFill }); redrawTable(t); syncSelUI(); }
+  function buildTableFormatGallery() {
+    const host = document.getElementById('tdFormatGallery'); if (!host) return; host.innerHTML = '';
+    TABLE_FORMATS.forEach((fmt) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'td-fmt-sw'; b.title = fmt.name;
+      b.innerHTML = `<span class="td-fmt-h" style="background:${fmt.header ? fmt.headerFill : '#fff'};border-color:${fmt.borderColor}"></span><span class="td-fmt-b" style="background:${fmt.cellFill === 'none' ? '#fff' : fmt.cellFill};border-color:${fmt.borderColor}"></span>`;
+      b.addEventListener('click', () => applyTableFormat(fmt)); host.appendChild(b); });
+  }
+  function buildTableMenus() {
+    buildColorMenu(document.getElementById('tdFillMenu'), { apply: (c) => tblSet('cellFill', c), noneLabel: '✕ No Fill', onNone: () => tblSet('cellFill', 'none') });
+    buildColorMenu(document.getElementById('tdHeaderFillMenu'), { apply: (c) => tblSet('headerFill', c), noneLabel: '✕ No Fill', onNone: () => tblSet('headerFill', 'none') });
+    buildColorMenu(document.getElementById('tdLineColorMenu'), { apply: (c) => tblSet('borderColor', c), noneLabel: 'Automatic (dark)', onNone: () => tblSet('borderColor', '#333333') });
+  }
+  function tblInsRow(where) { tableOp((t) => { ensureCells(t); const row = Array(t.cols).fill(''); if (where === 'above') t.cells.unshift(row); else t.cells.push(row); t.rows++; }); }
+  function tblInsCol(where) { tableOp((t) => { ensureCells(t); t.cells.forEach((r) => { if (where === 'left') r.unshift(''); else r.push(''); }); if (where === 'left') t.colW.unshift(90); else t.colW.push(90); t.cols++; }); }
+  function tblDelRow() { tableOp((t) => { if (t.rows > 1) { t.rows--; t.cells.pop(); } }); }
+  function tblDelCol() { tableOp((t) => { if (t.cols > 1) { t.cols--; t.colW.pop(); t.cells.forEach((r) => r.pop()); } }); }
+  function syncTableTabsUI() {
+    const t = selTable();
+    if (el.tdNone) el.tdNone.classList.toggle('hidden', !!t);
+    if (el.tdControls) el.tdControls.classList.toggle('hidden', !t);
+    if (el.tlNone) el.tlNone.classList.toggle('hidden', !!t);
+    if (el.tlControls) el.tlControls.classList.toggle('hidden', !t);
+    if (!t) return;
+    if (el.tdBorderW) el.tdBorderW.value = num(t.borderW, 1);
+    if (el.tdHeader) el.tdHeader.checked = !!t.header;
+    document.querySelectorAll('.tbl-align').forEach((b) => b.classList.toggle('on', (t.align || 'left') === b.dataset.talign));
+  }
+
   // --- Master pages ---
   function masterPageNo(i) { const skip = Math.max(0, num(master.skipFirst, 0)); if (i < skip) return null; return i - skip + num(master.startAt, 1); }
   function masterAppliesTo(i) { const n = masterPageNo(i); if (n == null) return false; if (master.applyTo === 'odd') return n % 2 === 1; if (master.applyTo === 'even') return n % 2 === 0; return true; }
@@ -2012,7 +2060,7 @@
   }
   function applyScheme(s) {
     activeScheme = s;
-    buildFillOutlineMenus(); buildShapeStyleMenus(); // refresh scheme swatches
+    buildFillOutlineMenus(); buildShapeStyleMenus(); buildTableMenus(); // refresh scheme swatches
     pageModels.forEach((pm) => { pm._borderColor = s.colors[0]; });
     // Immediate feedback: recolor whatever's selected to the scheme.
     if (sels.length) {
@@ -2301,7 +2349,7 @@
         link: e.link || undefined, bookmark: e.bookmark || undefined,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
         rows: e.rows, cols: e.cols, cells: e.cells, colW: e.colW, header: e.header,
-        borderColor: e.borderColor, borderW: e.borderW, headerFill: e.headerFill, cellPad: e.cellPad,
+        borderColor: e.borderColor, borderW: e.borderW, headerFill: e.headerFill, cellPad: e.cellPad, cellFill: e.cellFill,
         behind: e.behind || undefined, field: e.field || undefined,
         gid: e.gid,
       }));
@@ -2880,23 +2928,28 @@
   // (Publisher has no standalone Arrange tab).
   // A text box also carries the object-specific tab (Text Box); other kinds get
   // their own single tab. Plain shapes use only Shape Format.
-  const CTX_LABELS = { image: 'Picture Format', table: 'Table', text: 'Text Box', qr: 'QR Code' };
+  const CTX_LABELS = { image: 'Picture Format', text: 'Text Box', qr: 'QR Code' };
   function updateContextTab() {
     if (!ribbonActivate || !el.ctxTab) return;
     const one = sels.length === 1 ? sels[0] : null;
     const kind = one && one.kind;
-    // Primary object tab (Text Box / Picture / Table / QR) — not for plain shapes.
+    const isTable = kind === 'table';
+    // Primary object tab (Text Box / Picture / QR) — not for shapes or tables.
     const hasPrimary = !!(kind && CTX_LABELS[kind]);
     // Shape Format (frame) tab — text boxes and shapes.
     const hasShapeFmt = kind === 'text' || kind === 'shape';
     if (hasPrimary) { el.ctxTab.textContent = CTX_LABELS[kind]; el.ctxTab.classList.add('avail'); }
     else el.ctxTab.classList.remove('avail');
     if (el.ctxTab2) el.ctxTab2.classList.toggle('avail', hasShapeFmt);
+    if (el.ctxTabTD) el.ctxTabTD.classList.toggle('avail', isTable);
+    if (el.ctxTabTL) el.ctxTabTL.classList.toggle('avail', isTable);
     // If we're on a contextual tab that no longer applies, fall back gracefully.
     const active = document.querySelector('.rtab.active');
     const cur = active ? active.dataset.tab : 'home';
-    if (cur === 'format' && !hasPrimary) ribbonActivate(hasShapeFmt ? 'shapeformat' : (ribbonPrevTab || 'home'));
-    if (cur === 'shapeformat' && !hasShapeFmt) ribbonActivate(hasPrimary ? 'format' : (ribbonPrevTab || 'home'));
+    const ok = { format: hasPrimary, shapeformat: hasShapeFmt, tabledesign: isTable, tablelayout: isTable };
+    if (cur in ok && !ok[cur]) {
+      ribbonActivate(isTable ? 'tabledesign' : hasPrimary ? 'format' : hasShapeFmt ? 'shapeformat' : (ribbonPrevTab || 'home'));
+    }
   }
 
   // --- theme (editor skin) ---
@@ -2956,6 +3009,18 @@
     if (el.sfUngroup) el.sfUngroup.addEventListener('click', ungroupSel);
     if (el.sfW) el.sfW.addEventListener('change', () => { const o = sfSel(); if (o) { pushUndo(); o.w = Math.max(8, Number(el.sfW.value) || num(o.w, 160)); sfRerender(o); syncSelUI(); } });
     if (el.sfH) el.sfH.addEventListener('change', () => { const o = sfSel(); if (o && o.kind === 'shape') { pushUndo(); o.h = Math.max(4, Number(el.sfH.value) || num(o.h, 120)); sfRerender(o); syncSelUI(); } });
+    // Table Design / Table Layout tabs
+    buildTableFormatGallery(); buildTableMenus();
+    if (el.tlInsAbove) el.tlInsAbove.addEventListener('click', () => tblInsRow('above'));
+    if (el.tlInsBelow) el.tlInsBelow.addEventListener('click', () => tblInsRow('below'));
+    if (el.tlInsLeft) el.tlInsLeft.addEventListener('click', () => tblInsCol('left'));
+    if (el.tlInsRight) el.tlInsRight.addEventListener('click', () => tblInsCol('right'));
+    if (el.tlForward) el.tlForward.addEventListener('click', () => reorder('forward'));
+    if (el.tlBackward) el.tlBackward.addEventListener('click', () => reorder('backward'));
+    if (el.tlEditText) el.tlEditText.addEventListener('click', () => setStatus('Double-click a cell to edit its text.', ''));
+    if (el.tdBorderW) el.tdBorderW.addEventListener('change', () => tblSet('borderW', Math.max(0, Math.min(8, Number(el.tdBorderW.value) || 0))));
+    if (el.tdHeader) el.tdHeader.addEventListener('change', () => tblSet('header', el.tdHeader.checked));
+    document.querySelectorAll('.tbl-align').forEach((b) => b.addEventListener('click', () => tblSet('align', b.dataset.talign)));
     // Home Clipboard / Objects / Arrange / Editing
     el.cutBtn.addEventListener('click', cutSel); el.copyBtn.addEventListener('click', copySel); el.pasteBtn.addEventListener('click', paste);
     el.fmtPainter.addEventListener('click', togglePainter);

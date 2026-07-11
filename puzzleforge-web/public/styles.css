@@ -629,6 +629,24 @@ body.theme-dark {
 .size-fields.rmini-col .m { flex-direction: row; align-items: center; gap: 6px; }
 .size-fields .m > span { width: 42px; font-size: 11px; }
 .size-fields .m input { width: 64px; }
+/* Table Design / Table Layout tabs (dense, same rules as other Format tabs) */
+.ribbon-panel[data-panel="tabledesign"] .rgroup-body,
+.ribbon-panel[data-panel="tablelayout"] .rgroup-body { flex-wrap: nowrap; align-items: center; }
+.ribbon-panel[data-panel="tabledesign"] .rmini,
+.ribbon-panel[data-panel="tablelayout"] .rmini { padding: 2px 6px; font-size: 11.5px; }
+.ribbon-panel[data-panel="tabledesign"] .rmini-col,
+.ribbon-panel[data-panel="tablelayout"] .rmini-col { gap: 2px; }
+.ribbon-panel[data-panel="tablelayout"] .rbig { min-width: 42px; max-width: 74px; padding: 2px 5px; font-size: 10px; min-height: 46px; }
+.ribbon-panel[data-panel="tablelayout"] .rbig .rbig-ico { font-size: 16px; }
+.ribbon-panel[data-panel="tablelayout"] .m { flex-direction: row; align-items: center; gap: 4px; }
+.ribbon-panel[data-panel="tabledesign"] .m { flex-direction: row; align-items: center; gap: 4px; }
+.ribbon-panel[data-panel="tabledesign"] .m input { width: 52px; }
+.td-format-gallery { display: grid; grid-template-columns: repeat(3, auto); gap: 4px; align-content: center; }
+.td-fmt-sw { display: flex; flex-direction: column; width: 44px; height: 30px; padding: 2px; cursor: pointer; gap: 1px; background: #fff; }
+.td-fmt-sw:hover { outline: 2px solid var(--brand); outline-offset: 1px; }
+.td-fmt-h { display: block; height: 9px; border: 1px solid #333; }
+.td-fmt-b { display: block; flex: 1; border: 1px solid #333; border-top: none; }
+.tbl-headerchk { white-space: nowrap; }
 .align-mini { display: inline-flex; gap: 2px; }
 .rmini-field { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 4px; white-space: nowrap; }
 .rmini-field .mini-color { width: 30px; height: 24px; }
