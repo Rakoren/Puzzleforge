@@ -334,7 +334,9 @@
     // control inside one keeps it open).
     document.addEventListener('click', (e) => { if (!e.target.closest('.rdrop-menu')) closeAll(); });
     window.addEventListener('resize', () => closeAll());
-    document.addEventListener('scroll', () => closeAll(), true);
+    // Close when the page scrolls under a floating menu, but NOT when the scroll
+    // happens inside a menu (e.g. spinning the wheel over the Fonts list).
+    document.addEventListener('scroll', (e) => { const t = e.target; if (t && t.closest && t.closest('.rdrop-menu')) return; closeAll(); }, true);
   }
   function handleDropAct(dropId, act) {
     if (dropId === 'pageDrop') {
