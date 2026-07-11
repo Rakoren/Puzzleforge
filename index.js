@@ -43,6 +43,7 @@ const {
 } = require('./themes');
 const { listTypes, isActivityType } = require('./generators/registry');
 const { BORDER_STYLES } = require('./engine/decor');
+const digital = require('./engine/digital');
 const offensive = require('./filters/offensive');
 const difficulty = require('./config/difficulty');
 
@@ -79,6 +80,10 @@ module.exports = {
   listTrimSizes,
   listTypes,
   isActivityType,
+  // Digital layer — per-puzzle QR "scan for answers" landing pages.
+  planDigital: digital.planDigital,
+  renderLandingPages: digital.renderLandingPages,
+  qrSvg: digital.qrSvg,
   borderStyles: BORDER_STYLES,
   loadTheme,
   listThemes,

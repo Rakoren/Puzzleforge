@@ -32,6 +32,7 @@ const {
   pageShell,
 } = require('./matter');
 const { renderCoverHtml, coverDimensions, frontImageDpi } = require('./cover');
+const { qrSvg } = require('./digital');
 
 function findChromium(explicit) {
   const home = process.env.HOME || process.env.USERPROFILE || '';
@@ -136,6 +137,26 @@ function applyDifficultyBadge(doc, layout, text) {
     ` border-radius: 5px; padding: 2px 8px; white-space: nowrap; }\n`;
   let out = doc.replace(/<\/style>/i, `${css}</style>`);
   out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-difficulty">${esc(text)}</div>`);
+  return out;
+}
+
+// A "scan for answers" QR pinned to the bottom-right of a puzzle page, linking
+// to that puzzle's static landing page (engine/digital.js). Inline SVG, injected
+// the same way as the difficulty badge so it travels through combinePages and
+// prints vector-sharp.
+function applyQrBadge(doc, layout, url, caption) {
+  if (!url) return doc;
+  const px = Math.max(56, Math.round(layout.usableWidth * 0.13));
+  const svg = qrSvg(url, { size: px, ecl: 'M' });
+  const cap = Math.max(6, Math.round(layout.fontSize * 0.52));
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const css =
+    `\n  body { position: relative; }` +
+    `\n  .pf-qr { position: absolute; bottom: 0; right: 0; z-index: 6; text-align: center; font-family: ${layout.fontFamily}; }` +
+    `\n  .pf-qr svg { width: ${px}px; height: ${px}px; display: block; }` +
+    `\n  .pf-qr .pf-qr-cap { font-size: ${cap}px; color: #555; margin-top: 1px; line-height: 1.1; }\n`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-qr">${svg}<div class="pf-qr-cap">${esc(caption || 'Scan for the answer')}</div></div>`);
   return out;
 }
 
@@ -407,6 +428,11 @@ function renderLeafDoc(book, layout, styleOpts, leaf) {
     // Optional per-page difficulty label (real puzzles only).
     if (book.perPageDifficulty && !isActivityType(puzzle.type)) {
       doc = applyDifficultyBadge(doc, layout, difficulty.badgeText(puzzle.difficulty, book.audience));
+    }
+    // Digital-layer QR: "scan for the answer" linking to this puzzle's landing
+    // page (real puzzles only; activity/filler pages get none).
+    if (book.digital && book.digital.byPuzzle && book.digital.byPuzzle.has(puzzle)) {
+      doc = applyQrBadge(doc, layout, book.digital.byPuzzle.get(puzzle).url, book.digital.caption);
     }
     return withBg(doc);
   }

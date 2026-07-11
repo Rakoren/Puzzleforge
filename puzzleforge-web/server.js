@@ -1422,6 +1422,19 @@ app.post('/api/book/kdp', async (req, res) => {
   let coverPath;
   try {
     const book = pf.assembleBook(config);
+    // Digital layer: if a base URL is supplied, attach the QR plan BEFORE
+    // exporting so each puzzle page prints its "scan for the answer" QR, and
+    // collect the matching landing pages to bundle under html/.
+    const digBase = (body.digital && body.digital.baseUrl) || (config.digital && config.digital.baseUrl) || '';
+    let digitalFiles = null;
+    if (digBase) {
+      book.digital = pf.planDigital(book, {
+        baseUrl: digBase,
+        mode: (body.digital && body.digital.mode) || (config.digital && config.digital.mode),
+        caption: (body.digital && body.digital.caption) || (config.digital && config.digital.caption),
+      });
+      digitalFiles = pf.renderLandingPages(book, book.digital);
+    }
     interiorPath = path.join(os.tmpdir(), `pf-int-${crypto.randomUUID()}.pdf`);
     await pf.exportBookPdf(book, { outPath: interiorPath });
     const interior = fs.readFileSync(interiorPath);
@@ -1462,12 +1475,61 @@ app.post('/api/book/kdp', async (req, res) => {
     archive.append(interior, { name: 'interior.pdf' });
     archive.append(cover, { name: 'cover.pdf' });
     archive.append(info, { name: 'build-info.txt' });
+    if (digitalFiles) {
+      digitalFiles.forEach((f) => archive.append(f.html, { name: `html/${book.digital.slug}/${f.filename}` }));
+      archive.append(digitalReadme(book.digital), { name: 'html/README.txt' });
+    }
     await archive.finalize();
   } catch (err) {
     if (!res.headersSent) res.status(err.status || 500).json({ error: err.message });
   } finally {
     if (interiorPath) fs.unlink(interiorPath, () => {});
     if (coverPath) fs.unlink(coverPath, () => {});
+  }
+});
+
+// Upload note bundled with the landing pages.
+function digitalReadme(plan) {
+  return [
+    'PuzzleForge — Digital layer (QR "scan for answers")',
+    '===================================================',
+    '',
+    `These pages back the QR codes printed on your puzzle pages. Upload the`,
+    `"${plan.slug}" folder to your web host so the QRs resolve, e.g.:`,
+    '',
+    `  ${plan.baseUrl}/${plan.slug}/p1.html`,
+    '',
+    'Each file is self-contained (no server, no dependencies) — any static host',
+    '(Netlify, GitHub Pages, Cloudflare Pages, an S3 bucket, your own domain)',
+    'works. index.html lists every puzzle. Re-export after any change so the',
+    'printed QRs and these pages stay in sync.',
+    '',
+  ].join('\n') + '\n';
+}
+
+// Standalone: just the digital landing pages, zipped (no PDF). Handy for
+// deploying / previewing the "scan for answers" site without a full KDP build.
+app.post('/api/book/digital', async (req, res) => {
+  const body = req.body || {};
+  const config = body.config || {};
+  const baseUrl = body.baseUrl || (config.digital && config.digital.baseUrl) || '';
+  if (!baseUrl) return res.status(400).json({ error: 'A base URL is required (where the pages will be hosted).' });
+  try {
+    const book = pf.assembleBook(config);
+    const plan = pf.planDigital(book, { baseUrl, mode: body.mode, caption: body.caption });
+    if (!plan.entries.length) return res.status(400).json({ error: 'This book has no puzzles to link.' });
+    const files = pf.renderLandingPages(book, plan);
+    const base = (config.title || 'book').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}-digital.zip"`);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.on('error', (err) => { if (!res.headersSent) res.status(500).json({ error: err.message }); });
+    archive.pipe(res);
+    files.forEach((f) => archive.append(f.html, { name: `${plan.slug}/${f.filename}` }));
+    archive.append(digitalReadme(plan), { name: 'README.txt' });
+    await archive.finalize();
+  } catch (err) {
+    if (!res.headersSent) res.status(err.status || 500).json({ error: err.message });
   }
 });
 
