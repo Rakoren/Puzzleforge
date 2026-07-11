@@ -24,7 +24,7 @@
     selNone: $('selNone'), selControls: $('selControls'), measurePanel: $('measurePanel'),
     mX: $('mX'), mY: $('mY'), mScale: $('mScale'), mRot: $('mRot'),
     mW: $('mW'), mH: $('mH'), mWField: $('mWField'), mHField: $('mHField'),
-    fontSize: $('fontSize'), objColor: $('objColor'), tbOutline: $('tbOutline'),
+    fontSize: $('fontSize'), objColor: $('objColor'), tbHyphenBtn: $('tbHyphenBtn'),
     fontFamily: $('fontFamily'), boldBtn: $('boldBtn'), italicBtn: $('italicBtn'), underBtn: $('underBtn'),
     fontGrow: $('fontGrow'), fontShrink: $('fontShrink'), caseBtn: $('caseBtn'), clearFmt: $('clearFmt'), lineSpacing: $('lineSpacing'),
     cutBtn: $('cutBtn'), copyBtn: $('copyBtn'), pasteBtn: $('pasteBtn'), fmtPainter: $('fmtPainter'),
@@ -1136,7 +1136,7 @@
       setVal('.js-font-color', one.color || '#222222');
       setVal('.js-font-family', one.fontFamily || 'sans');
       setVal('.js-line-spacing', String(num(one.lineHeight, 1.25)));
-      if (el.tbOutline) el.tbOutline.value = /^#/.test(one.textStroke || '') ? one.textStroke : '#222222';
+      if (el.tbHyphenBtn) el.tbHyphenBtn.classList.toggle('on', !!one.hyphens);
     }
   }
   function syncSelUI() {
@@ -2234,7 +2234,7 @@
         text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w,
         fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline, lineHeight: e.lineHeight,
         textStroke: e.textStroke, textStrokeW: e.textStrokeW, textShadow: e.textShadow,
-        columns: e.columns, pad: e.pad, numStyle: e.numStyle, ligatures: e.ligatures, dropCap: e.dropCap,
+        columns: e.columns, pad: e.pad, numStyle: e.numStyle, ligatures: e.ligatures, dropCap: e.dropCap, hyphens: e.hyphens,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV, placeholder: e.placeholder || undefined,
         link: e.link || undefined, bookmark: e.bookmark || undefined,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
@@ -2883,7 +2883,7 @@
     each('.js-italic', (b) => b.addEventListener('click', () => tstyle('italic')));
     each('.js-underline', (b) => b.addEventListener('click', () => tstyle('underline')));
     // Text Box tab: outline colour + WordArt gallery + effects
-    if (el.tbOutline) el.tbOutline.addEventListener('input', () => setTextOutline(el.tbOutline.value));
+    if (el.tbHyphenBtn) el.tbHyphenBtn.addEventListener('click', () => { const o = selText(); if (o) applyTextPropU('hyphens', !o.hyphens); });
     buildWordArtGallery(); buildFillOutlineMenus();
     // Home Clipboard / Objects / Arrange / Editing
     el.cutBtn.addEventListener('click', cutSel); el.copyBtn.addEventListener('click', copySel); el.pasteBtn.addEventListener('click', paste);

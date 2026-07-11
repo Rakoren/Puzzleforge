@@ -297,8 +297,9 @@
       `font-family:${fontStack(e.fontFamily)};` +
       `font-weight:${e.bold ? 700 : 400};font-style:${e.italic ? 'italic' : 'normal'};` +
       `text-decoration:${e.underline ? 'underline' : 'none'};` +
-      `text-align:${['left', 'center', 'right'].includes(e.align) ? e.align : 'left'};` +
+      `text-align:${['left', 'center', 'right', 'justify'].includes(e.align) ? e.align : 'left'};` +
       `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:${Math.max(0.8, Math.min(3, num(e.lineHeight, 1.25)))};` +
+      (e.hyphens ? 'hyphens:auto;-webkit-hyphens:auto;' : '') +
       (cols > 1 ? `column-count:${cols};column-gap:16px;` : '') +
       (pad > 0 ? `padding:${pad}px;box-sizing:border-box;` : '') +
       (NUMSTYLE[e.numStyle] ? `font-variant-numeric:${NUMSTYLE[e.numStyle]};` : '') +

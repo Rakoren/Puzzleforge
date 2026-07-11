@@ -587,6 +587,21 @@ body.theme-dark {
 .ro-val { font-weight: 600; color: var(--ink); }
 .design-hint { font-size: 10.5px; color: var(--muted); font-style: italic; margin-top: 1px; }
 
+/* Format tab: dense Publisher layout (rows packed within each group) */
+.ribbon-panel[data-panel="format"] .rgroup-body { flex-wrap: nowrap; align-items: center; }
+.ribbon-panel[data-panel="format"] .rbig { min-width: 42px; max-width: 74px; padding: 2px 5px; font-size: 10px; min-height: 46px; }
+.ribbon-panel[data-panel="format"] .rbig .rbig-ico { font-size: 16px; }
+.ribbon-panel[data-panel="format"] .rmini { padding: 2px 6px; font-size: 11.5px; }
+.ribbon-panel[data-panel="format"] .rmini-col { gap: 2px; }
+.ribbon-panel[data-panel="format"] .iconbtn { padding: 3px 6px; }
+.font-2row { display: flex; flex-direction: column; gap: 3px; }
+.font-2row .frow { display: flex; gap: 3px; align-items: center; }
+.font-2row .mini { max-width: 104px; }
+.align-grid2 { display: grid; grid-template-columns: repeat(2, auto); gap: 2px; align-content: center; }
+.align-grid2 .js-line-spacing { grid-column: 1 / -1; width: 100%; }
+.rmini-col > .rdrop { display: flex; }
+.rmini-col > .rdrop > .rmini { width: 100%; }
+
 /* Text Box (Format) tab: WordArt gallery + effect fields */
 .wordart-gallery { display: flex; gap: 4px; }
 .wordart-swatch { width: 34px; height: 34px; font-size: 21px; line-height: 1; cursor: pointer;
