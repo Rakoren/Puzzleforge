@@ -286,18 +286,32 @@
     if (e.kind === 'shape') return shapeSvg(e);
     if (e.kind === 'table') return tableHtml(e);
     // text
+    const fill = (e.color === 'none' || e.color === 'transparent') ? 'transparent' : color(e.color, '#222');
+    const cols = Math.max(1, Math.min(4, Math.round(num(e.columns, 1))));
+    const pad = Math.max(0, Math.min(60, num(e.pad, 0)));
+    // Typography (OpenType features Chromium renders on screen and in the PDF).
+    const NUMSTYLE = { linprop: 'lining-nums proportional-nums', lintab: 'lining-nums tabular-nums', oldprop: 'oldstyle-nums proportional-nums', oldtab: 'oldstyle-nums tabular-nums' };
+    const LIG = { disc: 'common-ligatures discretionary-ligatures', none: 'none' };
     const css =
-      `font-size:${num(e.fontSize, 24)}px;color:${color(e.color, '#222')};` +
+      `font-size:${num(e.fontSize, 24)}px;color:${fill};` +
       `font-family:${fontStack(e.fontFamily)};` +
       `font-weight:${e.bold ? 700 : 400};font-style:${e.italic ? 'italic' : 'normal'};` +
       `text-decoration:${e.underline ? 'underline' : 'none'};` +
       `text-align:${['left', 'center', 'right'].includes(e.align) ? e.align : 'left'};` +
       `width:${num(e.w, 240)}px;white-space:pre-wrap;line-height:${Math.max(0.8, Math.min(3, num(e.lineHeight, 1.25)))};` +
+      (cols > 1 ? `column-count:${cols};column-gap:16px;` : '') +
+      (pad > 0 ? `padding:${pad}px;box-sizing:border-box;` : '') +
+      (NUMSTYLE[e.numStyle] ? `font-variant-numeric:${NUMSTYLE[e.numStyle]};` : '') +
+      (LIG[e.ligatures] ? `font-variant-ligatures:${LIG[e.ligatures]};` : '') +
       // WordArt: outline (text-stroke) + drop shadow. Chromium renders both on
       // screen and in the PDF, so styled titles print exactly as designed.
       (e.textStroke ? `-webkit-text-stroke:${Math.max(0, num(e.textStrokeW, 1))}px ${color(e.textStroke, '#222')};` : '') +
       (e.textShadow ? `text-shadow:2px 2px 0 ${color(e.textShadow, '#00000040')};` : '');
-    return `<div class="pf-textbox" style="${css}">${esc(e.text || '')}</div>`;
+    // Drop cap: float the first character so it spans N lines (Publisher-style).
+    let body = esc(e.text || '');
+    const dc = Math.max(0, Math.min(5, Math.round(num(e.dropCap, 0))));
+    if (dc >= 2 && e.text) { const t = String(e.text); body = `<span style="float:left;font-size:${dc}em;line-height:.8;padding:0 .06em 0 0;font-weight:700;">${esc(t[0])}</span>${esc(t.slice(1))}`; }
+    return `<div class="pf-textbox" style="${css}">${body}</div>`;
   }
 
   // Wrap the inner HTML in a link / bookmark anchor when set, so Chromium emits

@@ -382,10 +382,21 @@
       else if (act === 'distv') distribute('y');
     } else if (dropId === 'tbDirDrop') {
       const o = selText(); if (o) { pushUndo(); o.rot = act === 'd90' ? 90 : act === 'd270' ? 270 : 0; applyElTf(o); drawSel(); syncSelUI(); }
+    } else if (dropId === 'tbFitDrop') {
+      applyTextFit(act);
+    } else if (dropId === 'tbColsDrop') {
+      applyTextPropU('columns', Number(act) || 1);
+    } else if (dropId === 'tbMarginsDrop') {
+      setTextMargins(act);
+    } else if (dropId === 'tbDropCapDrop') {
+      applyTextPropU('dropCap', Number(act) || 0);
+    } else if (dropId === 'tbNumDrop') {
+      applyTextPropU('numStyle', act === 'default' ? undefined : act);
+    } else if (dropId === 'tbLigDrop') {
+      applyTextPropU('ligatures', act === 'standard' ? undefined : act);
     } else if (dropId === 'tbEffectsDrop') {
       const o = selText(); if (!o) return; pushUndo();
-      if (act === 'outline') { if (o.textStroke) { delete o.textStroke; delete o.textStrokeW; } else { o.textStroke = el.tbOutline ? el.tbOutline.value : '#222222'; o.textStrokeW = 1.5; } }
-      else if (act === 'shadow') { if (o.textShadow) delete o.textShadow; else o.textShadow = '#00000040'; }
+      if (act === 'shadow') { if (o.textShadow) delete o.textShadow; else o.textShadow = '#00000040'; }
       else if (act === 'none') { delete o.textStroke; delete o.textStrokeW; delete o.textShadow; }
       o._node.innerHTML = elHtml(o); drawSel();
     }
@@ -1840,6 +1851,66 @@
       host.appendChild(b);
     });
   }
+  // --- Text Box tab: colour palettes (Text Fill / Text Outline), Fit, Margins ---
+  const STD_COLORS = ['#000000', '#444444', '#666666', '#888888', '#bbbbbb', '#ffffff', '#c0392b', '#e74c3c', '#e67e22', '#f1c40f', '#f9e79f', '#2ecc71', '#27ae60', '#16a085', '#3498db', '#2980b9', '#6741d9', '#9c36b5', '#d6336c', '#f783ac'];
+  const schemePalette = () => { const s = activeScheme ? activeScheme.colors.slice() : ['#3b5bdb', '#e64980', '#f59f00', '#2b8a3e']; return ['#000000', '#ffffff', ...s, '#495057', '#adb5bd']; };
+  function buildColorMenu(host, opts) {
+    if (!host) return; host.innerHTML = '';
+    const sec = (t) => { const h = document.createElement('div'); h.className = 'color-sec'; h.textContent = t; host.appendChild(h); };
+    const rowOf = (colors) => { const r = document.createElement('div'); r.className = 'color-row'; colors.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'color-sw rdrop-item'; b.style.background = c; b.title = c; b.addEventListener('click', () => opts.apply(c)); r.appendChild(b); }); host.appendChild(r); };
+    const sep = () => { const d = document.createElement('div'); d.className = 'rdrop-sep'; host.appendChild(d); };
+    const opt = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'rdrop-item color-opt'; b.textContent = label; b.addEventListener('click', fn); host.appendChild(b); };
+    sec('Scheme Colors'); rowOf(schemePalette());
+    sec('Standard Colors'); rowOf(STD_COLORS);
+    sep();
+    opt(opts.noneLabel, opts.onNone);
+    opt('More Colors…', () => pickMore(opts.apply));
+    if (window.EyeDropper) opt(opts.sampleLabel || 'Sample colour…', () => sampleColor(opts.apply));
+    if (opts.weights) {
+      sep(); sec('Weight');
+      const r = document.createElement('div'); r.className = 'color-row wt-row';
+      [['Thin', 0.75], ['Med', 1.5], ['Bold', 3]].forEach(([l, w]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'rdrop-item wt-btn'; b.textContent = l; b.addEventListener('click', () => opts.weight(w)); r.appendChild(b); });
+      host.appendChild(r);
+    }
+  }
+  function pickMore(apply) {
+    const inp = document.createElement('input'); inp.type = 'color'; inp.value = '#333333'; inp.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'; document.body.appendChild(inp);
+    inp.addEventListener('input', () => apply(inp.value));
+    inp.addEventListener('change', () => setTimeout(() => inp.remove(), 200));
+    inp.click();
+  }
+  async function sampleColor(apply) { try { const r = await new window.EyeDropper().open(); if (r && r.sRGBHex) apply(r.sRGBHex); } catch (_) { /* cancelled */ } }
+  function clearOutline() { const o = selText(); if (!o) return; pushUndo(); delete o.textStroke; delete o.textStrokeW; o._node.innerHTML = elHtml(o); drawSel(); }
+  function buildFillOutlineMenus() {
+    buildColorMenu(document.getElementById('tbFillMenu'), { apply: (c) => applyTextPropU('color', c), noneLabel: '✕ No Fill', onNone: () => applyTextPropU('color', 'none') });
+    buildColorMenu(document.getElementById('tbOutlineMenu'), {
+      apply: (c) => setTextOutline(c), noneLabel: '✕ No Outline', onNone: clearOutline, sampleLabel: 'Sample line colour…',
+      weights: true, weight: (w) => { const o = selText(); if (o) { pushUndo(); if (!o.textStroke) o.textStroke = '#222222'; o.textStrokeW = w; o._node.innerHTML = elHtml(o); drawSel(); } },
+    });
+  }
+  // Text Fit: grow the box to the text's natural width, or shrink the font to fit.
+  function applyTextFit(mode) {
+    const o = selText(); if (!o || !o._node) return; const inner = o._node.firstElementChild; if (!inner) return;
+    if (mode === 'none') { o._fit = 'none'; return; }
+    pushUndo();
+    const prev = inner.style.whiteSpace; inner.style.whiteSpace = 'nowrap';
+    if (mode === 'shrink') {
+      let fs = num(o.fontSize, 24);
+      for (let i = 0; i < 60 && inner.scrollWidth > num(o.w, 240) && fs > 6; i++) { fs -= 1; inner.style.fontSize = fs + 'px'; }
+      inner.style.whiteSpace = prev; o.fontSize = fs; o._node.innerHTML = elHtml(o); drawSel(); syncFontUI(o);
+    } else {
+      const nat = Math.min(dims.usableWidth, Math.ceil(inner.scrollWidth) + 6);
+      inner.style.whiteSpace = prev; o.w = Math.max(40, nat); o._node.innerHTML = elHtml(o); drawSel(); syncSelUI();
+    }
+  }
+  function setTextMargins(preset) {
+    const o = selText(); if (!o) return;
+    const map = { none: 0, narrow: 0.04, moderate: 0.06, wide: 0.1 };
+    let inch = map[preset];
+    if (preset === 'custom') { const v = parseFloat(window.prompt('Text box inset margin (inches):', String(num(o.pad, 0) / 96))); if (!isFinite(v)) return; inch = Math.max(0, Math.min(0.6, v)); }
+    if (inch == null) return;
+    pushUndo(); o.pad = Math.round(inch * 96); o._node.innerHTML = elHtml(o); drawSel();
+  }
   function addSymbol(sym) {
     if (!sym) return;
     const o = selText();
@@ -1880,6 +1951,7 @@
   }
   function applyScheme(s) {
     activeScheme = s;
+    buildFillOutlineMenus(); // refresh the Text Fill / Outline scheme swatches
     pageModels.forEach((pm) => { pm._borderColor = s.colors[0]; });
     // Immediate feedback: recolor whatever's selected to the scheme.
     if (sels.length) {
@@ -2162,6 +2234,7 @@
         text: e.text, fontSize: e.fontSize, color: e.color, align: e.align, w: e.w,
         fontFamily: e.fontFamily, bold: e.bold, italic: e.italic, underline: e.underline, lineHeight: e.lineHeight,
         textStroke: e.textStroke, textStrokeW: e.textStrokeW, textShadow: e.textShadow,
+        columns: e.columns, pad: e.pad, numStyle: e.numStyle, ligatures: e.ligatures, dropCap: e.dropCap,
         src: e.src, width: e.width, flipH: e.flipH, flipV: e.flipV, placeholder: e.placeholder || undefined,
         link: e.link || undefined, bookmark: e.bookmark || undefined,
         shape: e.shape, h: e.h, fill: e.fill, stroke: e.stroke, strokeW: e.strokeW,
@@ -2811,7 +2884,7 @@
     each('.js-underline', (b) => b.addEventListener('click', () => tstyle('underline')));
     // Text Box tab: outline colour + WordArt gallery + effects
     if (el.tbOutline) el.tbOutline.addEventListener('input', () => setTextOutline(el.tbOutline.value));
-    buildWordArtGallery();
+    buildWordArtGallery(); buildFillOutlineMenus();
     // Home Clipboard / Objects / Arrange / Editing
     el.cutBtn.addEventListener('click', cutSel); el.copyBtn.addEventListener('click', copySel); el.pasteBtn.addEventListener('click', paste);
     el.fmtPainter.addEventListener('click', togglePainter);

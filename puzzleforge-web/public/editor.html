@@ -499,7 +499,29 @@
       <section class="ribbon-panel" data-panel="format">
         <div id="selNone" class="rhint">Select an object on the page to format it. Shift-click to select multiple.</div>
         <div id="selControls" class="ribbon-inline hidden">
-          <!-- Text Box tools (Publisher-style: Font · Alignment · WordArt Styles) -->
+          <!-- Text Box tools (Publisher-style: Text · Font · Alignment · WordArt Styles) -->
+          <div class="rgroup tb-group">
+            <div class="rgroup-body">
+              <span class="rdrop" id="tbFitDrop">
+                <button class="rbig rdrop-btn" id="tbFitDropBtn" aria-haspopup="true" aria-expanded="false" title="How the box and text size to each other"><span class="rbig-ico">â</span>Text&nbsp;Fit&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="best">Best Fit</button>
+                  <button type="button" data-act="shrink">Shrink Text on Overflow</button>
+                  <button type="button" data-act="grow">Grow Text Box to Fit</button>
+                  <button type="button" data-act="none">✓ Do Not Autofit</button>
+                </div>
+              </span>
+              <span class="rdrop" id="tbDirDrop">
+                <button class="rbig rdrop-btn" id="tbDirDropBtn" aria-haspopup="true" aria-expanded="false" title="Text direction"><span class="rbig-ico">⇅</span>Text&nbsp;<br>Direction&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="d0">→ Horizontal</button>
+                  <button type="button" data-act="d90">↓ Rotate 90°</button>
+                  <button type="button" data-act="d270">↑ Rotate 270°</button>
+                </div>
+              </span>
+            </div>
+            <div class="rgroup-name">Text</div>
+          </div>
           <div class="rgroup tb-group">
             <div class="rgroup-body font-body">
               <select class="mini js-font-family" title="Font">
@@ -511,7 +533,6 @@
               <button class="iconbtn tstyle js-bold" title="Bold"><b>B</b></button>
               <button class="iconbtn tstyle js-italic" title="Italic"><i>I</i></button>
               <button class="iconbtn tstyle js-underline" title="Underline"><u>U</u></button>
-              <input class="mini-color js-font-color" type="color" value="#222222" title="Text color">
               <button class="iconbtn js-font-case" title="Change case (UPPER / lower / Title)">Aa</button>
               <button class="iconbtn js-font-clear" title="Clear text formatting">⌫</button>
             </div>
@@ -527,12 +548,22 @@
               <select class="mini js-line-spacing" title="Line spacing">
                 <option value="1">1.0</option><option value="1.15">1.15</option><option value="1.25" selected>1.25</option><option value="1.5">1.5</option><option value="2">2.0</option>
               </select>
-              <span class="rdrop" id="tbDirDrop">
-                <button class="rmini rdrop-btn" id="tbDirDropBtn" aria-haspopup="true" aria-expanded="false" title="Text direction"><span class="rmini-ico">⟲</span>Direction&nbsp;<span class="rdrop-caret">▾</span></button>
+              <span class="rdrop" id="tbColsDrop">
+                <button class="rmini rdrop-btn" id="tbColsDropBtn" aria-haspopup="true" aria-expanded="false" title="Text columns"><span class="rmini-ico">▥</span>Columns&nbsp;<span class="rdrop-caret">▾</span></button>
                 <div class="rdrop-menu" hidden>
-                  <button type="button" data-act="d0">→ Horizontal</button>
-                  <button type="button" data-act="d90">↓ Rotate 90°</button>
-                  <button type="button" data-act="d270">↑ Rotate 270°</button>
+                  <button type="button" data-act="1">▮ One Column</button>
+                  <button type="button" data-act="2">▮▮ Two Columns</button>
+                  <button type="button" data-act="3">▮▮▮ Three Columns</button>
+                </div>
+              </span>
+              <span class="rdrop" id="tbMarginsDrop">
+                <button class="rmini rdrop-btn" id="tbMarginsDropBtn" aria-haspopup="true" aria-expanded="false" title="Text box inset margins"><span class="rmini-ico">▤</span>Margins&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="none">None — 0″</button>
+                  <button type="button" data-act="narrow">Narrow — 0.04″</button>
+                  <button type="button" data-act="moderate">Moderate — 0.06″</button>
+                  <button type="button" data-act="wide">Wide — 0.1″</button>
+                  <button type="button" data-act="custom">Custom margins…</button>
                 </div>
               </span>
             </div>
@@ -542,12 +573,17 @@
             <div class="rgroup-body">
               <div class="wordart-gallery" id="wordartGallery"></div>
               <span class="rmini-col">
-                <label class="rmini-field"><span class="rmini-ico">🄰</span>Text Fill<input class="mini-color js-font-color" type="color" value="#222222" title="Text fill colour"></label>
-                <label class="rmini-field"><span class="rmini-ico">🅰</span>Outline<input id="tbOutline" class="mini-color" type="color" value="#222222" title="Text outline colour"></label>
+                <span class="rdrop" id="tbFillDrop">
+                  <button class="rmini rdrop-btn" id="tbFillDropBtn" aria-haspopup="true" aria-expanded="false" title="Text fill colour"><span class="rmini-ico">🄰</span>Text&nbsp;Fill&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu color-menu" id="tbFillMenu" hidden></div>
+                </span>
+                <span class="rdrop" id="tbOutlineDrop">
+                  <button class="rmini rdrop-btn" id="tbOutlineDropBtn" aria-haspopup="true" aria-expanded="false" title="Text outline"><span class="rmini-ico">🅰</span>Text&nbsp;Outline&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <div class="rdrop-menu color-menu" id="tbOutlineMenu" hidden></div>
+                </span>
                 <span class="rdrop" id="tbEffectsDrop">
-                  <button class="rmini rdrop-btn" id="tbEffectsDropBtn" aria-haspopup="true" aria-expanded="false" title="Text effects"><span class="rmini-ico">✦</span>Effects&nbsp;<span class="rdrop-caret">▾</span></button>
+                  <button class="rmini rdrop-btn" id="tbEffectsDropBtn" aria-haspopup="true" aria-expanded="false" title="Text effects"><span class="rmini-ico">✦</span>Text&nbsp;Effects&nbsp;<span class="rdrop-caret">▾</span></button>
                   <div class="rdrop-menu" hidden>
-                    <button type="button" data-act="outline">▢ Toggle outline</button>
                     <button type="button" data-act="shadow">◍ Toggle shadow</button>
                     <button type="button" data-act="none">✕ Clear effects</button>
                   </div>
@@ -555,6 +591,38 @@
               </span>
             </div>
             <div class="rgroup-name">WordArt Styles</div>
+          </div>
+          <div class="rgroup tb-group">
+            <div class="rgroup-body">
+              <span class="rdrop" id="tbDropCapDrop">
+                <button class="rmini rdrop-btn" id="tbDropCapDropBtn" aria-haspopup="true" aria-expanded="false" title="Drop cap"><span class="rmini-ico">🅰</span>Drop&nbsp;Cap&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="0">None</button>
+                  <button type="button" data-act="2">Dropped — 2 lines</button>
+                  <button type="button" data-act="3">Dropped — 3 lines</button>
+                  <button type="button" data-act="4">Dropped — 4 lines</button>
+                </div>
+              </span>
+              <span class="rdrop" id="tbNumDrop">
+                <button class="rmini rdrop-btn" id="tbNumDropBtn" aria-haspopup="true" aria-expanded="false" title="Number style"><span class="rmini-ico">123</span>Number&nbsp;Style&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="default">Default</button>
+                  <button type="button" data-act="linprop">Proportional Lining</button>
+                  <button type="button" data-act="lintab">Tabular Lining</button>
+                  <button type="button" data-act="oldprop">Proportional Old-style</button>
+                  <button type="button" data-act="oldtab">Tabular Old-style</button>
+                </div>
+              </span>
+              <span class="rdrop" id="tbLigDrop">
+                <button class="rmini rdrop-btn" id="tbLigDropBtn" aria-haspopup="true" aria-expanded="false" title="Ligatures"><span class="rmini-ico">fi</span>Ligatures&nbsp;<span class="rdrop-caret">▾</span></button>
+                <div class="rdrop-menu" hidden>
+                  <button type="button" data-act="standard">Standard Only</button>
+                  <button type="button" data-act="disc">Standard &amp; Discretionary</button>
+                  <button type="button" data-act="none">No Ligatures</button>
+                </div>
+              </span>
+            </div>
+            <div class="rgroup-name">Typography</div>
           </div>
           <div class="rgroup" id="measurePanel">
             <div class="rgroup-body">
