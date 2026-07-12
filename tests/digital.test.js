@@ -51,9 +51,14 @@ test('renderLandingPages produces one reveal page per puzzle plus an index', () 
   const book = sampleBook();
   const plan = pf.planDigital(book, { baseUrl: 'https://x.test' });
   const files = pf.renderLandingPages(book, plan);
-  assert.equal(files.length, plan.entries.length + 1);
+  assert.equal(files.length, plan.entries.length + 2); // + index.html + finish.html
   const names = files.map((f) => f.name || f.filename);
   assert.ok(names.includes('index.html'));
+  // end-of-book celebration page, linked from the index and every puzzle page
+  const finish = files.find((f) => (f.filename || f.name) === 'finish.html');
+  assert.ok(finish, 'finish.html present');
+  assert.match(finish.html, /You did it/);
+  assert.match(finish.html, /canvas/i); // confetti canvas
   // p1 is a word search → interactive tap-for-hint page (not the static reveal).
   const p1 = files.find((f) => (f.filename || f.name) === 'p1.html').html;
   assert.match(p1, /class="wbtn"/);      // tappable word buttons

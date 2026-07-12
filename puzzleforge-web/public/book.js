@@ -54,6 +54,9 @@
     royaltyOut: $('royaltyOut'),
     kdpBundle: $('kdpBundle'),
     kdpStatus: $('kdpStatus'),
+    digitalBaseUrl: $('digitalBaseUrl'),
+    digitalPages: $('digitalPages'),
+    digitalStatus: $('digitalStatus'),
     rows: $('rows'),
     addRow: $('addRow'),
     summary: $('summary'),
@@ -346,6 +349,7 @@
       // for a fresh book so each preview re-rolls.
       ...(currentSeed != null ? { seed: currentSeed } : {}),
       ...(pageState.length ? { pageState } : {}),
+      ...(digitalBase() ? { digital: { baseUrl: digitalBase() } } : {}),
       puzzleforgeBook: 1,
       puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty, ...(r.theme ? { theme: r.theme } : {}) })),
     };
@@ -453,6 +457,40 @@
     } catch (_) { return true; }
   }
 
+  function digitalBase() {
+    return (el.digitalBaseUrl && el.digitalBaseUrl.value.trim()) || '';
+  }
+  function setDigitalStatus(text, kind) {
+    if (!el.digitalStatus) return;
+    el.digitalStatus.textContent = text || '';
+    el.digitalStatus.className = 'status' + (kind ? ' ' + kind : '');
+  }
+  async function downloadDigital() {
+    if (!rows.length) { setDigitalStatus('Add at least one puzzle first.', 'err'); return; }
+    const base = digitalBase();
+    if (!base) { setDigitalStatus('Enter the hosting base URL first.', 'err'); return; }
+    setDigitalStatus('Building answer pages…', 'busy');
+    el.digitalPages.disabled = true;
+    try {
+      const res = await fetch('/api/book/digital', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: config(), baseUrl: base }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Could not build answer pages');
+      }
+      const blob = await res.blob();
+      download(blob, fileBase() + '-digital.zip');
+      setDigitalStatus('Answer pages downloaded — upload the folder to your host, then the printed QR codes will resolve.', 'ok');
+    } catch (err) {
+      setDigitalStatus(err.message, 'err');
+    } finally {
+      el.digitalPages.disabled = false;
+    }
+  }
+
   async function buildBundle() {
     if (!rows.length) { setKdpStatus('Add at least one puzzle first.', 'err'); return; }
     if (!(await preflightGate(setKdpStatus))) { setKdpStatus('Export cancelled — fix the blockers in the checklist.', 'err'); return; }
@@ -470,7 +508,9 @@
       }
       const blob = await res.blob();
       download(blob, fileBase() + '-kdp.zip');
-      setKdpStatus('KDP bundle downloaded — interior.pdf, cover.pdf, build-info.txt.', 'ok');
+      setKdpStatus(digitalBase()
+        ? 'KDP bundle downloaded — interior.pdf (with QR codes), cover.pdf, build-info.txt, and the answer pages under html/.'
+        : 'KDP bundle downloaded — interior.pdf, cover.pdf, build-info.txt.', 'ok');
     } catch (err) {
       setKdpStatus(err.message, 'err');
     } finally {
@@ -692,6 +732,7 @@
     if (cfg.difficultyCurve) el.difficultyCurve.value = cfg.difficultyCurve;
     if (cfg.coverBg) el.coverBg.value = cfg.coverBg;
     if (cfg.coverText) el.coverText.value = cfg.coverText;
+    if (el.digitalBaseUrl) el.digitalBaseUrl.value = (cfg.digital && cfg.digital.baseUrl) || '';
     const md = cfg.metadata || {};
     el.mdSeriesName.value = md.seriesName || '';
     el.mdSeriesNumber.value = md.seriesNumber || '';
@@ -838,6 +879,7 @@
     el.runChecklist.addEventListener('click', runChecklist);
     el.contentReview.addEventListener('click', contentReview);
     el.kdpBundle.addEventListener('click', buildBundle);
+    if (el.digitalPages) el.digitalPages.addEventListener('click', downloadDigital);
     el.estimateRoyalty.addEventListener('click', estimateRoyalty);
     el.saveRecipe.addEventListener('click', saveRecipe);
     el.loadRecipe.addEventListener('change', onLoad);

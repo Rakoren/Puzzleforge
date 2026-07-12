@@ -223,6 +223,17 @@
           </div>
           <p class="hint">One zip: <strong>interior.pdf</strong>, <strong>cover.pdf</strong> (spine sized from the final page count), and a <strong>build-info</strong> sheet with your metadata, royalty estimate, and AI disclosure.</p>
           <p class="status" id="kdpStatus"></p>
+
+          <h2 style="margin-top:22px;">Digital layer (answer-page QR codes)</h2>
+          <p class="hint">Give a web address where you'll host the answer pages. Each puzzle gets a QR code (printed in the corner) that opens its page — an interactive tap-for-hint grid for word/number searches, a plain answer reveal for the rest. Leave blank to skip QR codes entirely.</p>
+          <div class="row">
+            <label class="field" style="flex:1 1 100%;"><span>Hosting base URL</span><input id="digitalBaseUrl" type="url" placeholder="https://puzzleforge.yourdomain.com"></label>
+          </div>
+          <div class="actions" style="margin-top:8px;">
+            <button id="digitalPages" class="ghost" type="button">Download answer pages (.zip)</button>
+          </div>
+          <p class="hint">Upload the folder inside that zip to your host at the base URL above, so the printed QR codes resolve. When a base URL is set, the <strong>KDP bundle</strong> above also prints the QR codes and includes the pages under <code>html/</code>.</p>
+          <p class="status" id="digitalStatus"></p>
         </div>
       </details>
     </section>

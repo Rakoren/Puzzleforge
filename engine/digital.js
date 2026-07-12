@@ -131,7 +131,7 @@ function landingHtml(book, entry, ansStyle, ansBody, opts = {}) {
   <button class="reveal" id="revealBtn" onclick="var a=document.getElementById('ans');a.hidden=false;this.style.display='none';">Show the answer</button>
   <div class="answer" id="ans" hidden><div class="answer-scroll">${ansBody}</div></div>
 </div>
-<p class="foot">Powered by PuzzleForge · <a href="index.html">All puzzles</a></p>
+<p class="foot">Powered by PuzzleForge · <a href="index.html">All puzzles</a> · <a href="finish.html">🎉 Finished?</a></p>
 </div>
 </body></html>`;
 }
@@ -148,8 +148,54 @@ function indexHtml(book, plan) {
   <h1>${esc(book.title || 'Puzzle Book')}</h1>
   <p class="sub">Scan a puzzle's QR code, or tap a puzzle below to see its answer.</p>
   <ul>${items}</ul>
+  <p style="text-align:center;margin:18px 0 0"><a href="finish.html" style="display:inline-block;background:#f76707;color:#fff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:10px">🎉 Finished the book? Celebrate!</a></p>
   <p class="foot">Powered by PuzzleForge</p>
 </div>
+</body></html>`;
+}
+
+// End-of-book celebration: a confetti burst + congratulations. Self-contained
+// (inline canvas confetti, no deps) so it runs as a static file.
+function finishPage(book) {
+  const title = esc(book.title || 'the book');
+  return `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>You did it! — ${title}</title>
+<style>${SHELL_CSS}
+  html,body{height:100%}
+  #cc{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+  .wrap{position:relative;z-index:1;display:flex;min-height:100vh;align-items:center}
+  .finish{text-align:center}
+  .finish .big{font-size:clamp(40px,16vw,96px);line-height:1;margin:0 0 6px}
+  .finish h1{font-size:clamp(24px,7vw,40px);margin:0 0 8px}
+  .finish p{color:#555;font-size:16px;margin:0 0 20px}
+  .again{appearance:none;border:0;background:#f76707;color:#fff;font-weight:700;font-size:16px;padding:12px 22px;border-radius:11px;cursor:pointer}
+  .again:hover{background:#e8590c}
+  .home{display:block;margin-top:16px;color:#888;font-size:14px}
+  @media(prefers-color-scheme:dark){.finish p{color:#a9adb5}}
+</style>
+</head><body>
+<canvas id="cc"></canvas>
+<div class="wrap"><div class="card finish">
+  <div class="big">🎉</div>
+  <h1>You did it!</h1>
+  <p>You finished <strong>${title}</strong>. Amazing work — every puzzle solved!</p>
+  <button class="again" id="again" type="button">More confetti! 🎊</button>
+  <a class="home" href="index.html">Back to all puzzles</a>
+</div></div>
+<script>
+(function(){
+  var c=document.getElementById('cc'),x=c.getContext('2d'),W,H,parts=[];
+  function size(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  size(); addEventListener('resize',size);
+  var COL=['#ff6b6b','#feca57','#48dbfb','#1dd1a1','#5f27cd','#ff9ff3','#f76707'];
+  function burst(n){ for(var i=0;i<n;i++) parts.push({x:W*(0.2+Math.random()*0.6),y:H*0.28,vx:(Math.random()-0.5)*15,vy:Math.random()*-15-4,g:0.3,s:6+Math.random()*7,c:COL[(Math.random()*COL.length)|0],r:Math.random()*6,vr:(Math.random()-0.5)*0.4,life:1}); }
+  function tick(){ x.clearRect(0,0,W,H); for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; p.life-=0.006; if(p.y>H+24||p.life<=0){parts.splice(i,1);continue;} x.save(); x.globalAlpha=Math.max(0,p.life); x.translate(p.x,p.y); x.rotate(p.r); x.fillStyle=p.c; x.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62); x.restore(); } requestAnimationFrame(tick); }
+  burst(170); setTimeout(function(){burst(120);},550); setTimeout(function(){burst(120);},1200); tick();
+  document.getElementById('again').addEventListener('click',function(){burst(200);});
+})();
+</script>
 </body></html>`;
 }
 
@@ -206,7 +252,7 @@ function gridHintPage(book, entry) {
   <div class="legend"><span><i class="swatch sw-box"></i>hint area</span><span><i class="swatch sw-start"></i>first letter</span><span><i class="swatch sw-rev"></i>revealed</span></div>
   <div class="words">${buttons}</div>
 </div>
-<p class="foot">Powered by PuzzleForge · <a href="index.html">All puzzles</a></p>
+<p class="foot">Powered by PuzzleForge · <a href="index.html">All puzzles</a> · <a href="finish.html">🎉 Finished?</a></p>
 </div>
 <script>
 (function(){
@@ -258,6 +304,7 @@ function renderLandingPages(book, plan) {
     return { filename: e.filename, html: landingHtml(book, e, style, body, { mode: plan.mode }) };
   });
   files.push({ filename: 'index.html', html: indexHtml(book, plan) });
+  files.push({ filename: 'finish.html', html: finishPage(book) });
   return files;
 }
 
