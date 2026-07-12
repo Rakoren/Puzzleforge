@@ -2454,8 +2454,9 @@
   function selectAll() { setSel(allRefs().filter((r) => !r.locked)); }
 
   // --- marquee (rubber-band) selection ---
-  function startMarquee(ev) {
+  function startMarquee(ev, additive, clickRef) {
     hideCtx();
+    const base = additive ? sels.slice() : []; // shift-drag adds to the selection
     const r = el.stageInner.getBoundingClientRect();
     const sx = (ev.clientX - r.left) / zoom, sy = (ev.clientY - r.top) / zoom;
     const mq = document.createElement('div'); mq.className = 'pf-marquee'; mq.style.display = 'none';
@@ -2474,11 +2475,18 @@
       mq.remove();
       if (rect && (rect.w > 3 || rect.h > 3)) {
         const hit = allRefs().filter((rf) => {
-          if (rf.locked || !rf._node) return false; const b = box(rf);
+          if (rf.group !== 'el' || rf.locked || !rf._node) return false; // free objects only, not protected puzzle pieces
+          const b = box(rf);
           return b.x < rect.x + rect.w && b.x + b.w > rect.x && b.y < rect.y + rect.h && b.y + b.h > rect.y;
         });
-        setSel(expandGroups(hit));
-      } else setSel([]);
+        const merged = base.slice();
+        expandGroups(hit).forEach((rf) => { if (!merged.includes(rf)) merged.push(rf); });
+        setSel(merged);
+      } else if (clickRef) {
+        // A plain click (no drag) on a piece: select it, since we suppressed
+        // the piece's own handler to be able to marquee.
+        setSel(additive && !base.includes(clickRef) ? base.concat([clickRef]) : expandGroups([clickRef]));
+      } else setSel(base); // click on empty stage: clear (or keep, if additive)
     };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
   }
@@ -3651,10 +3659,25 @@
     if (el.viewMaster) el.viewMaster.addEventListener('click', enterMaster);
     el.save.addEventListener('click', save); el.exportPdf.addEventListener('click', exportPdf); el.loadRecipe.addEventListener('change', onLoadRecipe);
     el.stageScroll.addEventListener('scroll', syncRulers);
+    // Marquee (rubber-band) select. Capture phase, so we decide BEFORE a piece
+    // grabs the press: free elements keep their own click+drag; pressing on the
+    // stage background or a puzzle/matter piece starts a rubber-band. A real
+    // drag selects the enclosed objects; a plain click just selects the object
+    // under the pointer (or clears). An already-selected piece still drags.
     el.stageInner.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0) return;
-      if (e.target === el.stageInner || e.target === gridEl || e.target === selLayer || e.target === flowEl) { setSel([]); startMarquee(e); }
-    });
+      if (e.button !== 0 || linkPickMode || swapPickMode) return;
+      const t = e.target;
+      if (!t.closest) return;
+      // Interactive chrome handles its own press: resize/rotate handles &
+      // selection boxes (sel layer) and draggable ruler guides.
+      if (t.closest('.pf-sel-layer') || t.closest('.pf-user-guide') || t.closest('.pf-guide')) return;
+      if (t.closest('.pf-node')) return; // free element: its own handler selects/drags it
+      const pieceNode = t.closest('.pf-piece');
+      const pieceRef = pieceNode ? pieceNode._ref : null;
+      if (pieceRef && isSel(pieceRef)) return; // already selected → let it drag
+      e.stopPropagation(); // suppress the piece's own select/drag
+      startMarquee(e, e.shiftKey, pieceRef);
+    }, true);
     el.stageInner.addEventListener('contextmenu', (e) => {
       const t = e.target.closest ? e.target.closest('.pf-piece, .pf-node') : null;
       const ref = t && t._ref;
