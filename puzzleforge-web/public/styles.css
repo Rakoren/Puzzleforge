@@ -29,6 +29,26 @@
   --brand: var(--nf-teal-500);
   --brand-dark: var(--nf-teal-600);
   --ok: var(--nf-green-700);
+  --text: var(--nf-neutral-700);   /* default body text */
+  --field-bg: var(--nf-neutral-25); /* input/select surface */
+  --hover-bg: var(--nf-neutral-50); /* subtle hover fill */
+}
+
+/* ---- Nova Form dark theme (teacher web app). Keyed off <html data-theme>,
+   distinct from the editor's own body.theme-dark skin. Auto-follows the OS
+   unless the user has explicitly picked a theme. ---- */
+:root[data-theme="dark"],
+:root[data-theme="dark"] body {
+  --bg:#14130e; --panel:#1f1d17; --ink:#f5f3ef; --muted:#a8a293; --line:#33302a;
+  --brand:#1fc9ba; --brand-dark:#4fe0d0; --ok:#7dd69a;
+  --text:#d6d2c7; --field-bg:#26241d; --hover-bg:#2c2a22;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#14130e; --panel:#1f1d17; --ink:#f5f3ef; --muted:#a8a293; --line:#33302a;
+    --brand:#1fc9ba; --brand-dark:#4fe0d0; --ok:#7dd69a;
+    --text:#d6d2c7; --field-bg:#26241d; --hover-bg:#2c2a22;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -36,7 +56,7 @@ html, body { margin: 0; padding: 0; }
 body {
   font-family: var(--font-body);
   background: var(--bg);
-  color: var(--nf-neutral-700);
+  color: var(--text);
 }
 
 .topbar {
@@ -54,15 +74,29 @@ body {
   text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 600;
   padding: 8px 14px; border-radius: 9px;
 }
-.nav a:hover { background: var(--nf-neutral-50); }
+.nav a:hover { background: var(--hover-bg); }
 .nav a.active { background: var(--nf-gradient-brand-soft); color: var(--nf-teal-700); }
+.theme-toggle {
+  margin-left: 4px; width: 38px; height: 38px; padding: 0; border-radius: var(--radius-pill);
+  background: var(--panel); border: 1px solid var(--nf-neutral-300); color: var(--ink);
+  font-size: 16px; line-height: 1; cursor: pointer; flex: none;
+}
+.theme-toggle:hover { background: var(--hover-bg); transform: translateY(-1px); }
+/* Dark-mode fixes for elements that hardcode light fills */
+:root[data-theme="dark"] .tpl-cta { background: linear-gradient(120deg,#12302c,#173021); border-color:#1d5049; }
+:root[data-theme="dark"] .aud-badge.aud-kids { background:#173021; color:#8fe0a4; }
+:root[data-theme="dark"] .aud-badge.aud-adult { background:#123249; color:#8fc0f0; }
+:root[data-theme="dark"] .aud-badge.aud-both { background:#2c2a22; color:#bcb8ab; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tpl-cta { background: linear-gradient(120deg,#12302c,#173021); border-color:#1d5049; }
+}
 .brand { display: flex; align-items: center; gap: 14px; }
 .brand .logo {
   font-size: 26px; color: #fff;
   background: var(--nf-gradient-brand); width: 48px; height: 48px; border-radius: 14px;
   display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-xs);
 }
-.brand h1 { margin: 0; font-size: 20px; letter-spacing: -.01em; font-family: var(--font-display); color: var(--text-heading, var(--nf-neutral-900)); }
+.brand h1 { margin: 0; font-size: 20px; letter-spacing: -.01em; font-family: var(--font-display); color: var(--ink); }
 .brand .tagline { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 
 .layout {
@@ -99,7 +133,7 @@ select, input[type="text"], input[type="number"], input[type="url"], input[type=
   padding: 9px 11px;
   border: 1px solid var(--nf-neutral-200);
   border-radius: var(--radius-md);
-  background: var(--nf-neutral-25);
+  background: var(--field-bg);
   color: var(--ink);
   width: 100%;
 }
@@ -120,7 +154,7 @@ button, .upload {
 button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
 button.primary:hover:not(:disabled) { background: var(--brand-dark); transform: translateY(-1px); }
 button.ghost, .upload { background: var(--panel); border-color: var(--nf-neutral-300); color: var(--ink); }
-button.ghost:hover:not(:disabled), .upload:hover { background: var(--nf-neutral-50); transform: translateY(-1px); }
+button.ghost:hover:not(:disabled), .upload:hover { background: var(--hover-bg); transform: translateY(-1px); }
 button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400); border-color: var(--nf-neutral-100); cursor: not-allowed; }
 .checkbox { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }
 
@@ -170,10 +204,10 @@ button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400
 .prow select, .prow input { padding: 7px 8px; font-size: 13px; }
 .prow .move { display: flex; flex-direction: column; gap: 1px; }
 .prow .iconbtn {
-  border: 1px solid var(--line); background: #fff; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--panel); border-radius: 6px;
   padding: 1px 6px; font-size: 12px; line-height: 1.3; cursor: pointer; color: var(--muted);
 }
-.prow .iconbtn:hover { background: #f1f3f9; }
+.prow .iconbtn:hover { background: var(--hover-bg); }
 .prow .del { color: #c92a2a; }
 
 .preview { position: sticky; top: 20px; }
@@ -188,13 +222,13 @@ button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400
   border: 1px solid var(--line);
   border-radius: 11px;
   overflow: hidden;
-  background: #fff;
+  background: var(--panel);
   min-height: 70vh;
 }
 .preview-frame iframe { width: 100%; height: 70vh; border: 0; display: block; background: #fff; }
 .empty {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  color: var(--muted); text-align: center; padding: 24px;
+  color: var(--muted); text-align: center; padding: 24px; background: var(--panel);
 }
 .empty.hidden { display: none; }
 
