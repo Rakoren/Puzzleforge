@@ -512,7 +512,7 @@ Tooltip copy should be written for every control before the teacher tool goes pu
 | Puzzle of the week (public free weekly puzzle) | 🔲 Phase 11 |
 | Email subscribe for weekly puzzle | 🔲 Phase 11 |
 | Classroom competition mode (class set + scoring sheet) | 🔲 Phase 11 |
-| QR hint / answer reveal on printed puzzles | 🔲 Phase 9 |
+| QR hint / answer reveal on printed puzzles | ✅ Shipped — interactive tap-for-hint pages (grid puzzles) + static answer reveal (others), auto-QR on the page |
 | QR bonus digital puzzle | 🔲 Phase 10 |
 | QR audio read-aloud (early readers, accessibility) | 🔲 Phase 10 |
 | QR parent/teacher page (discussion questions, extension) | 🔲 Phase 10 |
