@@ -162,6 +162,13 @@ button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400
 .status.ok { color: var(--ok); }
 .status.err { color: #c92a2a; }
 .status.busy { color: var(--muted); }
+/* Indeterminate progress bar (AI generators — unknown duration) */
+.pf-progress { height: 6px; border-radius: var(--radius-pill); background: var(--line); overflow: hidden; margin: 10px 0 2px; }
+.pf-progress[hidden] { display: none; }
+.pf-progress-bar { height: 100%; width: 40%; border-radius: inherit; background: var(--nf-gradient-brand); animation: pf-indeterminate 1.15s ease-in-out infinite; }
+@keyframes pf-indeterminate { 0% { margin-left: -42%; } 100% { margin-left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .pf-progress-bar { animation-duration: 2.4s; } }
+
 .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 8px; }
 .hint.ok { color: var(--ok); }
 .hint.err { color: #c92a2a; }
@@ -313,12 +320,19 @@ button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400
 .editor-block { margin: 10px 0; }
 .editor-block strong { font-size: 13px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--nf-teal-50); color: var(--ink);
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--nf-teal-50); color: var(--nf-teal-900);
   border-radius: 999px; padding: 3px 6px 3px 10px; font-size: 13px; }
 .chip.chip-wide { border-radius: 9px; align-items: flex-start; padding: 6px 6px 6px 10px; max-width: 100%; }
-.chip-x { border: none; background: #d6ddf7; color: #2f49b0; border-radius: 999px; cursor: pointer;
+.chip-x { border: none; background: var(--nf-teal-100); color: var(--nf-teal-700); border-radius: 999px; cursor: pointer;
   width: 18px; height: 18px; line-height: 1; font-size: 11px; padding: 0; flex: 0 0 auto; }
-.chip-x:hover { background: #c92a2a; color: #fff; }
+.chip-x:hover { background: var(--nf-red-500); color: #fff; }
+/* Dark: keep chips readable (nf-teal-50 is a fixed light tint) */
+:root[data-theme="dark"] .chip { background: rgba(15,181,166,.16); color: var(--nf-teal-100); }
+:root[data-theme="dark"] .chip-x { background: rgba(15,181,166,.28); color: var(--nf-teal-100); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .chip { background: rgba(15,181,166,.16); color: var(--nf-teal-100); }
+  :root:not([data-theme="light"]) .chip-x { background: rgba(15,181,166,.28); color: var(--nf-teal-100); }
+}
 .fact-edit-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 
 /* ===== Ribbon toolbar (Page Editor, MS Publisher style) ===== */

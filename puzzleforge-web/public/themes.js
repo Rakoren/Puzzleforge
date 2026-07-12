@@ -28,6 +28,8 @@
     catCount: $('catCount'),
     catGenerate: $('catGenerate'),
     catStatus: $('catStatus'),
+    genProgress: $('genProgress'),
+    catProgress: $('catProgress'),
     catResult: $('catResult'),
     catList: $('catList'),
     catSave: $('catSave'),
@@ -99,6 +101,7 @@
     }
     setStatus(el.status, 'Generating theme… this can take 20–40 seconds.', 'busy');
     el.generate.disabled = true;
+    if (el.genProgress) el.genProgress.hidden = false;
     el.result.classList.add('hidden');
     current = null;
     try {
@@ -115,6 +118,7 @@
       setStatus(el.status, err.message, 'err');
     } finally {
       el.generate.disabled = false;
+      if (el.genProgress) el.genProgress.hidden = true;
     }
   }
 
@@ -322,6 +326,7 @@
     if (!topic) { setStatus(el.catStatus, 'Enter a broad topic.', 'err'); return; }
     setStatus(el.catStatus, 'Generating a category… this can take a minute or two.', 'busy');
     el.catGenerate.disabled = true;
+    if (el.catProgress) el.catProgress.hidden = false;
     el.catResult.classList.add('hidden');
     categoryData = null;
     try {
@@ -339,6 +344,7 @@
       setStatus(el.catStatus, err.message, 'err');
     } finally {
       el.catGenerate.disabled = false;
+      if (el.catProgress) el.catProgress.hidden = true;
     }
   }
 
