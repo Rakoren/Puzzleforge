@@ -1168,7 +1168,9 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - ✅ **Self-hosted LAN team workspace** (`workspace.js`) — shared roster, shared
   books, live comments via SSE, "Save to my library" fork + notifications
 - ✅ Grouping/ungrouping; page add / duplicate / delete / reorder in the sidebar; responsive mobile view
-- 🔲 Marquee (rubber-band) select
+- ✅ Marquee (rubber-band) select — capture-phase drag over the stage or a
+  piece lassos the enclosed free objects (shift-drag adds); free-element and
+  piece click/drag are preserved
 - 🔲 Filler page swap inline; layers panel; multiple named master pages
 - 🔲 Cross-page text-box linking (chains are per-page today; cross-page flow needs a global element registry)
 - 🔲 Swap-formatting-only variant; text-box Stylistic Set gallery previews
