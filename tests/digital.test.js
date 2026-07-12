@@ -54,13 +54,35 @@ test('renderLandingPages produces one reveal page per puzzle plus an index', () 
   assert.equal(files.length, plan.entries.length + 1);
   const names = files.map((f) => f.name || f.filename);
   assert.ok(names.includes('index.html'));
+  // p1 is a word search → interactive tap-for-hint page (not the static reveal).
   const p1 = files.find((f) => (f.filename || f.name) === 'p1.html').html;
-  assert.match(p1, /Show the answer/); // reveal control
-  assert.match(p1, /id="ans"/);        // answer container present
+  assert.match(p1, /class="wbtn"/);      // tappable word buttons
+  assert.match(p1, /tap a word/i);        // hint prompt
   assert.match(p1, /<!doctype html>/i);
+  assert.doesNotMatch(p1, /Show the answer/);
+  // the maze (p3) is not a grid puzzle → keeps the static answer-reveal page.
+  const pMaze = files.find((f) => (f.filename || f.name) === 'p3.html').html;
+  assert.match(pMaze, /Show the answer/);
+  assert.match(pMaze, /id="ans"/);
   // index links every puzzle
   const idx = files.find((f) => (f.filename || f.name) === 'index.html').html;
   plan.entries.forEach((e) => assert.ok(idx.includes(e.filename), `index links ${e.filename}`));
+});
+
+test('interactive hint page embeds the grid and each word’s cells', () => {
+  const book = pf.assembleBook({ title: 'WS', trimSize: '8.5x11', audience: 'adult', theme: 'animals', puzzles: [{ type: 'wordsearch', count: 1, difficulty: 2 }] });
+  const plan = pf.planDigital(book, { baseUrl: 'https://x.test' });
+  const p1 = pf.renderLandingPages(book, plan).find((f) => (f.filename || f.name) === 'p1.html').html;
+  const puzzle = book.puzzles.find((p) => p.type === 'wordsearch');
+  const n = puzzle.data.grid.length;
+  // every grid cell is present as a keyed <td>
+  assert.equal((p1.match(/<td data-k="/g) || []).length, n * n);
+  // the embedded token data carries start cell + full cell list for hints
+  assert.match(p1, /var P=\[/);
+  assert.match(p1, /"cells":/);
+  assert.match(p1, /"s":/);
+  // one word button per placed token
+  assert.equal((p1.match(/class="wbtn"/g) || []).length, puzzle.solution.placements.length);
 });
 
 test('book export prints one QR badge per real puzzle, encoding its URL', () => {
