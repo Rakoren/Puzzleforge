@@ -96,7 +96,7 @@ function findChromium(explicit) {
 function renderPuzzleHtml(puzzle, opts = {}) {
   const trimSize = opts.trimSize || '8.5x11';
   const audience = opts.audience || (puzzle.difficulty <= 1 ? 'kids' : 'adult');
-  const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily });
+  const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily, reserveBottomIn: opts.reserveBottomIn });
   const mod = getModule(puzzle.type);
   let doc = mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
   // Decorative border, but never on blank/activity pages (bleed guards stay
@@ -140,18 +140,31 @@ function applyDifficultyBadge(doc, layout, text) {
   return out;
 }
 
+// Sizing for the QR badge, shared by the page-reserve calc and the renderer so
+// the reserved band exactly fits the QR + caption.
+function qrBadgeMetrics(layout) {
+  const px = Math.max(56, Math.round(layout.usableWidth * 0.12));
+  const cap = Math.max(6, Math.round(layout.fontSize * 0.52));
+  return { px, cap, bandPx: px + cap + 12 };
+}
+
 // A "scan for answers" QR pinned to the bottom-right of a puzzle page, linking
 // to that puzzle's static landing page (engine/digital.js). Inline SVG, injected
 // the same way as the difficulty badge so it travels through combinePages and
-// prints vector-sharp.
+// prints vector-sharp. When `reserved` is set the puzzle was rendered into a
+// shorter area (getLayout reserveBottomIn), so the badge drops into that clear
+// band below the content — no overlap with word lists etc.
 function applyQrBadge(doc, layout, url, caption) {
   if (!url) return doc;
-  const px = Math.max(56, Math.round(layout.usableWidth * 0.13));
+  const { px, cap } = qrBadgeMetrics(layout);
   const svg = qrSvg(url, { size: px, ecl: 'M' });
-  const cap = Math.max(6, Math.round(layout.fontSize * 0.52));
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // `layout` here is the book's full (unreduced) layout, so its usableHeight is
+  // the whole content area. When a reserve band was applied the module rendered
+  // into (usableHeight - band), so pinning the body to the full height drops the
+  // QR into the clear band at the true page foot.
   const css =
-    `\n  body { position: relative; }` +
+    `\n  body { position: relative; min-height: ${layout.usableHeight}px; box-sizing: border-box; }` +
     `\n  .pf-qr { position: absolute; bottom: 0; right: 0; z-index: 6; text-align: center; font-family: ${layout.fontFamily}; }` +
     `\n  .pf-qr svg { width: ${px}px; height: ${px}px; display: block; }` +
     `\n  .pf-qr .pf-qr-cap { font-size: ${cap}px; color: #555; margin-top: 1px; line-height: 1.1; }\n`;
@@ -422,18 +435,21 @@ function renderLeafDoc(book, layout, styleOpts, leaf) {
   if (leaf.role === 'content') {
     const puzzle = leaf.puzzle;
     const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
+    // Digital-layer QR: reserve a foot band so the puzzle is sized above it,
+    // then pin the QR into that clear band (real puzzles only; activity/filler
+    // pages get none). For editor-composed pages (st.layout) we can't reshape
+    // the layout, so the QR overlays without a reserve.
+    const qrEntry = book.digital && book.digital.byPuzzle && book.digital.byPuzzle.get(puzzle);
+    const qr = qrBadgeMetrics(layout);
+    const reserveBottomIn = qrEntry && !st.layout ? qr.bandPx / layout.pxPerIn : 0;
     let doc = st.layout
       ? withBorder(composePage(puzzle, layout, st.layout))
-      : renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay });
+      : renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay, reserveBottomIn });
     // Optional per-page difficulty label (real puzzles only).
     if (book.perPageDifficulty && !isActivityType(puzzle.type)) {
       doc = applyDifficultyBadge(doc, layout, difficulty.badgeText(puzzle.difficulty, book.audience));
     }
-    // Digital-layer QR: "scan for the answer" linking to this puzzle's landing
-    // page (real puzzles only; activity/filler pages get none).
-    if (book.digital && book.digital.byPuzzle && book.digital.byPuzzle.has(puzzle)) {
-      doc = applyQrBadge(doc, layout, book.digital.byPuzzle.get(puzzle).url, book.digital.caption);
-    }
+    if (qrEntry) doc = applyQrBadge(doc, layout, qrEntry.url, book.digital.caption);
     return withBg(doc);
   }
   // Title / front matter / answer key / back matter.

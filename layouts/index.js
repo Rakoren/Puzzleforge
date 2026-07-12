@@ -67,8 +67,11 @@ function getLayout(trimSize, opts = {}) {
   }
 
   const { margins } = spec;
+  // Optional reserved band at the foot of the usable area (e.g. for a QR
+  // "scan for answers" badge) so puzzle content is sized to sit above it.
+  const reserveBottomIn = Math.max(0, Math.min(spec.heightIn * 0.25, Number(opts.reserveBottomIn) || 0));
   const usableWidthIn = spec.widthIn - margins.gutter - margins.outside;
-  const usableHeightIn = spec.heightIn - margins.top - margins.bottom;
+  const usableHeightIn = spec.heightIn - margins.top - margins.bottom - reserveBottomIn;
 
   const usableWidth = Math.round(usableWidthIn * PX_PER_IN);
   const usableHeight = Math.round(usableHeightIn * PX_PER_IN);
@@ -90,6 +93,7 @@ function getLayout(trimSize, opts = {}) {
     pxPerIn: PX_PER_IN,
     usableWidth,
     usableHeight,
+    reserveBottom: Math.round(reserveBottomIn * PX_PER_IN), // px reserved below content
     fontSize,
     textScale,
     fontFamily,
