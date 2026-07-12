@@ -9,7 +9,23 @@
  * The browser editor uses the same `qrcode-generator` library (served as a
  * static script) so a QR created in the editor matches one made server-side.
  */
-const qrcode = require('qrcode-generator');
+// Lazy-loaded so importing this module (and everything that transitively
+// requires it, e.g. the digital layer at server startup) never fails just
+// because the optional dependency isn't installed yet — only encoding a QR does.
+let _qrcode = null;
+function getQrcode() {
+  if (_qrcode) return _qrcode;
+  try {
+    // eslint-disable-next-line global-require
+    _qrcode = require('qrcode-generator');
+  } catch (_) {
+    throw new Error(
+      "engine/qr: the 'qrcode-generator' package is not installed. "
+        + 'Run `npm install` in the project root.'
+    );
+  }
+  return _qrcode;
+}
 
 const LEVELS = ['L', 'M', 'Q', 'H'];
 
@@ -22,6 +38,7 @@ const LEVELS = ['L', 'M', 'Q', 'H'];
  * @returns {{ count:number, modules:number[][], ecl:string }}
  */
 function encode(text, opts = {}) {
+  const qrcode = getQrcode();
   const ecl = LEVELS.includes(opts.ecl) ? opts.ecl : 'M';
   const qr = qrcode(opts.typeNumber || 0, ecl);
   qr.addData(String(text == null ? '' : text));
