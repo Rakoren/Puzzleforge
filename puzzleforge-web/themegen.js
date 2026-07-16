@@ -414,6 +414,164 @@ async function generateCategory({ topic, count, wordsPerTier, audience } = {}) {
   return { category, themes };
 }
 
+// Map a theme's recorded audiences to the prompt ramp (kids / adult / both),
+// so an expansion generates words at the same reading level as the original.
+function themeAudienceMode(audiences) {
+  const a = (Array.isArray(audiences) ? audiences : []).map((x) => String(x || '').toLowerCase());
+  const kids = a.includes('kids'), adult = a.includes('adult');
+  if (kids && !adult) return 'kids';
+  if (adult && !kids) return 'adult';
+  return 'both';
+}
+
+// Minimal structured-output schema for an expansion: only the new tier words,
+// no label/category/facts (those already exist on the theme).
+function expansionSchema() {
+  const tierArray = {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        word: { type: 'string', description: 'A single NEW word, letters only, 3-14 characters.' },
+        clue: { type: 'string', description: 'A short crossword-style clue that never spells out the word.' },
+      },
+      required: ['word', 'clue'],
+      additionalProperties: false,
+    },
+  };
+  return {
+    type: 'object',
+    properties: {
+      tiers: {
+        type: 'object',
+        properties: { 1: tierArray, 2: tierArray, 3: tierArray, 4: tierArray },
+        required: ['1', '2', '3', '4'],
+        additionalProperties: false,
+      },
+    },
+    required: ['tiers'],
+    additionalProperties: false,
+  };
+}
+
+// Prompt for topping up an existing theme: it lists the words already present
+// (so the model never repeats them) and asks for brand-new ones per tier.
+function buildExpandPrompt(label, mode, perTier, existingByTier) {
+  const lines = [
+    `Expand an existing puzzle-book word theme titled "${label}" with MORE words.`,
+    '',
+    'It feeds word searches, crosswords, and word scrambles, and already contains',
+    'the words listed below. Generate ADDITIONAL, brand-new words for each tier —',
+    'never repeat, rephrase, pluralize, or trivially vary any word already present.',
+    '',
+    ...tierGuidance(mode, perTier),
+    '',
+    `For EACH tier, add enough NEW words to reach roughly ${perTier} words total in`,
+    'that tier, staying on-topic and at that tier\'s difficulty. If the topic is',
+    'nearly exhausted, return as many genuinely good new words as truly exist — do',
+    'NOT pad with off-topic, obscure, contrived, or made-up words.',
+    '',
+    'Words already in the theme (do NOT repeat any of these):',
+  ];
+  for (const t of TIERS) {
+    const ws = (existingByTier[t] || []).join(', ');
+    lines.push(`  • Tier ${t}: ${ws || '(none yet)'}`);
+  }
+  lines.push(
+    '',
+    'Rules for every new word:',
+    '  • A single word only — no spaces, hyphens, numbers, or punctuation.',
+    '  • Singular form unless the word is only ever plural (e.g. SCISSORS).',
+    '  • Genuinely on-topic and real (no invented or misspelled words).',
+    '  • Unique across all four tiers AND vs. every existing word listed above.',
+    '  • Avoid one word being contained inside another (e.g. EAR inside HEART).',
+    '',
+    'Return ONLY the new words to add, in the tiers object.'
+  );
+  return lines.join('\n');
+}
+
+/**
+ * Top up an existing saved theme with fresh AI-generated words: feed Claude the
+ * words already present so it never repeats them, ask for new ones per tier up
+ * to a target count, then sanitize + merge + write back in place. Facts, id,
+ * label, category, tags and audiences are preserved.
+ * @returns {Promise<{ id, added, counts, total, report, exhausted }>}
+ */
+async function expandTheme({ id, wordsPerTier, model } = {}) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    const e = new Error(
+      'The AI generator needs an Anthropic API key. Set ANTHROPIC_API_KEY and restart the server.'
+    );
+    e.status = 503;
+    e.code = 'NO_API_KEY';
+    throw e;
+  }
+  const file = themeFile(id);
+  if (!fs.existsSync(file)) {
+    const e = new Error('Theme not found.');
+    e.status = 404;
+    throw e;
+  }
+  const source = pf.loadTheme(id); // normalized four tiers, audiences, label…
+  const mode = themeAudienceMode(source.audiences);
+  const target = clampPerTier(wordsPerTier || 40);
+
+  // Existing words drive both the prompt (don't repeat) and the dedupe guard.
+  const existingByTier = {};
+  const seen = new Set();
+  for (const t of TIERS) {
+    existingByTier[t] = (source.tiers[t] || []).map(entryWord).filter(Boolean);
+    for (const w of existingByTier[t]) seen.add(w);
+  }
+
+  const client = new Anthropic();
+  let message;
+  try {
+    const stream = client.messages.stream({
+      model: model || DEFAULT_MODEL,
+      max_tokens: 16000,
+      messages: [{ role: 'user', content: buildExpandPrompt(source.label, mode, target, existingByTier) }],
+      output_config: { format: { type: 'json_schema', schema: expansionSchema() } },
+    });
+    message = await stream.finalMessage();
+  } catch (err) {
+    const e = new Error(friendlyApiError(err));
+    e.status = err && err.status ? err.status : 502;
+    throw e;
+  }
+
+  const text = (message.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  let raw;
+  try {
+    raw = JSON.parse(text);
+  } catch (_) {
+    const e = new Error('The model returned an unexpected response. Please try again.');
+    e.status = 502;
+    throw e;
+  }
+
+  // Sanitize the additions, deduped against everything already in the theme
+  // (seen is pre-loaded and mutated, so repeats within the reply drop too).
+  const report = { dropped: 0, blocked: 0 };
+  const additions = {};
+  for (const t of TIERS) additions[t] = sanitizeTier(raw.tiers && raw.tiers[t], seen, report);
+  const added = TIERS.reduce((n, t) => n + additions[t].length, 0);
+
+  // Merge into the on-disk theme, preserving the original entries and order.
+  const disk = JSON.parse(fs.readFileSync(file, 'utf8'));
+  disk.tiers = disk.tiers || {};
+  for (const t of TIERS) disk.tiers[t] = (disk.tiers[t] || []).concat(additions[t]);
+  if (added) fs.writeFileSync(file, JSON.stringify(disk, null, 2) + '\n', 'utf8');
+
+  const counts = {};
+  for (const t of TIERS) counts[t] = (disk.tiers[t] || []).length;
+  const total = TIERS.reduce((n, t) => n + counts[t], 0);
+  // Heuristic: the topic looks tapped out if the model gave us very little.
+  const exhausted = added < 4;
+  return { id: disk.id || slugify(id), added, counts, total, report, exhausted };
+}
+
 function friendlyApiError(err) {
   if (err instanceof Anthropic.AuthenticationError) {
     return 'The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.';
@@ -625,6 +783,7 @@ module.exports = {
   deleteTheme,
   cleanTheme,
   splitTheme,
+  expandTheme,
   removeFromTheme,
   slugify,
 };

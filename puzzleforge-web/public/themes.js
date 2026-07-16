@@ -229,9 +229,17 @@
     del.textContent = 'Delete';
     del.addEventListener('click', () => deleteTheme(th, row));
 
+    const expand = document.createElement('button');
+    expand.className = 'iconbtn';
+    expand.type = 'button';
+    expand.textContent = '✨ Expand';
+    expand.title = 'Use AI to add more words to this theme (up to ~40 per level)';
+    expand.addEventListener('click', () => expandTheme(th, expand));
+
     const actions = document.createElement('span');
     actions.className = 'manage-actions';
     actions.appendChild(edit);
+    actions.appendChild(expand);
     actions.appendChild(clean);
     // Only a "Both" theme can be split into Kids + Adult variants.
     if (aud.text === 'Both') {
@@ -267,6 +275,34 @@
       loadThemeList();
     } catch (err) {
       setStatus(el.saveStatus, err.message, 'err');
+      btn.disabled = false;
+      btn.textContent = prev;
+    }
+  }
+
+  // AI top-up: ask the server to generate more words for this theme (deduped
+  // against what's already there) up to ~`target` per level, then refresh.
+  async function expandTheme(th, btn, target) {
+    btn.disabled = true;
+    const prev = btn.textContent;
+    btn.textContent = '✨ Adding…';
+    try {
+      const res = await fetch('/api/theme/expand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: th.id, wordsPerTier: target || 40 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Expand failed');
+      const msg = data.added
+        ? `Added ${data.added} new word${data.added === 1 ? '' : 's'} to “${th.label}” — now ${data.total} total (${data.counts[1]}/${data.counts[2]}/${data.counts[3]}/${data.counts[4]} by level).${data.exhausted ? ' The topic looks nearly tapped out — few new words left.' : ''}`
+        : `No new words to add for “${th.label}” — the topic looks tapped out.`;
+      setStatus(el.saveStatus, msg, data.added ? 'ok' : '');
+      loadThemeList();
+      if (editing === th.id) openEditor(th); // refresh the open editor
+    } catch (err) {
+      setStatus(el.saveStatus, err.message, 'err');
+    } finally {
       btn.disabled = false;
       btn.textContent = prev;
     }
@@ -429,6 +465,27 @@
 
   function renderEditor(theme) {
     el.editorBody.innerHTML = '';
+    // Top bar: AI top-up. Fills each level toward the target, skipping words
+    // already present. Great for making a small theme large enough that "No
+    // repeated words" can build several puzzles without reusing words.
+    const bar = document.createElement('div');
+    bar.className = 'editor-expand';
+    const lbl = document.createElement('label');
+    lbl.className = 'editor-expand-target';
+    lbl.appendChild(document.createTextNode('Words per level:'));
+    const target = document.createElement('input');
+    target.type = 'number'; target.min = '8'; target.max = '40'; target.value = '40'; target.id = 'expandTarget';
+    lbl.appendChild(target);
+    const add = document.createElement('button');
+    add.className = 'primary'; add.type = 'button'; add.textContent = '✨ Add more words';
+    add.title = 'Use AI to generate more on-topic words, skipping any already here';
+    add.addEventListener('click', () => {
+      const n = Math.max(8, Math.min(40, Number(target.value) || 40));
+      expandTheme({ id: editing, label: theme.label }, add, n);
+    });
+    bar.appendChild(add);
+    bar.appendChild(lbl);
+    el.editorBody.appendChild(bar);
     for (const t of ['1', '2', '3', '4']) {
       const entries = theme.tiers[t] || [];
       const block = document.createElement('div');

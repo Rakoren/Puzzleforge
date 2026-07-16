@@ -319,6 +319,11 @@ button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400
 .theme-editor.hidden { display: none; }
 .editor-block { margin: 10px 0; }
 .editor-block strong { font-size: 13px; }
+.editor-expand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px; margin: 0 0 6px; background: var(--hover-bg); border: 1px solid var(--line); border-radius: 9px; }
+.editor-expand-target { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.editor-expand-target input { width: 58px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--field-bg); color: var(--ink); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--nf-teal-50); color: var(--nf-teal-900);
   border-radius: 999px; padding: 3px 6px 3px 10px; font-size: 13px; }

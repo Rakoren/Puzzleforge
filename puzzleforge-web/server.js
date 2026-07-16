@@ -1131,6 +1131,17 @@ app.post('/api/theme/clean', (req, res) => {
   }
 });
 
+// Top up an existing theme with fresh AI-generated words (in place).
+app.post('/api/theme/expand', async (req, res) => {
+  const body = req.body || {};
+  if (!body.id) return res.status(400).json({ error: 'No theme id.' });
+  try {
+    res.json(await themegen.expandTheme({ id: body.id, wordsPerTier: body.wordsPerTier }));
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code });
+  }
+});
+
 // Split a "Both" theme into Kids + Adult variants (keeping the original).
 app.post('/api/theme/split', (req, res) => {
   const id = req.body && req.body.id;
