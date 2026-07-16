@@ -1,8 +1,8 @@
 # PuzzleForge — Product Requirements Document
 
 **Version:** 0.3 (Active Development)
-**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace) with **Publisher-parity contextual ribbons** (Shape Format / Table Design / Table Layout / Picture Format / QR Code / Text Box) and their tools — interactive crop, linked text-box flow, advanced OpenType typography, picture compress/swap; Tier 3 puzzle types (Logic Grid, Word Ladder, Word Wheel, Cipher); KDP-verified pre-flight export gate live
-**Last full docs sync:** 2026-07-11
+**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace) with **Publisher-parity contextual ribbons** (Shape Format / Table Design / Table Layout / Picture Format / QR Code / Text Box) and their tools — interactive crop, linked text-box flow, advanced OpenType typography, picture compress/swap, **Fit-to-margins**, and **Ctrl/Cmd + rubber-band multi-select**; the **QR digital layer** is live (hosted interactive hint / answer landing pages + end-of-book celebration, self-serve from the Book Builder); the app wears the **Nova Form Studios design system with dark mode**; Tier 3 puzzle types (Logic Grid, Word Ladder, Word Wheel, Cipher); KDP-verified pre-flight export gate live
+**Last full docs sync:** 2026-07-16
 **Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
 **Author:** Rakoren
@@ -42,7 +42,7 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (138 tests passing)
+### Engine (143 tests passing)
 
 **14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
@@ -118,6 +118,8 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 - Words organized by **four difficulty tiers** (Easy / Medium / Hard / **Expert**), matching the engine's four levels — a level-1 puzzle never pulls a tier-3 word, and adult **Expert (level 4)** pulls a genuinely harder tier than Hard (the built-ins' hardest vocabulary was split into Hard + Expert).
 - **Audience-aware selection** — each theme carries an `audiences` field, and the word pull is audience-aware (`engine/book.js` `themeTierOpts`): adults draw the exact tier for the level (Expert → tier 4); kids draw the easier tiers with a per-tier word-length cap and **never** reach the hardest tier. Same theme, age-appropriate vocabulary for each audience.
 - **AI Theme Generator** — topic + **audience** (Kids / Adults / Both) → Claude-written four-tier clued word list **plus fun facts**, vocabulary + clue reading-level calibrated to the audience, singular words, safety/dedup filtered before save, appears instantly in every picker
+- **AI "Expand" (top-up)** — grow an existing theme in place: feeds Claude the words already present, asks for brand-new ones per level up to a target (default 40/level), then sanitizes, de-dupes, and merges them (facts/label/category/audience preserved). Respects the theme's audience ramp and reports when a topic is tapped out. This is the fix for word variety: a bigger pool lets "No repeated words" build several same-tier puzzles without reusing words. Available on each theme's manage row and inside the editor.
+- **Word-search-safe word lists** — a word search rejects any target that is a substring of another (e.g. CONTROL inside CONTROLPAD). Selection de-dupes substrings within a draw *and* across the top-up refill draw, and Expand won't add a colliding word — so a themed book always builds.
 - **Manual theme builder** and **Manage themes** — build a four-tier theme by hand (with an audience), re-run the filter over a saved theme ("Clean"), or delete it
 - **Tag filter / search** on theme pickers
 - **Whole-category selection** — e.g. "All Animals & Nature" merges animals + ocean + weather into one pool
@@ -165,10 +167,11 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
   - **Table Design / Layout** — styles, borders, header/cell fills, insert/delete rows & columns, cell **merge / split**, and **diagonal split** cells
   - **Shape Format** — fill/outline styles, text-box frame (fill/border/radius/shadow), arrange, size
   - **QR Code** — edit link, error-correction level, dark/light (or transparent) colours, colour presets, test-link, size
-- **Break-apart puzzle** — title / instructions / word-list become individually editable objects (word list can convert to a table); the grid stays protected
+- **Break-apart puzzle** — title / instructions / word-list become individually editable objects (word list can convert to a table); the grid stays protected. On import the broken-apart pieces keep their original stacked positions (no top-of-page pile-up), and the book's decorative page **border imports with the page** so the editor matches the Book Builder preview and the PDF
+- **Fit to margins** — right-click → "Fit page / selection to margins" (also under Page Design → Margins ▾) scales and re-centres a page's objects inside the current margin box, preserving relative layout and aspect ratio
 - **Free elements** — text, images, shapes (rect/ellipse/triangle/star/line + **speech/thought chat bubbles**), and **editable multi-column tables**; z-order incl. send-behind-the-puzzle
 - **Master pages** (page numbers / headers / repeating frames) and **two-page facing spreads**
-- Desktop-publishing toolset: undo/redo, zoom + rulers, numeric X/Y/size/angle, rotation, smart snapping + snap-to-grid, multi-select, align/distribute, group/ungroup, arrange, flip, lock, copy/paste, nudge
+- Desktop-publishing toolset: undo/redo, zoom + rulers, numeric X/Y/size/angle, rotation, smart snapping + snap-to-grid, **multi-select (Shift / Ctrl / Cmd click to toggle, plus a rubber-band marquee that starts even from atop an object with a modifier held)**, align/distribute, group/ungroup, arrange, flip, lock, copy/paste, nudge
 - **Custom font upload** (`@font-face` data-URLs sanitized server-side and embedded in the exported PDF) — 12 web-safe families plus your own
 - **Word-list consistency pre-flight** — flags mismatches between an edited word list and the grid
 - Editor == PDF parity: a shared renderer (`element-html.js`) draws every object identically on screen and in the exported PDF (vector-sharp at 300 DPI). Every contextual-tab tool above — crop, text flow, typography, compress, table spans — renders through this same renderer, so what you see prints
@@ -182,6 +185,10 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 
 **Manual (non-AI) theme builder:**
 - Build a themed word list + facts by hand (tiers, category, tags) — an alternative to the AI Theme Generator
+
+**Design system + dark mode:**
+- The teacher web app wears the **Nova Form Studios design system** — warm-paper palette, teal→green brand, Space Grotesk / Manrope / JetBrains Mono type — with a **light/dark toggle** (`theme.js`) that persists per browser and follows the OS by default. Teacher pages carry the toggle; the Page Editor keeps its own workspace theme.
+- **Loading bars** on the Theme and Category generators while Claude works.
 
 **Mobile:**
 - Responsive phone/tablet layout and touch controls across the maker, builder, and editor

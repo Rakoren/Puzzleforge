@@ -60,7 +60,7 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (131 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (143 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
@@ -99,15 +99,24 @@ Implemented so far:
 
 - **Web app** (`puzzleforge-web/`): Puzzle Maker (accountless), Book Builder with
   **starter templates** + one-click KDP export bundle, Cover Builder, image tools
-  (coloring / color-by-number / dot-to-dot), AI + manual theme generators, and a
-  full **Page Editor** (MS-Publisher-style ribbon, master pages, two-page spreads,
-  tables, break-apart puzzles, scannable **QR codes**, My Books library +
-  autosave, and a self-hosted LAN team workspace).
+  (coloring / color-by-number / dot-to-dot), AI + manual theme generators (incl.
+  **AI "Expand"** to top up a theme's word list), and a full **Page Editor**
+  (MS-Publisher-style ribbon, master pages, two-page spreads, tables, break-apart
+  puzzles, fit-to-margins, Ctrl/Cmd + rubber-band multi-select, scannable
+  **QR codes**, My Books library + autosave, and a self-hosted LAN team
+  workspace). Dressed in the **Nova Form Studios design system with light/dark
+  mode**.
+- **QR digital layer** (`engine/digital.js`): every real puzzle gets a
+  self-contained mobile landing page and a "Scan for the answer" QR printed in
+  the page corner. Word/number searches are **interactive** (tap a word for an
+  escalating hint — 3×3 box → start cell → full reveal); other types show a
+  static answer reveal. There's an end-of-book **celebration** page, and the
+  whole thing is self-serve from the Book Builder (set a hosting base URL; the
+  KDP bundle then prints the QR codes and includes an `html/` folder of pages).
 
-Not yet built (later phases): more Tier 3 puzzle types (Riddles, Brain Teasers, …), the
-QR digital layer (hosted hint/answer landing pages — the placeable QR foundation
-is done), and teacher-tool extras (worksheet builder, lesson packets).
-See [`PRD.md`](./PRD.md) for the full roadmap.
+Not yet built (later phases): more Tier 3 puzzle types (Riddles, Brain Teasers, …),
+book-level digital-layer analytics (needs a backend), and teacher-tool extras
+(worksheet builder, lesson packets). See [`PRD.md`](./PRD.md) for the full roadmap.
 
 ## Architecture
 
