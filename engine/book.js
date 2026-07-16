@@ -180,10 +180,15 @@ function wordsFromTheme(theme, level, count, exclude, audience) {
     // `inThis` only guards against duplicates *within* this one puzzle; repeats
     // across puzzles are what the no-words-left fallback deliberately allows.
     const inThis = new Set(words);
+    // A word search rejects any target that is a substring of another target.
+    // selectWords guarantees that within one sample, but a top-up draws a fresh
+    // sample, so guard the merge too: never add a word that contains — or is
+    // contained by — one already chosen (e.g. CONTROL vs CONTROLPAD).
+    const collides = (w) => words.some((c) => c.includes(w) || w.includes(c));
     const fill = (opts) => {
       for (const w of themes.selectWords(theme, { maxLength, ...opts })) {
         if (words.length >= count) break;
-        if (inThis.has(w)) continue;
+        if (inThis.has(w) || collides(w)) continue;
         inThis.add(w);
         words.push(w);
       }

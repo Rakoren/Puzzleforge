@@ -554,8 +554,22 @@ async function expandTheme({ id, wordsPerTier, model } = {}) {
   // Sanitize the additions, deduped against everything already in the theme
   // (seen is pre-loaded and mutated, so repeats within the reply drop too).
   const report = { dropped: 0, blocked: 0 };
+  // A word search can't use a target that is a substring of another target, so
+  // don't add a word that contains — or is contained by — one already in the
+  // theme or an earlier addition (e.g. CONTROL vs CONTROLPAD). The model is told
+  // to avoid this, but enforce it so a topped-up theme always stays buildable.
+  const keep = [];
+  for (const t of TIERS) for (const w of existingByTier[t]) keep.push(w);
+  const collides = (w) => keep.some((c) => c.includes(w) || w.includes(c));
   const additions = {};
-  for (const t of TIERS) additions[t] = sanitizeTier(raw.tiers && raw.tiers[t], seen, report);
+  for (const t of TIERS) {
+    additions[t] = sanitizeTier(raw.tiers && raw.tiers[t], seen, report).filter((e) => {
+      const w = entryWord(e);
+      if (collides(w)) { report.dropped++; return false; }
+      keep.push(w);
+      return true;
+    });
+  }
   const added = TIERS.reduce((n, t) => n + additions[t].length, 0);
 
   // Merge into the on-disk theme, preserving the original entries and order.
