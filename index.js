@@ -28,6 +28,7 @@ const {
   defaultLeaves,
   renderMatterDoc,
 } = require('./engine/export');
+const { renderPacketCoverHtml, assemblePacketHtml } = require('./engine/worksheet');
 const { getLayout, listTrimSizes } = require('./layouts');
 const {
   loadTheme,
@@ -73,6 +74,9 @@ module.exports = {
   exportHtmlPdf,
   renderHtml: renderPuzzleHtml,
   renderPuzzlesHtml,
+  // Classroom worksheets + lesson packets
+  renderPacketCoverHtml,
+  assemblePacketHtml,
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,

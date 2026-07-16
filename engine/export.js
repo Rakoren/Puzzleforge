@@ -96,7 +96,14 @@ function findChromium(explicit) {
 function renderPuzzleHtml(puzzle, opts = {}) {
   const trimSize = opts.trimSize || '8.5x11';
   const audience = opts.audience || (puzzle.difficulty <= 1 ? 'kids' : 'adult');
-  const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily, reserveBottomIn: opts.reserveBottomIn });
+  // A worksheet reserves a top band for its Name / Date header, so the puzzle is
+  // sized to sit below it. The band height is figured from the header content.
+  const ws = opts.worksheet;
+  const reserveTopIn = ws ? worksheetHeaderInches(ws) : 0;
+  // A worksheet footer sits at the page foot; reserve a band so the puzzle
+  // content is sized to sit above it (no overlap with a word list, etc.).
+  const reserveBottomIn = opts.reserveBottomIn || (ws && ws.footer ? 0.32 : 0);
+  const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily, reserveBottomIn, reserveTopIn });
   const mod = getModule(puzzle.type);
   let doc = mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
   // Decorative border, but never on blank/activity pages (bleed guards stay
@@ -109,7 +116,61 @@ function renderPuzzleHtml(puzzle, opts = {}) {
   if (opts.overlay) {
     doc = applyOverlay(doc, layout, opts.overlay);
   }
+  // Worksheet chrome: a student Name / Date (/ Class) header above the puzzle
+  // and an optional footer line — injected the same way as the border so it
+  // travels through combinePages.
+  if (ws) {
+    doc = applyWorksheetHeader(doc, layout, ws, Boolean(opts.answerKey));
+  }
   return doc;
+}
+
+// Height (inches) the worksheet header band needs: a Name/Date row, an optional
+// Class/Period row, and a little breathing room.
+function worksheetHeaderInches(ws) {
+  let inches = 0.5; // name/date row + rule
+  if (ws && ws.classField) inches += 0.28;
+  return inches;
+}
+
+// Inject a worksheet header (Name / Date / optional Class) at the top of a
+// rendered puzzle page, occupying the layout's reserved top band, plus an
+// optional footer. On an answer copy the header shows "ANSWER KEY" instead of
+// blank fill-in lines.
+function applyWorksheetHeader(doc, layout, ws, isAnswer) {
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const band = layout.reserveTop; // px
+  const fs = Math.max(11, Math.round(layout.fontSize * 0.82));
+  const line = (label) =>
+    `<span class="pf-ws-f"><span class="pf-ws-lbl">${esc(label)}</span><span class="pf-ws-rule"></span></span>`;
+  const fields = isAnswer
+    ? `<span class="pf-ws-akey">✔ ANSWER KEY</span>`
+    : `${line('Name')}${line('Date')}`;
+  const classRow = (!isAnswer && ws.classField)
+    ? `<div class="pf-ws-row2">${line('Class / Period')}</div>` : '';
+  const footer = ws.footer
+    ? `<div class="pf-ws-foot">${esc(ws.footer)}</div>` : '';
+
+  // Pin the body to the full usable page height so the footer lands at the true
+  // page foot (the reserved bottom band), not just under the last line of content.
+  const fullH = layout.usableHeight + (layout.reserveTop || 0) + (layout.reserveBottom || 0);
+  const css =
+    `\n  body { position: relative; padding-top: ${band}px; min-height: ${fullH}px; box-sizing: border-box; }` +
+    `\n  .pf-ws-head { position: absolute; top: 0; left: 0; width: 100%; height: ${band}px; box-sizing: border-box;` +
+    ` padding-bottom: 8px; border-bottom: 1.5px solid #222; font-family: ${layout.fontFamily};` +
+    ` display: flex; flex-direction: column; justify-content: flex-start; gap: 6px; }` +
+    `\n  .pf-ws-row1 { display: flex; gap: 26px; align-items: flex-end; }` +
+    `\n  .pf-ws-f { display: flex; align-items: flex-end; gap: 7px; flex: 1; font-size: ${fs}px; color: #222; }` +
+    `\n  .pf-ws-lbl { white-space: nowrap; font-weight: 600; }` +
+    `\n  .pf-ws-rule { flex: 1; border-bottom: 1px solid #222; height: ${Math.round(fs * 1.1)}px; }` +
+    `\n  .pf-ws-akey { font-size: ${fs + 1}px; font-weight: 700; letter-spacing: .06em; color: #1a7a3a; }` +
+    `\n  .pf-ws-foot { position: absolute; bottom: 0; left: 0; width: 100%; text-align: center;` +
+    ` font-family: ${layout.fontFamily}; font-size: ${Math.max(9, Math.round(fs * 0.78))}px; color: #666; }\n`;
+
+  const head = `<div class="pf-ws-head"><div class="pf-ws-row1">${fields}</div>${classRow}</div>`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1>${head}${footer}`);
+  return out;
 }
 
 // Inject the editor's decoration SVG as a top overlay covering the usable area.
@@ -551,6 +612,9 @@ function renderPuzzlesHtml(entries) {
       trimSize: e.trimSize || '8.5x11',
       audience: e.audience,
       answerKey: Boolean(e.answerKey),
+      worksheet: e.worksheet,
+      border: e.border,
+      borderColor: e.borderColor,
     })
   );
   return combinePages(docs);

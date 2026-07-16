@@ -294,6 +294,15 @@ button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400
 }
 .banner code { background: #ffedd5; padding: 1px 5px; border-radius: 5px; }
 
+/* Worksheets & lesson packets */
+.ws-preview-frame { border: 1px solid var(--line); border-radius: 10px; overflow: auto; background: #fff; }
+.ws-preview-frame.hidden { display: none; }
+.ws-preview-scale { transform-origin: top left; }
+#wsPreview { border: 0; background: #fff; display: block; }
+.ws-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.ws-row select { flex: 1; min-width: 0; }
+.ws-row .iconbtn.del { flex: none; border: 1px solid var(--line); background: var(--panel); color: #c92a2a; border-radius: 7px; padding: 7px 10px; }
+
 /* Book Builder — low word-pool warning (before "No repeated words" generation) */
 .pool-warn { margin: 12px 0 0; padding: 11px 13px; border-radius: 10px; font-size: 13px;
   background: #fff7ed; border: 1px solid #fed7aa; color: #7c3a12; }

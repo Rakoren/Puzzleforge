@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PuzzleForge — Worksheets</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <div>
+        <h1>PuzzleForge</h1>
+        <p class="tagline">Worksheets &amp; lesson packets — classroom-ready handouts with a Name/Date header</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Puzzle Maker</a>
+      <a href="book.html">Book Builder</a>
+      <a href="worksheets.html" class="active">Worksheets</a>
+      <a href="themes.html">Themes</a>
+      <a href="imagetools.html">Image Tools</a>
+      <a href="cover.html">Cover Builder</a>
+      <a href="aiart.html">AI Art</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="panel config" aria-label="Worksheet builder">
+      <div class="tabs modegen" style="margin-bottom:16px;">
+        <button class="tab active" id="modeSheet" type="button">📄 Single worksheet</button>
+        <button class="tab" id="modePacket" type="button">📚 Lesson packet</button>
+      </div>
+
+      <!-- ============ SINGLE WORKSHEET ============ -->
+      <div id="sheetView">
+        <h2>1 · Puzzle</h2>
+        <div class="row">
+          <label class="field"><span>Type</span><select id="wsType"></select></label>
+          <label class="field"><span>Difficulty</span><select id="wsDiff"></select></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>Theme <i class="pf-info" title="Used by word puzzles (word search, crossword, scramble…). Ignored by sudoku/maze.">i</i></span><select id="wsTheme"></select></label>
+          <label class="field"><span>Audience</span>
+            <select id="wsAudience"><option value="adult">Adults</option><option value="kids">Kids</option></select>
+          </label>
+        </div>
+        <label class="field"><span>Page size</span><select id="wsTrim"></select></label>
+
+        <h2>2 · Student header</h2>
+        <p class="hint">Every worksheet gets a <b>Name</b> and <b>Date</b> line. Add a class line or a footer if you like.</p>
+        <div class="pf-checks">
+          <label class="checkbox"><input type="checkbox" id="wsClass"> Add a “Class / Period” line</label>
+        </div>
+        <label class="field"><span>Footer (optional)</span>
+          <input id="wsFooter" type="text" maxlength="120" placeholder="e.g. Mrs. Lee · Grade 3 · Animals unit">
+        </label>
+
+        <h2>3 · Download</h2>
+        <div class="pf-checks">
+          <label class="checkbox"><input type="checkbox" id="wsAnswer"> Also add a teacher answer copy</label>
+        </div>
+        <div class="actions">
+          <button id="wsRefresh" class="ghost">↻ New puzzle</button>
+          <button id="wsPdf" class="primary">Download worksheet PDF</button>
+        </div>
+        <p class="status" id="wsStatus"></p>
+      </div>
+
+      <!-- ============ LESSON PACKET ============ -->
+      <div id="packetView" class="hidden">
+        <h2>1 · Cover</h2>
+        <div class="pf-checks">
+          <label class="checkbox"><input type="checkbox" id="pkCover" checked> Include a cover page</label>
+          <label class="checkbox"><input type="checkbox" id="pkContents" checked> List the puzzles on the cover</label>
+        </div>
+        <label class="field"><span>Packet title</span><input id="pkTitle" type="text" maxlength="80" placeholder="e.g. Animals Unit — Vocabulary Puzzles"></label>
+        <div class="row">
+          <label class="field"><span>Kicker (small label)</span><input id="pkKicker" type="text" maxlength="40" placeholder="e.g. Grade 3 Lesson Packet"></label>
+          <label class="field"><span>Subtitle</span><input id="pkSubtitle" type="text" maxlength="80" placeholder="optional"></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>Teacher</span><input id="pkTeacher" type="text" maxlength="60" placeholder="Mrs. Lee"></label>
+          <label class="field"><span>Class / room</span><input id="pkClass" type="text" maxlength="60" placeholder="Room 12"></label>
+        </div>
+        <label class="field"><span>Learning objective (optional)</span>
+          <textarea id="pkObjective" rows="2" placeholder="Students build animal vocabulary and spelling through puzzle solving."></textarea>
+        </label>
+        <label class="field"><span>Standards (optional)</span>
+          <input id="pkStandards" type="text" maxlength="120" placeholder="e.g. CCSS.ELA-LITERACY.L.3.4">
+        </label>
+
+        <h2>2 · Puzzles</h2>
+        <div class="row">
+          <label class="field"><span>Theme (all puzzles)</span><select id="pkTheme"></select></label>
+          <label class="field"><span>Audience</span>
+            <select id="pkAudience"><option value="adult">Adults</option><option value="kids">Kids</option></select>
+          </label>
+        </div>
+        <label class="field"><span>Page size</span><select id="pkTrim"></select></label>
+        <div id="pkRows" class="rows" style="margin-top:10px;"></div>
+        <button id="pkAddRow" class="ghost">+ Add puzzle</button>
+        <p class="hint" id="pkSummary"></p>
+
+        <h2>3 · Options</h2>
+        <div class="pf-checks">
+          <label class="checkbox"><input type="checkbox" id="pkAnswers" checked> Add an answer-key section at the end</label>
+          <label class="checkbox"><input type="checkbox" id="pkHeaderClass"> Add a “Class / Period” line to each worksheet</label>
+        </div>
+        <label class="field"><span>Worksheet footer (optional)</span>
+          <input id="pkFooter" type="text" maxlength="120" placeholder="e.g. Animals Unit">
+        </label>
+
+        <h2>4 · Download</h2>
+        <div class="actions">
+          <button id="pkPdf" class="primary">Download packet PDF</button>
+        </div>
+        <p class="status" id="pkStatus"></p>
+      </div>
+    </section>
+
+    <section class="panel preview" aria-label="Preview">
+      <div class="preview-head"><h2>Preview</h2><span class="tool-desc" id="previewNote">Single worksheet — front page</span></div>
+      <div class="ws-preview-frame">
+        <iframe id="wsPreview" title="Worksheet preview"></iframe>
+      </div>
+      <div id="packetPreview" class="explainer hidden">
+        <ol>
+          <li><strong>Cover page</strong> — title, your name/class, objective, and a contents list.</li>
+          <li><strong>One worksheet per puzzle</strong> — each with its own Name/Date header.</li>
+          <li><strong>Answer key section</strong> — teacher copies of every puzzle at the end.</li>
+        </ol>
+        <p class="hint">Everything prints on your chosen page size (default US Letter). Download to see the full packet.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="identity.js"></script>
+  <script src="worksheets.js"></script>
+</body>
+</html>

@@ -288,6 +288,109 @@ app.post('/api/set', async (req, res) => {
   }
 });
 
+// --- Classroom worksheets + lesson packets ---
+
+// Readable puzzle-type + difficulty labels for a packet's contents list.
+const TYPE_LABELS = {
+  wordsearch: 'Word Search', numbersearch: 'Number Search', crossword: 'Crossword',
+  krisskross: 'Kriss-Kross', wordscramble: 'Word Scramble', sudoku: 'Sudoku', maze: 'Maze',
+  cryptogram: 'Cryptogram', nonogram: 'Nonogram', trivia: 'Trivia', logicgrid: 'Logic Grid',
+  wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', coloring: 'Coloring',
+  drawing: 'Drawing',
+};
+const typeLabel = (t) => TYPE_LABELS[t] || String(t || '').replace(/\b\w/g, (c) => c.toUpperCase());
+function diffLabel(d, audience) {
+  const kids = String(audience).toLowerCase() === 'kids';
+  const adult = { 1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Expert' };
+  const kid = { 1: 'Beginner', 2: 'Early Reader', 3: 'Growing Reader', 4: 'Independent' };
+  const one = (n) => (kids ? kid[n] : adult[n]) || `L${n}`;
+  const s = String(d == null ? 1 : d);
+  if (s.includes('-')) { const [lo, hi] = s.split('-'); return `${one(+lo)}–${one(+hi)}`; }
+  return one(parseInt(s, 10) || 1);
+}
+
+// Normalize the student-header options a worksheet carries.
+function headerFromReq(h) {
+  h = h || {};
+  if (h.enabled === false) return null;
+  return { classField: !!h.classField, footer: h.footer ? String(h.footer).slice(0, 120) : '' };
+}
+
+// Live worksheet preview (HTML for an iframe) — one puzzle with the teacher header.
+app.post('/api/worksheet/preview', (req, res) => {
+  const recipe = (req.body && req.body.recipe) || {};
+  try {
+    const puzzle = pf.generate(configFromRecipe(recipe));
+    const opts = renderOpts(recipe, false);
+    opts.worksheet = headerFromReq(req.body && req.body.header);
+    res.json({ html: pf.renderHtml(puzzle, opts) });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Download a single worksheet PDF (optionally a teacher answer copy after it).
+app.post('/api/worksheet/pdf', async (req, res) => {
+  const recipe = (req.body && req.body.recipe) || {};
+  const header = headerFromReq(req.body && req.body.header);
+  const withAnswer = Boolean(req.body && req.body.answerKey);
+  try {
+    const puzzle = pf.generate(configFromRecipe(recipe));
+    const entries = [{ puzzle, trimSize: recipe.trimSize || '8.5x11', audience: renderOpts(recipe).audience, worksheet: header, border: recipe.border || undefined, borderColor: recipe.borderColor || undefined }];
+    if (withAnswer) entries.push({ ...entries[0], answerKey: true });
+    const outPath = path.join(os.tmpdir(), `pf-ws-${crypto.randomUUID()}.pdf`);
+    await pf.exportPuzzlesPdf(entries, { outPath });
+    const pdf = fs.readFileSync(outPath); fs.unlink(outPath, () => {});
+    const base = (recipe.title || recipe.theme || recipe.type || 'worksheet').toString().replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}-worksheet.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Download a lesson packet PDF: cover + worksheets + optional answer-key section.
+app.post('/api/packet/pdf', async (req, res) => {
+  const body = req.body || {};
+  const trimSize = body.trimSize || '8.5x11';
+  const audience = body.audience || 'adult';
+  const header = headerFromReq(body.header);
+  const rows = Array.isArray(body.pages) ? body.pages : [];
+  if (!rows.length) return res.status(400).json({ error: 'Add at least one puzzle to the packet.' });
+  try {
+    const pages = [];
+    const contents = [];
+    for (const row of rows) {
+      const recipe = { ...row, theme: row.theme || body.theme, trimSize, audience };
+      const puzzle = pf.generate(configFromRecipe(recipe));
+      pages.push({ puzzle });
+      contents.push(row.label || `${typeLabel(row.type)} — ${diffLabel(row.difficulty, audience)}`);
+    }
+    const c = body.cover || {};
+    const cover = c.enabled === false ? null : {
+      title: c.title || body.title || 'Lesson Packet',
+      subtitle: c.subtitle || '',
+      kicker: c.kicker || 'Lesson Packet',
+      teacher: c.teacher || '', className: c.className || '', dateline: c.dateline || '',
+      objective: c.objective || '', standards: c.standards || '',
+      footer: c.footer || '', contents: c.showContents === false ? [] : contents,
+    };
+    const html = pf.assemblePacketHtml({
+      trimSize, audience, cover, worksheet: header, answers: body.answers === 'none' ? 'none' : 'end', pages,
+    });
+    const outPath = path.join(os.tmpdir(), `pf-packet-${crypto.randomUUID()}.pdf`);
+    await pf.exportHtmlPdf(html, { outPath });
+    const pdf = fs.readFileSync(outPath); fs.unlink(outPath, () => {});
+    const base = ((cover && cover.title) || body.title || 'lesson-packet').toString().replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${base}-packet.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // --- Book builder ---
 
 const bookCache = new Map();
