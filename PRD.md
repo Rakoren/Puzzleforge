@@ -162,6 +162,7 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 **Worksheets & lesson packets (`worksheets.html/js`) — classroom handouts:**
 - **Single worksheet** — turn any puzzle into a printable handout with a student **Name / Date** header (optional **Class / Period** line + footer), a live scaled preview, and one-click PDF; optionally append a **teacher answer copy**.
 - **Lesson packet** — a **cover page** (title, kicker, teacher/class, learning objective, standards line, auto **contents list**) + one worksheet per puzzle + an **answer-key section**, combined into one PDF.
+- **Auto lesson-plan (curriculum presets)** — pick a **grade (K–6 / adults)** + topic + puzzle count and "Build plan from grade" fills the entire packet: a grade-appropriate puzzle mix at the right difficulty, plus a cover title, objective, and the **Common Core ELA standards** a word puzzle actually supports (`engine/curriculum.js`: vocabulary L.x.4/L.x.5 + K–5 phonics RF.x.3). Everything stays editable before download. Endpoints: `GET /api/curriculum`, `POST /api/packet/plan`.
 - Built on the engine's own primitives: a new `reserveTopIn` sizes the puzzle below the header band, `renderPuzzleHtml`'s `worksheet` option injects the header/footer (same path as borders/QR so it prints vector-sharp), and `engine/worksheet.js` assembles the packet via `combinePages`. Endpoints: `POST /api/worksheet/preview|pdf`, `POST /api/packet/pdf`.
 
 **Page Editor (`editor.html/js`) — a full MS-Publisher-style desktop-publishing app:**
@@ -518,9 +519,10 @@ Tooltip copy should be written for every control before the teacher tool goes pu
 | Theme editing UI (edit/delete saved themes) | ✅ |
 | Worksheet builder (any puzzle → printable handout with Name/Date header) | ✅ Shipped — `worksheets.html`; live preview + one-click PDF, optional teacher answer copy |
 | Lesson packets (cover + several worksheets + answer-key section) | ✅ Shipped — cover with objective/standards/contents; one PDF |
-| Common Core / state standards alignment tags | ◐ Partial — a free-text standards line prints on the packet cover; structured tags/alignment still to come |
-| Curriculum word list presets | 🔲 Phase 11 |
-| Lesson plan mode (topic + grade → auto-selected packet) | 🔲 Phase 11 (packet assembly is manual today) |
+| Common Core standards alignment | ✅ Shipped — grade presets map to the CCSS ELA vocabulary (L.x.4/L.x.5) + K–5 phonics (RF.x.3) standards a word puzzle supports; codes print on the packet cover |
+| Curriculum grade presets | ✅ Shipped — `engine/curriculum.js`: grade (K–6 / adults) → difficulty, audience, puzzle mix, standards, objective |
+| Auto lesson-plan mode (grade + topic → packet) | ✅ Shipped — "Build plan from grade" fills the whole packet (rows + cover + objective + standards); editable before download |
+| Curriculum word-list presets (standard-specific vocabulary) | 🔲 Phase 11 — today the grade preset sets tier/difficulty on your chosen theme; per-standard word banks still to come |
 | Puzzle packs by subject (pre-built curriculum sets) | 🔲 Phase 11 |
 | Puzzle of the week (public free weekly puzzle) | 🔲 Phase 11 |
 | Email subscribe for weekly puzzle | 🔲 Phase 11 |

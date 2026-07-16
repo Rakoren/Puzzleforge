@@ -60,7 +60,7 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (149 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (153 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
@@ -118,7 +118,9 @@ Implemented so far:
   turn any puzzle into a printable classroom handout with a student Name/Date
   header (+ optional Class/Period line and footer) and a one-click PDF, or
   assemble a lesson packet — a cover page (title, objective, standards, contents
-  list) + several worksheets + an answer-key section — into one PDF.
+  list) + several worksheets + an answer-key section — into one PDF. An **auto
+  lesson-plan** mode turns a grade (K–6) + topic into a ready packet, aligned to
+  the Common Core ELA vocabulary/phonics standards a word puzzle supports.
 
 Not yet built (later phases): more Tier 3 puzzle types (Riddles, Brain Teasers, …),
 book-level digital-layer analytics (needs a backend), and curriculum extras
