@@ -213,6 +213,82 @@ function wordsFromTheme(theme, level, count, exclude, audience) {
   return words;
 }
 
+// Adult / kids labels per level, for a human-readable low-pool warning.
+const LEVEL_LABELS = {
+  adult: { 1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Expert' },
+  kids: { 1: 'Beginner', 2: 'Early Reader', 3: 'Growing Reader', 4: 'Independent' },
+};
+
+/**
+ * Ahead-of-generation check: with "No repeated words" on, does the book demand
+ * more unique theme words at some difficulty band than the theme actually has?
+ * Groups word-type puzzles by (theme, tier band) exactly as generation does
+ * (audience-aware `themeTierOpts` → the same `selectWords` pool), distributing a
+ * difficulty range evenly across the levels it spans. Advisory only — it never
+ * blocks generation (the engine still fills short lists by reusing words).
+ * @returns {{ unique: boolean, wordsPerPuzzle: number, shortfalls: Array }}
+ */
+function analyzeWordPool(config = {}) {
+  const audience = String(config.audience || 'adult').toLowerCase() === 'kids' ? 'kids' : 'adult';
+  if (config.uniqueWords !== true) return { unique: false, wordsPerPuzzle: DEFAULT_WORD_COUNT, shortfalls: [] };
+  const rows = Array.isArray(config.puzzles) ? config.puzzles : [];
+
+  const levelsOf = (d) => {
+    const s = String(d == null ? 2 : d);
+    if (s.includes('-')) {
+      const [lo, hi] = s.split('-').map((x) => parseInt(x, 10));
+      const out = [];
+      for (let l = Math.max(1, lo || 1); l <= Math.min(4, hi || lo || 1); l++) out.push(l);
+      return out.length ? out : [2];
+    }
+    return [Math.max(1, Math.min(4, parseInt(s, 10) || 2))];
+  };
+
+  // Accumulate demand per (theme, band). A band is keyed by the tier options a
+  // level resolves to, so kids' cumulative tiers group together correctly.
+  const bands = new Map();
+  for (const spec of rows) {
+    if (!spec || !WORD_TYPES.has(spec.type) || spec.words) continue; // custom lists don't draw the pool
+    const themeRef = spec.theme || config.theme;
+    if (!themeRef) continue;
+    const per = spec.count_words || DEFAULT_WORD_COUNT;
+    const count = spec.count || 1;
+    const levels = levelsOf(spec.difficulty);
+    const share = count / levels.length; // a range spreads evenly across its levels
+    for (const level of levels) {
+      const opts = themeTierOpts(level, audience);
+      const key = `${themeRef}@@${opts.difficulty != null ? 'd' + opts.difficulty : 'm' + opts.maxDifficulty}@@${opts.maxLength || ''}`;
+      const g = bands.get(key) || { themeRef, level, opts, demand: 0, puzzles: 0 };
+      g.demand += share * per;
+      g.puzzles += share;
+      if (level < g.level) g.level = level; // label with the band's easiest level
+      bands.set(key, g);
+    }
+  }
+
+  const shortfalls = [];
+  for (const g of bands.values()) {
+    let theme;
+    try { theme = themes.resolveTheme(g.themeRef); } catch (_) { continue; }
+    const { ceiling, maxLength, ...base } = g.opts;
+    const supply = themes.selectWords(theme, { ...base, maxLength }).length;
+    const demand = Math.round(g.demand);
+    if (demand > supply) {
+      shortfalls.push({
+        theme: theme.label,
+        level: g.level,
+        label: LEVEL_LABELS[audience][g.level] || `L${g.level}`,
+        puzzles: Math.round(g.puzzles),
+        demand,
+        supply,
+        short: demand - supply,
+      });
+    }
+  }
+  shortfalls.sort((a, b) => b.short - a.short);
+  return { unique: true, wordsPerPuzzle: DEFAULT_WORD_COUNT, shortfalls };
+}
+
 // Puzzle types that consume a themed word list.
 const WORD_TYPES = new Set(['wordsearch', 'wordscramble', 'crossword', 'krisskross']);
 
@@ -569,4 +645,4 @@ function interleavePuzzles(puzzles, config) {
   return out;
 }
 
-module.exports = { assembleBook };
+module.exports = { assembleBook, analyzeWordPool };

@@ -312,6 +312,17 @@ function editablePages(book) {
   return out;
 }
 
+// Ahead-of-generation word-pool check: with "No repeated words" on, warn when
+// the requested puzzles would need more unique theme words than a theme has.
+// Cheap (counts words, generates nothing).
+app.post('/api/book/wordpool', (req, res) => {
+  try {
+    res.json(pf.analyzeWordPool((req.body && req.body.config) || req.body || {}));
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
 app.post('/api/book/preview', (req, res) => {
   const config = (req.body && req.body.config) || {};
   try {

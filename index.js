@@ -8,7 +8,7 @@
  *   await pf.exportPdf(puzzle, { trimSize: '8x10', outPath: 'out.pdf' });
  */
 const { generate } = require('./engine/generate');
-const { assembleBook } = require('./engine/book');
+const { assembleBook, analyzeWordPool } = require('./engine/book');
 const { runChecklist } = require('./engine/checklist');
 const { splitPuzzle, splitHtml, composePage } = require('./engine/components');
 const kdp = require('./engine/kdp');
@@ -50,6 +50,7 @@ const difficulty = require('./config/difficulty');
 module.exports = {
   generate,
   assembleBook,
+  analyzeWordPool,
   runChecklist,
   splitPuzzle,
   splitHtml,

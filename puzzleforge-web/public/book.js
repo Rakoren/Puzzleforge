@@ -60,6 +60,7 @@
     rows: $('rows'),
     addRow: $('addRow'),
     summary: $('summary'),
+    poolWarn: $('poolWarn'),
     preview: $('preview'),
     buildPdf: $('buildPdf'),
     saveRecipe: $('saveRecipe'),
@@ -254,6 +255,46 @@
     el.buildPdf.disabled = true;
     el.editPanel.classList.add('hidden');
     el.editList.innerHTML = '';
+    checkWordPool();
+  }
+
+  // Ahead-of-generation warning: when "No repeated words" is on and the puzzles
+  // would need more unique theme words at some level than the theme has, tell the
+  // publisher *before* they build so they can Expand the theme, pick "All <cat>",
+  // or turn the toggle off. Debounced; the server does the pool math.
+  let poolSeq = 0;
+  function checkWordPool() {
+    if (!el.poolWarn) return;
+    if (!el.uniqueWords.checked) { el.poolWarn.hidden = true; return; }
+    const seq = ++poolSeq;
+    clearTimeout(checkWordPool._t);
+    checkWordPool._t = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/book/wordpool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: config() }),
+        });
+        const data = await res.json();
+        if (seq !== poolSeq) return; // a newer edit superseded this check
+        renderPoolWarn(res.ok ? data : null);
+      } catch (_) { /* leave the last state on a transient error */ }
+    }, 250);
+  }
+
+  function renderPoolWarn(data) {
+    const w = el.poolWarn;
+    if (!data || !data.unique || !data.shortfalls || !data.shortfalls.length) { w.hidden = true; w.innerHTML = ''; return; }
+    const per = data.wordsPerPuzzle || 14;
+    const lines = data.shortfalls.map((s) => {
+      const p = s.puzzles === 1 ? '1 puzzle' : `${s.puzzles} puzzles`;
+      return `<li><b>${escapeHtml(s.label)}</b> — ${p} need ~${s.demand} words but <b>${escapeHtml(s.theme)}</b> has ${s.supply} at that level, so ${s.short} will repeat.</li>`;
+    }).join('');
+    w.innerHTML =
+      `<div class="pool-warn-head">⚠ Not enough unique words for “No repeated words”</div>` +
+      `<ul class="pool-warn-list">${lines}</ul>` +
+      `<div class="pool-warn-fix">Fix it: <b>Expand</b> the theme on the <a href="themes.html">Themes</a> page, pick the <b>“★ All …” category</b> above (bigger pool), reduce the puzzle count, or turn off <b>No repeated words</b>. Each word puzzle uses ${per} words.</div>`;
+    w.hidden = false;
   }
 
   // List drawing/coloring pages with an editable subject (datalist of choices).

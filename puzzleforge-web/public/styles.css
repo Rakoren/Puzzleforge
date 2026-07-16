@@ -293,6 +293,18 @@ button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400
   border-radius: 10px; padding: 10px 12px; font-size: 13px; margin: 0 0 12px;
 }
 .banner code { background: #ffedd5; padding: 1px 5px; border-radius: 5px; }
+
+/* Book Builder — low word-pool warning (before "No repeated words" generation) */
+.pool-warn { margin: 12px 0 0; padding: 11px 13px; border-radius: 10px; font-size: 13px;
+  background: #fff7ed; border: 1px solid #fed7aa; color: #7c3a12; }
+.pool-warn-head { font-weight: 700; margin-bottom: 6px; }
+.pool-warn-list { margin: 0 0 8px; padding-left: 18px; display: grid; gap: 3px; }
+.pool-warn-fix { font-size: 12px; opacity: .92; }
+.pool-warn a { color: inherit; text-decoration: underline; font-weight: 600; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pool-warn { background: #2e2718; border-color: #5a4415; color: #f0cf9a; }
+}
+:root[data-theme="dark"] .pool-warn { background: #2e2718; border-color: #5a4415; color: #f0cf9a; }
 .tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .tag {
   font-size: 12px; color: var(--brand); background: #eef1fe;
