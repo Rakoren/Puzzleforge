@@ -139,7 +139,7 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 
 **Book Builder:**
 - Visual multi-puzzle assembly, preview, full-book PDF export, recipe save / load
-- **"No repeated words" toggle** — each theme word used once across a book, respects difficulty tiers
+- **"No repeated words" toggle** — each theme word used once across a book, respects difficulty tiers. A **low word-pool warning** flags *before* generating when the puzzles would need more unique words at some difficulty band than the theme has (e.g. "4 puzzles need ~56 words but Animals has 42 — 14 will repeat"), pointing at the fixes: Expand the theme, pick the merged "★ All …" category, fewer puzzles, or turn the toggle off. `engine/book.js` `analyzeWordPool` via `POST /api/book/wordpool`.
 - **Shuffle puzzle order** — mix puzzle types instead of grouping by row (keeps fillers)
 - **"Between puzzles, insert"** — drop coloring / drawing / blank page after each puzzle (with coloring style + after-last options)
 - **Bleed-guard** — a blank page auto-inserted behind every coloring/drawing page (default on)
