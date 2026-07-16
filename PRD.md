@@ -159,6 +159,11 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 **Starter book templates:**
 - "Start from a template" gallery in the Book Builder — six ready-to-publish books (Large-Print Senior Word Search, Kids Animal Activity Book, Travel Pocket Puzzles, Sudoku Workout, Brain Training Variety, Coffee Break Crosswords), each a full config (puzzle mix + trim + cover colors + KDP metadata) that drops into the builder and is editable from there. Zero-to-book on-ramp.
 
+**Worksheets & lesson packets (`worksheets.html/js`) — classroom handouts:**
+- **Single worksheet** — turn any puzzle into a printable handout with a student **Name / Date** header (optional **Class / Period** line + footer), a live scaled preview, and one-click PDF; optionally append a **teacher answer copy**.
+- **Lesson packet** — a **cover page** (title, kicker, teacher/class, learning objective, standards line, auto **contents list**) + one worksheet per puzzle + an **answer-key section**, combined into one PDF.
+- Built on the engine's own primitives: a new `reserveTopIn` sizes the puzzle below the header band, `renderPuzzleHtml`'s `worksheet` option injects the header/footer (same path as borders/QR so it prints vector-sharp), and `engine/worksheet.js` assembles the packet via `combinePages`. Endpoints: `POST /api/worksheet/preview|pdf`, `POST /api/packet/pdf`.
+
 **Page Editor (`editor.html/js`) — a full MS-Publisher-style desktop-publishing app:**
 - **Ribbon UI** — Home / Insert / Page Design / Team / Review / View / Help tabs, each a single dense Publisher-style row, plus **contextual tabs** that appear only when the matching object is selected: **Shape Format**, **Table Design**, **Table Layout**, **Picture Format**, **QR Code**, and **Text Box** (a text box shows Shape Format + Text Box together, a table shows Table Design + Table Layout, matching Publisher)
 - **Contextual tab tools (Publisher-parity):**
@@ -511,10 +516,11 @@ Tooltip copy should be written for every control before the teacher tool goes pu
 | Recipe save / load | ✅ |
 | AI Theme Generator | ✅ |
 | Theme editing UI (edit/delete saved themes) | ✅ |
-| Worksheet builder (3–4 types, one page) | 🔲 Phase 11 |
+| Worksheet builder (any puzzle → printable handout with Name/Date header) | ✅ Shipped — `worksheets.html`; live preview + one-click PDF, optional teacher answer copy |
+| Lesson packets (cover + several worksheets + answer-key section) | ✅ Shipped — cover with objective/standards/contents; one PDF |
+| Common Core / state standards alignment tags | ◐ Partial — a free-text standards line prints on the packet cover; structured tags/alignment still to come |
 | Curriculum word list presets | 🔲 Phase 11 |
-| Lesson plan mode (topic + grade → full packet) | 🔲 Phase 11 |
-| Common Core / state standards alignment tags | 🔲 Phase 11 |
+| Lesson plan mode (topic + grade → auto-selected packet) | 🔲 Phase 11 (packet assembly is manual today) |
 | Puzzle packs by subject (pre-built curriculum sets) | 🔲 Phase 11 |
 | Puzzle of the week (public free weekly puzzle) | 🔲 Phase 11 |
 | Email subscribe for weekly puzzle | 🔲 Phase 11 |

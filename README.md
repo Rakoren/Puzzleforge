@@ -60,7 +60,7 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (143 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (149 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
@@ -114,9 +114,16 @@ Implemented so far:
   whole thing is self-serve from the Book Builder (set a hosting base URL; the
   KDP bundle then prints the QR codes and includes an `html/` folder of pages).
 
+- **Worksheets & lesson packets** (`worksheets.html`, `engine/worksheet.js`):
+  turn any puzzle into a printable classroom handout with a student Name/Date
+  header (+ optional Class/Period line and footer) and a one-click PDF, or
+  assemble a lesson packet — a cover page (title, objective, standards, contents
+  list) + several worksheets + an answer-key section — into one PDF.
+
 Not yet built (later phases): more Tier 3 puzzle types (Riddles, Brain Teasers, …),
-book-level digital-layer analytics (needs a backend), and teacher-tool extras
-(worksheet builder, lesson packets). See [`PRD.md`](./PRD.md) for the full roadmap.
+book-level digital-layer analytics (needs a backend), and curriculum extras
+(standards-aligned word-list presets, auto lesson-plan mode). See
+[`PRD.md`](./PRD.md) for the full roadmap.
 
 ## Architecture
 
