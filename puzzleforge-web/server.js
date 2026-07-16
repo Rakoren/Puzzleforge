@@ -558,6 +558,19 @@ app.post('/api/book/editor', (req, res) => {
       bookId = cacheBook(book);
     }
     const layout = pf.getLayout(book.trimSize, { audience: book.audience });
+    // The book's decorative page frame is applied at render/export time, not
+    // baked into the split pieces — so seed it onto each eligible page's state
+    // so the editor draws the same border the Book Builder preview and PDF show.
+    // Match the exporter: the frame goes on real puzzle pages, never on activity
+    // (coloring/drawing) pages or front/back matter.
+    const bookBorder = book.border && book.border !== 'none' ? book.border : null;
+    const withBorder = (state, wants) => {
+      if (!bookBorder || !wants) return state || null;
+      const s = { ...(state || {}) };
+      if (s.border === undefined) s.border = bookBorder;
+      if (s.borderColor === undefined && book.borderColor) s.borderColor = book.borderColor;
+      return s;
+    };
     // Every physical page (title, front matter, puzzles, answer key, back
     // matter) as an editable, splittable leaf — so the editor shows the whole
     // book, not only the puzzles.
@@ -580,7 +593,7 @@ app.post('/api/book/editor', (req, res) => {
         akIndex: leaf.akIndex != null ? leaf.akIndex : null,
         type, title, activity,
         style: split.style, components: split.components,
-        state: leaf.state || null,
+        state: withBorder(leaf.state, leaf.role === 'content' && !activity),
       };
     });
     res.json({
@@ -622,15 +635,22 @@ app.post('/api/book/insert-puzzle', (req, res) => {
     const cfg = { ...base, titlePage: false, answerKey: false, puzzles: [spec], ...(audience ? { audience } : {}) };
     const gen = pf.assembleBook(cfg);
     const layout = pf.getLayout(gen.trimSize, { audience: gen.audience });
+    // Carry the book's page frame onto real puzzle pages (not activity pages),
+    // so an inserted puzzle matches the rest of a bordered book.
+    const bookBorder = gen.border && gen.border !== 'none' ? gen.border : null;
     const pages = (gen.pages || [])
       .filter((pg) => pg.puzzle && pg.puzzle.type !== 'bleedguard')
       .map((pg) => {
         const split = pf.splitPuzzle(pg.puzzle, layout);
+        const activity = pf.isActivityType(pg.puzzle.type);
         return {
           role: 'content', type: pg.puzzle.type,
           title: pg.puzzle.title || pg.puzzle.type,
-          activity: pf.isActivityType(pg.puzzle.type),
+          activity,
           style: split.style, components: split.components, puzzle: pg.puzzle,
+          state: (bookBorder && !activity)
+            ? { border: bookBorder, ...(gen.borderColor ? { borderColor: gen.borderColor } : {}) }
+            : null,
         };
       });
     if (!pages.length) return res.status(400).json({ error: 'Could not generate that puzzle type.' });
