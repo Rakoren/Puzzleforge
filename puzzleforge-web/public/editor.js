@@ -1346,7 +1346,17 @@
     if (painter && ev.button !== 2 && applyPainter(ref)) { setSel([ref]); return; }
     if (ev.button === 2) { if (!isSel(ref)) setSel(expandGroups([ref])); return; }
     if (ref.locked) { setSel([ref]); return; }
-    if (ev.shiftKey) { if (!isSel(ref)) sels.push(ref); } else if (!isSel(ref)) sels = [ref];
+    // Shift / Ctrl / Cmd extend the selection (Ctrl/Cmd is what most people
+    // reach for). A modifier-click on an already-selected object toggles it out.
+    const additive = ev.shiftKey || ev.ctrlKey || ev.metaKey;
+    if (additive) {
+      if (isSel(ref)) {
+        const gid = ref.gid;
+        sels = sels.filter((r) => r !== ref && !(gid && r.gid === gid));
+        syncSelUI(); drawSel(); return; // toggled out — nothing to drag
+      }
+      sels.push(ref);
+    } else if (!isSel(ref)) sels = [ref];
     sels = expandGroups(sels);
     syncSelUI(); drawSel();
     const group = sels.slice(); const starts = group.map((r) => { const b = box(r); return { r, x: b.x, y: b.y, w: b.w, h: b.h }; });
@@ -2528,9 +2538,10 @@
         expandGroups(hit).forEach((rf) => { if (!merged.includes(rf)) merged.push(rf); });
         setSel(merged);
       } else if (clickRef) {
-        // A plain click (no drag) on a piece: select it, since we suppressed
-        // the piece's own handler to be able to marquee.
-        setSel(additive && !base.includes(clickRef) ? base.concat([clickRef]) : expandGroups([clickRef]));
+        // A plain click (no drag) where we suppressed the object's own handler.
+        // Additive: toggle it in/out of the current selection; plain: select it.
+        if (additive) setSel(base.includes(clickRef) ? base.filter((r) => r !== clickRef) : expandGroups(base.concat([clickRef])));
+        else setSel(expandGroups([clickRef]));
       } else setSel(base); // click on empty stage: clear (or keep, if additive)
     };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
@@ -3723,12 +3734,23 @@
       // Interactive chrome handles its own press: resize/rotate handles &
       // selection boxes (sel layer) and draggable ruler guides.
       if (t.closest('.pf-sel-layer') || t.closest('.pf-user-guide') || t.closest('.pf-guide')) return;
-      if (t.closest('.pf-node')) return; // free element: its own handler selects/drags it
+      const additive = e.shiftKey || e.ctrlKey || e.metaKey;
+      const nodeEl = t.closest('.pf-node');
+      if (nodeEl) {
+        // Plain press on a free object drags it (its own handler). A modifier
+        // press instead starts an additive rubber-band — so you can lasso more
+        // objects even when the press lands on top of one — and a modifier click
+        // with no drag adds that object to the selection.
+        if (!additive) return;
+        e.stopPropagation();
+        startMarquee(e, true, nodeEl._ref);
+        return;
+      }
       const pieceNode = t.closest('.pf-piece');
       const pieceRef = pieceNode ? pieceNode._ref : null;
-      if (pieceRef && isSel(pieceRef)) return; // already selected → let it drag
+      if (pieceRef && isSel(pieceRef) && !additive) return; // already selected → let it drag
       e.stopPropagation(); // suppress the piece's own select/drag
-      startMarquee(e, e.shiftKey, pieceRef);
+      startMarquee(e, additive, pieceRef);
     }, true);
     el.stageInner.addEventListener('contextmenu', (e) => {
       const t = e.target.closest ? e.target.closest('.pf-piece, .pf-node') : null;
