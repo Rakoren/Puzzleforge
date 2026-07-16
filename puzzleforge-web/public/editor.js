@@ -400,7 +400,7 @@
       else if (act === 'addv') addGuide('v');
       else if (act === 'clear') clearGuides();
     } else if (dropId === 'marginsDrop') {
-      setMargins(act);
+      if (act === 'fit') fitToMargins(false); else setMargins(act);
     } else if (dropId === 'bgDrop') {
       setBgType(act);
     } else if (dropId === 'fmtArrangeDrop') {
@@ -2454,6 +2454,35 @@
     applyMarginGuide();
     setStatus(`Margin guide set to ${(marginInset / PX_PER_IN).toFixed(2)}″.`, 'ok');
   }
+  // Reposition (and, if needed, scale) items so they sit inside the current
+  // margin box — the pink guide when it's on, else the whole usable page. The
+  // group's relative layout and aspect ratio are preserved; it's re-centred in
+  // the box. `selOnly` fits just the current selection; otherwise the whole
+  // page. Pinned pieces (grid) and free objects move together.
+  function fitToMargins(selOnly) {
+    const inset = (el.marginGuide && el.marginGuide.checked) ? marginInset : 0;
+    const tx = inset, ty = inset, tw = dims.usableWidth - inset * 2, th = dims.usableHeight - inset * 2;
+    if (tw <= 4 || th <= 4) { setStatus('Margins leave no room to fit into.', 'err'); return; }
+    let refs = (selOnly && sels.length ? sels.slice() : allRefs())
+      .filter((r) => r._node && !r.locked && !(r.group === 'piece' && r.hidden));
+    if (!refs.length) { setStatus(selOnly ? 'Select objects to fit.' : 'Nothing on this page to fit.', ''); return; }
+    // Combined bounding box in page coordinates.
+    const bs = refs.map((r) => ({ r, b: box(r) }));
+    const gx = Math.min(...bs.map((o) => o.b.x)), gy = Math.min(...bs.map((o) => o.b.y));
+    const gw = Math.max(...bs.map((o) => o.b.x + o.b.w)) - gx;
+    const gh = Math.max(...bs.map((o) => o.b.y + o.b.h)) - gy;
+    if (gw <= 0 || gh <= 0) return;
+    const s = Math.min(tw / gw, th / gh);        // scale to fit (shrinks or grows)
+    const ox = tx + (tw - gw * s) / 2, oy = ty + (th - gh * s) / 2; // centre in box
+    pushUndo();
+    bs.forEach(({ r, b }) => {
+      setScale(r, num(r.scale, 1) * s);
+      moveTo(r, Math.round(ox + (b.x - gx) * s), Math.round(oy + (b.y - gy) * s));
+    });
+    drawSel();
+    const pct = Math.round(s * 100);
+    setStatus(`Fit ${selOnly ? 'selection' : 'page'} within the margins${pct !== 100 ? ` (scaled to ${pct}%)` : ''}.`, 'ok');
+  }
   function applyShapeProp(prop, val) { const o = sels.length === 1 && sels[0]; if (!o || o.kind !== 'shape') return; o[prop] = val; o._node.innerHTML = elHtml(o); drawSel(); }
   // W/H from the measure panel: intrinsic size per kind.
   function setElSize(prop, val) {
@@ -2529,6 +2558,13 @@
     if (one) items.push({ label: one.locked ? 'Unlock' : 'Lock', fn: toggleLock });
     if (one && one.group === 'piece') items.push({ label: 'Hide piece', fn: hideComp });
     if (canBreakApart()) { if (items.length && items[items.length - 1] !== '-') items.push('-'); items.push({ label: '✂ Break apart puzzle', fn: breakApartPuzzle }); }
+    // Fit-to-margins: pull the page's items (or just the selection) inside the
+    // current margin box. Available whenever the page has something to arrange.
+    if (!masterMode && allRefs().some((r) => r._node && !r.locked)) {
+      if (items.length && items[items.length - 1] !== '-') items.push('-');
+      if (sels.length) items.push({ label: '⤢ Fit selection to margins', fn: () => fitToMargins(true) });
+      items.push({ label: '⤢ Fit page to margins', fn: () => fitToMargins(false) });
+    }
     if (!items.length) return;
     ctxEl = document.createElement('div'); ctxEl.className = 'pf-ctx';
     items.forEach((it) => {
