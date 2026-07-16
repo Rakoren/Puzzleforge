@@ -1078,6 +1078,14 @@
     // Content: measure flow bases (no transform yet). Matter: bases already set.
     requestAnimationFrame(() => {
       if (!matter) measureBases(pm);
+      // A piece pinned during break-apart keeps its original page position even
+      // after its siblings are hidden (which would otherwise let it reflow up).
+      // Convert the pin to a one-time dx/dy delta against the fresh flow base.
+      pm.comps.forEach((c) => {
+        if (!c._pin) return;
+        c.dx = num(c._pinX, c.baseX) - c.baseX; c.dy = num(c._pinY, c.baseY) - c.baseY;
+        delete c._pin; delete c._pinX; delete c._pinY;
+      });
       pm.comps.forEach(applyPieceTf);
       // Auto-break imported puzzle pages once, after the pieces are measured
       // (break-apart needs their on-screen geometry). breakApartPuzzle re-renders.
@@ -1516,6 +1524,14 @@
     if (!canBreakApart()) { if (!silent) setStatus('Open a puzzle page with a title or word list to break apart.', 'err'); return; }
     const targets = pm.comps.filter((c) => !c.hidden && BREAKABLE.includes(c.kind));
     pushUndo();
+    // Pin every piece that will REMAIN visible (the grid) to where it sits now.
+    // Once the title/instructions/word-list pieces are hidden they leave the
+    // flow, so an un-pinned grid would slide up and overlap the new text
+    // objects; the pin (applied on the next render) holds it in place.
+    pm.comps.forEach((c) => {
+      if (c.hidden || BREAKABLE.includes(c.kind)) return;
+      const b = box(c); c._pin = true; c._pinX = b.x; c._pinY = b.y;
+    });
     let made = 0;
     targets.forEach((c) => {
       // Word list → editable multi-column table; everything else → text.
