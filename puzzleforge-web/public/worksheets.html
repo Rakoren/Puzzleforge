@@ -72,6 +72,17 @@
 
       <!-- ============ LESSON PACKET ============ -->
       <div id="packetView" class="hidden">
+        <div class="pk-autoplan">
+          <h2 style="margin-top:0;">✨ Auto lesson plan <span class="tool-desc">fills everything below</span></h2>
+          <p class="hint">Pick a grade and how many puzzles. PuzzleForge chooses a grade-appropriate puzzle mix and difficulty, then fills the cover title, objective, and Common Core standards — edit anything afterward.</p>
+          <div class="row">
+            <label class="field"><span>Grade</span><select id="pkGrade"></select></label>
+            <label class="field"><span>How many puzzles</span><input id="pkCount" type="number" min="1" max="20" value="4"></label>
+          </div>
+          <p class="hint" id="pkStandardsHint"></p>
+          <div class="actions"><button id="pkBuildPlan" class="primary" type="button">✨ Build plan from grade</button></div>
+        </div>
+
         <h2>1 · Cover</h2>
         <div class="pf-checks">
           <label class="checkbox"><input type="checkbox" id="pkCover" checked> Include a cover page</label>

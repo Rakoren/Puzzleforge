@@ -130,7 +130,9 @@
     theme: $('pkTheme'), audience: $('pkAudience'), trim: $('pkTrim'), rows: $('pkRows'), addRow: $('pkAddRow'),
     summary: $('pkSummary'), answers: $('pkAnswers'), headerClass: $('pkHeaderClass'), footer: $('pkFooter'),
     pdf: $('pkPdf'), status: $('pkStatus'),
+    grade: $('pkGrade'), count: $('pkCount'), buildPlan: $('pkBuildPlan'), standardsHint: $('pkStandardsHint'),
   };
+  let grades = [];
   let packetRows = [];
   function renderPacketRows() {
     pk.rows.innerHTML = '';
@@ -218,6 +220,50 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
 
+  // ---------------- auto lesson plan ----------------
+  // The topic for the plan = the selected theme's readable label.
+  function selectedThemeLabel() {
+    const v = pk.theme.value || '';
+    if (v.startsWith('cat:')) return v.slice(4);
+    const t = ((meta && meta.themes) || []).find((x) => x.id === v);
+    return t ? t.label : (pk.theme.options[pk.theme.selectedIndex] || {}).textContent || 'this unit';
+  }
+  function updateStandardsHint() {
+    const g = grades.find((x) => x.id === pk.grade.value);
+    if (!g) { pk.standardsHint.textContent = ''; return; }
+    const mix = g.mix.map((t) => TYPE_LABELS[t] || t).join(', ');
+    const std = g.standards.length ? g.standards.map((s) => s.code).join(', ') : 'no ELA standards (general audience)';
+    pk.standardsHint.innerHTML = `<b>${g.label}</b> → ${g.audience === 'kids' ? 'Kids' : 'Adult'} difficulty · mix: ${mix}.<br>Standards: ${std}`;
+  }
+  async function buildLessonPlan() {
+    pk.buildPlan.disabled = true;
+    setStatus(pk.status, 'Building plan…', 'busy');
+    try {
+      const res = await fetch('/api/packet/plan', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grade: pk.grade.value, topic: selectedThemeLabel(), count: Number(pk.count.value) || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Plan failed');
+      const plan = data.plan;
+      // Fill the cover + options from the plan.
+      pk.cover.checked = true; pk.contents.checked = true; pk.answers.checked = plan.answers === 'end';
+      pk.title.value = plan.cover.title || '';
+      pk.kicker.value = plan.cover.kicker || '';
+      pk.objective.value = plan.cover.objective || '';
+      pk.standards.value = plan.cover.standards || '';
+      pk.audience.value = plan.audience || 'kids';
+      // Replace the puzzle rows with the planned mix.
+      packetRows = plan.pages.map((p) => ({ type: p.type, difficulty: p.difficulty }));
+      renderPacketRows(); updatePacketSummary();
+      setStatus(pk.status, 'Plan ready — review the cover and puzzles below, then download.', 'ok');
+    } catch (err) {
+      setStatus(pk.status, err.message, 'err');
+    } finally {
+      pk.buildPlan.disabled = false;
+    }
+  }
+
   // ---------------- mode switch ----------------
   function setMode(packet) {
     $('sheetView').classList.toggle('hidden', packet);
@@ -250,6 +296,18 @@
     packetRows = [{ type: (meta.types || ['wordsearch'])[0], difficulty: 1 }, { type: 'wordscramble', difficulty: 2 }];
     renderPacketRows(); updatePacketSummary();
     pk.audience.addEventListener('change', () => { renderPacketRows(); });
+
+    // Curriculum grades → auto lesson plan
+    try {
+      grades = ((await (await fetch('/api/curriculum')).json()).grades) || [];
+      pk.grade.innerHTML = '';
+      grades.forEach((g) => { const o = document.createElement('option'); o.value = g.id; o.textContent = g.label + (g.ages ? ` (ages ${g.ages})` : ''); pk.grade.appendChild(o); });
+      pk.grade.value = '3';
+      updateStandardsHint();
+      pk.grade.addEventListener('change', updateStandardsHint);
+      pk.theme.addEventListener('change', updateStandardsHint);
+      pk.buildPlan.addEventListener('click', buildLessonPlan);
+    } catch (_) { /* curriculum optional */ }
     pk.addRow.addEventListener('click', () => { packetRows.push({ type: (meta.types || ['wordsearch'])[0], difficulty: 1 }); renderPacketRows(); updatePacketSummary(); });
     [pk.cover, pk.contents, pk.answers].forEach((n) => n.addEventListener('change', updatePacketSummary));
     pk.pdf.addEventListener('click', downloadPacket);

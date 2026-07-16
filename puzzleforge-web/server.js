@@ -391,6 +391,22 @@ app.post('/api/packet/pdf', async (req, res) => {
   }
 });
 
+// Curriculum grade presets (grade → difficulty, standards, puzzle mix).
+app.get('/api/curriculum', (req, res) => {
+  res.json({ grades: pf.listGrades() });
+});
+
+// Auto lesson-plan: grade + topic (+ count) → a packet config the Worksheets
+// page loads into its form (the teacher can then tweak and download).
+app.post('/api/packet/plan', (req, res) => {
+  const body = req.body || {};
+  try {
+    res.json({ plan: pf.planLessonPacket({ grade: body.grade, topic: body.topic, count: body.count }) });
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
 // --- Book builder ---
 
 const bookCache = new Map();

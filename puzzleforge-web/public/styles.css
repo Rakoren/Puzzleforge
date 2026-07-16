@@ -295,6 +295,9 @@ button:disabled { background: var(--nf-neutral-100); color: var(--nf-neutral-400
 .banner code { background: #ffedd5; padding: 1px 5px; border-radius: 5px; }
 
 /* Worksheets & lesson packets */
+.pk-autoplan { background: var(--hover-bg); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
+.pk-autoplan h2 { border: 0; padding: 0; }
+#pkStandardsHint { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.5; }
 .ws-preview-frame { border: 1px solid var(--line); border-radius: 10px; overflow: auto; background: #fff; }
 .ws-preview-frame.hidden { display: none; }
 .ws-preview-scale { transform-origin: top left; }

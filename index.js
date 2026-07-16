@@ -29,6 +29,7 @@ const {
   renderMatterDoc,
 } = require('./engine/export');
 const { renderPacketCoverHtml, assemblePacketHtml } = require('./engine/worksheet');
+const { listGrades, gradeInfo, planLessonPacket } = require('./engine/curriculum');
 const { getLayout, listTrimSizes } = require('./layouts');
 const {
   loadTheme,
@@ -77,6 +78,10 @@ module.exports = {
   // Classroom worksheets + lesson packets
   renderPacketCoverHtml,
   assemblePacketHtml,
+  // Curriculum presets + auto lesson-plan
+  listGrades,
+  gradeInfo,
+  planLessonPacket,
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,
