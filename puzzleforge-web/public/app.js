@@ -474,6 +474,8 @@
       brainteasers: 'Brain Teasers',
       mathpuzzles: 'Math Puzzles',
       xsudoku: 'X-Sudoku',
+      minisudoku: 'Mini Sudoku',
+      evenodd: 'Even-Odd Sudoku',
       logicgrid: 'Logic Grid',
       wordladder: 'Word Ladder',
       wordwheel: 'Word Wheel',

@@ -117,6 +117,22 @@ const xsudoku = {
   render: require('./xsudoku/renderer').render,
 };
 
+const minisudoku = {
+  type: 'minisudoku',
+  generate: require('./minisudoku').generate,
+  validate: require('./minisudoku/validator').validate,
+  solve: require('./minisudoku/solver').solve,
+  render: require('./minisudoku/renderer').render,
+};
+
+const evenodd = {
+  type: 'evenodd',
+  generate: require('./evenodd').generate,
+  validate: require('./evenodd/validator').validate,
+  solve: require('./evenodd/solver').solve,
+  render: require('./evenodd/renderer').render,
+};
+
 const logicgrid = {
   type: 'logicgrid',
   generate: require('./logicgrid').generate,
@@ -197,6 +213,8 @@ const MODULES = {
   brainteasers,
   mathpuzzles,
   xsudoku,
+  minisudoku,
+  evenodd,
   logicgrid,
   wordladder,
   wordwheel,

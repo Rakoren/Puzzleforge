@@ -36,6 +36,8 @@ const ACCEPT_THRESHOLDS = {
   brainteasers: 0.9,
   mathpuzzles: 0.9,
   xsudoku: 0.85,
+  minisudoku: 0.85,
+  evenodd: 0.85,
 };
 
 // Per-type difficulty presets. Each generator interprets these.
@@ -126,6 +128,21 @@ const DIFFICULTY = {
     2: { givens: 34 },
     3: { givens: 30 },
     4: { givens: 26 },
+  },
+  // Mini Sudoku (6×6) — fewer givens as the level rises. 36 cells total.
+  minisudoku: {
+    1: { givens: 20 },
+    2: { givens: 16 },
+    3: { givens: 13 },
+    4: { givens: 11 },
+  },
+  // Even-Odd Sudoku (9×9) — the parity shading is extra help, so it can start
+  // with fewer givens than plain sudoku at the same tier.
+  evenodd: {
+    1: { givens: 34 },
+    2: { givens: 30 },
+    3: { givens: 26 },
+    4: { givens: 22 },
   },
   // Logic Grid: `items` is the grid size (people & values per category), `cats`
   // the number of categories (incl. the primary), `ordinal` allows one numeric
@@ -245,6 +262,20 @@ const KIDS_DIFFICULTY = {
     2: { givens: 42 },
     3: { givens: 38 },
     4: { givens: 34 },
+  },
+  // Kids Mini Sudoku keeps plenty of givens (gentler than the adult ladder).
+  minisudoku: {
+    1: { givens: 26 },
+    2: { givens: 23 },
+    3: { givens: 20 },
+    4: { givens: 17 },
+  },
+  // Kids Even-Odd Sudoku keeps plenty of givens.
+  evenodd: {
+    1: { givens: 42 },
+    2: { givens: 38 },
+    3: { givens: 34 },
+    4: { givens: 30 },
   },
   logicgrid: {
     1: { items: 4, cats: 3, ordinal: false, style: 'positive' },
