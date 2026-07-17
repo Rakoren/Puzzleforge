@@ -20,7 +20,9 @@ test('number search and trivia are registered (ten puzzle types + activity pages
   assert.ok(types.includes('wordladder'));
   assert.ok(types.includes('wordwheel'));
   assert.ok(types.includes('cipher'));
-  assert.equal(types.length, 18);
+  assert.ok(types.includes('riddles'));
+  assert.ok(types.includes('brainteasers'));
+  assert.equal(types.length, 20);
 });
 
 // --- Number Search ---

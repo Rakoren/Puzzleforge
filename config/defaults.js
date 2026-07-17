@@ -32,6 +32,8 @@ const ACCEPT_THRESHOLDS = {
   nonogram: 0.85,
   numbersearch: 0.85,
   trivia: 0.9,
+  riddles: 0.9,
+  brainteasers: 0.9,
 };
 
 // Per-type difficulty presets. Each generator interprets these.
@@ -93,6 +95,20 @@ const DIFFICULTY = {
     2: { count: 12, maxDifficulty: 2 },
     3: { count: 14, maxDifficulty: 3 },
     4: { count: 16, maxDifficulty: 3 },
+  },
+  // Riddles / brain teasers are longer to read, so fewer fit on a page than a
+  // trivia sheet; higher levels pull the trickier items.
+  riddles: {
+    1: { count: 6, maxDifficulty: 1 },
+    2: { count: 7, maxDifficulty: 2 },
+    3: { count: 8, maxDifficulty: 3 },
+    4: { count: 9, maxDifficulty: 4 },
+  },
+  brainteasers: {
+    1: { count: 6, maxDifficulty: 1 },
+    2: { count: 7, maxDifficulty: 2 },
+    3: { count: 8, maxDifficulty: 3 },
+    4: { count: 8, maxDifficulty: 4 },
   },
   // Logic Grid: `items` is the grid size (people & values per category), `cats`
   // the number of categories (incl. the primary), `ordinal` allows one numeric
@@ -184,6 +200,19 @@ const KIDS_DIFFICULTY = {
     2: { count: 10, maxDifficulty: 1 },
     3: { count: 10, maxDifficulty: 2 },
     4: { count: 12, maxDifficulty: 2 },
+  },
+  // Kids stay in the easier riddle/teaser tiers (never the tricky level-4 ones).
+  riddles: {
+    1: { count: 5, maxDifficulty: 1 },
+    2: { count: 6, maxDifficulty: 2 },
+    3: { count: 6, maxDifficulty: 2 },
+    4: { count: 7, maxDifficulty: 3 },
+  },
+  brainteasers: {
+    1: { count: 5, maxDifficulty: 1 },
+    2: { count: 6, maxDifficulty: 2 },
+    3: { count: 6, maxDifficulty: 2 },
+    4: { count: 7, maxDifficulty: 3 },
   },
   logicgrid: {
     1: { items: 4, cats: 3, ordinal: false, style: 'positive' },

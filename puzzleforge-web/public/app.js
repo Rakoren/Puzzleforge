@@ -470,6 +470,8 @@
       nonogram: 'Nonogram',
       numbersearch: 'Number Search',
       trivia: 'Trivia Quiz',
+      riddles: 'Riddles',
+      brainteasers: 'Brain Teasers',
       logicgrid: 'Logic Grid',
       wordladder: 'Word Ladder',
       wordwheel: 'Word Wheel',

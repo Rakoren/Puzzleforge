@@ -295,8 +295,8 @@ const TYPE_LABELS = {
   wordsearch: 'Word Search', numbersearch: 'Number Search', crossword: 'Crossword',
   krisskross: 'Kriss-Kross', wordscramble: 'Word Scramble', sudoku: 'Sudoku', maze: 'Maze',
   cryptogram: 'Cryptogram', nonogram: 'Nonogram', trivia: 'Trivia', logicgrid: 'Logic Grid',
-  wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', coloring: 'Coloring',
-  drawing: 'Drawing',
+  wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', riddles: 'Riddles',
+  brainteasers: 'Brain Teasers', coloring: 'Coloring', drawing: 'Drawing',
 };
 const typeLabel = (t) => TYPE_LABELS[t] || String(t || '').replace(/\b\w/g, (c) => c.toUpperCase());
 function diffLabel(d, audience) {

@@ -85,6 +85,22 @@ const trivia = {
   render: require('./trivia/renderer').render,
 };
 
+const riddles = {
+  type: 'riddles',
+  generate: require('./riddles').generate,
+  validate: require('./riddles/validator').validate,
+  solve: require('./riddles/solver').solve,
+  render: require('./riddles/renderer').render,
+};
+
+const brainteasers = {
+  type: 'brainteasers',
+  generate: require('./brainteasers').generate,
+  validate: require('./brainteasers/validator').validate,
+  solve: require('./brainteasers/solver').solve,
+  render: require('./brainteasers/renderer').render,
+};
+
 const logicgrid = {
   type: 'logicgrid',
   generate: require('./logicgrid').generate,
@@ -161,6 +177,8 @@ const MODULES = {
   nonogram,
   numbersearch,
   trivia,
+  riddles,
+  brainteasers,
   logicgrid,
   wordladder,
   wordwheel,

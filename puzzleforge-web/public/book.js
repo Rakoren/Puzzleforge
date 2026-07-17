@@ -80,7 +80,7 @@
   const TYPE_NAMES = {
     wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku',
     maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble',
-    crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz', logicgrid: 'Logic Grid', wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher',
+    crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz', riddles: 'Riddles', brainteasers: 'Brain Teasers', logicgrid: 'Logic Grid', wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher',
     coloring: 'Coloring Page', drawing: 'Drawing Page', bleedguard: 'Blank (bleed guard)',
   };
   // Per-row difficulty options, labelled for the book's audience (Kids show the
