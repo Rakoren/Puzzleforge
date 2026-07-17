@@ -60,12 +60,12 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (164 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (172 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Sixteen puzzle types**, each with Golden Standards validation and an
+- **Eighteen puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
   - **Word Search** — direction mix and word separation by difficulty
     (easy: words fully isolated; medium: no crossings; hard: dense crossings)
@@ -82,6 +82,8 @@ Implemented so far:
   - **Riddles** — family-friendly "what am I?" riddles with an answer key
   - **Brain Teasers** — logic / math / word / lateral teasers tagged by kind,
     with an explained answer key
+  - **Math Puzzles** — self-checking missing-number equations + number sequences
+  - **X-Sudoku** — diagonal sudoku (both diagonals also hold 1–9), unique solution
   - **Logic Grid** — deduction puzzle; a constraint solver proves each clue set
     has exactly one solution, with natural-language clues
   - **Word Ladder** — change one letter at a time (start → end); built on a
@@ -127,10 +129,9 @@ Implemented so far:
   Standards-tagged **curriculum word banks** (Dolch sight words/nouns, number
   words) are selectable everywhere themes are.
 
-Not yet built (later phases): more Tier 3 puzzle types (Riddles, Brain Teasers, …),
-book-level digital-layer analytics (needs a backend), and curriculum extras
-(standards-aligned word-list presets, auto lesson-plan mode). See
-[`PRD.md`](./PRD.md) for the full roadmap.
+Not yet built (later phases): more Tier 3–4 puzzle types (Kakuro, Spot-the-Difference,
+more sudoku variants) and book-level digital-layer analytics (needs a backend).
+See [`PRD.md`](./PRD.md) for the full roadmap.
 
 ## Architecture
 

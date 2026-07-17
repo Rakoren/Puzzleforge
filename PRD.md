@@ -42,9 +42,9 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (164 tests passing)
+### Engine (172 tests passing)
 
-**16 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
+**18 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
 | Puzzle Type | Status |
 |---|---|
@@ -60,6 +60,8 @@ Planned split (future):
 | Trivia / Quiz | ✅ Complete |
 | Riddles | ✅ Complete — family-friendly "what am I?" bank, 4 tiers, answer key |
 | Brain Teasers | ✅ Complete — logic/math/word/lateral bank tagged by kind, explained answer key |
+| Math Puzzles | ✅ Complete — self-checking missing-number equations + number sequences |
+| X-Sudoku | ✅ Complete — diagonal sudoku, unique-solution guaranteed (diagonal-aware solver) |
 | Logic Grid | ✅ Complete — constraint-solver-proven unique solutions, natural-language clues (Tier 2 now 12/12) |
 | Word Ladder | ✅ Complete — common-word graph, minimal-hint unique solutions (Tier 3 started) |
 | Word Wheel | ✅ Complete — 9-letter source, baked common-word dictionary, full findable-word key |
@@ -234,9 +236,11 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 | Cipher / Code Puzzles | ✅ |
 | Riddles | ✅ Shipped — family-friendly "what am I?" bank, 4 tiers, answer key |
 | Brain Teasers | ✅ Shipped — logic/math/word/lateral bank tagged by kind, 4 tiers, explained answer key |
-| Spot the Difference | 🔲 Roadmap |
-| Sudoku Variants | 🔲 Roadmap |
-| Math Puzzles | 🔲 Roadmap |
+| Math Puzzles | ✅ Shipped — self-checking missing-number equations + number sequences, 4 tiers |
+| Sudoku Variants (X-Sudoku) | ✅ Shipped — diagonal sudoku, unique-solution guaranteed, shaded diagonals |
+| Spot the Difference | 🔲 Roadmap — needs original artwork |
+| Kakuro | 🔲 Roadmap — needs a unique-solution cross-sum generator |
+| Sudoku Variants (6×6, Killer, …) | 🔲 Roadmap |
 
 ### Tier 4 — Stretch Goals
 | Type | Status |
