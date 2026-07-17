@@ -121,6 +121,8 @@ Implemented so far:
   list) + several worksheets + an answer-key section — into one PDF. An **auto
   lesson-plan** mode turns a grade (K–6) + topic into a ready packet, aligned to
   the Common Core ELA vocabulary/phonics standards a word puzzle supports.
+  Standards-tagged **curriculum word banks** (Dolch sight words/nouns, number
+  words) are selectable everywhere themes are.
 
 Not yet built (later phases): more Tier 3 puzzle types (Riddles, Brain Teasers, …),
 book-level digital-layer analytics (needs a backend), and curriculum extras

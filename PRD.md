@@ -123,6 +123,7 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 - **Manual theme builder** and **Manage themes** — build a four-tier theme by hand (with an audience), re-run the filter over a saved theme ("Clean"), or delete it
 - **Tag filter / search** on theme pickers
 - **Whole-category selection** — e.g. "All Animals & Nature" merges animals + ocean + weather into one pool
+- **Per-standard curriculum word banks** — puzzle-friendly, standards-tagged vocabulary sets (Dolch Sight-Word Nouns, Dolch Sight Words, Number Words) in a "Curriculum & Sight Words" category. Each theme carries a `standard` (CCSS code) that shows in the pickers and prefills worksheet/packet covers. Being ordinary themes, they flow through every puzzle type, book assembly, and the worksheet/packet tools.
 - **Mixed themes** fully supported — generator receives a merged word pool
 - Theme files carry curated/AI **fun facts** used by breather pages
 
@@ -522,7 +523,7 @@ Tooltip copy should be written for every control before the teacher tool goes pu
 | Common Core standards alignment | ✅ Shipped — grade presets map to the CCSS ELA vocabulary (L.x.4/L.x.5) + K–5 phonics (RF.x.3) standards a word puzzle supports; codes print on the packet cover |
 | Curriculum grade presets | ✅ Shipped — `engine/curriculum.js`: grade (K–6 / adults) → difficulty, audience, puzzle mix, standards, objective |
 | Auto lesson-plan mode (grade + topic → packet) | ✅ Shipped — "Build plan from grade" fills the whole packet (rows + cover + objective + standards); editable before download |
-| Curriculum word-list presets (standard-specific vocabulary) | 🔲 Phase 11 — today the grade preset sets tier/difficulty on your chosen theme; per-standard word banks still to come |
+| Per-standard word banks (standard-specific vocabulary) | ✅ Shipped — Dolch Sight-Word Nouns (RF.K.3), Dolch Sight Words (RF.1.3), Number Words (K.CC.A.3) under a "Curriculum & Sight Words" category; the standard shows in every picker and prefills the packet cover |
 | Puzzle packs by subject (pre-built curriculum sets) | 🔲 Phase 11 |
 | Puzzle of the week (public free weekly puzzle) | 🔲 Phase 11 |
 | Email subscribe for weekly puzzle | 🔲 Phase 11 |
