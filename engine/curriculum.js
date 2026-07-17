@@ -33,7 +33,7 @@ const GRADES = [
 
 const TYPE_LABELS = {
   wordsearch: 'Word Search', wordscramble: 'Word Scramble', crossword: 'Crossword',
-  krisskross: 'Kriss-Kross', cryptogram: 'Cryptogram', numbersearch: 'Number Search', riddles: 'Riddles', brainteasers: 'Brain Teasers',
+  krisskross: 'Kriss-Kross', cryptogram: 'Cryptogram', numbersearch: 'Number Search', riddles: 'Riddles', brainteasers: 'Brain Teasers', mathpuzzles: 'Math Puzzles', xsudoku: 'X-Sudoku',
 };
 const typeLabel = (t) => TYPE_LABELS[t] || String(t).replace(/\b\w/g, (c) => c.toUpperCase());
 

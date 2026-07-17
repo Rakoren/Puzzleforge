@@ -34,6 +34,8 @@ const ACCEPT_THRESHOLDS = {
   trivia: 0.9,
   riddles: 0.9,
   brainteasers: 0.9,
+  mathpuzzles: 0.9,
+  xsudoku: 0.85,
 };
 
 // Per-type difficulty presets. Each generator interprets these.
@@ -109,6 +111,21 @@ const DIFFICULTY = {
     2: { count: 7, maxDifficulty: 2 },
     3: { count: 8, maxDifficulty: 3 },
     4: { count: 8, maxDifficulty: 4 },
+  },
+  // Math puzzles — operations widen and numbers grow with level; sequence
+  // puzzles join at the harder tiers.
+  mathpuzzles: {
+    1: { count: 12, maxA: 10, maxFactor: 5, ops: ['+', '−'], blankFirst: false, seq: 0, maxStep: 5, seqBlanks: 1 },
+    2: { count: 14, maxA: 20, maxFactor: 6, ops: ['+', '−'], blankFirst: true, seq: 2, maxStep: 6, seqBlanks: 1 },
+    3: { count: 15, maxA: 25, maxFactor: 9, ops: ['+', '−', '×'], blankFirst: true, seq: 3, maxStep: 8, seqBlanks: 1 },
+    4: { count: 16, maxA: 30, maxFactor: 12, ops: ['+', '−', '×', '÷'], blankFirst: true, seq: 4, maxStep: 10, seqBlanks: 2 },
+  },
+  // X-Sudoku (diagonal sudoku) — fewer givens (harder) as the level rises.
+  xsudoku: {
+    1: { givens: 40 },
+    2: { givens: 34 },
+    3: { givens: 30 },
+    4: { givens: 26 },
   },
   // Logic Grid: `items` is the grid size (people & values per category), `cats`
   // the number of categories (incl. the primary), `ordinal` allows one numeric
@@ -213,6 +230,21 @@ const KIDS_DIFFICULTY = {
     2: { count: 6, maxDifficulty: 2 },
     3: { count: 6, maxDifficulty: 2 },
     4: { count: 7, maxDifficulty: 3 },
+  },
+  // Kids math stays with addition/subtraction longer; times tables arrive at the
+  // top tiers, and numbers stay small.
+  mathpuzzles: {
+    1: { count: 10, maxA: 10, maxFactor: 5, ops: ['+', '−'], blankFirst: false, seq: 0, maxStep: 5, seqBlanks: 1 },
+    2: { count: 12, maxA: 12, maxFactor: 5, ops: ['+', '−'], blankFirst: false, seq: 1, maxStep: 5, seqBlanks: 1 },
+    3: { count: 12, maxA: 20, maxFactor: 6, ops: ['+', '−', '×'], blankFirst: true, seq: 2, maxStep: 6, seqBlanks: 1 },
+    4: { count: 14, maxA: 20, maxFactor: 9, ops: ['+', '−', '×'], blankFirst: true, seq: 3, maxStep: 8, seqBlanks: 1 },
+  },
+  // Kids X-Sudoku keeps plenty of givens (gentler than the adult ladder).
+  xsudoku: {
+    1: { givens: 46 },
+    2: { givens: 42 },
+    3: { givens: 38 },
+    4: { givens: 34 },
   },
   logicgrid: {
     1: { items: 4, cats: 3, ordinal: false, style: 'positive' },

@@ -22,7 +22,9 @@ test('number search and trivia are registered (ten puzzle types + activity pages
   assert.ok(types.includes('cipher'));
   assert.ok(types.includes('riddles'));
   assert.ok(types.includes('brainteasers'));
-  assert.equal(types.length, 20);
+  assert.ok(types.includes('mathpuzzles'));
+  assert.ok(types.includes('xsudoku'));
+  assert.equal(types.length, 22);
 });
 
 // --- Number Search ---

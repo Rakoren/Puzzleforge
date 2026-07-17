@@ -472,6 +472,8 @@
       trivia: 'Trivia Quiz',
       riddles: 'Riddles',
       brainteasers: 'Brain Teasers',
+      mathpuzzles: 'Math Puzzles',
+      xsudoku: 'X-Sudoku',
       logicgrid: 'Logic Grid',
       wordladder: 'Word Ladder',
       wordwheel: 'Word Wheel',

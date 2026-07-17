@@ -101,6 +101,22 @@ const brainteasers = {
   render: require('./brainteasers/renderer').render,
 };
 
+const mathpuzzles = {
+  type: 'mathpuzzles',
+  generate: require('./mathpuzzles').generate,
+  validate: require('./mathpuzzles/validator').validate,
+  solve: require('./mathpuzzles/solver').solve,
+  render: require('./mathpuzzles/renderer').render,
+};
+
+const xsudoku = {
+  type: 'xsudoku',
+  generate: require('./xsudoku').generate,
+  validate: require('./xsudoku/validator').validate,
+  solve: require('./xsudoku/solver').solve,
+  render: require('./xsudoku/renderer').render,
+};
+
 const logicgrid = {
   type: 'logicgrid',
   generate: require('./logicgrid').generate,
@@ -179,6 +195,8 @@ const MODULES = {
   trivia,
   riddles,
   brainteasers,
+  mathpuzzles,
+  xsudoku,
   logicgrid,
   wordladder,
   wordwheel,
