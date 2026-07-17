@@ -42,9 +42,9 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (143 tests passing)
+### Engine (164 tests passing)
 
-**14 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
+**16 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
 | Puzzle Type | Status |
 |---|---|
@@ -58,6 +58,8 @@ Planned split (future):
 | Kriss-Kross | ✅ Complete |
 | Nonogram | ✅ Complete |
 | Trivia / Quiz | ✅ Complete |
+| Riddles | ✅ Complete — family-friendly "what am I?" bank, 4 tiers, answer key |
+| Brain Teasers | ✅ Complete — logic/math/word/lateral bank tagged by kind, explained answer key |
 | Logic Grid | ✅ Complete — constraint-solver-proven unique solutions, natural-language clues (Tier 2 now 12/12) |
 | Word Ladder | ✅ Complete — common-word graph, minimal-hint unique solutions (Tier 3 started) |
 | Word Wheel | ✅ Complete — 9-letter source, baked common-word dictionary, full findable-word key |
@@ -230,11 +232,11 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 | Word Ladder | ✅ |
 | Word Wheel | ✅ |
 | Cipher / Code Puzzles | ✅ |
+| Riddles | ✅ Shipped — family-friendly "what am I?" bank, 4 tiers, answer key |
+| Brain Teasers | ✅ Shipped — logic/math/word/lateral bank tagged by kind, 4 tiers, explained answer key |
 | Spot the Difference | 🔲 Roadmap |
 | Sudoku Variants | 🔲 Roadmap |
 | Math Puzzles | 🔲 Roadmap |
-| Riddles | 🔲 Roadmap |
-| Brain Teasers | 🔲 Roadmap |
 
 ### Tier 4 — Stretch Goals
 | Type | Status |

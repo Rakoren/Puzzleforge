@@ -60,12 +60,12 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (153 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (164 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Fourteen puzzle types**, each with Golden Standards validation and an
+- **Sixteen puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
   - **Word Search** — direction mix and word separation by difficulty
     (easy: words fully isolated; medium: no crossings; hard: dense crossings)
@@ -79,6 +79,9 @@ Implemented so far:
   - **Number Search** — hidden number sequences in a digit grid (shares the
     word-search core)
   - **Trivia** — numbered quiz questions with an answer key
+  - **Riddles** — family-friendly "what am I?" riddles with an answer key
+  - **Brain Teasers** — logic / math / word / lateral teasers tagged by kind,
+    with an explained answer key
   - **Logic Grid** — deduction puzzle; a constraint solver proves each clue set
     has exactly one solution, with natural-language clues
   - **Word Ladder** — change one letter at a time (start → end); built on a
