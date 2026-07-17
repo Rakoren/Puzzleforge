@@ -42,9 +42,9 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (172 tests passing)
+### Engine (180 tests passing)
 
-**18 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
+**20 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
 | Puzzle Type | Status |
 |---|---|
@@ -62,6 +62,8 @@ Planned split (future):
 | Brain Teasers | ✅ Complete — logic/math/word/lateral bank tagged by kind, explained answer key |
 | Math Puzzles | ✅ Complete — self-checking missing-number equations + number sequences |
 | X-Sudoku | ✅ Complete — diagonal sudoku, unique-solution guaranteed (diagonal-aware solver) |
+| Mini Sudoku | ✅ Complete — gentler 6×6 grid, 2×3 boxes, digits 1–6, unique solution |
+| Even-Odd Sudoku | ✅ Complete — 9×9 with parity shading (shaded even / plain odd), constraint enforced during dig |
 | Logic Grid | ✅ Complete — constraint-solver-proven unique solutions, natural-language clues (Tier 2 now 12/12) |
 | Word Ladder | ✅ Complete — common-word graph, minimal-hint unique solutions (Tier 3 started) |
 | Word Wheel | ✅ Complete — 9-letter source, baked common-word dictionary, full findable-word key |
@@ -237,7 +239,7 @@ Internal engine levels are **1–4**, but **kids and adults are two separate lad
 | Riddles | ✅ Shipped — family-friendly "what am I?" bank, 4 tiers, answer key |
 | Brain Teasers | ✅ Shipped — logic/math/word/lateral bank tagged by kind, 4 tiers, explained answer key |
 | Math Puzzles | ✅ Shipped — self-checking missing-number equations + number sequences, 4 tiers |
-| Sudoku Variants (X-Sudoku) | ✅ Shipped — diagonal sudoku, unique-solution guaranteed, shaded diagonals |
+| Sudoku Variants (X-Sudoku, Mini 6×6, Even-Odd) | ✅ Shipped — diagonal, gentler 6×6, and parity-shaded 9×9; all unique-solution guaranteed on a shared engine |
 | Spot the Difference | 🔲 Roadmap — needs original artwork |
 | Kakuro | 🔲 Roadmap — needs a unique-solution cross-sum generator |
 | Sudoku Variants (6×6, Killer, …) | 🔲 Roadmap |
