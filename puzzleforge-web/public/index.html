@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PuzzleForge — Puzzle Maker for Teachers</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -18,7 +20,9 @@
     <nav class="nav">
       <a href="index.html" class="active">Puzzle Maker</a>
       <a href="book.html">Book Builder</a>
-      <a href="themes.html">AI Themes</a>
+      
+      <a href="worksheets.html">Worksheets</a>
+      <a href="themes.html">Themes</a>
       <a href="imagetools.html">Image Tools</a>
       <a href="cover.html">Cover Builder</a>
       <a href="aiart.html">AI Art</a>
@@ -64,7 +68,7 @@
 
       <div class="row">
         <label class="field">
-          <span>Difficulty</span>
+          <span>Difficulty <i class="pf-info" title="Higher = bigger grids, denser layouts, harder words.">i</i></span>
           <select id="difficulty">
             <option value="1">1 — Easy</option>
             <option value="2">2 — Medium</option>
@@ -77,54 +81,36 @@
         </label>
       </div>
 
-      <div class="row">
-        <label class="field">
-          <span>Audience</span>
-          <select id="audience">
-            <option value="kids">Kids</option>
-            <option value="adult">Adult</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Grid size (optional)</span>
-          <input id="size" type="number" min="5" max="30" placeholder="auto">
-        </label>
-      </div>
-
-      <div class="row">
-        <label class="field">
-          <span>Text size</span>
-          <select id="fontScale">
-            <option value="1">Normal</option>
-            <option value="1.25">Large print</option>
-            <option value="1.5">Extra large</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Font</span>
-          <select id="fontFamily">
-            <option value="sans">Sans (Arial)</option>
-            <option value="serif">Serif (Georgia)</option>
-            <option value="rounded">Rounded</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="row">
-        <label class="field">
-          <span>Page border</span>
-          <select id="border"></select>
-        </label>
-        <label class="field">
-          <span>Border color</span>
-          <input id="borderColor" type="color" value="#333333">
-        </label>
-      </div>
-
-      <label class="field">
-        <span>Title (optional)</span>
-        <input id="title" type="text" placeholder="e.g. Animal Word Search">
-      </label>
+      <details class="pf-group">
+        <summary>Appearance &amp; details <span class="sub">audience, size, font, border, title</span></summary>
+        <div class="pf-group-body">
+          <div class="row">
+            <label class="field">
+              <span>Audience <i class="pf-info" title="Kids get gentler difficulty and larger print; Adults get the full range.">i</i></span>
+              <select id="audience"><option value="kids">Kids</option><option value="adult">Adult</option></select>
+            </label>
+            <label class="field">
+              <span>Grid size (optional) <i class="pf-info" title="Force a specific grid size. Leave blank to size it automatically from the difficulty and word list.">i</i></span>
+              <input id="size" type="number" min="5" max="30" placeholder="auto">
+            </label>
+          </div>
+          <div class="row">
+            <label class="field">
+              <span>Text size <i class="pf-info" title="Large / extra-large print for young or low-vision readers.">i</i></span>
+              <select id="fontScale"><option value="1">Normal</option><option value="1.25">Large print</option><option value="1.5">Extra large</option></select>
+            </label>
+            <label class="field">
+              <span>Font</span>
+              <select id="fontFamily"><option value="sans">Sans (Arial)</option><option value="serif">Serif (Georgia)</option><option value="rounded">Rounded</option></select>
+            </label>
+          </div>
+          <div class="row">
+            <label class="field"><span>Page border</span><select id="border"></select></label>
+            <label class="field"><span>Border color</span><input id="borderColor" type="color" value="#333333"></label>
+          </div>
+          <label class="field"><span>Title (optional)</span><input id="title" type="text" placeholder="e.g. Animal Word Search"></label>
+        </div>
+      </details>
 
       <h2>2 · Generate</h2>
       <div class="actions">
@@ -148,33 +134,31 @@
       <p class="hint">A <strong>recipe</strong> saves your settings (words, title, difficulty) so you can
         regenerate or share the puzzle later. The grid re-rolls; your words stay.</p>
 
-      <h2>4 · Teacher tools</h2>
-      <div class="tool">
-        <div class="tool-head">
-          <strong>Differentiation set</strong>
-          <span class="tool-desc">The same puzzle at Easy, Medium &amp; Hard — one PDF.</span>
+      <details class="pf-group">
+        <summary>Teacher tools <span class="sub">differentiation, class sets</span></summary>
+        <div class="pf-group-body">
+          <div class="tool">
+            <div class="tool-head">
+              <strong>Differentiation set</strong>
+              <span class="tool-desc">The same puzzle at Easy, Medium &amp; Hard — one PDF.</span>
+            </div>
+            <button id="diffSet" class="ghost" disabled>Download 3 levels (PDF)</button>
+          </div>
+          <div class="tool">
+            <div class="tool-head">
+              <strong>Class set</strong>
+              <span class="tool-desc">Many re-rolled copies so students can’t copy each other.</span>
+            </div>
+            <div class="actions">
+              <label class="inline">Copies <input id="copies" type="number" min="2" max="30" value="5"></label>
+              <label class="inline">Answers
+                <select id="setAnswers"><option value="none">None</option><option value="end">Key at end</option><option value="each">After each</option></select>
+              </label>
+            </div>
+            <button id="classSet" class="ghost" disabled>Download class set (PDF)</button>
+          </div>
         </div>
-        <button id="diffSet" class="ghost" disabled>Download 3 levels (PDF)</button>
-      </div>
-      <div class="tool">
-        <div class="tool-head">
-          <strong>Class set</strong>
-          <span class="tool-desc">Many re-rolled copies so students can’t copy each other.</span>
-        </div>
-        <div class="actions">
-          <label class="inline">Copies
-            <input id="copies" type="number" min="2" max="30" value="5">
-          </label>
-          <label class="inline">Answers
-            <select id="setAnswers">
-              <option value="none">None</option>
-              <option value="end">Key at end</option>
-              <option value="each">After each</option>
-            </select>
-          </label>
-        </div>
-        <button id="classSet" class="ghost" disabled>Download class set (PDF)</button>
-      </div>
+      </details>
     </section>
 
     <section class="panel preview" aria-label="Preview">
@@ -194,6 +178,7 @@
     </section>
   </main>
 
+  <script src="identity.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

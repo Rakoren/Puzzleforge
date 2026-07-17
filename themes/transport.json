@@ -2,131 +2,495 @@
   "id": "transport",
   "label": "Transport",
   "category": "Everyday Life",
-  "tags": ["transport", "vehicles", "travel"],
+  "tags": [
+    "transport",
+    "vehicles",
+    "travel"
+  ],
+  "audiences": [
+    "kids",
+    "adult"
+  ],
   "tiers": {
     "1": [
-      { "word": "CAR", "clue": "A vehicle with four wheels" },
-      { "word": "BUS", "clue": "A big vehicle that carries many people" },
-      { "word": "VAN", "clue": "A boxy vehicle for carrying goods" },
-      { "word": "JET", "clue": "A fast plane" },
-      { "word": "CAB", "clue": "A car you pay to ride in" },
-      { "word": "BIKE", "clue": "You pedal it to ride" },
-      { "word": "BOAT", "clue": "It floats on the water" },
-      { "word": "SHIP", "clue": "A large boat for the sea" },
-      { "word": "TRAIN", "clue": "It runs along rails" },
-      { "word": "PLANE", "clue": "It flies through the sky" },
-      { "word": "TRUCK", "clue": "A large vehicle for hauling loads" },
-      { "word": "TAXI", "clue": "A car for hire with a driver" },
-      { "word": "SLED", "clue": "It slides over the snow" },
-      { "word": "RAFT", "clue": "A flat floating platform" },
-      { "word": "KART", "clue": "A small low racing vehicle" },
-      { "word": "TRAM", "clue": "A street train on rails" },
-      { "word": "ROAD", "clue": "A path for vehicles to drive on" },
-      { "word": "WHEEL", "clue": "A round part that turns" },
-      { "word": "JEEP", "clue": "A rugged vehicle for rough ground" },
-      { "word": "FERRY", "clue": "A boat that carries people across water" },
-      { "word": "WAGON", "clue": "A cart pulled along" },
-      { "word": "MOPED", "clue": "A small motorbike with pedals" },
-      { "word": "YACHT", "clue": "A sleek pleasure boat" },
-      { "word": "CANOE", "clue": "A light narrow paddled boat" },
-      { "word": "KAYAK", "clue": "A small covered paddled boat" },
-      { "word": "ENGINE", "clue": "It powers a vehicle" },
-      { "word": "PEDAL", "clue": "You push it with your foot" },
-      { "word": "SADDLE", "clue": "A seat on a bike or horse" }
+      {
+        "word": "CAR",
+        "clue": "A vehicle with four wheels"
+      },
+      {
+        "word": "BUS",
+        "clue": "A big vehicle that carries many people"
+      },
+      {
+        "word": "VAN",
+        "clue": "A boxy vehicle for carrying goods"
+      },
+      {
+        "word": "JET",
+        "clue": "A fast plane"
+      },
+      {
+        "word": "CAB",
+        "clue": "A car you pay to ride in"
+      },
+      {
+        "word": "BIKE",
+        "clue": "You pedal it to ride"
+      },
+      {
+        "word": "BOAT",
+        "clue": "It floats on the water"
+      },
+      {
+        "word": "SHIP",
+        "clue": "A large boat for the sea"
+      },
+      {
+        "word": "TRAIN",
+        "clue": "It runs along rails"
+      },
+      {
+        "word": "PLANE",
+        "clue": "It flies through the sky"
+      },
+      {
+        "word": "TRUCK",
+        "clue": "A large vehicle for hauling loads"
+      },
+      {
+        "word": "TAXI",
+        "clue": "A car for hire with a driver"
+      },
+      {
+        "word": "SLED",
+        "clue": "It slides over the snow"
+      },
+      {
+        "word": "RAFT",
+        "clue": "A flat floating platform"
+      },
+      {
+        "word": "KART",
+        "clue": "A small low racing vehicle"
+      },
+      {
+        "word": "TRAM",
+        "clue": "A street train on rails"
+      },
+      {
+        "word": "ROAD",
+        "clue": "A path for vehicles to drive on"
+      },
+      {
+        "word": "WHEEL",
+        "clue": "A round part that turns"
+      },
+      {
+        "word": "JEEP",
+        "clue": "A rugged vehicle for rough ground"
+      },
+      {
+        "word": "FERRY",
+        "clue": "A boat that carries people across water"
+      },
+      {
+        "word": "WAGON",
+        "clue": "A cart pulled along"
+      },
+      {
+        "word": "MOPED",
+        "clue": "A small motorbike with pedals"
+      },
+      {
+        "word": "YACHT",
+        "clue": "A sleek pleasure boat"
+      },
+      {
+        "word": "CANOE",
+        "clue": "A light narrow paddled boat"
+      },
+      {
+        "word": "KAYAK",
+        "clue": "A small covered paddled boat"
+      },
+      {
+        "word": "ENGINE",
+        "clue": "It powers a vehicle"
+      },
+      {
+        "word": "PEDAL",
+        "clue": "You push it with your foot"
+      },
+      {
+        "word": "SADDLE",
+        "clue": "A seat on a bike or horse"
+      }
     ],
     "2": [
-      { "word": "SCOOTER", "clue": "You ride it standing and pushing" },
-      { "word": "TRACTOR", "clue": "A farm vehicle that pulls equipment" },
-      { "word": "TROLLEY", "clue": "A streetcar or a cart on wheels" },
-      { "word": "CHARIOT", "clue": "An ancient horse-drawn cart" },
-      { "word": "CARRIAGE", "clue": "A wheeled vehicle pulled by horses" },
-      { "word": "CARAVAN", "clue": "A trailer home pulled by a car" },
-      { "word": "GONDOLA", "clue": "A long boat used in Venice" },
-      { "word": "GLIDER", "clue": "A plane with no engine" },
-      { "word": "CHOPPER", "clue": "Another name for a helicopter" },
-      { "word": "MOTOR", "clue": "A machine that makes a vehicle go" },
-      { "word": "BRAKE", "clue": "It stops a vehicle" },
-      { "word": "CABIN", "clue": "The enclosed space for passengers" },
-      { "word": "COCKPIT", "clue": "Where the pilot sits" },
-      { "word": "RUNWAY", "clue": "Where planes take off and land" },
-      { "word": "STATION", "clue": "Where trains stop for passengers" },
-      { "word": "SUBWAY", "clue": "An underground train" },
-      { "word": "FREIGHT", "clue": "Goods carried by transport" },
-      { "word": "MINIVAN", "clue": "A small van for a family" },
-      { "word": "PICKUP", "clue": "A truck with an open back" },
-      { "word": "CAMPER", "clue": "A van you can sleep in" },
-      { "word": "SAILBOAT", "clue": "A boat moved by the wind" },
-      { "word": "ROWBOAT", "clue": "A small boat moved with oars" },
-      { "word": "SPEEDBOAT", "clue": "A fast motorboat" },
-      { "word": "STEAMBOAT", "clue": "A boat powered by steam" },
-      { "word": "TUGBOAT", "clue": "A small boat that pulls big ships" },
-      { "word": "LIFEBOAT", "clue": "A boat for emergencies at sea" },
-      { "word": "TRICYCLE", "clue": "A cycle with three wheels" },
-      { "word": "UNICYCLE", "clue": "A cycle with one wheel" },
-      { "word": "RICKSHAW", "clue": "A small cart pulled or pedaled" },
-      { "word": "TANKER", "clue": "A ship or truck that carries liquid" },
-      { "word": "FREIGHTER", "clue": "A ship that carries cargo" },
-      { "word": "FERRYBOAT", "clue": "A boat that ferries people and cars" },
-      { "word": "HANGGLIDER", "clue": "A wing you hang beneath to glide" },
-      { "word": "GOKART", "clue": "A small racing kart" },
-      { "word": "MONORAIL", "clue": "A train that runs on a single rail" },
-      { "word": "VESSEL", "clue": "Any ship or large boat" },
-      { "word": "CONVOY", "clue": "A group of vehicles traveling together" },
-      { "word": "HARNESS", "clue": "Straps that connect an animal to a cart" },
-      { "word": "PADDLE", "clue": "Used to move a canoe" },
-      { "word": "PROPELLER", "clue": "Spinning blades that drive a boat or plane" },
-      { "word": "THROTTLE", "clue": "It controls a vehicle's speed" },
-      { "word": "AXLE", "clue": "The rod that wheels turn on" },
-      { "word": "BICYCLE", "clue": "A cycle with two wheels" },
-      { "word": "MOTORBIKE", "clue": "A powered two-wheeled vehicle" },
-      { "word": "RAILROAD", "clue": "The track a train runs on" }
+      {
+        "word": "SCOOTER",
+        "clue": "You ride it standing and pushing"
+      },
+      {
+        "word": "TRACTOR",
+        "clue": "A farm vehicle that pulls equipment"
+      },
+      {
+        "word": "TROLLEY",
+        "clue": "A streetcar or a cart on wheels"
+      },
+      {
+        "word": "CHARIOT",
+        "clue": "An ancient horse-drawn cart"
+      },
+      {
+        "word": "CARRIAGE",
+        "clue": "A wheeled vehicle pulled by horses"
+      },
+      {
+        "word": "CARAVAN",
+        "clue": "A trailer home pulled by a car"
+      },
+      {
+        "word": "GONDOLA",
+        "clue": "A long boat used in Venice"
+      },
+      {
+        "word": "GLIDER",
+        "clue": "A plane with no engine"
+      },
+      {
+        "word": "CHOPPER",
+        "clue": "Another name for a helicopter"
+      },
+      {
+        "word": "MOTOR",
+        "clue": "A machine that makes a vehicle go"
+      },
+      {
+        "word": "BRAKE",
+        "clue": "It stops a vehicle"
+      },
+      {
+        "word": "CABIN",
+        "clue": "The enclosed space for passengers"
+      },
+      {
+        "word": "COCKPIT",
+        "clue": "Where the pilot sits"
+      },
+      {
+        "word": "RUNWAY",
+        "clue": "Where planes take off and land"
+      },
+      {
+        "word": "STATION",
+        "clue": "Where trains stop for passengers"
+      },
+      {
+        "word": "SUBWAY",
+        "clue": "An underground train"
+      },
+      {
+        "word": "FREIGHT",
+        "clue": "Goods carried by transport"
+      },
+      {
+        "word": "MINIVAN",
+        "clue": "A small van for a family"
+      },
+      {
+        "word": "PICKUP",
+        "clue": "A truck with an open back"
+      },
+      {
+        "word": "CAMPER",
+        "clue": "A van you can sleep in"
+      },
+      {
+        "word": "SAILBOAT",
+        "clue": "A boat moved by the wind"
+      },
+      {
+        "word": "ROWBOAT",
+        "clue": "A small boat moved with oars"
+      },
+      {
+        "word": "SPEEDBOAT",
+        "clue": "A fast motorboat"
+      },
+      {
+        "word": "STEAMBOAT",
+        "clue": "A boat powered by steam"
+      },
+      {
+        "word": "TUGBOAT",
+        "clue": "A small boat that pulls big ships"
+      },
+      {
+        "word": "LIFEBOAT",
+        "clue": "A boat for emergencies at sea"
+      },
+      {
+        "word": "TRICYCLE",
+        "clue": "A cycle with three wheels"
+      },
+      {
+        "word": "UNICYCLE",
+        "clue": "A cycle with one wheel"
+      },
+      {
+        "word": "RICKSHAW",
+        "clue": "A small cart pulled or pedaled"
+      },
+      {
+        "word": "TANKER",
+        "clue": "A ship or truck that carries liquid"
+      },
+      {
+        "word": "FREIGHTER",
+        "clue": "A ship that carries cargo"
+      },
+      {
+        "word": "FERRYBOAT",
+        "clue": "A boat that ferries people and cars"
+      },
+      {
+        "word": "HANGGLIDER",
+        "clue": "A wing you hang beneath to glide"
+      },
+      {
+        "word": "GOKART",
+        "clue": "A small racing kart"
+      },
+      {
+        "word": "MONORAIL",
+        "clue": "A train that runs on a single rail"
+      },
+      {
+        "word": "VESSEL",
+        "clue": "Any ship or large boat"
+      },
+      {
+        "word": "CONVOY",
+        "clue": "A group of vehicles traveling together"
+      },
+      {
+        "word": "HARNESS",
+        "clue": "Straps that connect an animal to a cart"
+      },
+      {
+        "word": "PADDLE",
+        "clue": "Used to move a canoe"
+      },
+      {
+        "word": "PROPELLER",
+        "clue": "Spinning blades that drive a boat or plane"
+      },
+      {
+        "word": "THROTTLE",
+        "clue": "It controls a vehicle's speed"
+      },
+      {
+        "word": "AXLE",
+        "clue": "The rod that wheels turn on"
+      },
+      {
+        "word": "BICYCLE",
+        "clue": "A cycle with two wheels"
+      },
+      {
+        "word": "MOTORBIKE",
+        "clue": "A powered two-wheeled vehicle"
+      },
+      {
+        "word": "RAILROAD",
+        "clue": "The track a train runs on"
+      }
     ],
     "3": [
-      { "word": "HELICOPTER", "clue": "An aircraft with spinning rotor blades" },
-      { "word": "SUBMARINE", "clue": "A vessel that travels underwater" },
-      { "word": "AMBULANCE", "clue": "A vehicle that rushes the sick to hospital" },
-      { "word": "LOCOMOTIVE", "clue": "The engine that pulls a train" },
-      { "word": "AUTOMOBILE", "clue": "A formal word for a car" },
-      { "word": "MOTORCYCLE", "clue": "A large powered two-wheeler" },
-      { "word": "SNOWMOBILE", "clue": "A vehicle for driving over snow" },
-      { "word": "BULLDOZER", "clue": "A machine that pushes earth" },
-      { "word": "EXCAVATOR", "clue": "A digging machine with a bucket arm" },
-      { "word": "FORKLIFT", "clue": "A machine that lifts heavy pallets" },
-      { "word": "LIMOUSINE", "clue": "A long luxury car" },
-      { "word": "CONVERTIBLE", "clue": "A car with a folding roof" },
-      { "word": "HATCHBACK", "clue": "A car with a rear door that lifts up" },
-      { "word": "FUNICULAR", "clue": "A cable railway up a steep slope" },
-      { "word": "ZEPPELIN", "clue": "A large rigid airship" },
-      { "word": "AIRSHIP", "clue": "A lighter-than-air flying craft" },
-      { "word": "AIRLINER", "clue": "A large passenger plane" },
-      { "word": "SEAPLANE", "clue": "A plane that lands on water" },
-      { "word": "BIPLANE", "clue": "A plane with two sets of wings" },
-      { "word": "HOVERCRAFT", "clue": "A vehicle that floats on a cushion of air" },
-      { "word": "WHEELBARROW", "clue": "A one-wheeled cart you push" },
-      { "word": "ICEBREAKER", "clue": "A ship that smashes through sea ice" },
-      { "word": "CATAMARAN", "clue": "A boat with two parallel hulls" },
-      { "word": "DESTROYER", "clue": "A fast warship" },
-      { "word": "BATTLESHIP", "clue": "A large heavily armed warship" },
-      { "word": "AIRCRAFT", "clue": "Any flying machine" },
-      { "word": "SPACECRAFT", "clue": "A vehicle for traveling in space" },
-      { "word": "PARACHUTE", "clue": "It slows a fall from the sky" },
-      { "word": "ESCALATOR", "clue": "A moving staircase" },
-      { "word": "ELEVATOR", "clue": "A box that lifts people between floors" },
-      { "word": "TURBINE", "clue": "A wheel spun by gas or steam for power" },
-      { "word": "TRANSMISSION", "clue": "The gears that drive a car" },
-      { "word": "ODOMETER", "clue": "It counts the miles a car travels" },
-      { "word": "SPEEDOMETER", "clue": "It shows how fast you are going" },
-      { "word": "WINDSHIELD", "clue": "The front window of a vehicle" },
-      { "word": "EXPRESSWAY", "clue": "A fast road with no crossings" },
-      { "word": "INTERSECTION", "clue": "Where two roads cross" },
-      { "word": "PASSENGER", "clue": "Someone who rides but does not drive" },
-      { "word": "CONDUCTOR", "clue": "The person in charge on a train" },
-      { "word": "NAVIGATION", "clue": "Finding the way on a journey" },
-      { "word": "DIRIGIBLE", "clue": "A steerable airship" },
-      { "word": "SCHOONER", "clue": "A sailing ship with two or more masts" },
-      { "word": "GALLEON", "clue": "A large old sailing warship" },
-      { "word": "JUGGERNAUT", "clue": "A very large heavy truck" },
-      { "word": "TRANSPORTER", "clue": "A truck that carries other vehicles" }
+      {
+        "word": "SUBMARINE",
+        "clue": "A vessel that travels underwater"
+      },
+      {
+        "word": "AMBULANCE",
+        "clue": "A vehicle that rushes the sick to hospital"
+      },
+      {
+        "word": "BULLDOZER",
+        "clue": "A machine that pushes earth"
+      },
+      {
+        "word": "EXCAVATOR",
+        "clue": "A digging machine with a bucket arm"
+      },
+      {
+        "word": "FORKLIFT",
+        "clue": "A machine that lifts heavy pallets"
+      },
+      {
+        "word": "LIMOUSINE",
+        "clue": "A long luxury car"
+      },
+      {
+        "word": "HATCHBACK",
+        "clue": "A car with a rear door that lifts up"
+      },
+      {
+        "word": "FUNICULAR",
+        "clue": "A cable railway up a steep slope"
+      },
+      {
+        "word": "ZEPPELIN",
+        "clue": "A large rigid airship"
+      },
+      {
+        "word": "AIRSHIP",
+        "clue": "A lighter-than-air flying craft"
+      },
+      {
+        "word": "AIRLINER",
+        "clue": "A large passenger plane"
+      },
+      {
+        "word": "SEAPLANE",
+        "clue": "A plane that lands on water"
+      },
+      {
+        "word": "BIPLANE",
+        "clue": "A plane with two sets of wings"
+      },
+      {
+        "word": "CATAMARAN",
+        "clue": "A boat with two parallel hulls"
+      },
+      {
+        "word": "DESTROYER",
+        "clue": "A fast warship"
+      },
+      {
+        "word": "AIRCRAFT",
+        "clue": "Any flying machine"
+      },
+      {
+        "word": "PARACHUTE",
+        "clue": "It slows a fall from the sky"
+      },
+      {
+        "word": "ESCALATOR",
+        "clue": "A moving staircase"
+      },
+      {
+        "word": "ELEVATOR",
+        "clue": "A box that lifts people between floors"
+      },
+      {
+        "word": "TURBINE",
+        "clue": "A wheel spun by gas or steam for power"
+      },
+      {
+        "word": "ODOMETER",
+        "clue": "It counts the miles a car travels"
+      },
+      {
+        "word": "WINDSHIELD",
+        "clue": "The front window of a vehicle"
+      },
+      {
+        "word": "PASSENGER",
+        "clue": "Someone who rides but does not drive"
+      },
+      {
+        "word": "CONDUCTOR",
+        "clue": "The person in charge on a train"
+      },
+      {
+        "word": "DIRIGIBLE",
+        "clue": "A steerable airship"
+      },
+      {
+        "word": "SCHOONER",
+        "clue": "A sailing ship with two or more masts"
+      },
+      {
+        "word": "GALLEON",
+        "clue": "A large old sailing warship"
+      }
+    ],
+    "4": [
+      {
+        "word": "HELICOPTER",
+        "clue": "An aircraft with spinning rotor blades"
+      },
+      {
+        "word": "LOCOMOTIVE",
+        "clue": "The engine that pulls a train"
+      },
+      {
+        "word": "AUTOMOBILE",
+        "clue": "A formal word for a car"
+      },
+      {
+        "word": "MOTORCYCLE",
+        "clue": "A large powered two-wheeler"
+      },
+      {
+        "word": "SNOWMOBILE",
+        "clue": "A vehicle for driving over snow"
+      },
+      {
+        "word": "CONVERTIBLE",
+        "clue": "A car with a folding roof"
+      },
+      {
+        "word": "HOVERCRAFT",
+        "clue": "A vehicle that floats on a cushion of air"
+      },
+      {
+        "word": "WHEELBARROW",
+        "clue": "A one-wheeled cart you push"
+      },
+      {
+        "word": "ICEBREAKER",
+        "clue": "A ship that smashes through sea ice"
+      },
+      {
+        "word": "BATTLESHIP",
+        "clue": "A large heavily armed warship"
+      },
+      {
+        "word": "SPACECRAFT",
+        "clue": "A vehicle for traveling in space"
+      },
+      {
+        "word": "TRANSMISSION",
+        "clue": "The gears that drive a car"
+      },
+      {
+        "word": "SPEEDOMETER",
+        "clue": "It shows how fast you are going"
+      },
+      {
+        "word": "EXPRESSWAY",
+        "clue": "A fast road with no crossings"
+      },
+      {
+        "word": "INTERSECTION",
+        "clue": "Where two roads cross"
+      },
+      {
+        "word": "NAVIGATION",
+        "clue": "Finding the way on a journey"
+      },
+      {
+        "word": "JUGGERNAUT",
+        "clue": "A very large heavy truck"
+      },
+      {
+        "word": "TRANSPORTER",
+        "clue": "A truck that carries other vehicles"
+      }
     ]
   }
 }

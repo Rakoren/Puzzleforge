@@ -1,0 +1,127 @@
+/**
+ * Difficulty labels & tiers.
+ *
+ * The engine speaks in internal levels 1–4. What the *reader/buyer* sees is
+ * presentation, and it depends on the book's audience:
+ *
+ *   Adult → industry labels people search Amazon for: Easy / Medium / Hard / Expert
+ *   Kids  → age range is the primary label (parents & teachers shop by age),
+ *           with the grade band as a secondary label.
+ *
+ * This module is the single source of truth for that LABEL mapping. The two
+ * audiences are also two separate difficulty LADDERS mechanically: kids books
+ * generate smaller grids / shorter, commoner words at every level (see
+ * `KIDS_DIFFICULTY` and `presetFor` in config/defaults.js). A kids "Independent"
+ * (L4) puzzle is far gentler than an adult "Expert" (L4) — same internal number,
+ * deliberately different puzzle.
+ */
+
+const LEVELS = [1, 2, 3, 4];
+
+// Adult books: standard puzzle-market labels.
+const ADULT = { 1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Expert' };
+
+// Kids books: age range (primary) + grade band (secondary).
+const KIDS = {
+  1: { label: 'Beginner', ages: '4–6', grade: 'Pre-K – K' },
+  2: { label: 'Early Reader', ages: '6–8', grade: 'Grades 1–2' },
+  3: { label: 'Growing Reader', ages: '8–10', grade: 'Grades 3–4' },
+  4: { label: 'Independent', ages: '10–12', grade: 'Grades 5–6' },
+};
+
+// Lexile word-complexity ranges that guide kids vocabulary per tier.
+const KIDS_LEXILE = {
+  1: { min: null, max: 200, label: 'BR–200L' },
+  2: { min: 200, max: 500, label: '200–500L' },
+  3: { min: 500, max: 820, label: '500–820L' },
+  4: { min: 820, max: 1100, label: '820–1100L' },
+};
+
+const clampLevel = (level) => Math.max(1, Math.min(4, Math.round(Number(level) || 1)));
+const isKids = (audience) => String(audience || '').toLowerCase() === 'kids';
+
+/** Full descriptor for a level under an audience. */
+function difficultyTier(level, audience) {
+  const lv = clampLevel(level);
+  if (isKids(audience)) {
+    const k = KIDS[lv];
+    return { level: lv, audience: 'kids', label: k.label, ages: k.ages, grade: k.grade, lexile: KIDS_LEXILE[lv].label };
+  }
+  return { level: lv, audience: 'adult', label: ADULT[lv] };
+}
+
+/**
+ * A single display string.
+ *   adult          → "Expert"
+ *   kids (long)    → "Independent · Ages 10–12 · Grades 5–6"
+ *   kids (short)   → "Independent (10–12)"
+ */
+function difficultyLabel(level, audience, opts = {}) {
+  const t = difficultyTier(level, audience);
+  if (t.audience === 'adult') return t.label;
+  if (opts.short) return `${t.label} (${t.ages})`;
+  return `${t.label} · Ages ${t.ages} · ${t.grade}`;
+}
+
+// First / last number in an age string like "8–10".
+const ageLo = (s) => (s || '').split('–')[0];
+const ageHi = (s) => (s || '').split('–')[1] || (s || '').split('–')[0];
+
+/**
+ * A human range label spanning min→max level for an audience.
+ *   adult, same    → "Hard"
+ *   adult, range   → "Easy to Hard"
+ *   kids, same     → "Growing Reader (Ages 8–10)"
+ *   kids, range    → "Beginner to Growing Reader (Ages 4–10)"
+ */
+function rangeLabel(min, max, audience) {
+  const lo = difficultyTier(min, audience);
+  const hi = difficultyTier(max, audience);
+  if (isKids(audience)) {
+    const ages = min === max ? lo.ages : `${ageLo(lo.ages)}–${ageHi(hi.ages)}`;
+    const name = min === max ? lo.label : `${lo.label} to ${hi.label}`;
+    return `${name} (Ages ${ages})`;
+  }
+  return min === max ? lo.label : `${lo.label} to ${hi.label}`;
+}
+
+/** Compact per-page badge text: adults get a 4-star rating + label; kids the tier + age. */
+function badgeText(level, audience) {
+  const lv = clampLevel(level);
+  const t = difficultyTier(lv, audience);
+  if (isKids(audience)) return `${t.label} · ${t.ages}`;
+  return `${'★'.repeat(lv)}${'☆'.repeat(4 - lv)} ${t.label}`;
+}
+
+/**
+ * Summarize a list of puzzle levels for a book: range, per-level counts, and a
+ * ready-to-print range label. Levels out of 1–4 are clamped.
+ */
+function summarizeLevels(levels, audience) {
+  const clean = (levels || []).map(clampLevel);
+  if (!clean.length) return { count: 0, levels: [], min: null, max: null, counts: {}, single: true, rangeLabel: '' };
+  const min = Math.min(...clean);
+  const max = Math.max(...clean);
+  const counts = {};
+  clean.forEach((l) => { counts[l] = (counts[l] || 0) + 1; });
+  return {
+    count: clean.length,
+    levels: [...new Set(clean)].sort((a, b) => a - b),
+    min, max, counts, single: min === max,
+    rangeLabel: rangeLabel(min, max, audience),
+  };
+}
+
+/** Option list for a UI select, one entry per level, labelled for the audience. */
+function levelOptions(audience) {
+  return LEVELS.map((lv) => {
+    const t = difficultyTier(lv, audience);
+    return { value: lv, label: t.label, ages: t.ages || null, grade: t.grade || null };
+  });
+}
+
+module.exports = {
+  LEVELS, ADULT, KIDS, KIDS_LEXILE, clampLevel, isKids,
+  difficultyTier, difficultyLabel, levelOptions,
+  rangeLabel, badgeText, summarizeLevels,
+};

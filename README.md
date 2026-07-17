@@ -60,11 +60,12 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–4 complete; Phase 5 in progress.** Implemented so far:
+**Phases 1–5 complete; content depth + Page Editor ongoing (164 tests passing).**
+Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Ten puzzle types**, each with Golden Standards validation and an
+- **Sixteen puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
   - **Word Search** — direction mix and word separation by difficulty
     (easy: words fully isolated; medium: no crossings; hard: dense crossings)
@@ -78,21 +79,58 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
   - **Number Search** — hidden number sequences in a digit grid (shares the
     word-search core)
   - **Trivia** — numbered quiz questions with an answer key
+  - **Riddles** — family-friendly "what am I?" riddles with an answer key
+  - **Brain Teasers** — logic / math / word / lateral teasers tagged by kind,
+    with an explained answer key
+  - **Logic Grid** — deduction puzzle; a constraint solver proves each clue set
+    has exactly one solution, with natural-language clues
+  - **Word Ladder** — change one letter at a time (start → end); built on a
+    common-word graph with the minimum hints needed for a unique answer
+  - **Word Wheel** — nine letters around a required centre; find every word and
+    the hidden 9-letter word, from a baked common-word dictionary
+  - **Cipher** — decode a message hidden with a Caesar shift, Atbash, number
+    code (A1Z26), or Morse; the solver decodes straight back
+- Four **activity page** types (no answer key): coloring, drawing,
+  blank/bleed-guard, breather (quote/fact/divider)
 - Non-bypassable offensive-language filter (applied to words, fill, and clues)
 - Engine orchestration with a retry loop and solution verification
 - Book assembly (`engine/book.js`): multi-puzzle ordering, page assignment,
-  front matter, and a back-of-book answer key (per-page CSS scoped so mixed
+  front/back matter, and a back-of-book answer key (per-page CSS scoped so mixed
   puzzle types never collide in the combined PDF)
 - Puppeteer-based PDF export for both single puzzles and full books
 - CLI for single-puzzle and full-book generation/export
 
-- **Teacher web app** (`puzzleforge-web/`): pick a puzzle, choose a theme or
-  custom word list, live preview, and download a print-ready PDF or a reusable
-  recipe file — accountless, runs the engine server-side
+- **Web app** (`puzzleforge-web/`): Puzzle Maker (accountless), Book Builder with
+  **starter templates** + one-click KDP export bundle, Cover Builder, image tools
+  (coloring / color-by-number / dot-to-dot), AI + manual theme generators (incl.
+  **AI "Expand"** to top up a theme's word list), and a full **Page Editor**
+  (MS-Publisher-style ribbon, master pages, two-page spreads, tables, break-apart
+  puzzles, fit-to-margins, Ctrl/Cmd + rubber-band multi-select, scannable
+  **QR codes**, My Books library + autosave, and a self-hosted LAN team
+  workspace). Dressed in the **Nova Form Studios design system with light/dark
+  mode**.
+- **QR digital layer** (`engine/digital.js`): every real puzzle gets a
+  self-contained mobile landing page and a "Scan for the answer" QR printed in
+  the page corner. Word/number searches are **interactive** (tap a word for an
+  escalating hint — 3×3 box → start cell → full reveal); other types show a
+  static answer reveal. There's an end-of-book **celebration** page, and the
+  whole thing is self-serve from the Book Builder (set a hosting base URL; the
+  KDP bundle then prints the QR codes and includes an `html/` folder of pages).
 
-Not yet built (later phases): remaining Tier 2/3 types (Logic Grid, Nonogram,
-Dot-to-Dot, …) and the teacher-tool extras (worksheet builder, class sets,
-differentiation mode).
+- **Worksheets & lesson packets** (`worksheets.html`, `engine/worksheet.js`):
+  turn any puzzle into a printable classroom handout with a student Name/Date
+  header (+ optional Class/Period line and footer) and a one-click PDF, or
+  assemble a lesson packet — a cover page (title, objective, standards, contents
+  list) + several worksheets + an answer-key section — into one PDF. An **auto
+  lesson-plan** mode turns a grade (K–6) + topic into a ready packet, aligned to
+  the Common Core ELA vocabulary/phonics standards a word puzzle supports.
+  Standards-tagged **curriculum word banks** (Dolch sight words/nouns, number
+  words) are selectable everywhere themes are.
+
+Not yet built (later phases): more Tier 3 puzzle types (Riddles, Brain Teasers, …),
+book-level digital-layer analytics (needs a backend), and curriculum extras
+(standards-aligned word-list presets, auto lesson-plan mode). See
+[`PRD.md`](./PRD.md) for the full roadmap.
 
 ## Architecture
 
@@ -122,6 +160,7 @@ themes/         word lists (word + clue + difficulty) and loader
 filters/        offensive.js (gate) + common-words.js
 config/         engine defaults (retry policy, thresholds, difficulty presets)
 cli/            single-puzzle CLI entry point
+mcp/            Model Context Protocol server (exposes the engine as tools)
 tests/          node:test suites
 ```
 
@@ -154,6 +193,10 @@ node cli/index.js --type sudoku --difficulty 2 --answers --out sudoku.pdf
 node cli/index.js --type maze --difficulty 3 --answers --out maze.pdf
 node cli/index.js --type crossword --theme space --answers --out crossword.pdf
 node cli/index.js --type cryptogram --difficulty 2 --out cryptogram.pdf
+node cli/index.js --type logicgrid --difficulty 2 --answers --out logic.pdf
+node cli/index.js --type wordladder --difficulty 2 --answers --out ladder.pdf
+node cli/index.js --type wordwheel --difficulty 2 --answers --out wheel.pdf
+node cli/index.js --type cipher --difficulty 2 --answers --out cipher.pdf
 
 # Assemble and export a full book from a config file
 node cli/index.js --book examples/animals-activity-book.json --out book.pdf
@@ -174,6 +217,39 @@ const words = require('./themes').selectWords(theme, { maxDifficulty: 2 });
 const puzzle = pf.generate({ type: 'wordsearch', theme: 'animals', words, difficulty: 1 });
 await pf.exportPdf(puzzle, { outPath: 'animals.pdf', trimSize: '8x10', answerKey: true });
 ```
+
+## MCP server
+
+PuzzleForge ships an [MCP](https://modelcontextprotocol.io) server so any MCP
+client — Claude Desktop, Cursor, or an agent — can drive the engine as tools. It
+wraps the same functions as the CLI and web app, so results are identical.
+
+```bash
+npm run mcp        # stdio transport (or: node mcp/server.js)
+```
+
+**Tools:** `list_puzzle_types`, `list_themes`, `list_trim_sizes`,
+`generate_puzzle`, `export_puzzle_pdf`, `assemble_book`, `export_book_pdf`.
+The `*_pdf` tools need a Chromium binary (set `PUPPETEER_EXECUTABLE_PATH` if it
+isn't auto-detected, or pass `executablePath`).
+
+Register it with a client, e.g. Claude Desktop's `claude_desktop_config.json`
+(or a project `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "puzzleforge": {
+      "command": "node",
+      "args": ["/absolute/path/to/puzzleforge/mcp/server.js"],
+      "env": { "PUPPETEER_EXECUTABLE_PATH": "/path/to/chrome" }
+    }
+  }
+}
+```
+
+Then ask the client things like *"generate a hard word ladder"* or *"assemble a
+50-page large-print word search book and export the PDF."*
 
 ## Tests
 

@@ -13,6 +13,21 @@
 const RATES_UPDATED = '2025-06';
 const ROYALTY_RATE = 0.6;
 
+// KDP paperback page-count bounds and the minimum inside (gutter) margin, which
+// grows with page count because thicker books lose more of the inside edge to
+// the binding. Values are inches; outside/top/bottom minimum is 0.25" (0.375"
+// with bleed) which our trim specs already exceed.
+const KDP_PAGE_MIN = 24;
+const KDP_PAGE_MAX = 828;
+function gutterMinInches(pageCount) {
+  const p = Math.round(pageCount) || 0;
+  if (p <= 150) return 0.375;
+  if (p <= 300) return 0.5;
+  if (p <= 500) return 0.625;
+  if (p <= 700) return 0.75;
+  return 0.875; // 701–828
+}
+
 // US paperback printing cost. Black & white: a flat fee under 108 pages, then a
 // per-page rate. Color rates are approximate.
 function printingCostUSD(pageCount, paper) {
@@ -95,8 +110,15 @@ function normalizeMetadata(meta = {}) {
     listPrice: meta.listPrice != null && meta.listPrice !== '' ? Number(meta.listPrice) : null,
     aiText: Boolean(meta.aiText),
     aiImages: Boolean(meta.aiImages),
+    language: LANG_NAMES[meta.language] || (meta.language ? String(meta.language) : 'English'),
   };
 }
+
+// KDP's language picker uses full names; the editor stores ISO codes.
+const LANG_NAMES = {
+  en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+  pt: 'Portuguese', nl: 'Dutch', ja: 'Japanese',
+};
 
 // KDP AI-disclosure answers, pre-filled from which AI tools the book used.
 // Puzzle grids/keys are algorithmic and never disclosed.
@@ -114,4 +136,4 @@ function aiDisclosure(meta = {}) {
   };
 }
 
-module.exports = { royaltyEstimate, printingCostUSD, normalizeMetadata, aiDisclosure, ROYALTY_RATE, RATES_UPDATED };
+module.exports = { royaltyEstimate, printingCostUSD, normalizeMetadata, aiDisclosure, gutterMinInches, KDP_PAGE_MIN, KDP_PAGE_MAX, ROYALTY_RATE, RATES_UPDATED };

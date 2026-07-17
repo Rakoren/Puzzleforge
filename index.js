@@ -8,9 +8,9 @@
  *   await pf.exportPdf(puzzle, { trimSize: '8x10', outPath: 'out.pdf' });
  */
 const { generate } = require('./engine/generate');
-const { assembleBook } = require('./engine/book');
+const { assembleBook, analyzeWordPool } = require('./engine/book');
 const { runChecklist } = require('./engine/checklist');
-const { splitPuzzle, composePage } = require('./engine/components');
+const { splitPuzzle, splitHtml, composePage } = require('./engine/components');
 const kdp = require('./engine/kdp');
 const recipe = require('./engine/recipe');
 const {
@@ -24,7 +24,12 @@ const {
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,
+  frontImageDpi,
+  defaultLeaves,
+  renderMatterDoc,
 } = require('./engine/export');
+const { renderPacketCoverHtml, assemblePacketHtml } = require('./engine/worksheet');
+const { listGrades, gradeInfo, planLessonPacket } = require('./engine/curriculum');
 const { getLayout, listTrimSizes } = require('./layouts');
 const {
   loadTheme,
@@ -35,18 +40,25 @@ const {
   selectWords,
   clueMap,
   wordCount,
+  upgradeToFourTiers,
   THEME_DIR,
 } = require('./themes');
 const { listTypes, isActivityType } = require('./generators/registry');
 const { BORDER_STYLES } = require('./engine/decor');
+const digital = require('./engine/digital');
 const offensive = require('./filters/offensive');
+const difficulty = require('./config/difficulty');
 
 module.exports = {
   generate,
   assembleBook,
+  analyzeWordPool,
   runChecklist,
   splitPuzzle,
+  splitHtml,
   composePage,
+  defaultLeaves,
+  renderMatterDoc,
   royaltyEstimate: kdp.royaltyEstimate,
   printingCostUSD: kdp.printingCostUSD,
   normalizeMetadata: kdp.normalizeMetadata,
@@ -63,13 +75,25 @@ module.exports = {
   exportHtmlPdf,
   renderHtml: renderPuzzleHtml,
   renderPuzzlesHtml,
+  // Classroom worksheets + lesson packets
+  renderPacketCoverHtml,
+  assemblePacketHtml,
+  // Curriculum presets + auto lesson-plan
+  listGrades,
+  gradeInfo,
+  planLessonPacket,
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,
+  frontImageDpi,
   getLayout,
   listTrimSizes,
   listTypes,
   isActivityType,
+  // Digital layer — per-puzzle QR "scan for answers" landing pages.
+  planDigital: digital.planDigital,
+  renderLandingPages: digital.renderLandingPages,
+  qrSvg: digital.qrSvg,
   borderStyles: BORDER_STYLES,
   loadTheme,
   listThemes,
@@ -79,7 +103,14 @@ module.exports = {
   selectWords,
   clueMap,
   wordCount,
+  upgradeToFourTiers,
   themesDir: THEME_DIR,
   isOffensiveWord: offensive.isOffensiveWord,
   scanTextForOffensive: offensive.scanText,
+  collectBookText: require('./engine/booktext').collectBookText,
+  // Difficulty labels/tiers (internal levels 1–4 → audience-specific labels).
+  difficultyLevels: difficulty.LEVELS,
+  difficultyTier: difficulty.difficultyTier,
+  difficultyLabel: difficulty.difficultyLabel,
+  difficultyOptions: difficulty.levelOptions,
 };

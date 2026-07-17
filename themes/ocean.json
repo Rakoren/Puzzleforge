@@ -2,210 +2,812 @@
   "id": "ocean",
   "label": "Ocean",
   "category": "Animals & Nature",
-  "tags": ["ocean", "sea", "water", "nature"],
+  "tags": [
+    "ocean",
+    "sea",
+    "water",
+    "nature"
+  ],
+  "audiences": [
+    "kids",
+    "adult"
+  ],
   "tiers": {
     "1": [
-      { "word": "SEA", "clue": "A large body of salt water" },
-      { "word": "FISH", "clue": "It swims and has gills" },
-      { "word": "CRAB", "clue": "It walks sideways with claws" },
-      { "word": "WAVE", "clue": "Water rolling onto the shore" },
-      { "word": "SAND", "clue": "Tiny grains on the beach" },
-      { "word": "BOAT", "clue": "It floats and carries people" },
-      { "word": "SHIP", "clue": "A large boat for the sea" },
-      { "word": "TIDE", "clue": "The daily rise and fall of the sea" },
-      { "word": "REEF", "clue": "A ridge of coral near the surface" },
-      { "word": "FOAM", "clue": "White bubbles on a wave" },
-      { "word": "SALT", "clue": "What makes seawater taste sharp" },
-      { "word": "KELP", "clue": "Tall brown seaweed" },
-      { "word": "SEAL", "clue": "A sea animal that claps its flippers" },
-      { "word": "EEL", "clue": "A long snake-like fish" },
-      { "word": "CLAM", "clue": "A shellfish with two hinged shells" },
-      { "word": "SHELL", "clue": "A snail or clam's hard home" },
-      { "word": "SHARK", "clue": "A fish with many sharp teeth" },
-      { "word": "WHALE", "clue": "The largest animal in the sea" },
-      { "word": "CORAL", "clue": "Colorful reef built by tiny animals" },
-      { "word": "SQUID", "clue": "A sea creature with ten arms" },
-      { "word": "SHORE", "clue": "Where the land meets the sea" },
-      { "word": "BEACH", "clue": "A sandy place by the sea" },
-      { "word": "TUNA", "clue": "A large fish often canned" },
-      { "word": "COD", "clue": "A common food fish" },
-      { "word": "BAY", "clue": "A curved part of the coast" },
-      { "word": "GULF", "clue": "A large bay" },
-      { "word": "OAR", "clue": "You row a boat with it" },
-      { "word": "SAIL", "clue": "It catches the wind on a boat" },
-      { "word": "DECK", "clue": "The floor of a ship" },
-      { "word": "ROPE", "clue": "Used to tie up a boat" },
-      { "word": "KNOT", "clue": "A tie in a rope" },
-      { "word": "PORT", "clue": "A town where ships load and unload" },
-      { "word": "DOCK", "clue": "Where boats tie up" },
-      { "word": "FIN", "clue": "A fish uses it to swim" },
-      { "word": "GILL", "clue": "A fish breathes through it" },
-      { "word": "SURF", "clue": "The white waves near the shore" },
-      { "word": "DIVE", "clue": "Plunge headfirst into water" },
-      { "word": "RAFT", "clue": "A flat floating platform" },
-      { "word": "BUOY", "clue": "A floating marker in the water" }
+      {
+        "word": "SEA",
+        "clue": "A large body of salt water"
+      },
+      {
+        "word": "FISH",
+        "clue": "It swims and has gills"
+      },
+      {
+        "word": "CRAB",
+        "clue": "It walks sideways with claws"
+      },
+      {
+        "word": "WAVE",
+        "clue": "Water rolling onto the shore"
+      },
+      {
+        "word": "SAND",
+        "clue": "Tiny grains on the beach"
+      },
+      {
+        "word": "BOAT",
+        "clue": "It floats and carries people"
+      },
+      {
+        "word": "SHIP",
+        "clue": "A large boat for the sea"
+      },
+      {
+        "word": "TIDE",
+        "clue": "The daily rise and fall of the sea"
+      },
+      {
+        "word": "REEF",
+        "clue": "A ridge of coral near the surface"
+      },
+      {
+        "word": "FOAM",
+        "clue": "White bubbles on a wave"
+      },
+      {
+        "word": "SALT",
+        "clue": "What makes seawater taste sharp"
+      },
+      {
+        "word": "KELP",
+        "clue": "Tall brown seaweed"
+      },
+      {
+        "word": "SEAL",
+        "clue": "A sea animal that claps its flippers"
+      },
+      {
+        "word": "EEL",
+        "clue": "A long snake-like fish"
+      },
+      {
+        "word": "CLAM",
+        "clue": "A shellfish with two hinged shells"
+      },
+      {
+        "word": "SHELL",
+        "clue": "A snail or clam's hard home"
+      },
+      {
+        "word": "SHARK",
+        "clue": "A fish with many sharp teeth"
+      },
+      {
+        "word": "WHALE",
+        "clue": "The largest animal in the sea"
+      },
+      {
+        "word": "CORAL",
+        "clue": "Colorful reef built by tiny animals"
+      },
+      {
+        "word": "SQUID",
+        "clue": "A sea creature with ten arms"
+      },
+      {
+        "word": "SHORE",
+        "clue": "Where the land meets the sea"
+      },
+      {
+        "word": "BEACH",
+        "clue": "A sandy place by the sea"
+      },
+      {
+        "word": "TUNA",
+        "clue": "A large fish often canned"
+      },
+      {
+        "word": "COD",
+        "clue": "A common food fish"
+      },
+      {
+        "word": "BAY",
+        "clue": "A curved part of the coast"
+      },
+      {
+        "word": "GULF",
+        "clue": "A large bay"
+      },
+      {
+        "word": "OAR",
+        "clue": "You row a boat with it"
+      },
+      {
+        "word": "SAIL",
+        "clue": "It catches the wind on a boat"
+      },
+      {
+        "word": "DECK",
+        "clue": "The floor of a ship"
+      },
+      {
+        "word": "ROPE",
+        "clue": "Used to tie up a boat"
+      },
+      {
+        "word": "KNOT",
+        "clue": "A tie in a rope"
+      },
+      {
+        "word": "PORT",
+        "clue": "A town where ships load and unload"
+      },
+      {
+        "word": "DOCK",
+        "clue": "Where boats tie up"
+      },
+      {
+        "word": "FIN",
+        "clue": "A fish uses it to swim"
+      },
+      {
+        "word": "GILL",
+        "clue": "A fish breathes through it"
+      },
+      {
+        "word": "SURF",
+        "clue": "The white waves near the shore"
+      },
+      {
+        "word": "DIVE",
+        "clue": "Plunge headfirst into water"
+      },
+      {
+        "word": "RAFT",
+        "clue": "A flat floating platform"
+      },
+      {
+        "word": "BUOY",
+        "clue": "A floating marker in the water"
+      }
     ],
     "2": [
-      { "word": "ANCHOR", "clue": "It keeps a boat from drifting" },
-      { "word": "HARBOR", "clue": "A safe place where boats rest" },
-      { "word": "LAGOON", "clue": "A shallow pool near the sea" },
-      { "word": "ISLAND", "clue": "Land surrounded by water" },
-      { "word": "MARINA", "clue": "A dock for small boats" },
-      { "word": "OYSTER", "clue": "A shellfish that can make pearls" },
-      { "word": "MUSSEL", "clue": "A dark shellfish on the rocks" },
-      { "word": "SPONGE", "clue": "A soft sea animal full of holes" },
-      { "word": "SHRIMP", "clue": "A small curved shellfish" },
-      { "word": "MARLIN", "clue": "A fast fish with a long spear-like bill" },
-      { "word": "TURTLE", "clue": "A reptile with a hard shell" },
-      { "word": "WALRUS", "clue": "A sea animal with long tusks" },
-      { "word": "URCHIN", "clue": "A spiny ball-shaped sea creature" },
-      { "word": "CURRENT", "clue": "A steady flow of water in the sea" },
-      { "word": "SEAWEED", "clue": "Green plants that grow in the sea" },
-      { "word": "OCTOPUS", "clue": "A sea animal with eight arms" },
-      { "word": "DOLPHIN", "clue": "A clever sea mammal that leaps" },
-      { "word": "STINGRAY", "clue": "A flat fish with a whip-like tail" },
-      { "word": "LOBSTER", "clue": "A shellfish with big claws" },
-      { "word": "SEAGULL", "clue": "A common bird at the beach" },
-      { "word": "PELICAN", "clue": "A bird with a big throat pouch" },
-      { "word": "SAILOR", "clue": "A person who works on a ship" },
-      { "word": "CAPTAIN", "clue": "The person in charge of a ship" },
-      { "word": "VOYAGE", "clue": "A long journey by sea" },
-      { "word": "SNAPPER", "clue": "A reddish reef fish" },
-      { "word": "HERRING", "clue": "A small silvery schooling fish" },
-      { "word": "MACKEREL", "clue": "An oily fish with striped back" },
-      { "word": "SARDINE", "clue": "A tiny fish often sold in tins" },
-      { "word": "STARFISH", "clue": "A five-armed creature on the seabed" },
-      { "word": "SEAHORSE", "clue": "A tiny fish shaped like a horse's head" },
-      { "word": "BARNACLE", "clue": "A small shell that sticks to hulls" },
-      { "word": "TENTACLE", "clue": "An arm of an octopus or jellyfish" },
-      { "word": "DRIFTWOOD", "clue": "Wood washed up by the sea" },
-      { "word": "SEASHELL", "clue": "A shell found on the beach" },
-      { "word": "SEAWALL", "clue": "A wall that holds back the sea" },
-      { "word": "SEABED", "clue": "The floor of the sea" },
-      { "word": "SEABIRD", "clue": "A bird that lives by the ocean" },
-      { "word": "MARINER", "clue": "Another word for a sailor" },
-      { "word": "CASTAWAY", "clue": "Someone stranded on an island" },
-      { "word": "FLOTSAM", "clue": "Floating wreckage on the sea" },
-      { "word": "JETSAM", "clue": "Goods thrown overboard and washed ashore" },
-      { "word": "RIPTIDE", "clue": "A strong current pulling out to sea" },
-      { "word": "BREAKER", "clue": "A wave that crashes on the shore" },
-      { "word": "SWELL", "clue": "Rolling waves on the open sea" },
-      { "word": "ATOLL", "clue": "A ring-shaped coral island" },
-      { "word": "FJORD", "clue": "A narrow sea inlet between cliffs" },
-      { "word": "INLET", "clue": "A small narrow bay" },
-      { "word": "COVE", "clue": "A small sheltered bay" },
-      { "word": "STRAIT", "clue": "A narrow channel between two seas" },
-      { "word": "CHANNEL", "clue": "A passage of water between lands" },
-      { "word": "JETTY", "clue": "A structure that juts into the water" },
-      { "word": "WHARF", "clue": "A platform where ships are loaded" },
-      { "word": "BUOYANT", "clue": "Able to float" },
-      { "word": "NAUTICAL", "clue": "Relating to ships and sailing" },
-      { "word": "MARITIME", "clue": "Relating to the sea" },
-      { "word": "SEAFOOD", "clue": "Fish and shellfish we eat" },
-      { "word": "FISHERY", "clue": "A place where fish are caught" },
-      { "word": "TRAWLER", "clue": "A boat that drags a fishing net" },
-      { "word": "DINGHY", "clue": "A small boat" },
-      { "word": "KAYAK", "clue": "A small paddled boat" },
-      { "word": "CANOE", "clue": "A light narrow boat" },
-      { "word": "YACHT", "clue": "A sleek sailing or motor boat" },
-      { "word": "FRIGATE", "clue": "A fast naval warship" },
-      { "word": "PORTHOLE", "clue": "A round window on a ship" },
-      { "word": "RUDDER", "clue": "It steers a boat" },
-      { "word": "KEEL", "clue": "The bottom ridge of a boat" },
-      { "word": "HULL", "clue": "The body of a ship" },
-      { "word": "STERN", "clue": "The back of a boat" },
-      { "word": "CARGO", "clue": "Goods carried by a ship" },
-      { "word": "COMPASS", "clue": "It points the way at sea" },
-      { "word": "SEASICK", "clue": "Feeling ill from a rocking boat" },
-      { "word": "PLAICE", "clue": "A flat sea fish" },
-      { "word": "HALIBUT", "clue": "A large flatfish" },
-      { "word": "MULLET", "clue": "A common coastal fish" },
-      { "word": "ABALONE", "clue": "A shellfish with a pearly shell" },
-      { "word": "SCALLOP", "clue": "A shellfish with a fan-shaped shell" },
-      { "word": "COCKLE", "clue": "A small ribbed shellfish" },
-      { "word": "PRAWN", "clue": "A large shrimp" },
-      { "word": "PADDLE", "clue": "Used to move a canoe" }
+      {
+        "word": "ANCHOR",
+        "clue": "It keeps a boat from drifting"
+      },
+      {
+        "word": "HARBOR",
+        "clue": "A safe place where boats rest"
+      },
+      {
+        "word": "LAGOON",
+        "clue": "A shallow pool near the sea"
+      },
+      {
+        "word": "ISLAND",
+        "clue": "Land surrounded by water"
+      },
+      {
+        "word": "MARINA",
+        "clue": "A dock for small boats"
+      },
+      {
+        "word": "OYSTER",
+        "clue": "A shellfish that can make pearls"
+      },
+      {
+        "word": "MUSSEL",
+        "clue": "A dark shellfish on the rocks"
+      },
+      {
+        "word": "SPONGE",
+        "clue": "A soft sea animal full of holes"
+      },
+      {
+        "word": "SHRIMP",
+        "clue": "A small curved shellfish"
+      },
+      {
+        "word": "MARLIN",
+        "clue": "A fast fish with a long spear-like bill"
+      },
+      {
+        "word": "TURTLE",
+        "clue": "A reptile with a hard shell"
+      },
+      {
+        "word": "WALRUS",
+        "clue": "A sea animal with long tusks"
+      },
+      {
+        "word": "URCHIN",
+        "clue": "A spiny ball-shaped sea creature"
+      },
+      {
+        "word": "CURRENT",
+        "clue": "A steady flow of water in the sea"
+      },
+      {
+        "word": "SEAWEED",
+        "clue": "Green plants that grow in the sea"
+      },
+      {
+        "word": "OCTOPUS",
+        "clue": "A sea animal with eight arms"
+      },
+      {
+        "word": "DOLPHIN",
+        "clue": "A clever sea mammal that leaps"
+      },
+      {
+        "word": "STINGRAY",
+        "clue": "A flat fish with a whip-like tail"
+      },
+      {
+        "word": "LOBSTER",
+        "clue": "A shellfish with big claws"
+      },
+      {
+        "word": "SEAGULL",
+        "clue": "A common bird at the beach"
+      },
+      {
+        "word": "PELICAN",
+        "clue": "A bird with a big throat pouch"
+      },
+      {
+        "word": "SAILOR",
+        "clue": "A person who works on a ship"
+      },
+      {
+        "word": "CAPTAIN",
+        "clue": "The person in charge of a ship"
+      },
+      {
+        "word": "VOYAGE",
+        "clue": "A long journey by sea"
+      },
+      {
+        "word": "SNAPPER",
+        "clue": "A reddish reef fish"
+      },
+      {
+        "word": "HERRING",
+        "clue": "A small silvery schooling fish"
+      },
+      {
+        "word": "MACKEREL",
+        "clue": "An oily fish with striped back"
+      },
+      {
+        "word": "SARDINE",
+        "clue": "A tiny fish often sold in tins"
+      },
+      {
+        "word": "STARFISH",
+        "clue": "A five-armed creature on the seabed"
+      },
+      {
+        "word": "SEAHORSE",
+        "clue": "A tiny fish shaped like a horse's head"
+      },
+      {
+        "word": "BARNACLE",
+        "clue": "A small shell that sticks to hulls"
+      },
+      {
+        "word": "TENTACLE",
+        "clue": "An arm of an octopus or jellyfish"
+      },
+      {
+        "word": "DRIFTWOOD",
+        "clue": "Wood washed up by the sea"
+      },
+      {
+        "word": "SEASHELL",
+        "clue": "A shell found on the beach"
+      },
+      {
+        "word": "SEAWALL",
+        "clue": "A wall that holds back the sea"
+      },
+      {
+        "word": "SEABED",
+        "clue": "The floor of the sea"
+      },
+      {
+        "word": "SEABIRD",
+        "clue": "A bird that lives by the ocean"
+      },
+      {
+        "word": "MARINER",
+        "clue": "Another word for a sailor"
+      },
+      {
+        "word": "CASTAWAY",
+        "clue": "Someone stranded on an island"
+      },
+      {
+        "word": "FLOTSAM",
+        "clue": "Floating wreckage on the sea"
+      },
+      {
+        "word": "JETSAM",
+        "clue": "Goods thrown overboard and washed ashore"
+      },
+      {
+        "word": "RIPTIDE",
+        "clue": "A strong current pulling out to sea"
+      },
+      {
+        "word": "BREAKER",
+        "clue": "A wave that crashes on the shore"
+      },
+      {
+        "word": "SWELL",
+        "clue": "Rolling waves on the open sea"
+      },
+      {
+        "word": "ATOLL",
+        "clue": "A ring-shaped coral island"
+      },
+      {
+        "word": "FJORD",
+        "clue": "A narrow sea inlet between cliffs"
+      },
+      {
+        "word": "INLET",
+        "clue": "A small narrow bay"
+      },
+      {
+        "word": "COVE",
+        "clue": "A small sheltered bay"
+      },
+      {
+        "word": "STRAIT",
+        "clue": "A narrow channel between two seas"
+      },
+      {
+        "word": "CHANNEL",
+        "clue": "A passage of water between lands"
+      },
+      {
+        "word": "JETTY",
+        "clue": "A structure that juts into the water"
+      },
+      {
+        "word": "WHARF",
+        "clue": "A platform where ships are loaded"
+      },
+      {
+        "word": "BUOYANT",
+        "clue": "Able to float"
+      },
+      {
+        "word": "NAUTICAL",
+        "clue": "Relating to ships and sailing"
+      },
+      {
+        "word": "MARITIME",
+        "clue": "Relating to the sea"
+      },
+      {
+        "word": "SEAFOOD",
+        "clue": "Fish and shellfish we eat"
+      },
+      {
+        "word": "FISHERY",
+        "clue": "A place where fish are caught"
+      },
+      {
+        "word": "TRAWLER",
+        "clue": "A boat that drags a fishing net"
+      },
+      {
+        "word": "DINGHY",
+        "clue": "A small boat"
+      },
+      {
+        "word": "KAYAK",
+        "clue": "A small paddled boat"
+      },
+      {
+        "word": "CANOE",
+        "clue": "A light narrow boat"
+      },
+      {
+        "word": "YACHT",
+        "clue": "A sleek sailing or motor boat"
+      },
+      {
+        "word": "FRIGATE",
+        "clue": "A fast naval warship"
+      },
+      {
+        "word": "PORTHOLE",
+        "clue": "A round window on a ship"
+      },
+      {
+        "word": "RUDDER",
+        "clue": "It steers a boat"
+      },
+      {
+        "word": "KEEL",
+        "clue": "The bottom ridge of a boat"
+      },
+      {
+        "word": "HULL",
+        "clue": "The body of a ship"
+      },
+      {
+        "word": "STERN",
+        "clue": "The back of a boat"
+      },
+      {
+        "word": "CARGO",
+        "clue": "Goods carried by a ship"
+      },
+      {
+        "word": "COMPASS",
+        "clue": "It points the way at sea"
+      },
+      {
+        "word": "SEASICK",
+        "clue": "Feeling ill from a rocking boat"
+      },
+      {
+        "word": "PLAICE",
+        "clue": "A flat sea fish"
+      },
+      {
+        "word": "HALIBUT",
+        "clue": "A large flatfish"
+      },
+      {
+        "word": "MULLET",
+        "clue": "A common coastal fish"
+      },
+      {
+        "word": "ABALONE",
+        "clue": "A shellfish with a pearly shell"
+      },
+      {
+        "word": "SCALLOP",
+        "clue": "A shellfish with a fan-shaped shell"
+      },
+      {
+        "word": "COCKLE",
+        "clue": "A small ribbed shellfish"
+      },
+      {
+        "word": "PRAWN",
+        "clue": "A large shrimp"
+      },
+      {
+        "word": "PADDLE",
+        "clue": "Used to move a canoe"
+      }
     ],
     "3": [
-      { "word": "JELLYFISH", "clue": "A see-through sea animal that stings" },
-      { "word": "ANEMONE", "clue": "A flower-like animal stuck to a rock" },
-      { "word": "PLANKTON", "clue": "Tiny drifting sea life" },
-      { "word": "CRUSTACEAN", "clue": "A shellfish like a crab or lobster" },
-      { "word": "MOLLUSK", "clue": "A soft-bodied animal often with a shell" },
-      { "word": "BARRACUDA", "clue": "A fierce predatory fish" },
-      { "word": "SWORDFISH", "clue": "A big fish with a long flat bill" },
-      { "word": "CUTTLEFISH", "clue": "A relative of the squid that changes color" },
-      { "word": "NARWHAL", "clue": "A whale with a long spiral tusk" },
-      { "word": "MANATEE", "clue": "A gentle sea cow" },
-      { "word": "PORPOISE", "clue": "A small relative of the dolphin" },
-      { "word": "PLESIOSAUR", "clue": "An ancient long-necked sea reptile" },
-      { "word": "SEAWATER", "clue": "The salty water of the ocean" },
-      { "word": "SALTWATER", "clue": "Water that contains salt" },
-      { "word": "SHIPWRECK", "clue": "The remains of a sunken ship" },
-      { "word": "LIGHTHOUSE", "clue": "A tower that guides ships at night" },
-      { "word": "SUBMARINE", "clue": "A vessel that travels underwater" },
-      { "word": "PERISCOPE", "clue": "A tube used to see above the water" },
-      { "word": "ESTUARY", "clue": "Where a river meets the sea" },
-      { "word": "PENINSULA", "clue": "Land surrounded by water on three sides" },
-      { "word": "ARCHIPELAGO", "clue": "A group of many islands" },
-      { "word": "TSUNAMI", "clue": "A giant wave caused by an earthquake" },
-      { "word": "WHIRLPOOL", "clue": "A swirling funnel of water" },
-      { "word": "UNDERTOW", "clue": "A pull of water back out to sea" },
-      { "word": "HORIZON", "clue": "Where the sea seems to meet the sky" },
-      { "word": "CONTINENT", "clue": "A vast landmass bounded by oceans" },
-      { "word": "CORALREEF", "clue": "An underwater ridge built by coral" },
-      { "word": "SEAFLOOR", "clue": "The bottom of the ocean" },
-      { "word": "ABYSS", "clue": "The deep dark part of the ocean" },
-      { "word": "TRENCH", "clue": "A very deep crack in the sea floor" },
-      { "word": "CRUSTACEANS", "clue": "Crabs, shrimp, and their relatives" },
-      { "word": "BIOLUMINESCENT", "clue": "Glowing with its own light" },
-      { "word": "ANGLERFISH", "clue": "A deep-sea fish with a glowing lure" },
-      { "word": "HAMMERHEAD", "clue": "A shark with a wide flat head" },
-      { "word": "SUBMERSIBLE", "clue": "A small craft for going deep underwater" },
-      { "word": "BATHYSPHERE", "clue": "A round deep-sea diving chamber" },
-      { "word": "OCEANOGRAPHY", "clue": "The science of the oceans" },
-      { "word": "HYDROTHERMAL", "clue": "Relating to hot water vents on the seabed" },
-      { "word": "ABYSSAL", "clue": "Of the deepest ocean" },
-      { "word": "PELAGIC", "clue": "Living in the open sea" },
-      { "word": "BENTHIC", "clue": "Living on the sea floor" },
-      { "word": "INTERTIDAL", "clue": "The zone between high and low tide" },
-      { "word": "BRACKISH", "clue": "Slightly salty water" },
-      { "word": "DESALINATION", "clue": "Removing salt from seawater" },
-      { "word": "PHYTOPLANKTON", "clue": "Tiny drifting sea plants" },
-      { "word": "ZOOPLANKTON", "clue": "Tiny drifting sea animals" },
-      { "word": "ECHINODERM", "clue": "A group including starfish and urchins" },
-      { "word": "CEPHALOPOD", "clue": "A group including octopus and squid" },
-      { "word": "GASTROPOD", "clue": "A snail or slug" },
-      { "word": "BIVALVE", "clue": "A shellfish with two hinged shells" },
-      { "word": "NUDIBRANCH", "clue": "A colorful sea slug" },
-      { "word": "NAUTILUS", "clue": "A spiral-shelled sea creature" },
-      { "word": "COELACANTH", "clue": "An ancient fish once thought extinct" },
-      { "word": "STURGEON", "clue": "A large fish prized for caviar" },
-      { "word": "GROUPER", "clue": "A heavy-bodied reef fish" },
-      { "word": "AMBERJACK", "clue": "A strong sport fish" },
-      { "word": "SAILFISH", "clue": "A fast fish with a tall fin" },
-      { "word": "TRIGGERFISH", "clue": "A boxy reef fish with a spine" },
-      { "word": "PARROTFISH", "clue": "A reef fish with a beak-like mouth" },
-      { "word": "CLOWNFISH", "clue": "An orange fish that lives in anemones" },
-      { "word": "LIONFISH", "clue": "A striped fish with venomous spines" },
-      { "word": "PUFFERFISH", "clue": "A fish that puffs up into a ball" },
-      { "word": "STONEFISH", "clue": "A venomous fish that looks like a rock" },
-      { "word": "SEACUCUMBER", "clue": "A soft sausage-shaped sea animal" },
-      { "word": "LEATHERBACK", "clue": "The largest sea turtle" },
-      { "word": "LOGGERHEAD", "clue": "A large-headed sea turtle" },
-      { "word": "HUMPBACK", "clue": "A whale known for its songs" },
-      { "word": "BELUGA", "clue": "A small white whale" },
-      { "word": "MEGALODON", "clue": "A giant prehistoric shark" },
-      { "word": "MAELSTROM", "clue": "A powerful whirlpool" },
-      { "word": "TIDEPOOL", "clue": "A rocky pool left by the tide" },
-      { "word": "BREAKWATER", "clue": "A barrier that calms the waves" },
-      { "word": "PROMONTORY", "clue": "A high point of land jutting into the sea" },
-      { "word": "HEADLAND", "clue": "A narrow piece of land reaching into the sea" },
-      { "word": "AQUACULTURE", "clue": "Farming fish and shellfish" },
-      { "word": "CATAMARAN", "clue": "A boat with two parallel hulls" },
-      { "word": "SCHOONER", "clue": "A sailing ship with two or more masts" },
-      { "word": "GALLEON", "clue": "A large old sailing warship" },
-      { "word": "NAVIGATOR", "clue": "One who plots a ship's course" }
+      {
+        "word": "JELLYFISH",
+        "clue": "A see-through sea animal that stings"
+      },
+      {
+        "word": "ANEMONE",
+        "clue": "A flower-like animal stuck to a rock"
+      },
+      {
+        "word": "PLANKTON",
+        "clue": "Tiny drifting sea life"
+      },
+      {
+        "word": "MOLLUSK",
+        "clue": "A soft-bodied animal often with a shell"
+      },
+      {
+        "word": "SWORDFISH",
+        "clue": "A big fish with a long flat bill"
+      },
+      {
+        "word": "NARWHAL",
+        "clue": "A whale with a long spiral tusk"
+      },
+      {
+        "word": "MANATEE",
+        "clue": "A gentle sea cow"
+      },
+      {
+        "word": "PORPOISE",
+        "clue": "A small relative of the dolphin"
+      },
+      {
+        "word": "SEAWATER",
+        "clue": "The salty water of the ocean"
+      },
+      {
+        "word": "SALTWATER",
+        "clue": "Water that contains salt"
+      },
+      {
+        "word": "SHIPWRECK",
+        "clue": "The remains of a sunken ship"
+      },
+      {
+        "word": "SUBMARINE",
+        "clue": "A vessel that travels underwater"
+      },
+      {
+        "word": "PERISCOPE",
+        "clue": "A tube used to see above the water"
+      },
+      {
+        "word": "ESTUARY",
+        "clue": "Where a river meets the sea"
+      },
+      {
+        "word": "PENINSULA",
+        "clue": "Land surrounded by water on three sides"
+      },
+      {
+        "word": "TSUNAMI",
+        "clue": "A giant wave caused by an earthquake"
+      },
+      {
+        "word": "WHIRLPOOL",
+        "clue": "A swirling funnel of water"
+      },
+      {
+        "word": "UNDERTOW",
+        "clue": "A pull of water back out to sea"
+      },
+      {
+        "word": "HORIZON",
+        "clue": "Where the sea seems to meet the sky"
+      },
+      {
+        "word": "CONTINENT",
+        "clue": "A vast landmass bounded by oceans"
+      },
+      {
+        "word": "CORALREEF",
+        "clue": "An underwater ridge built by coral"
+      },
+      {
+        "word": "SEAFLOOR",
+        "clue": "The bottom of the ocean"
+      },
+      {
+        "word": "ABYSS",
+        "clue": "The deep dark part of the ocean"
+      },
+      {
+        "word": "TRENCH",
+        "clue": "A very deep crack in the sea floor"
+      },
+      {
+        "word": "ABYSSAL",
+        "clue": "Of the deepest ocean"
+      },
+      {
+        "word": "PELAGIC",
+        "clue": "Living in the open sea"
+      },
+      {
+        "word": "BENTHIC",
+        "clue": "Living on the sea floor"
+      },
+      {
+        "word": "BRACKISH",
+        "clue": "Slightly salty water"
+      },
+      {
+        "word": "GASTROPOD",
+        "clue": "A snail or slug"
+      },
+      {
+        "word": "BIVALVE",
+        "clue": "A shellfish with two hinged shells"
+      },
+      {
+        "word": "NAUTILUS",
+        "clue": "A spiral-shelled sea creature"
+      },
+      {
+        "word": "STURGEON",
+        "clue": "A large fish prized for caviar"
+      },
+      {
+        "word": "GROUPER",
+        "clue": "A heavy-bodied reef fish"
+      },
+      {
+        "word": "SAILFISH",
+        "clue": "A fast fish with a tall fin"
+      },
+      {
+        "word": "CLOWNFISH",
+        "clue": "An orange fish that lives in anemones"
+      },
+      {
+        "word": "LIONFISH",
+        "clue": "A striped fish with venomous spines"
+      },
+      {
+        "word": "STONEFISH",
+        "clue": "A venomous fish that looks like a rock"
+      },
+      {
+        "word": "HUMPBACK",
+        "clue": "A whale known for its songs"
+      },
+      {
+        "word": "BELUGA",
+        "clue": "A small white whale"
+      },
+      {
+        "word": "MEGALODON",
+        "clue": "A giant prehistoric shark"
+      },
+      {
+        "word": "MAELSTROM",
+        "clue": "A powerful whirlpool"
+      },
+      {
+        "word": "TIDEPOOL",
+        "clue": "A rocky pool left by the tide"
+      },
+      {
+        "word": "HEADLAND",
+        "clue": "A narrow piece of land reaching into the sea"
+      },
+      {
+        "word": "CATAMARAN",
+        "clue": "A boat with two parallel hulls"
+      },
+      {
+        "word": "SCHOONER",
+        "clue": "A sailing ship with two or more masts"
+      },
+      {
+        "word": "GALLEON",
+        "clue": "A large old sailing warship"
+      },
+      {
+        "word": "NAVIGATOR",
+        "clue": "One who plots a ship's course"
+      }
+    ],
+    "4": [
+      {
+        "word": "CRUSTACEAN",
+        "clue": "A shellfish like a crab or lobster"
+      },
+      {
+        "word": "BARRACUDA",
+        "clue": "A fierce predatory fish"
+      },
+      {
+        "word": "CUTTLEFISH",
+        "clue": "A relative of the squid that changes color"
+      },
+      {
+        "word": "PLESIOSAUR",
+        "clue": "An ancient long-necked sea reptile"
+      },
+      {
+        "word": "LIGHTHOUSE",
+        "clue": "A tower that guides ships at night"
+      },
+      {
+        "word": "ARCHIPELAGO",
+        "clue": "A group of many islands"
+      },
+      {
+        "word": "CRUSTACEANS",
+        "clue": "Crabs, shrimp, and their relatives"
+      },
+      {
+        "word": "BIOLUMINESCENT",
+        "clue": "Glowing with its own light"
+      },
+      {
+        "word": "ANGLERFISH",
+        "clue": "A deep-sea fish with a glowing lure"
+      },
+      {
+        "word": "HAMMERHEAD",
+        "clue": "A shark with a wide flat head"
+      },
+      {
+        "word": "SUBMERSIBLE",
+        "clue": "A small craft for going deep underwater"
+      },
+      {
+        "word": "BATHYSPHERE",
+        "clue": "A round deep-sea diving chamber"
+      },
+      {
+        "word": "OCEANOGRAPHY",
+        "clue": "The science of the oceans"
+      },
+      {
+        "word": "HYDROTHERMAL",
+        "clue": "Relating to hot water vents on the seabed"
+      },
+      {
+        "word": "INTERTIDAL",
+        "clue": "The zone between high and low tide"
+      },
+      {
+        "word": "DESALINATION",
+        "clue": "Removing salt from seawater"
+      },
+      {
+        "word": "PHYTOPLANKTON",
+        "clue": "Tiny drifting sea plants"
+      },
+      {
+        "word": "ZOOPLANKTON",
+        "clue": "Tiny drifting sea animals"
+      },
+      {
+        "word": "ECHINODERM",
+        "clue": "A group including starfish and urchins"
+      },
+      {
+        "word": "CEPHALOPOD",
+        "clue": "A group including octopus and squid"
+      },
+      {
+        "word": "NUDIBRANCH",
+        "clue": "A colorful sea slug"
+      },
+      {
+        "word": "COELACANTH",
+        "clue": "An ancient fish once thought extinct"
+      },
+      {
+        "word": "AMBERJACK",
+        "clue": "A strong sport fish"
+      },
+      {
+        "word": "TRIGGERFISH",
+        "clue": "A boxy reef fish with a spine"
+      },
+      {
+        "word": "PARROTFISH",
+        "clue": "A reef fish with a beak-like mouth"
+      },
+      {
+        "word": "PUFFERFISH",
+        "clue": "A fish that puffs up into a ball"
+      },
+      {
+        "word": "SEACUCUMBER",
+        "clue": "A soft sausage-shaped sea animal"
+      },
+      {
+        "word": "LEATHERBACK",
+        "clue": "The largest sea turtle"
+      },
+      {
+        "word": "LOGGERHEAD",
+        "clue": "A large-headed sea turtle"
+      },
+      {
+        "word": "BREAKWATER",
+        "clue": "A barrier that calms the waves"
+      },
+      {
+        "word": "PROMONTORY",
+        "clue": "A high point of land jutting into the sea"
+      },
+      {
+        "word": "AQUACULTURE",
+        "clue": "Farming fish and shellfish"
+      }
     ]
   }
 }

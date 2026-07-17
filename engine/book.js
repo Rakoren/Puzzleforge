@@ -24,6 +24,8 @@
 const { generate } = require('./generate');
 const { withSeed } = require('./rng');
 const { isActivityType } = require('../generators/registry');
+const { summarizeLevels } = require('../config/difficulty');
+const { kidsWordMaxLen } = require('../config/defaults');
 const themes = require('../themes');
 const breatherContent = require('../content/breathers');
 
@@ -150,35 +152,58 @@ function curveLevel(i, n, curve, flatLevel, rand) {
   return curve === 'hard-to-easy' ? 3 - step : 1 + step;
 }
 
+// Map a puzzle level (1–4) + audience to how words are drawn from a theme's
+// FOUR vocabulary tiers (1 easiest → 4 hardest):
+//   Adult → the exact tier for the level, so Expert (L4) pulls tier-4 vocabulary
+//           that Hard (L3) never sees.
+//   Kids  → the easier tiers only (cumulative for variety), never the hardest
+//           tier, plus a per-tier word-length cap. A kids "Independent" (L4)
+//           tops out at tier-3 words ≤8 letters — far gentler than adult Expert.
+function themeTierOpts(level, audience) {
+  const lv = Math.max(1, Math.min(4, Number(level) || 1));
+  if (String(audience || '').toLowerCase() === 'kids') {
+    const maxTier = { 1: 1, 2: 2, 3: 2, 4: 3 }[lv];
+    return { maxDifficulty: maxTier, maxLength: kidsWordMaxLen(lv, 'kids'), ceiling: maxTier };
+  }
+  return { difficulty: lv, ceiling: lv }; // adults: exact tier = level (1..4)
+}
+
 // Select the word list for a word-type puzzle from an already-resolved theme.
 // When `exclude` is a Set, words already used elsewhere in the book are avoided;
 // if uniqueness leaves the puzzle short, it tops up (allowing repeats, but never
 // from a harder tier) so a puzzle is never starved of words.
-function wordsFromTheme(theme, difficulty, count, exclude) {
-  // Pull from the difficulty's tier; sample `count` so each puzzle differs.
-  let words = themes.selectWords(theme, { difficulty, count, exclude });
+function wordsFromTheme(theme, level, count, exclude, audience) {
+  const { ceiling, maxLength, ...base } = themeTierOpts(level, audience);
+  let words = themes.selectWords(theme, { ...base, maxLength, count, exclude });
 
   if (words.length < count) {
     // `inThis` only guards against duplicates *within* this one puzzle; repeats
     // across puzzles are what the no-words-left fallback deliberately allows.
     const inThis = new Set(words);
+    // A word search rejects any target that is a substring of another target.
+    // selectWords guarantees that within one sample, but a top-up draws a fresh
+    // sample, so guard the merge too: never add a word that contains — or is
+    // contained by — one already chosen (e.g. CONTROL vs CONTROLPAD).
+    const collides = (w) => words.some((c) => c.includes(w) || w.includes(c));
     const fill = (opts) => {
-      for (const w of themes.selectWords(theme, opts)) {
+      for (const w of themes.selectWords(theme, { maxLength, ...opts })) {
         if (words.length >= count) break;
-        if (inThis.has(w)) continue;
+        if (inThis.has(w) || collides(w)) continue;
         inThis.add(w);
         words.push(w);
       }
     };
     if (exclude) {
-      // This difficulty's tier is exhausted of unused words. Borrow still-unused
-      // words from this and easier tiers (never harder than requested, so the
-      // level stays valid), keeping uniqueness across the book…
-      fill({ maxDifficulty: difficulty, count, exclude });
+      // This tier is exhausted of unused words. Borrow still-unused words from
+      // this and easier tiers (never harder than the level's ceiling, so the
+      // difficulty stays valid), keeping uniqueness across the book…
+      fill({ maxDifficulty: ceiling, count, exclude });
       // …then, only if still short, repeat words from the same/easier tiers so
-      // the puzzle stays full — still never pulling a harder word into an easier
-      // puzzle.
-      if (words.length < count) fill({ maxDifficulty: difficulty, count });
+      // the puzzle stays full — still never pulling a harder word in.
+      if (words.length < count) fill({ maxDifficulty: ceiling, count });
+      // Last resort: the kids cap left too few words — drop the cap so the
+      // puzzle is never starved (better a slightly long word than an empty grid).
+      if (words.length === 0 && maxLength != null) fill({ maxDifficulty: ceiling, count, maxLength: null });
     } else if (words.length === 0) {
       // No uniqueness constraint and this tier came back empty (e.g. a theme
       // with no words at this level) — fall back to the whole theme.
@@ -186,6 +211,82 @@ function wordsFromTheme(theme, difficulty, count, exclude) {
     }
   }
   return words;
+}
+
+// Adult / kids labels per level, for a human-readable low-pool warning.
+const LEVEL_LABELS = {
+  adult: { 1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Expert' },
+  kids: { 1: 'Beginner', 2: 'Early Reader', 3: 'Growing Reader', 4: 'Independent' },
+};
+
+/**
+ * Ahead-of-generation check: with "No repeated words" on, does the book demand
+ * more unique theme words at some difficulty band than the theme actually has?
+ * Groups word-type puzzles by (theme, tier band) exactly as generation does
+ * (audience-aware `themeTierOpts` → the same `selectWords` pool), distributing a
+ * difficulty range evenly across the levels it spans. Advisory only — it never
+ * blocks generation (the engine still fills short lists by reusing words).
+ * @returns {{ unique: boolean, wordsPerPuzzle: number, shortfalls: Array }}
+ */
+function analyzeWordPool(config = {}) {
+  const audience = String(config.audience || 'adult').toLowerCase() === 'kids' ? 'kids' : 'adult';
+  if (config.uniqueWords !== true) return { unique: false, wordsPerPuzzle: DEFAULT_WORD_COUNT, shortfalls: [] };
+  const rows = Array.isArray(config.puzzles) ? config.puzzles : [];
+
+  const levelsOf = (d) => {
+    const s = String(d == null ? 2 : d);
+    if (s.includes('-')) {
+      const [lo, hi] = s.split('-').map((x) => parseInt(x, 10));
+      const out = [];
+      for (let l = Math.max(1, lo || 1); l <= Math.min(4, hi || lo || 1); l++) out.push(l);
+      return out.length ? out : [2];
+    }
+    return [Math.max(1, Math.min(4, parseInt(s, 10) || 2))];
+  };
+
+  // Accumulate demand per (theme, band). A band is keyed by the tier options a
+  // level resolves to, so kids' cumulative tiers group together correctly.
+  const bands = new Map();
+  for (const spec of rows) {
+    if (!spec || !WORD_TYPES.has(spec.type) || spec.words) continue; // custom lists don't draw the pool
+    const themeRef = spec.theme || config.theme;
+    if (!themeRef) continue;
+    const per = spec.count_words || DEFAULT_WORD_COUNT;
+    const count = spec.count || 1;
+    const levels = levelsOf(spec.difficulty);
+    const share = count / levels.length; // a range spreads evenly across its levels
+    for (const level of levels) {
+      const opts = themeTierOpts(level, audience);
+      const key = `${themeRef}@@${opts.difficulty != null ? 'd' + opts.difficulty : 'm' + opts.maxDifficulty}@@${opts.maxLength || ''}`;
+      const g = bands.get(key) || { themeRef, level, opts, demand: 0, puzzles: 0 };
+      g.demand += share * per;
+      g.puzzles += share;
+      if (level < g.level) g.level = level; // label with the band's easiest level
+      bands.set(key, g);
+    }
+  }
+
+  const shortfalls = [];
+  for (const g of bands.values()) {
+    let theme;
+    try { theme = themes.resolveTheme(g.themeRef); } catch (_) { continue; }
+    const { ceiling, maxLength, ...base } = g.opts;
+    const supply = themes.selectWords(theme, { ...base, maxLength }).length;
+    const demand = Math.round(g.demand);
+    if (demand > supply) {
+      shortfalls.push({
+        theme: theme.label,
+        level: g.level,
+        label: LEVEL_LABELS[audience][g.level] || `L${g.level}`,
+        puzzles: Math.round(g.puzzles),
+        demand,
+        supply,
+        short: demand - supply,
+      });
+    }
+  }
+  shortfalls.sort((a, b) => b.short - a.short);
+  return { unique: true, wordsPerPuzzle: DEFAULT_WORD_COUNT, shortfalls };
 }
 
 // Puzzle types that consume a themed word list.
@@ -210,15 +311,31 @@ function puzzleWords(puzzle) {
 // blank page so ink doesn't bleed onto the next printed page.
 const DRAWABLE_TYPES = new Set(['coloring', 'drawing']);
 
-// Insert a blank bleed-guard page after each drawable page (unless one already
-// follows). Returns a new array.
-function addBleedGuards(pages) {
+// Bleed-guard placement that respects the physical leaf. In a printed book a
+// sheet has two sides — page p (recto, odd) and p+1 (verso, even) are the same
+// leaf — so marker ink on a drawing/coloring page bleeds through to the OTHER
+// side of that leaf, not merely the next page in reading order. To keep that
+// back side blank we put every drawable on a recto (odd) page and a blank on its
+// verso. `startAbs` is the absolute PDF page number of the first content page
+// (after the title + front matter).
+function addBleedGuards(pages, startAbs, guardLeaf) {
+  const blank = () => generate({ type: 'bleedguard', label: '' });
   const out = [];
+  let abs = startAbs;
+  const pushBlank = () => { out.push(blank()); abs++; };
   for (let i = 0; i < pages.length; i++) {
-    out.push(pages[i]);
-    if (DRAWABLE_TYPES.has(pages[i].type)) {
-      const next = pages[i + 1];
-      if (!next || next.type !== 'bleedguard') out.push(generate({ type: 'bleedguard', label: '' }));
+    const pg = pages[i];
+    if (DRAWABLE_TYPES.has(pg.type)) {
+      if (abs % 2 === 0) pushBlank(); // put the drawable onto a recto (odd)
+      out.push(pg); abs++;
+      // Consume an existing blank right after so we don't double it.
+      if (pages[i + 1] && pages[i + 1].type === 'bleedguard') i++;
+      pushBlank(); // blank verso = the drawable's blank physical back
+      // Optional: a full blank leaf so the next puzzle starts on a fresh spread.
+      if (guardLeaf) { pushBlank(); pushBlank(); }
+    } else {
+      out.push(pg);
+      abs++;
     }
   }
   return out;
@@ -274,7 +391,7 @@ function buildBook(config, opts, seed, rand) {
   // Applied in generation order, which is the final reading order unless the
   // book is shuffled (a ramp assumes grouped order).
   const curve = DIFFICULTY_CURVES.has(config.difficultyCurve) ? config.difficultyCurve : null;
-  const flatLevel = Math.max(1, Math.min(3, Number(config.difficultyLevel) || 2));
+  const flatLevel = Math.max(1, Math.min(4, Number(config.difficultyLevel) || 2));
   const totalPuzzles = config.puzzles.reduce((sum, sp) => sum + (sp.count || 1), 0);
   let gIdx = 0;
 
@@ -289,7 +406,9 @@ function buildBook(config, opts, seed, rand) {
       const difficulty = curve
         ? curveLevel(gIdx++, totalPuzzles, curve, flatLevel, rand)
         : pickDifficulty(spec, rand);
-      const puzzleConfig = { type: spec.type, difficulty, size: spec.size };
+      // Audience reaches the generator so it reads the right difficulty ladder
+      // (kids get the gentler KIDS_DIFFICULTY presets; adults the standard ones).
+      const puzzleConfig = { type: spec.type, difficulty, size: spec.size, audience };
       if (WORD_TYPES.has(spec.type)) {
         if (spec.words) {
           puzzleConfig.words = spec.words;
@@ -304,7 +423,9 @@ function buildBook(config, opts, seed, rand) {
           }
           const theme = themes.resolveTheme(themeRef);
           const count = spec.count_words || DEFAULT_WORD_COUNT;
-          puzzleConfig.words = wordsFromTheme(theme, difficulty, count, usedWords);
+          // Audience + level pick the right vocabulary tiers (adults reach tier 4
+          // at Expert; kids stay in the easier tiers with a word-length cap).
+          puzzleConfig.words = wordsFromTheme(theme, difficulty, count, usedWords, audience);
           puzzleConfig.clues = themes.clueMap(theme);
           puzzleConfig.theme = theme.label; // clean title even for a merged category
         }
@@ -319,6 +440,8 @@ function buildBook(config, opts, seed, rand) {
           puzzleConfig.words = themes.selectWords(theme, { difficulty, count: 12 });
           puzzleConfig.theme = theme.label;
         }
+        // A coloring row may pin a specific style (mandala / pattern / bubble).
+        if (spec.type === 'coloring' && spec.style) puzzleConfig.style = spec.style;
       }
       const puzzle = generate(puzzleConfig);
       if (usedWords) for (const w of puzzleWords(puzzle)) usedWords.add(w);
@@ -349,22 +472,26 @@ function buildBook(config, opts, seed, rand) {
     });
   }
 
-  // Optional filler pages inserted after puzzles (kids fillers / inserts).
-  let ordered = interleavePuzzles(sequence, config);
-  // Back every coloring/drawing page with a blank page so markers don't bleed
-  // through to the next printed page (on by default).
-  if (config.bleedGuard !== false) ordered = addBleedGuards(ordered);
-
   // Front matter (copyright / "belongs to" / intro) sits between the title page
   // and the puzzles; offset content page numbers past it. Back matter (about /
   // more books) is rendered after the answer key.
   const frontMatter = buildFrontMatter(config);
   const backMatter = buildBackMatter(config);
 
-  // Page assignment: title page (1) + front matter, then one page per content
-  // page, then the answer key (computed by the matter template at render time;
-  // here we record content page numbers for cross-referencing in the key).
-  let page = 1 + frontMatter.length; // title + front matter
+  // Optional filler pages inserted after puzzles (kids fillers / inserts).
+  let ordered = interleavePuzzles(sequence, config);
+  // Keep the back of every coloring/drawing leaf blank so markers don't bleed
+  // through (on by default). Needs the first content page's absolute number
+  // (title page = 1, then front matter) to reason about recto/verso.
+  if (config.bleedGuard !== false) ordered = addBleedGuards(ordered, 2 + frontMatter.length, config.guardLeaf === true);
+
+  // Page assignment: (optional) title page + front matter, then one page per
+  // content page, then the answer key (computed by the matter template at render
+  // time; here we record content page numbers for cross-referencing in the key).
+  // The title page is on by default; the editor-driven flow turns it off and
+  // adds a Title Page template instead, so it must not be counted here.
+  const titlePage = config.titlePage !== false;
+  let page = (titlePage ? 1 : 0) + frontMatter.length;
   // Per-page state layer (recipe v2): overrides + reserved Fabric canvasState,
   // keyed by content-page index. Stable across reloads because the seed fixes
   // the page sequence.
@@ -384,13 +511,18 @@ function buildBook(config, opts, seed, rand) {
     author: config.author || null,
     trimSize,
     audience,
+    metadata: config.metadata && typeof config.metadata === 'object' ? config.metadata : null, // KDP listing metadata (kept for pre-flight checks)
+    perPageDifficulty: config.perPageDifficulty === true, // print a difficulty label on each puzzle page
     answerKey,
+    padToEven: config.padToEven === true, // append a blank leaf so the physical page count is even (KDP)
+    titlePage, // whether an auto title page leads the book (off = template-driven)
     pageNumbers: config.pageNumbers === true, // footer page numbers on content pages
     footerText: config.footerText ? String(config.footerText).trim() : null,
     fontScale: Number(config.fontScale) || 1, // large-print text scaling
     fontFamily: config.fontFamily || 'sans',
     border: config.border && config.border !== 'none' ? String(config.border) : null, // decorative page frame
     borderColor: config.borderColor || null,
+    master: config.master && typeof config.master === 'object' ? config.master : null, // master-page overlay (page numbers, headers, frames)
     seed, // recorded so a saved recipe reproduces the same page structure
     frontMatter, // [{ kind, ... }] rendered after the title page
     backMatter, // [{ kind, ... }] rendered after the answer key
@@ -405,6 +537,8 @@ function buildBook(config, opts, seed, rand) {
       byType,
       uniqueWords,
       difficultyCurve: curve,
+      // Difficulty spread across the real puzzles, labelled for the audience.
+      difficulty: summarizeLevels(ordered.filter((p) => !isActivityType(p.type)).map((p) => p.difficulty), audience),
       ...(usedWords ? { distinctWords: usedWords.size } : {}),
     },
   };
@@ -511,4 +645,4 @@ function interleavePuzzles(puzzles, config) {
   return out;
 }
 
-module.exports = { assembleBook };
+module.exports = { assembleBook, analyzeWordPool };

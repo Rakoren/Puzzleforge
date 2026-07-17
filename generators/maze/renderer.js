@@ -18,8 +18,13 @@ function render(puzzle, layout, opts = {}) {
   const reserveVertical = Math.round(layout.usableHeight * 0.16);
   const availW = layout.usableWidth;
   const availH = layout.usableHeight - reserveVertical;
-  const cell = Math.max(8, Math.floor(Math.min(availW / width, availH / height)));
-  const pad = Math.max(2, Math.round(cell * 0.15));
+  // The SVG is drawn with a padding margin (≈15% of a cell) on every side, so
+  // the cell must be chosen to fit the maze PLUS that padding inside the usable
+  // area — otherwise small mazes spill past the right/bottom print margin.
+  const padOf = (c) => Math.max(2, Math.round(c * 0.15));
+  let cell = Math.max(8, Math.floor(Math.min(availW / width, availH / height)));
+  while (cell > 8 && (width * cell + padOf(cell) * 2 > availW || height * cell + padOf(cell) * 2 > availH)) cell--;
+  const pad = padOf(cell);
   const w = width * cell;
   const h = height * cell;
   const stroke = Math.max(1.5, Math.round(cell * 0.08));

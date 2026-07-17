@@ -12,7 +12,7 @@
  *   difficulty  1|2|3
  *   size        number    optional grid side length
  */
-const { DIFFICULTY } = require('../../config/defaults');
+const { presetFor } = require('../../config/defaults');
 const { resolveDirections, autoSize, placeTokens, fillGrid } = require('../shared/gridsearch');
 
 const DIGITS = '0123456789';
@@ -39,7 +39,7 @@ function makeNumbers(count, len, rand) {
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = DIFFICULTY.numbersearch[difficulty] || DIFFICULTY.numbersearch[1];
+  const preset = presetFor('numbersearch', difficulty, config.audience);
   const len = config.length || preset.len;
   const count = config.count || preset.count;
   const mode = config.directions || preset.directions;

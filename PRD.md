@@ -1,7 +1,8 @@
 # PuzzleForge — Product Requirements Document
 
-**Version:** 0.2 (Active Development)
-**Status:** Publishable pipeline complete (interior + cover + KDP bundle) — content depth next
+**Version:** 0.3 (Active Development)
+**Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace) with **Publisher-parity contextual ribbons** (Shape Format / Table Design / Table Layout / Picture Format / QR Code / Text Box) and their tools — interactive crop, linked text-box flow, advanced OpenType typography, picture compress/swap, **Fit-to-margins**, and **Ctrl/Cmd + rubber-band multi-select**; the **QR digital layer** is live (hosted interactive hint / answer landing pages + end-of-book celebration, self-serve from the Book Builder); the app wears the **Nova Form Studios design system with dark mode**; Tier 3 puzzle types (Logic Grid, Word Ladder, Word Wheel, Cipher); KDP-verified pre-flight export gate live
+**Last full docs sync:** 2026-07-16
 **Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
 **Author:** Rakoren
@@ -41,9 +42,9 @@ Planned split (future):
 
 ## Current Status — What's Built ✅
 
-### Engine (45 tests passing)
+### Engine (164 tests passing)
 
-**10 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
+**16 puzzle types** — all conforming to the standard `generate / validate / solve / render` module interface:
 
 | Puzzle Type | Status |
 |---|---|
@@ -57,6 +58,12 @@ Planned split (future):
 | Kriss-Kross | ✅ Complete |
 | Nonogram | ✅ Complete |
 | Trivia / Quiz | ✅ Complete |
+| Riddles | ✅ Complete — family-friendly "what am I?" bank, 4 tiers, answer key |
+| Brain Teasers | ✅ Complete — logic/math/word/lateral bank tagged by kind, explained answer key |
+| Logic Grid | ✅ Complete — constraint-solver-proven unique solutions, natural-language clues (Tier 2 now 12/12) |
+| Word Ladder | ✅ Complete — common-word graph, minimal-hint unique solutions (Tier 3 started) |
+| Word Wheel | ✅ Complete — 9-letter source, baked common-word dictionary, full findable-word key |
+| Cipher | ✅ Complete — Caesar / Atbash / A1Z26 / Morse, decoder verified round-trip |
 
 **4 activity page types** (no answer key):
 - **Coloring** — seed-driven unique line art: mandala / shape-pattern / bubble-letter
@@ -70,6 +77,38 @@ Planned split (future):
 - Per-type quality thresholds
 - Non-bypassable offensive content filter (offensive-aware fill + word-aware scan — fixed false positives on legit words like RACCOON, PEACOCK)
 
+### Difficulty System ✅
+
+Internal engine levels are **1–4**, but **kids and adults are two separate ladders — not one ladder with two labels.** `config/difficulty.js` is the single source of truth for the labels; `config/defaults.js` (`DIFFICULTY` + `KIDS_DIFFICULTY`, resolved by `presetFor(type, level, audience)`) is the source of truth for the **mechanics**. A kids "Independent" (L4) puzzle is deliberately far gentler than an adult "Expert" (L4).
+
+| Level | Adult label | Kids label | Ages | Grade |
+|---|---|---|---|---|
+| 1 | Easy | Beginner | 4–6 | Pre-K – K |
+| 2 | Medium | Early Reader | 6–8 | Grades 1–2 |
+| 3 | Hard | Growing Reader | 8–10 | Grades 3–4 |
+| 4 | **Expert** | Independent | 10–12 | Grades 5–6 |
+
+**The two ladders are mechanically distinct** (verified in `tests/difficulty-ladder.test.js`):
+
+| | Adult ramp (L1→L4) | Kids ramp (Beginner→Independent) |
+|---|---|---|
+| Word search grid | 10×10 → **20×20**, diagonal + backwards + *dense* (crossing) | 7×7 → **13×13**, never dense; backwards only at the very top tier |
+| Maze grid | 10×10 → **25×33** | 7×7 → **13×17** (kids top ≈ adult Easy–Medium) |
+| Theme vocabulary | exact tier per level (L4 → tier 4, the hardest) | easier tiers only (never tier 4), each capped ≤5 / ≤6 / ≤7 / ≤8 letters — hand-typed words are never dropped |
+| Sudoku | 9×9, digs to ~20 givens at Expert | **not offered below Growing Reader (8–10)**; 9×9 with heavy givens (~43 / ~37) for the two older tiers |
+| Cipher | Morse by Hard; key hidden from Hard | **never Morse**; Caesar key stays shown until the top tier |
+
+- **Expert (level 4, adults)** added across every playable type: Word Search 20×20+ (tier `minSize` floor), Sudoku digs deeper by dropping 180° symmetry, Maze 25×33. Nonogram Expert stays 15×15 (a 20×20 unique-solution search costs ~8s/puzzle).
+- **Audience threads into generation**, not just labels: `book.js` passes `audience` to every puzzle so `presetFor` picks the right ladder; the word-length cap and gentler presets apply automatically. Requesting a kids sudoku below Growing Reader throws a clear, actionable error rather than silently making an age-inappropriate puzzle.
+- **Audience-aware labels in the UI** — the Kids/Adult toggle swaps the label set; the internal value never changes. Puzzle Maker shows age + grade; the Book Builder shows both sets with cross-tier ranges (e.g. Hard–Expert / Beginner–Growing Reader).
+- Kids vocabulary targets these Lexile bands: Beginner BR–200L, Early Reader 200–500L, Growing Reader 500–820L, Independent 820–1100L (the per-tier length cap is the concrete enforcement today; full Lexile scoring is future work).
+- **Publish Checklist** flags when the audience is unset or the listing's reading age contradicts it (e.g. a Kids book tagged "Adult").
+
+**Displaying difficulty** (all off a shared descriptor — `config/difficulty.js` `summarizeLevels` + `book.meta.difficulty`; levels are known by construction, not estimated):
+- **Per-page label** — optional badge printed in the top-right of each puzzle page (adults: ★-rating + label; kids: tier + age). Toggle in the Book Builder ("Label each page with its difficulty"); injected in `engine/export.js` like the border overlay so it prints vector-sharp.
+- **Book difficulty summary** — the range + per-level spread ("Easy to Hard — Easy 4 · Medium 6 · Hard 2") shown live in the Book Builder summary and as an info row in the Publish Checklist.
+- **Cover difficulty text** — an optional line on the front cover ("Easy to Hard · Large Print") for Amazon discoverability; a field in the Cover Builder.
+
 ### Layout & Export System ✅
 
 - **4 KDP trim sizes**: 8×10, 8.5×11, 8.5×8.5, 6×9 — all with correct margins and gutters
@@ -78,12 +117,15 @@ Planned split (future):
 ### Theme System ✅
 
 - 9 built-in themes, ~1,275 clued words
-- Words organized by **difficulty tiers** (easy / medium / hard) — level 1 puzzles never pull hard words
-- Categories + tags, grouped in pickers
-- **AI Theme Generator** — topic → Claude-written tiered clued word list **plus fun facts**, singular words, safety/dedup filtered before save, appears instantly in every picker
-- **Manage themes** — re-run the filter over a saved theme ("Clean") or delete it
+- Words organized by **four difficulty tiers** (Easy / Medium / Hard / **Expert**), matching the engine's four levels — a level-1 puzzle never pulls a tier-3 word, and adult **Expert (level 4)** pulls a genuinely harder tier than Hard (the built-ins' hardest vocabulary was split into Hard + Expert).
+- **Audience-aware selection** — each theme carries an `audiences` field, and the word pull is audience-aware (`engine/book.js` `themeTierOpts`): adults draw the exact tier for the level (Expert → tier 4); kids draw the easier tiers with a per-tier word-length cap and **never** reach the hardest tier. Same theme, age-appropriate vocabulary for each audience.
+- **AI Theme Generator** — topic + **audience** (Kids / Adults / Both) → Claude-written four-tier clued word list **plus fun facts**, vocabulary + clue reading-level calibrated to the audience, singular words, safety/dedup filtered before save, appears instantly in every picker
+- **AI "Expand" (top-up)** — grow an existing theme in place: feeds Claude the words already present, asks for brand-new ones per level up to a target (default 40/level), then sanitizes, de-dupes, and merges them (facts/label/category/audience preserved). Respects the theme's audience ramp and reports when a topic is tapped out. This is the fix for word variety: a bigger pool lets "No repeated words" build several same-tier puzzles without reusing words. Available on each theme's manage row and inside the editor.
+- **Word-search-safe word lists** — a word search rejects any target that is a substring of another (e.g. CONTROL inside CONTROLPAD). Selection de-dupes substrings within a draw *and* across the top-up refill draw, and Expand won't add a colliding word — so a themed book always builds.
+- **Manual theme builder** and **Manage themes** — build a four-tier theme by hand (with an audience), re-run the filter over a saved theme ("Clean"), or delete it
 - **Tag filter / search** on theme pickers
 - **Whole-category selection** — e.g. "All Animals & Nature" merges animals + ocean + weather into one pool
+- **Per-standard curriculum word banks** — puzzle-friendly, standards-tagged vocabulary sets (Dolch Sight-Word Nouns, Dolch Sight Words, Number Words) in a "Curriculum & Sight Words" category. Each theme carries a `standard` (CCSS code) that shows in the pickers and prefills worksheet/packet covers. Being ordinary themes, they flow through every puzzle type, book assembly, and the worksheet/packet tools.
 - **Mixed themes** fully supported — generator receives a merged word pool
 - Theme files carry curated/AI **fun facts** used by breather pages
 
@@ -100,7 +142,7 @@ Planned split (future):
 
 **Book Builder:**
 - Visual multi-puzzle assembly, preview, full-book PDF export, recipe save / load
-- **"No repeated words" toggle** — each theme word used once across a book, respects difficulty tiers
+- **"No repeated words" toggle** — each theme word used once across a book, respects difficulty tiers. A **low word-pool warning** flags *before* generating when the puzzles would need more unique words at some difficulty band than the theme has (e.g. "4 puzzles need ~56 words but Animals has 42 — 14 will repeat"), pointing at the fixes: Expand the theme, pick the merged "★ All …" category, fewer puzzles, or turn the toggle off. `engine/book.js` `analyzeWordPool` via `POST /api/book/wordpool`.
 - **Shuffle puzzle order** — mix puzzle types instead of grouping by row (keeps fillers)
 - **"Between puzzles, insert"** — drop coloring / drawing / blank page after each puzzle (with coloring style + after-last options)
 - **Bleed-guard** — a blank page auto-inserted behind every coloring/drawing page (default on)
@@ -116,6 +158,49 @@ Planned split (future):
 
 **One-click KDP export:**
 - Single zip: interior PDF + cover PDF (spine sized from the *actual* rendered page count) + build-info sheet
+
+**Starter book templates:**
+- "Start from a template" gallery in the Book Builder — six ready-to-publish books (Large-Print Senior Word Search, Kids Animal Activity Book, Travel Pocket Puzzles, Sudoku Workout, Brain Training Variety, Coffee Break Crosswords), each a full config (puzzle mix + trim + cover colors + KDP metadata) that drops into the builder and is editable from there. Zero-to-book on-ramp.
+
+**Worksheets & lesson packets (`worksheets.html/js`) — classroom handouts:**
+- **Single worksheet** — turn any puzzle into a printable handout with a student **Name / Date** header (optional **Class / Period** line + footer), a live scaled preview, and one-click PDF; optionally append a **teacher answer copy**.
+- **Lesson packet** — a **cover page** (title, kicker, teacher/class, learning objective, standards line, auto **contents list**) + one worksheet per puzzle + an **answer-key section**, combined into one PDF.
+- **Auto lesson-plan (curriculum presets)** — pick a **grade (K–6 / adults)** + topic + puzzle count and "Build plan from grade" fills the entire packet: a grade-appropriate puzzle mix at the right difficulty, plus a cover title, objective, and the **Common Core ELA standards** a word puzzle actually supports (`engine/curriculum.js`: vocabulary L.x.4/L.x.5 + K–5 phonics RF.x.3). Everything stays editable before download. Endpoints: `GET /api/curriculum`, `POST /api/packet/plan`.
+- Built on the engine's own primitives: a new `reserveTopIn` sizes the puzzle below the header band, `renderPuzzleHtml`'s `worksheet` option injects the header/footer (same path as borders/QR so it prints vector-sharp), and `engine/worksheet.js` assembles the packet via `combinePages`. Endpoints: `POST /api/worksheet/preview|pdf`, `POST /api/packet/pdf`.
+
+**Page Editor (`editor.html/js`) — a full MS-Publisher-style desktop-publishing app:**
+- **Ribbon UI** — Home / Insert / Page Design / Team / Review / View / Help tabs, each a single dense Publisher-style row, plus **contextual tabs** that appear only when the matching object is selected: **Shape Format**, **Table Design**, **Table Layout**, **Picture Format**, **QR Code**, and **Text Box** (a text box shows Shape Format + Text Box together, a table shows Table Design + Table Layout, matching Publisher)
+- **Contextual tab tools (Publisher-parity):**
+  - **Text Box** — Text Fit, Text Direction, Hyphenation, Font/Alignment/WordArt with Text Fill & Outline colour palettes, Columns, Margins, Drop Cap, Number Style, Ligatures, **Stylistic Sets / Swash / Stylistic & Contextual Alternates** (OpenType `font-feature-settings`), and **Linking** — Create / Break Link + Previous / Next that flow a box's overflow into the next box (true text flow with a draggable flow-region height)
+  - **Picture Format** — Corrections, Recolor washes, Picture Border / Effects / Styles, Caption, **interactive Crop** (drag-handle crop with a `{l,t,r,b}` model), **Compress Pictures** (downsample to 300/220/150/96 ppi, optional delete-cropped-areas), and **Swap** (exchange two pictures' contents while each keeps its frame)
+  - **Table Design / Layout** — styles, borders, header/cell fills, insert/delete rows & columns, cell **merge / split**, and **diagonal split** cells
+  - **Shape Format** — fill/outline styles, text-box frame (fill/border/radius/shadow), arrange, size
+  - **QR Code** — edit link, error-correction level, dark/light (or transparent) colours, colour presets, test-link, size
+- **Break-apart puzzle** — title / instructions / word-list become individually editable objects (word list can convert to a table); the grid stays protected. On import the broken-apart pieces keep their original stacked positions (no top-of-page pile-up), and the book's decorative page **border imports with the page** so the editor matches the Book Builder preview and the PDF
+- **Fit to margins** — right-click → "Fit page / selection to margins" (also under Page Design → Margins ▾) scales and re-centres a page's objects inside the current margin box, preserving relative layout and aspect ratio
+- **Free elements** — text, images, shapes (rect/ellipse/triangle/star/line + **speech/thought chat bubbles**), and **editable multi-column tables**; z-order incl. send-behind-the-puzzle
+- **Master pages** (page numbers / headers / repeating frames) and **two-page facing spreads**
+- Desktop-publishing toolset: undo/redo, zoom + rulers, numeric X/Y/size/angle, rotation, smart snapping + snap-to-grid, **multi-select (Shift / Ctrl / Cmd click to toggle, plus a rubber-band marquee that starts even from atop an object with a modifier held)**, align/distribute, group/ungroup, arrange, flip, lock, copy/paste, nudge
+- **Custom font upload** (`@font-face` data-URLs sanitized server-side and embedded in the exported PDF) — 12 web-safe families plus your own
+- **Word-list consistency pre-flight** — flags mismatches between an edited word list and the grid
+- Editor == PDF parity: a shared renderer (`element-html.js`) draws every object identically on screen and in the exported PDF (vector-sharp at 300 DPI). Every contextual-tab tool above — crop, text flow, typography, compress, table spans — renders through this same renderer, so what you see prints
+
+**Book library + autosave:**
+- **My Books** dashboard (`library.html`, IndexedDB) — every project saved locally, change-detecting autosave, reopen/duplicate/delete
+
+**Self-hosted team workspace (LAN, publisher-only):**
+- `workspace.js` — a lightweight self-hosted backend (JSON-file store) for a small local team: shared roster, shared book library, live comments via Server-Sent Events, "Save to my library" fork + team notifications. No hosted accounts required (optional `PUZZLEFORGE_WORKSPACE_TOKEN`; email left as an optional SMTP hook)
+- **Identity / sign-in** (`workspace.js` profiles + sessions + invites, client `identity.js`): each person is a **profile** (name, email, role, pen name, avatar colour, optional PIN). Sign-in = pick your profile (+PIN if set) → a session token remembered in the browser; a self-mounting "Signed in as …" chip on every page (menu → Profile settings, Switch user, Sign out). The first profile bootstraps as **Owner**; owners expand the team with **single-use invite links** (`profile.html?invite=<token>`) that register the new person and sign them in. A dedicated **Profile & Team** page (`profile.html`) edits your profile and, for owners, manages the roster. The book Author field prefills from your pen name. A reserved `google` slot on each profile lets **"Sign in with Google"** drop in later (once the app is behind an HTTPS address) with no data migration.
+
+**Manual (non-AI) theme builder:**
+- Build a themed word list + facts by hand (tiers, category, tags) — an alternative to the AI Theme Generator
+
+**Design system + dark mode:**
+- The teacher web app wears the **Nova Form Studios design system** — warm-paper palette, teal→green brand, Space Grotesk / Manrope / JetBrains Mono type — with a **light/dark toggle** (`theme.js`) that persists per browser and follows the OS by default. Teacher pages carry the toggle; the Page Editor keeps its own workspace theme.
+- **Loading bars** on the Theme and Category generators while Claude works.
+
+**Mobile:**
+- Responsive phone/tablet layout and touch controls across the maker, builder, and editor
 
 ---
 
@@ -138,20 +223,20 @@ Planned split (future):
 | Number Search | ✅ |
 | Trivia / Quiz | ✅ |
 | Nonogram / Picross | ✅ |
-| Logic Grid | 🔲 Not started |
+| Logic Grid | ✅ |
 | Dot-to-Dot | 🔲 Deferred (needs image assets) |
 
 ### Tier 3 — Niche / High Value
 | Type | Status |
 |---|---|
-| Word Ladder | 🔲 Roadmap |
+| Word Ladder | ✅ |
+| Word Wheel | ✅ |
+| Cipher / Code Puzzles | ✅ |
+| Riddles | ✅ Shipped — family-friendly "what am I?" bank, 4 tiers, answer key |
+| Brain Teasers | ✅ Shipped — logic/math/word/lateral bank tagged by kind, 4 tiers, explained answer key |
 | Spot the Difference | 🔲 Roadmap |
 | Sudoku Variants | 🔲 Roadmap |
 | Math Puzzles | 🔲 Roadmap |
-| Riddles | 🔲 Roadmap |
-| Brain Teasers | 🔲 Roadmap |
-| Word Wheel | 🔲 Roadmap |
-| Cipher / Code Puzzles | 🔲 Roadmap |
 
 ### Tier 4 — Stretch Goals
 | Type | Status |
@@ -237,9 +322,9 @@ Adding a new puzzle type = new folder, same four exports. Engine doesn't change.
 |---|---|
 | Grid resolution | 300 DPI |
 | Crossword cell numbers | 600 DPI |
-| Gutter (inside margin) | 0.75" ≤150pp / 0.875" 151–300pp / 1.0" 300+pp |
-| Outside margin | 0.625" |
-| Top / bottom margins | 0.75" |
+| Gutter (inside margin) — **KDP minimums, verified July 2026** | ≤150pp → 0.375" · 151–300 → 0.5" · 301–500 → 0.625" · 501–700 → 0.75" · 701–828 → 0.875" (source of truth: `engine/kdp.js` `gutterMinInches`; our trim specs exceed these) |
+| Outside / top / bottom margin (KDP minimum) | ≥ 0.25" (≥ 0.375" with bleed) |
+| Image resolution | ≥ 300 DPI (600 recommended); interior file ≤ 650 MB |
 | Bleed | None (0.125" if decorative edges) |
 | Minimum page count | 24 (50+ recommended) |
 | Maximum page count | 828pp B&W / 550pp premium color |
@@ -295,7 +380,7 @@ The PuzzleForge export bundle should pre-fill both fields based on which tools w
 
 ### KDP Royalty Estimator
 
-*Shipped (v1): `engine/kdp.js` + "Estimate royalty" button and a listing-metadata fieldset in the Book Builder. US paperback, 60%, B&W modeled precisely (color approximate); renders the book for an accurate page count; build-info sheet now includes metadata, royalty estimate, and pre-filled AI disclosure. Multi-marketplace currency and IngramSpark/Books.by are still to come.*
+*Shipped (v1): `engine/kdp.js` + "Estimate royalty" button and a listing-metadata fieldset in the Book Builder. US paperback, 60%, B&W modeled precisely (color approximate); renders the book for an accurate page count; build-info sheet now includes metadata, royalty estimate, and pre-filled AI disclosure. The pre-flight checklist also warns (`price-breakeven`) when a set list price falls below the printing break-even (no royalty). Multi-marketplace currency and IngramSpark/Books.by are still to come.*
 
 Built into the export bundle screen. Calculates estimated royalty per sale before upload so you can set pricing confidently without switching to KDP's external calculator.
 
@@ -333,17 +418,22 @@ Themes are **word lists only** — no visual assets. Visual presentation is hand
 {
   id: "space",
   label: "Space",
-  words: [
-    { word: "ASTEROID", clue: "A rocky object orbiting the sun", difficulty: 2 },
-    { word: "COMET", clue: "An icy body with a glowing tail", difficulty: 1 },
-  ]
+  audiences: ["kids", "adult"],   // who the theme suits; missing = both
+  tiers: {                         // four vocabulary tiers (1 easiest → 4 hardest)
+    1: [{ word: "MOON", clue: "It orbits the Earth" }, "STAR"],
+    2: [{ word: "COMET", clue: "An icy body with a glowing tail" }],
+    3: [{ word: "ASTEROID", clue: "A rocky object orbiting the sun" }],
+    4: [{ word: "CONSTELLATION", clue: "A pattern of stars in the sky" }]
+  }
 }
 ```
 
-- Words carry a clue (for crossword/kriss-kross) and a difficulty rating
-- Mixed themes fully supported — generator receives a merged pool
+- An entry is a plain string or `{ word, clue }` (clue for crossword/kriss-kross)
+- **Four tiers** matching the four difficulty levels; adults draw the exact tier for a level (Expert → tier 4), kids draw the easier tiers with a length cap (never tier 4)
+- `audiences` marks suitability; the AI generator sets it from the chosen audience, and any theme missing it counts as both
+- Mixed themes fully supported — generator receives a merged pool (audiences unioned)
 - Custom word lists supported in both CLI and web UI
-- AI Theme Generator available — topic → tiered clued word list via Claude API
+- AI Theme Generator — topic + audience → four-tier clued word list via Claude API
 
 ---
 
@@ -430,15 +520,17 @@ Tooltip copy should be written for every control before the teacher tool goes pu
 | Recipe save / load | ✅ |
 | AI Theme Generator | ✅ |
 | Theme editing UI (edit/delete saved themes) | ✅ |
-| Worksheet builder (3–4 types, one page) | 🔲 Phase 11 |
-| Curriculum word list presets | 🔲 Phase 11 |
-| Lesson plan mode (topic + grade → full packet) | 🔲 Phase 11 |
-| Common Core / state standards alignment tags | 🔲 Phase 11 |
+| Worksheet builder (any puzzle → printable handout with Name/Date header) | ✅ Shipped — `worksheets.html`; live preview + one-click PDF, optional teacher answer copy |
+| Lesson packets (cover + several worksheets + answer-key section) | ✅ Shipped — cover with objective/standards/contents; one PDF |
+| Common Core standards alignment | ✅ Shipped — grade presets map to the CCSS ELA vocabulary (L.x.4/L.x.5) + K–5 phonics (RF.x.3) standards a word puzzle supports; codes print on the packet cover |
+| Curriculum grade presets | ✅ Shipped — `engine/curriculum.js`: grade (K–6 / adults) → difficulty, audience, puzzle mix, standards, objective |
+| Auto lesson-plan mode (grade + topic → packet) | ✅ Shipped — "Build plan from grade" fills the whole packet (rows + cover + objective + standards); editable before download |
+| Per-standard word banks (standard-specific vocabulary) | ✅ Shipped — Dolch Sight-Word Nouns (RF.K.3), Dolch Sight Words (RF.1.3), Number Words (K.CC.A.3) under a "Curriculum & Sight Words" category; the standard shows in every picker and prefills the packet cover |
 | Puzzle packs by subject (pre-built curriculum sets) | 🔲 Phase 11 |
 | Puzzle of the week (public free weekly puzzle) | 🔲 Phase 11 |
 | Email subscribe for weekly puzzle | 🔲 Phase 11 |
 | Classroom competition mode (class set + scoring sheet) | 🔲 Phase 11 |
-| QR hint / answer reveal on printed puzzles | 🔲 Phase 9 |
+| QR hint / answer reveal on printed puzzles | ✅ Shipped — interactive tap-for-hint pages (grid puzzles) + static answer reveal (others), auto-QR on the page |
 | QR bonus digital puzzle | 🔲 Phase 10 |
 | QR audio read-aloud (early readers, accessibility) | 🔲 Phase 10 |
 | QR parent/teacher page (discussion questions, extension) | 🔲 Phase 10 |
@@ -456,7 +548,7 @@ The teacher tool web UI is fully responsive — designed to work on phone and ta
 - Phone/tablet: planning, config, theme generation, recipe management
 - Desktop: heavy generation, PDF export, ComfyUI, page editor
 
-**The Page Editor (Phase 9) is desktop-only** — Fabric.js canvas interaction requires a pointer device. All other tools should be fully functional on mobile.
+**The Page Editor is desktop-first but now has a phone-friendly responsive view** — a reduced touch layout for review/light edits ships today; heavy layout work is still best on a pointer device. All other tools are fully functional on mobile.
 
 ### Hosting
 Vercel free tier for v1.
@@ -735,7 +827,20 @@ Each checklist item has a **"Fix it" shortcut** that jumps directly to the relev
 
 ---
 
-### Content Quality Checks (Claude API)
+### Implementation status (verified July 2026)
+
+**Shipped** (`engine/checklist.js`, checked against KDP's published rules) and **gated on export** — "Download KDP bundle" / "Download PDF" run the checklist first and block on 🔴 blockers unless the user overrides; 🟡 warnings never block:
+
+- **Structural** — page count 24–828 · even (with an optional "Pad to an even page count" toggle that appends a blank leaf where you control it) · puzzle count matches config · no empty puzzle pages · answer key present + complete · bleed guards placed · copyright / back matter · word list matches grid · difficulty↔audience coherence + range summary.
+- **Print readiness** — single trim set · within KDP page limit · gutter (inside) margin per page-count table (`engine/kdp.js`) · interior images ≥ 300 DPI (`engine/imagesize.js`) · front cover-image effective DPI ≥ 300 (`engine/cover.js` `frontImageDpi`, surfaced inline in the Cover Builder and on the build-info sheet) · content inside the safe area.
+- **KDP listing metadata + pricing** (warnings) — description present · 7 keywords · 3 categories · reading age set (kids) · list price clears the printing break-even (`engine/kdp.js` `royaltyEstimate` — a price below break-even earns no royalty).
+- **Content quality (Claude API)** — an on-demand "AI content review" button runs one Claude pass over all reader-facing text (`engine/booktext.js` collects titles, instructions, crossword clues, trivia Q&A, blurb, matter) and returns findings: spelling/grammar errors, placeholder/ambiguous clues, generic titles, dry blurbs, reading-level mismatches. Results render in the checklist panel; reuses the editor proofread's SDK path.
+
+**Still to come** (tracked below): cover-dimension formula check, AI-disclosure completeness, per-item "Fix it" jumps, folding the AI review into the export gate, and server-side gate enforcement (today's gate is client-side — right for the local single-user tool, bypassable via direct API).
+
+---
+
+### Content Quality Checks (Claude API) — ✅ shipped (on-demand review)
 
 These checks use the Claude API to evaluate subjective quality. Run as a batch — one API call covers all text content in the book.
 
@@ -757,7 +862,7 @@ These checks use the Claude API to evaluate subjective quality. Run as a batch �
 
 | Check | Severity | Notes |
 |---|---|---|
-| Page count even | 🔴 | KDP requires even page count — auto-offer to add blank page |
+| Page count even | 🟡 ✅ | KDP requires even page count — a "Pad to an even page count" toggle appends a blank leaf; the checklist also warns on an odd count |
 | Answer key present | 🔴 | At least one answer key page exists |
 | Answer key complete | 🔴 | Every puzzle has a corresponding answer key entry |
 | No blank puzzle pages | 🔴 | Generator failure edge case — puzzle page with no content |
@@ -773,7 +878,7 @@ These checks use the Claude API to evaluate subjective quality. Run as a batch �
 
 | Check | Severity | Notes |
 |---|---|---|
-| Images at correct DPI | 🔴 | All images ≥300 DPI (600 DPI for crossword cell numbers) |
+| Images at correct DPI | 🟡 ✅ | Interior images ≥300 DPI (`engine/imagesize.js`) and the front cover image ≥300 DPI (`engine/cover.js` `frontImageDpi`) — warned in the checklist, inline in the Cover Builder, and on the build-info sheet |
 | Nothing in margin zone | 🔴 | No content bleeds into KDP minimum margin area |
 | Spine text threshold | 🟡 | Spine text only shown if page count ≥80 pages — warn if spine text enabled on thin book |
 | Trim size consistent | 🔴 | All pages match the configured trim size — no mixed dimensions |
@@ -790,7 +895,7 @@ These checks use the Claude API to evaluate subjective quality. Run as a batch �
 | All 3 categories filled | 🟡 | Leaving category slots empty hurts discoverability |
 | All 7 keywords filled | 🟡 | Leaving keyword slots empty hurts discoverability |
 | Description/blurb present | 🔴 | Cannot publish without a book description |
-| Price above KDP minimum | 🔴 | List price must yield at least $0.01 royalty — show minimum price for this book's print cost |
+| Price above KDP minimum | 🟡 ✅ | List price must clear the printing break-even or the book earns no royalty — the checklist warns (`price-breakeven`) using `royaltyEstimate`, showing the break-even and a suggested price |
 | ISBN field decision made | 🟡 | Prompt user to confirm KDP free ISBN or own ISBN — don't leave ambiguous |
 | Series fields consistent | 🟡 | If series name is set, series number must also be set |
 
@@ -967,6 +1072,8 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - ✅ Theme editing UI — delete, "Clean", and in-browser word/fact removal
 - ✅ Per-book style/font presets + large-print "senior" mode
 - ✅ AI category generator — one broad topic → several related themes saved under a shared category
+- ✅ Manual (non-AI) theme builder — author a tiered clued word list + facts by hand
+- ✅ Starter book templates — six ready-to-publish books in the Book Builder
 - 🔲 More built-in themes (hand-authored)
 - 🔲 (optional) edit clues / add words to an existing theme
 
@@ -977,11 +1084,14 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
 - Settings → Tools page to add/remove tools after onboarding
 - UI cleanup pass — tidy up nav and layout now that tool visibility is per-user controlled
 
-### 🔲 Phase 7 — More Puzzle Variety
-10. Word Ladder
-11. Spot the Difference
-12. Sudoku variants
-13. Logic Grid
+### 🟡 Phase 7 — More Puzzle Variety
+- ✅ Logic Grid — constraint-solver-verified unique solutions, natural-language clues, book + answer-key support
+- ✅ Word Ladder — common-word graph (frequency list ∩ dictionary), minimal-hint unique solutions, book + answer-key support
+- ✅ Word Wheel — 9-letter source word, baked common-word dictionary (50k-freq ∩ dictionary), full findable-word key + scoring targets
+- ✅ Cipher — Caesar / Atbash / A1Z26 / Morse; the shared algorithm encodes and the solver decodes straight back (answer key can't drift)
+- 🔲 Spot the Difference
+- 🔲 Sudoku variants
+- 🔲 Riddles / Brain Teasers (Tier 3)
 
 ### ✅ Phase 8 — Image-Based Tools (complete)
 14. ✅ Image-to-Coloring Page — Sharp + JS Sobel edge detector → black line art, detail
@@ -1035,16 +1145,60 @@ Runs on all placed words, fill letters, user-supplied word lists, and clue text.
   flip H/V, lock, duplicate/copy/paste, arrow-key nudge
 - ✅ Export — engine composes placed pieces + elements per page
   (`pageState[i].layout`) via the normal book pipeline; vector-sharp at 300 DPI
-- 🔲 Marquee (rubber-band) select, grouping, draggable ruler guides, rotation handle
-- 🔲 Page reorder / add / remove in the sidebar (select-only for now)
-- 🔲 Filler page swap inline
+- ✅ **Full MS-Publisher-style ribbon** — Home / Insert / Page Design / Team /
+  Review / View / Help, each a single dense one-row ribbon (multi-button groups
+  collapse into dropdowns to match Publisher's density), plus **contextual tabs**
+  that appear only when the object is selected: **Shape Format**, **Table Design**,
+  **Table Layout**, **Picture Format**, **QR Code**, **Text Box** (Publisher shows
+  two at once for a text box or table — Shape Format + Text Box, Table Design +
+  Table Layout — and this matches that)
+- ✅ **Picture Format contextual tab** — Corrections, Recolor washes, Picture
+  Border / Effects / Styles, Caption (all via CSS filters that render in the PDF)
+- ✅ **Interactive crop** — drag the 8 handles with a live darkened mask; a
+  `{l,t,r,b}` edge-fraction model plus captured natural size, so the crop clips
+  identically in the editor viewport and the exported PDF
+- ✅ **Compress Pictures / Swap** — Compress downsamples the stored image to a
+  target print resolution (300/220/150/96 ppi, since the page is 96 CSS-ppi),
+  optionally baking the crop, and keeps PNG/GIF/WebP alpha; Swap exchanges two
+  pictures' contents (image + crop + adjustments) while each keeps its own frame
+- ✅ **QR Code contextual tab** — dedicated tab to edit the link, error-correction
+  level, dark/light (or transparent) colours, colour presets, test-link and size
+  (also fixed a serialization gap where QR data was lost on save/export)
+- ✅ **Table Design / Table Layout tabs** — styles, borders, header/cell fills,
+  insert/delete rows & columns, cell **merge / split**, and **diagonal-split** cells
+- ✅ **Text Box + Shape Format tabs** — Font/Alignment/WordArt with Text Fill &
+  Outline palettes, Text Fit, Text Direction, Columns, Margins, Drop Cap, Number
+  Style, Ligatures; the text-box frame (fill/border/radius/shadow) on Shape Format
+- ✅ **Advanced OpenType typography** — Stylistic Sets, Swash, and Stylistic /
+  Contextual Alternates via `font-feature-settings` (renders on screen and in the
+  PDF for any font that ships the feature; custom uploads especially)
+- ✅ **Linked text boxes (text flow)** — Create / Break Link + Previous / Next
+  flow a box's overflow into the next box; chains are keyed by serialization-safe
+  scalars, each box persists its own computed slice + flow-region height, so the
+  PDF reproduces the flow with no server-side measurement
+- ✅ **Break-apart puzzle** — title / instructions / word-list become editable
+  objects (word list → table); the grid stays protected. Send-behind z-order.
+- ✅ **Shapes incl. speech/thought chat bubbles**, and **editable multi-column tables**
+- ✅ **Master pages** (page numbers / headers / frames) and **two-page facing spreads**
+- ✅ **Word-list consistency pre-flight** (edited list vs. grid)
+- ✅ **Editor==PDF parity** via a shared `element-html.js` renderer
+- ✅ **My Books library + change-detecting autosave** (`library.html`, IndexedDB)
+- ✅ **Self-hosted LAN team workspace** (`workspace.js`) — shared roster, shared
+  books, live comments via SSE, "Save to my library" fork + notifications
+- ✅ Grouping/ungrouping; page add / duplicate / delete / reorder in the sidebar; responsive mobile view
+- ✅ Marquee (rubber-band) select — capture-phase drag over the stage or a
+  piece lassos the enclosed free objects (shift-drag adds); free-element and
+  piece click/drag are preserved
+- 🔲 Filler page swap inline; layers panel; multiple named master pages
+- 🔲 Cross-page text-box linking (chains are per-page today; cross-page flow needs a global element registry)
+- 🔲 Swap-formatting-only variant; text-box Stylistic Set gallery previews
 - 🔲 **Switchable editor "skins"** (future) — the layout model (`pageState`) is
   decoupled from the editor chrome, so a future setting could re-skin the editor
   to look/behave like MS Publisher, InDesign, Canva, etc. over the same data
-- **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner
+- **QR code basics** — hint and answer reveal per page, auto-generated URLs, static landing pages deployed at export, QR embedded in PDF corner. *(Shipped: the QR foundation — `engine/qr.js` encodes offline via `qrcode-generator`; the shared `element-html.js` draws it as a crisp vector so it stays scannable at any print size; placeable/editable in the Page Editor as a QR element pointing at any URL, editor==PDF. Now with a **dedicated QR Code contextual tab** — link, error-correction level, dark/light-or-transparent colours, colour presets, test-link, size — and a fixed serialization gap so QR data survives save/export. **Per-puzzle answer landing pages + auto-QR shipped** (`engine/digital.js`): every real puzzle gets a self-contained mobile "reveal the answer" page and a "Scan for the answer" QR printed in the page corner (encoding `<baseUrl>/<book-slug>/pN.html`); the KDP bundle now includes an `html/` folder of these pages, and `POST /api/book/digital` returns them standalone for deploying to any static host. **Word/number search pages are interactive** — tap a token for an escalating hint (3×3 box around the start → exact start cell → full reveal); other puzzle types keep the static answer reveal. There's an **end-of-book celebration** page (confetti "You did it!") linked from the index and every puzzle page. The printed QR reserves a foot band so it never overlaps puzzle content. The whole thing is **self-serve from the Book Builder** — a "Digital layer" section takes a hosting base URL and a "Download answer pages (.zip)" button, and setting the URL makes the KDP bundle print the QR codes and include the pages under `html/`. Book-level analytics (needs a backend) and richer content (bonus puzzles, audio) still to come.)*
 - **ComfyUI visibility** — WebSocket progress display, live latent preview, workflow debug panel
 - **ComfyUI prompt helper** — Claude-powered prompt optimizer, context-aware per preset, positive + negative prompt output, "explain changes" toggle
-- **Publish Checklist** — pre-flight checklist with 🔴 blockers / 🟡 warnings / 🟢 passes, structural + KDP compliance checks (logic), content quality checks (Claude API), "Fix it" shortcuts per item, auto-runs on export. *(Shipped early: the structural/print logic checks — `engine/checklist.js`, "Run publish checklist" button in Book Builder, renders the book for an accurate page count. Claude content-quality checks, "Fix it" jumps, and auto-run-on-export still to come.)*
+- **Publish Checklist** — pre-flight checklist with 🔴 blockers / 🟡 warnings / 🟢 passes, structural + KDP compliance checks (logic), content quality checks (Claude API), "Fix it" shortcuts per item, auto-runs on export. *(Shipped: `engine/checklist.js` — structural/print checks verified against KDP's published rules (July 2026): page count 24–828, even, gutter table per page count, trim set; plus image ≥300 DPI (`engine/imagesize.js`) and content-inside-safe-area checks, answer-key completeness, word-list match, difficulty/audience coherence, bleed guards, copyright/back-matter. **Export gate**: the KDP bundle / PDF download runs the checklist first and blocks on 🔴 blockers unless the user overrides (warnings never block). Fixed a stale `hasPuzzleContent` whitelist that had false-flagged sudoku/logic-grid/etc. as "empty". Still to come: Claude content-quality checks, "Fix it" jumps, cover-image DPI, server-side gate enforcement.)*
 
 ### 🔲 Phase 10 — Digital Layer + Multi-Platform (Publisher)
 - **QR full digital layer** — celebration animations, story continuation, bonus puzzles, audio, parent/teacher pages

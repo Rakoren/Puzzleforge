@@ -36,8 +36,9 @@ notice instead of failing.
 
 ## What it does
 
-- **Pick a puzzle** — any of the engine's types (word search, sudoku, maze,
-  cryptogram, word scramble, crossword, kriss-kross)
+- **Pick a puzzle** — any of the engine's 12 types (word search, number search,
+  sudoku, maze, cryptogram, word scramble, crossword, kriss-kross, nonogram,
+  trivia, logic grid, word ladder)
 - **Words** — choose a built-in theme or paste your own word list
 - **Settings** — difficulty, page (trim) size, audience, optional grid size and title
 - **Text size & font** — Normal / Large print / Extra large, and Sans / Serif / Rounded (large-print "senior" mode)
@@ -66,6 +67,11 @@ No accounts, no database — recipes live on the teacher's own machine
 A second page (**Book Builder**, linked in the header) assembles a whole book
 visually — no JSON by hand:
 
+- **Start from a template** — a gallery of six ready-to-publish books (Large-Print
+  Senior Word Search, Kids Animal Activity Book, Travel Pocket Puzzles, Sudoku
+  Workout, Brain Training Variety, Coffee Break Crosswords). Each drops a full
+  book (puzzle mix + trim + cover colors + KDP metadata) into the form, editable
+  from there — a zero-to-book on-ramp.
 - Set the title, subtitle, author, audience, page (trim) size, default theme,
   and answer-key toggle
 - Add puzzle rows (type · count · difficulty, including mixed ranges), reorder
@@ -78,8 +84,10 @@ visually — no JSON by hand:
 - **No repeated words** — keep every theme word to a single puzzle across the book
 - **Kids-book activity pages** (no answer key): **Coloring Page** (procedural
   mandala / shape-pattern / bubble-letter art), **Drawing Page** (framed blank
-  with a prompt), and **Blank (bleed guard)** pages to place after coloring
-  pages so marker ink doesn't bleed through
+  with a prompt), and **Blank (bleed guard)** pages. Bleed-guarding is
+  leaf-aware: each coloring/drawing page is placed on a recto (odd) page with a
+  blank verso behind it, so marker ink can't bleed onto a puzzle on the back of
+  the same sheet
 - **Between puzzles, insert** — automatically drop a drawing and/or blank page
   into every gap between puzzles (20 puzzles → 19 of each)
 - **Breather pages** (adult) — a calm page between puzzle *sets*: a fun fact
@@ -122,6 +130,11 @@ visually — no JSON by hand:
 | GET | `/api/comfy/status` | `{ available, url }` — whether a local ComfyUI is reachable |
 | GET | `/api/comfy/checkpoints` | `{ checkpoints:[], styles:[] }` for the model/style pickers |
 | POST | `/api/comfy/generate` | text prompt → `{ image (PNG data URL), seed }` via ComfyUI |
+| GET | `/api/workspace/status` | `{ enabled, needsToken, members, books }` |
+| GET | `/api/workspace/events` | Server-Sent Events stream of member/book/comment changes |
+| GET/POST/DELETE | `/api/workspace/members[/:id]` | list / add / remove team members |
+| GET/PUT/DELETE | `/api/workspace/books[/:id]` | list / read / publish / remove shared books |
+| GET/POST | `/api/workspace/books/:id/comments` | list / add live comments on a shared book |
 
 ### Image Tools (publisher)
 
@@ -199,34 +212,66 @@ Set title/subtitle/author, front/back/spine colors, an optional full-bleed
 front image, and a back blurb. The dashed box on the back marks the KDP
 barcode keep-out area.
 
-### Page Editor (publisher, desktop)
+### Page Editor (publisher) — a full MS-Publisher-style desktop-publishing app
 
-An opt-in freeform layout editor reached from the Book Builder's **Open in
-Editor** button (the fast Generate → Export path is unchanged). Each puzzle page
-is **split into movable, resizable pieces** — grid, title, instructions, word
-list — plus any text boxes and clip art you add:
+An opt-in layout editor reached from the Book Builder's **Open in Editor** button
+(the fast Generate → Export path is unchanged). It has grown from a piece-mover
+into a full desktop-publishing surface. Every object is drawn by a shared
+renderer (`element-html.js`) so it looks **identical on screen and in the exported
+PDF**, vector-sharp at 300 DPI.
 
-- **Page list** sidebar — click to select a page
-- **Move / resize every piece** — drag to position, drag the ○ handle to scale.
-  Pieces stay as crisp HTML (CSS transforms, no rasterizing), so grid lines and
-  text remain vector-sharp at print resolution. Hide pieces you don't want.
-- **Desktop-publishing toolset** — **undo/redo** (Ctrl+Z/Y), **zoom + rulers**,
-  a numeric **X / Y / size% / angle** panel, smart pink **snapping guides** (page
-  center, edges, other pieces) and a **snap-to-grid** option, **align** (to page
-  or, with multiple selected, to each other) + **distribute**, **multi-select**
-  (Shift-click), **arrange** (to front/back, forward/back), **flip H/V**, **lock**,
-  **duplicate / copy / paste** (Ctrl+D/C/V), **rotation**, and **arrow-key nudging**
-  (Shift = 10px).
-- **Add text** (double-click to edit; font size / color / align) and **add clip
-  art** (upload; AI Art PNGs work) — move, resize, layer
-- **Reroll** a single puzzle (fresh layout, same type/difficulty/words); your
-  piece positions, text, and clip art stay put — powered by seeded generation
-- **Per-page border override**, **Reset layout**
+- **Ribbon UI** — Home / Insert / Page Design / Arrange / Mailings / Review /
+  View / Help tabs, plus **contextual tabs** that appear only when the matching
+  object is selected: **Picture Format**, **Table**, **Text Box**, **Drawing
+  Tools**
+- **Break apart a puzzle** — the title, instructions, and word list become
+  individually editable objects (the word list can convert to a table); the grid
+  stays protected. Objects can be sent **behind** the puzzle.
+- **Free elements** — text boxes, images/clip art, **shapes** (rect / ellipse /
+  triangle / star / line + **speech & thought chat bubbles**), **editable
+  multi-column tables**, and **QR codes** (link to any URL; encoded offline and
+  drawn as a crisp vector so it prints scannable at any size)
+- **Master pages** (page numbers / headers / repeating frames) and **two-page
+  facing spreads**
+- **Desktop-publishing toolset** — undo/redo (Ctrl+Z/Y), zoom + rulers, numeric
+  X / Y / size% / angle, rotation, smart snapping guides + snap-to-grid,
+  multi-select, align/distribute, **group/ungroup**, arrange (front/back), flip,
+  lock, duplicate/copy/paste, arrow-key nudge
+- **Page management** — add / duplicate / delete / reorder pages in the sidebar;
+  save a page as a reusable template
+- **Word-list consistency pre-flight** — flags mismatches between an edited word
+  list and the puzzle grid
+- **Reroll** a single puzzle (fresh layout, same type/difficulty/words) with your
+  layout preserved; **per-page border override**; **reset layout**
+- **My Books library + autosave** — projects save locally (IndexedDB) with
+  change-detecting autosave; reopen / duplicate / delete from the **My Books** page
+- **Phone-friendly responsive view** for review and light edits
 - **Save recipe** (v2, with the full page layout) and **Export PDF** — the engine
   composes the placed pieces + elements into each page (`pageState[i].layout`)
   through the normal book pipeline
 
-The split/compose lives in `engine/components.js` (`splitPuzzle` / `composePage`).
+The split/compose lives in `engine/components.js` (`splitPuzzle` / `composePage`);
+the shared object renderer is `engine/element-html.js`.
+
+### Team workspace (publisher, self-hosted LAN)
+
+A lightweight self-hosted backend (`workspace.js`, mounted at `/api/workspace`)
+for a small local team — no hosted accounts, no third-party service. It keeps a
+JSON-file store (`data/workspace.json` + `data/books/`) and pushes live updates
+over Server-Sent Events:
+
+- **Shared roster** — add/remove team members
+- **Shared book library** — publish a book for the team; open, comment, and
+  "Save to my library" to fork a personal copy (with a team notification)
+- **Live comments** per book, broadcast to everyone connected
+- Optional `PUZZLEFORGE_WORKSPACE_TOKEN` gate; email is left as an optional SMTP
+  hook
+
+### Manual theme builder
+
+Alongside the AI Theme Generator, the *Themes* page has a **manual mode** to
+author a tiered, clued word list + fun facts by hand (name, category, tags,
+easy/medium/hard tiers) — saved in the same on-disk format as every other theme.
 
 ### AI Theme Generator
 

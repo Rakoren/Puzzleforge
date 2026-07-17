@@ -144,4 +144,8 @@ function frameSvg(style, w, h, opts = {}) {
   return open + inner + '</svg>';
 }
 
-module.exports = { frameSvg, BORDER_STYLES, BORDER_IDS };
+// Node (engine/export) uses module.exports; the browser editor loads this same
+// file via <script> and reads window.PFDecor, so its live border matches print.
+const __decorApi = { frameSvg, BORDER_STYLES, BORDER_IDS };
+if (typeof module !== 'undefined' && module.exports) module.exports = __decorApi;
+if (typeof self !== 'undefined') self.PFDecor = __decorApi;

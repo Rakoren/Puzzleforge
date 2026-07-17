@@ -234,6 +234,8 @@ function miniAnswer(puzzle, blockWidth) {
       return miniMaze(puzzle, blockWidth);
     case 'cryptogram':
       return `<div class="crypt-ans" style="font-size:${Math.max(9, Math.round(blockWidth / 22))}px">${esc(puzzle.solution.plaintext)}</div>`;
+    case 'cipher':
+      return `<div class="cipher-ans" style="font-size:${Math.max(9, Math.round(blockWidth / 24))}px">${esc(puzzle.solution.plaintext)}</div>`;
     case 'wordscramble':
     case 'krisskross':
       return `<div class="word-ans">${(puzzle.solution.words || []).map(esc).join(', ')}</div>`;
@@ -241,8 +243,39 @@ function miniAnswer(puzzle, blockWidth) {
       return miniCrossword(puzzle, blockWidth);
     case 'nonogram':
       return miniNonogram(puzzle, blockWidth);
-    case 'trivia':
-      return `<ol class="trivia-ans" style="margin:0;padding-left:18px;font-size:${Math.max(9, Math.round(blockWidth / 26))}px">${(puzzle.solution.answers || []).map((a) => `<li>${esc(a)}</li>`).join('')}</ol>`;
+    case 'trivia': {
+      // Numbers rendered inline (not as <ol> markers) so two-digit numbers like
+      // "10." can't overflow the list padding and get clipped.
+      const fs = Math.max(9, Math.round(blockWidth / 26));
+      const lis = (puzzle.solution.answers || [])
+        .map((a, i) => `<li style="margin:0 0 3px 0"><b>${i + 1}.</b> ${esc(a)}</li>`)
+        .join('');
+      return `<ol class="trivia-ans" style="margin:0;padding:0;list-style:none;font-size:${fs}px">${lis}</ol>`;
+    }
+    case 'logicgrid': {
+      const cats = puzzle.data.categories;
+      const rows = puzzle.solution.rows;
+      const fs = Math.max(7, Math.min(12, Math.round(blockWidth / (cats.length * 6.5))));
+      const cell = `border:0.5px solid #999;padding:1px 3px;text-align:center;font-size:${fs}px`;
+      const th = cats.map((c) => `<th style="${cell};font-weight:700;background:#eee">${esc(c.label)}</th>`).join('');
+      const body = rows
+        .map((r) => `<tr>${cats.map((c) => `<td style="${cell}">${esc(r[c.key])}</td>`).join('')}</tr>`)
+        .join('');
+      return `<table class="logic-ans" style="border-collapse:collapse;width:100%;table-layout:fixed"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+    case 'wordladder': {
+      const fs = Math.max(9, Math.round(blockWidth / 16));
+      const chain = (puzzle.solution.ladder || []).map((w) => esc(w.toUpperCase())).join(' &rarr; ');
+      return `<div class="ladder-ans" style="font-size:${fs}px;line-height:1.5;font-weight:600">${chain}</div>`;
+    }
+    case 'wordwheel': {
+      const fs = Math.max(8, Math.round(blockWidth / 42));
+      const pan = puzzle.solution.pangram;
+      const words = (puzzle.solution.words || [])
+        .map((w) => (w === pan ? `<b>${esc(w.toUpperCase())}</b>` : esc(w.toUpperCase()))).join(', ');
+      return `<div class="wheel-ans" style="font-size:${fs}px;line-height:1.4">`
+        + `<b>9-letter word: ${esc(pan.toUpperCase())}</b> (${puzzle.data.count} words)<br>${words}</div>`;
+    }
     default:
       return `<div class="generic">(no compact answer view for ${esc(puzzle.type)})</div>`;
   }
@@ -272,36 +305,108 @@ function miniCrossword(puzzle, blockWidth) {
 // How many answer blocks fit per row, by type, balancing legibility.
 function blocksPerRow(type) {
   if (type === 'sudoku') return 3;
-  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross' || type === 'trivia') {
+  if (type === 'cryptogram' || type === 'wordscramble' || type === 'krisskross' || type === 'trivia' || type === 'logicgrid' || type === 'cipher') {
     return 1;
   }
   return 2; // wordsearch, numbersearch, maze, crossword, nonogram
 }
 
-/** Back-of-book answer-key section. Overflow paginates naturally in print. */
-function renderAnswerKey(book, layout) {
-  const gap = 16;
-  const style = `
-  h1.key-title { font-size: ${Math.round(layout.fontSize * 1.8)}px; text-align: center; margin: 0 0 18px 0; }
-  .key-grid { display: flex; flex-wrap: wrap; gap: ${gap}px; align-items: flex-start; }
-  .key-block { break-inside: avoid; }
-  .key-block .label { font-size: ${Math.round(layout.fontSize * 0.9)}px; margin: 0 0 4px 0; font-weight: 700; }`;
+// Estimate an answer block's rendered height (grid/text + its label), so the
+// key can be split into real pages without a browser to measure with.
+function estBlockHeight(puzzle, blockWidth, layout) {
+  const d = puzzle.data || {};
+  const labelH = Math.round(layout.fontSize * 0.9) + 10;
+  let grid = 60;
+  switch (puzzle.type) {
+    case 'wordsearch':
+    case 'numbersearch': { const size = d.size || 15; grid = size * Math.floor(blockWidth / size); break; }
+    case 'sudoku': { const size = d.size || 9; grid = size * Math.floor(blockWidth / size); break; }
+    case 'maze': { const w = d.width || 10, h = d.height || 10; grid = h * Math.max(5, Math.floor(blockWidth / w)); break; }
+    case 'crossword': { const w = d.width || 10, h = d.height || 10; grid = h * Math.max(8, Math.floor(blockWidth / w)); break; }
+    case 'nonogram': { const w = d.width || 10, h = d.height || 10; grid = h * Math.max(4, Math.floor(blockWidth / w)); break; }
+    case 'cryptogram': { const fs = Math.max(9, Math.round(blockWidth / 22)); const len = (puzzle.solution.plaintext || '').length; const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.62))); grid = Math.ceil(len / perLine) * Math.round(fs * 1.5); break; }
+    case 'cipher': { const fs = Math.max(9, Math.round(blockWidth / 24)); const len = (puzzle.solution.plaintext || '').length; const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.62))); grid = Math.ceil(len / perLine) * Math.round(fs * 1.5); break; }
+    case 'wordscramble':
+    case 'krisskross': { const fs = layout.fontSize; const txt = (puzzle.solution.words || []).join(', '); const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.56))); grid = Math.ceil((txt.length || 1) / perLine) * Math.round(fs * 1.5); break; }
+    case 'trivia': { const fs = Math.max(9, Math.round(blockWidth / 26)); grid = (puzzle.solution.answers || []).length * Math.round(fs * 1.6); break; }
+    case 'logicgrid': { const n = (puzzle.solution.rows || []).length; grid = (n + 1) * Math.round(layout.fontSize * 1.7); break; }
+    case 'wordladder': { const fs = Math.max(9, Math.round(blockWidth / 16)); const len = (puzzle.solution.ladder || []).join(' → ').length; const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.62))); grid = Math.ceil(len / perLine) * Math.round(fs * 1.5); break; }
+    case 'wordwheel': { const fs = Math.max(8, Math.round(blockWidth / 42)); const len = (puzzle.solution.words || []).join(', ').length + 40; const perLine = Math.max(1, Math.floor(blockWidth / (fs * 0.6))); grid = (Math.ceil(len / perLine) + 1) * Math.round(fs * 1.4); break; }
+    default: grid = 80;
+  }
+  return Math.ceil(grid) + labelH + 8;
+}
 
+const KEY_GAP = 16;
+const KEY_ROW_GAP = 16;
+
+// Pack the book's answer blocks into pages. Blocks flow into rows of up to
+// blocksPerRow(type) (grouped by matching row width); rows fill a page until the
+// usable height is reached, then a new page starts. Returns an array of pages,
+// each an array of rows ({ items:[{html,h}], h }).
+function packAnswerKey(book, layout) {
   const blocks = book.pages
     .filter(({ puzzle }) => hasAnswer(puzzle.type))
     .map(({ puzzle, pageNumber }, i) => {
       const perRow = blocksPerRow(puzzle.type);
-      const blockWidth = Math.floor((layout.usableWidth - gap * (perRow - 1)) / perRow);
+      const blockWidth = Math.floor((layout.usableWidth - KEY_GAP * (perRow - 1)) / perRow);
       const label = `${i + 1}. ${esc(puzzle.title)} (p.${pageNumber})`;
-      return `<div class="key-block" style="width:${blockWidth}px">
-        <p class="label">${label}</p>
-        ${miniAnswer(puzzle, blockWidth)}
-      </div>`;
-    })
-    .join('');
+      const html = `<div class="key-block" style="width:${blockWidth}px"><p class="label">${label}</p>${miniAnswer(puzzle, blockWidth)}</div>`;
+      return { html, h: estBlockHeight(puzzle, blockWidth, layout), perRow };
+    });
 
-  const body = `<h1 class="key-title">Answer Key</h1><div class="key-grid">${blocks}</div>`;
-  return pageShell(layout, style, body);
+  const rows = [];
+  let cur = null;
+  for (const b of blocks) {
+    if (!cur || cur.perRow !== b.perRow || cur.items.length >= b.perRow) { cur = { perRow: b.perRow, items: [], h: 0 }; rows.push(cur); }
+    cur.items.push(b); cur.h = Math.max(cur.h, b.h);
+  }
+
+  const titleH = Math.round(layout.fontSize * 1.8) + 26;
+  const budget = layout.usableHeight - titleH;
+  const pages = [];
+  let curRows = [], curH = 0;
+  for (const r of rows) {
+    const add = r.h + (curRows.length ? KEY_ROW_GAP : 0);
+    if (curRows.length && curH + add > budget) { pages.push(curRows); curRows = []; curH = 0; }
+    curRows.push(r); curH += r.h + (curRows.length > 1 ? KEY_ROW_GAP : 0);
+  }
+  if (curRows.length) pages.push(curRows);
+  return pages;
+}
+
+function keyPageStyle(layout) {
+  return `
+  h1.key-title { font-size: ${Math.round(layout.fontSize * 1.8)}px; text-align: center; margin: 0 0 18px 0; }
+  .key-row { display: flex; gap: ${KEY_GAP}px; align-items: flex-start; margin-bottom: ${KEY_ROW_GAP}px; }
+  .key-block { break-inside: avoid; }
+  .key-block .label { font-size: ${Math.round(layout.fontSize * 0.9)}px; margin: 0 0 4px 0; font-weight: 700; }`;
+}
+
+/**
+ * Back-of-book answer key, paginated into as many pages as needed so nothing
+ * overflows the trim. Returns an array of standalone page documents.
+ */
+function answerKeyPages(book, layout) {
+  const pages = packAnswerKey(book, layout);
+  if (!pages.length) return [pageShell(layout, keyPageStyle(layout), `<h1 class="key-title">Answer Key</h1>`)];
+  return pages.map((rows, i) => {
+    const suffix = pages.length > 1 ? ` (${i + 1} of ${pages.length})` : '';
+    const body = `<h1 class="key-title">Answer Key${suffix}</h1>` +
+      rows.map((r) => `<div class="key-row">${r.items.map((it) => it.html).join('')}</div>`).join('');
+    return pageShell(layout, keyPageStyle(layout), body);
+  });
+}
+
+/** Number of physical pages the answer key spans. */
+function answerKeyPageCount(book, layout) {
+  const n = packAnswerKey(book, layout).length;
+  return n || 1;
+}
+
+/** Back-of-book answer key — first page (kept for API compatibility). */
+function renderAnswerKey(book, layout) {
+  return answerKeyPages(book, layout)[0];
 }
 
 module.exports = {
@@ -312,5 +417,7 @@ module.exports = {
   renderAboutPage,
   renderMoreBooksPage,
   renderAnswerKey,
+  answerKeyPages,
+  answerKeyPageCount,
   pageShell,
 };

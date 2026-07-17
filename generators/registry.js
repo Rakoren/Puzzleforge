@@ -85,6 +85,54 @@ const trivia = {
   render: require('./trivia/renderer').render,
 };
 
+const riddles = {
+  type: 'riddles',
+  generate: require('./riddles').generate,
+  validate: require('./riddles/validator').validate,
+  solve: require('./riddles/solver').solve,
+  render: require('./riddles/renderer').render,
+};
+
+const brainteasers = {
+  type: 'brainteasers',
+  generate: require('./brainteasers').generate,
+  validate: require('./brainteasers/validator').validate,
+  solve: require('./brainteasers/solver').solve,
+  render: require('./brainteasers/renderer').render,
+};
+
+const logicgrid = {
+  type: 'logicgrid',
+  generate: require('./logicgrid').generate,
+  validate: require('./logicgrid/validator').validate,
+  solve: require('./logicgrid/solver').solve,
+  render: require('./logicgrid/renderer').render,
+};
+
+const wordladder = {
+  type: 'wordladder',
+  generate: require('./wordladder').generate,
+  validate: require('./wordladder/validator').validate,
+  solve: require('./wordladder/solver').solve,
+  render: require('./wordladder/renderer').render,
+};
+
+const wordwheel = {
+  type: 'wordwheel',
+  generate: require('./wordwheel').generate,
+  validate: require('./wordwheel/validator').validate,
+  solve: require('./wordwheel/solver').solve,
+  render: require('./wordwheel/renderer').render,
+};
+
+const cipher = {
+  type: 'cipher',
+  generate: require('./cipher').generate,
+  validate: require('./cipher/validator').validate,
+  solve: require('./cipher/solver').solve,
+  render: require('./cipher/renderer').render,
+};
+
 // Activity pages for kids' books — no answer, no puzzle solving.
 const coloring = {
   type: 'coloring',
@@ -129,6 +177,12 @@ const MODULES = {
   nonogram,
   numbersearch,
   trivia,
+  riddles,
+  brainteasers,
+  logicgrid,
+  wordladder,
+  wordwheel,
+  cipher,
   coloring,
   drawing,
   bleedguard,

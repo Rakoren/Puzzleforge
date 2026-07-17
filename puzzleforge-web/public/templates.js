@@ -1,0 +1,240 @@
+/**
+ * Starter book templates for the Book Builder.
+ *
+ * Each entry is a ready-to-publish book: a partial config compatible with the
+ * builder's applyConfig(), plus display metadata for the gallery. Picking one
+ * drops a fully-structured book into the form so a user goes from zero to an
+ * editable, print-ready book in a click, then tweaks from there.
+ *
+ * Only fields that differ from the builder's defaults need to be set; every
+ * value uses a real puzzle type / theme / trim / border id from the engine.
+ * Per-row `count` stays within the builder's 1–40 cap.
+ *
+ * UMD-ish: attaches window.PFBookTemplates in the browser; module.exports on
+ * Node so tests can validate the configs against the engine.
+ */
+(function (root, factory) {
+  const v = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = v;
+  else root.PFBookTemplates = v;
+})(typeof self !== 'undefined' ? self : this, function () {
+  const TEMPLATES = [
+    {
+      id: 'senior-large-print',
+      emoji: '🔍',
+      name: 'Large-Print Senior Word Search',
+      badge: '40 puzzles · Extra-large',
+      desc: 'Roomy grids and extra-large type — the best-selling word-search format for older readers.',
+      config: {
+        title: 'Large Print Word Search for Adults',
+        subtitle: '40 Relaxing Puzzles in Extra-Large Print',
+        audience: 'adult',
+        trimSize: '8.5x11',
+        fontScale: 1.5,
+        fontFamily: 'serif',
+        border: 'single',
+        borderColor: '#2b5c63',
+        theme: 'animals',
+        difficultyCurve: 'flat',
+        answerKey: true,
+        pageNumbers: true,
+        uniqueWords: true,
+        coverBg: '#1f4d54',
+        coverText: '#ffffff',
+        puzzles: [{ type: 'wordsearch', count: 40, difficulty: '1-2' }],
+        metadata: {
+          description: '40 large-print word search puzzles designed for comfortable reading, with full solutions in the back.',
+          keywords: ['large print word search', 'word search for seniors', 'word search puzzle book for adults',
+            'brain games for seniors', 'easy word search large print', 'word find puzzle book', 'gifts for grandma'],
+          categories: ['Humor & Entertainment > Puzzles & Games > Word Search',
+            'Health, Fitness & Dieting > Aging'],
+          readingAge: 'Adult',
+        },
+      },
+    },
+    {
+      id: 'kids-animal-activity',
+      emoji: '🐾',
+      name: 'Kids Animal Activity Book',
+      badge: 'Ages 6–9 · Mixed fun',
+      desc: 'A playful mix of word searches, mazes, scrambles and coloring pages — all animal-themed.',
+      config: {
+        title: 'My Big Animal Activity Book',
+        subtitle: 'Puzzles, Mazes & Coloring for Ages 6–9',
+        audience: 'kids',
+        trimSize: '8.5x11',
+        fontScale: 1.25,
+        fontFamily: 'rounded',
+        border: 'rounded',
+        borderColor: '#d98324',
+        theme: 'animals',
+        answerKey: true,
+        pageNumbers: true,
+        coverBg: '#f2a341',
+        coverText: '#3a2410',
+        puzzles: [
+          { type: 'wordsearch', count: 8, difficulty: '1' },
+          { type: 'maze', count: 8, difficulty: '1' },
+          { type: 'wordscramble', count: 6, difficulty: '1' },
+          { type: 'coloring', count: 6, difficulty: '1' },
+        ],
+        metadata: {
+          description: 'A fun-packed animal activity book for kids ages 6–9: word searches, mazes, word scrambles and coloring pages.',
+          keywords: ['kids activity book', 'animal activity book for children', 'word search for kids',
+            'mazes for kids ages 6-8', 'coloring and puzzle book', 'activity book ages 6 7 8 9'],
+          categories: ["Children's Books > Activity Books > Games & Activities",
+            "Children's Books > Animals"],
+          readingAge: '6-9',
+        },
+      },
+    },
+    {
+      id: 'travel-pocket',
+      emoji: '✈️',
+      name: 'Travel Pocket Puzzles',
+      badge: '6×9 pocket · 4 types',
+      desc: 'A compact 6×9 variety pack — crosswords, word searches, sudoku and cryptograms for the road.',
+      config: {
+        title: 'Travel Puzzle Pack',
+        subtitle: 'Pocket-Size Puzzles for Every Journey',
+        audience: 'adult',
+        trimSize: '6x9',
+        fontScale: 1,
+        fontFamily: 'sans',
+        border: 'single',
+        borderColor: '#333333',
+        theme: 'transport',
+        difficultyCurve: 'mixed',
+        answerKey: true,
+        pageNumbers: true,
+        coverBg: '#204a87',
+        coverText: '#ffffff',
+        puzzles: [
+          { type: 'crossword', count: 10, difficulty: '2' },
+          { type: 'wordsearch', count: 10, difficulty: '1-2' },
+          { type: 'sudoku', count: 10, difficulty: '2' },
+          { type: 'cryptogram', count: 8, difficulty: '2' },
+        ],
+        metadata: {
+          description: 'A pocket-size travel puzzle book packing crosswords, word searches, sudoku and cryptograms into a handy 6×9.',
+          keywords: ['travel puzzle book', 'pocket puzzle book', 'variety puzzle book for adults',
+            'crossword and sudoku book', 'puzzle book for travel', 'plane activities for adults'],
+          categories: ['Humor & Entertainment > Puzzles & Games > Logic & Brain Teasers',
+            'Travel > Reference'],
+          readingAge: 'Adult',
+        },
+      },
+    },
+    {
+      id: 'sudoku-workout',
+      emoji: '🔢',
+      name: 'Sudoku Workout (Easy → Hard)',
+      badge: '90 sudoku · Graded',
+      desc: 'Ninety graded sudoku that ramp from easy to hard — a clean, no-frills solver’s workbook.',
+      config: {
+        title: 'Sudoku Workout',
+        subtitle: '90 Graded Puzzles from Easy to Hard',
+        audience: 'adult',
+        trimSize: '6x9',
+        fontScale: 1,
+        fontFamily: 'sans',
+        border: 'none',
+        theme: 'space',
+        difficultyCurve: 'easy-to-hard',
+        answerKey: true,
+        pageNumbers: true,
+        coverBg: '#2d2a4a',
+        coverText: '#ffffff',
+        puzzles: [
+          { type: 'sudoku', count: 30, difficulty: '1' },
+          { type: 'sudoku', count: 30, difficulty: '2' },
+          { type: 'sudoku', count: 30, difficulty: '3' },
+        ],
+        metadata: {
+          description: '90 sudoku puzzles graded from easy to hard, with full solutions — a complete workout for sudoku solvers.',
+          keywords: ['sudoku puzzle book', 'sudoku for adults', 'easy to hard sudoku',
+            'sudoku book with answers', 'large sudoku collection', 'sudoku workbook'],
+          categories: ['Humor & Entertainment > Puzzles & Games > Sudoku',
+            'Humor & Entertainment > Puzzles & Games > Logic & Brain Teasers'],
+          readingAge: 'Adult',
+        },
+      },
+    },
+    {
+      id: 'brain-training-variety',
+      emoji: '🧠',
+      name: 'Brain Training Variety',
+      badge: '7 puzzle types',
+      desc: 'A full-size variety book spanning seven puzzle types, graded easy to hard to keep minds sharp.',
+      config: {
+        title: 'Brain Training Puzzle Book',
+        subtitle: 'A Variety of Puzzles to Keep Your Mind Sharp',
+        audience: 'adult',
+        trimSize: '8.5x11',
+        fontScale: 1.25,
+        fontFamily: 'sans',
+        border: 'single',
+        borderColor: '#333333',
+        theme: 'space',
+        difficultyCurve: 'easy-to-hard',
+        answerKey: true,
+        pageNumbers: true,
+        coverBg: '#3a2d5c',
+        coverText: '#ffffff',
+        puzzles: [
+          { type: 'wordsearch', count: 8, difficulty: '1-2' },
+          { type: 'sudoku', count: 8, difficulty: '2' },
+          { type: 'maze', count: 6, difficulty: '2' },
+          { type: 'cryptogram', count: 6, difficulty: '2' },
+          { type: 'nonogram', count: 6, difficulty: '2' },
+          { type: 'numbersearch', count: 6, difficulty: '1-2' },
+          { type: 'trivia', count: 4, difficulty: '2' },
+        ],
+        metadata: {
+          description: 'A brain-training variety puzzle book with seven puzzle types graded easy to hard, plus full solutions.',
+          keywords: ['brain games for adults', 'variety puzzle book', 'brain training puzzles',
+            'activity book for adults', 'puzzle book variety pack', 'logic puzzles for adults'],
+          categories: ['Humor & Entertainment > Puzzles & Games > Logic & Brain Teasers',
+            'Health, Fitness & Dieting > Mental Health'],
+          readingAge: 'Adult',
+        },
+      },
+    },
+    {
+      id: 'coffee-break-crosswords',
+      emoji: '☕',
+      name: 'Coffee Break Crosswords',
+      badge: '40 crosswords',
+      desc: 'Forty relaxed crosswords and kriss-kross grids — the classic coffee-break companion.',
+      config: {
+        title: 'Coffee Break Crosswords',
+        subtitle: '40 Relaxing Crossword Puzzles',
+        audience: 'adult',
+        trimSize: '8.5x11',
+        fontScale: 1.25,
+        fontFamily: 'serif',
+        border: 'single',
+        borderColor: '#5a3a22',
+        theme: 'food',
+        difficultyCurve: 'mixed',
+        answerKey: true,
+        pageNumbers: true,
+        coverBg: '#6b4226',
+        coverText: '#fff4e6',
+        puzzles: [
+          { type: 'crossword', count: 30, difficulty: '2' },
+          { type: 'krisskross', count: 10, difficulty: '2' },
+        ],
+        metadata: {
+          description: '40 relaxing crossword and kriss-kross puzzles for a coffee-break-size mental workout, with full solutions.',
+          keywords: ['crossword puzzle book', 'crosswords for adults', 'easy crossword puzzles',
+            'crossword book large print', 'coffee break puzzles', 'crossword and word puzzles'],
+          categories: ['Humor & Entertainment > Puzzles & Games > Crosswords',
+            'Humor & Entertainment > Puzzles & Games > Word Search'],
+          readingAge: 'Adult',
+        },
+      },
+    },
+  ];
+  return TEMPLATES;
+});

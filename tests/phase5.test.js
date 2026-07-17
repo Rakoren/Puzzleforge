@@ -16,7 +16,13 @@ test('number search and trivia are registered (ten puzzle types + activity pages
   assert.ok(types.includes('drawing'));
   assert.ok(types.includes('bleedguard'));
   assert.ok(types.includes('breather'));
-  assert.equal(types.length, 14);
+  assert.ok(types.includes('logicgrid'));
+  assert.ok(types.includes('wordladder'));
+  assert.ok(types.includes('wordwheel'));
+  assert.ok(types.includes('cipher'));
+  assert.ok(types.includes('riddles'));
+  assert.ok(types.includes('brainteasers'));
+  assert.equal(types.length, 20);
 });
 
 // --- Number Search ---

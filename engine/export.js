@@ -16,7 +16,9 @@ const path = require('path');
 const { getModule, isActivityType } = require('../generators/registry');
 const { getLayout } = require('../layouts');
 const { frameSvg } = require('./decor');
-const { composePage } = require('./components');
+const difficulty = require('../config/difficulty');
+const { composePage, splitHtml, composeParts } = require('./components');
+const { fontFaceCss } = require('./element-html');
 const {
   renderTitlePage,
   renderCopyrightPage,
@@ -25,8 +27,12 @@ const {
   renderAboutPage,
   renderMoreBooksPage,
   renderAnswerKey,
+  answerKeyPages,
+  answerKeyPageCount,
+  pageShell,
 } = require('./matter');
-const { renderCoverHtml, coverDimensions } = require('./cover');
+const { renderCoverHtml, coverDimensions, frontImageDpi } = require('./cover');
+const { qrSvg } = require('./digital');
 
 function findChromium(explicit) {
   const home = process.env.HOME || process.env.USERPROFILE || '';
@@ -90,7 +96,14 @@ function findChromium(explicit) {
 function renderPuzzleHtml(puzzle, opts = {}) {
   const trimSize = opts.trimSize || '8.5x11';
   const audience = opts.audience || (puzzle.difficulty <= 1 ? 'kids' : 'adult');
-  const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily });
+  // A worksheet reserves a top band for its Name / Date header, so the puzzle is
+  // sized to sit below it. The band height is figured from the header content.
+  const ws = opts.worksheet;
+  const reserveTopIn = ws ? worksheetHeaderInches(ws) : 0;
+  // A worksheet footer sits at the page foot; reserve a band so the puzzle
+  // content is sized to sit above it (no overlap with a word list, etc.).
+  const reserveBottomIn = opts.reserveBottomIn || (ws && ws.footer ? 0.32 : 0);
+  const layout = getLayout(trimSize, { audience, textScale: opts.textScale, fontFamily: opts.fontFamily, reserveBottomIn, reserveTopIn });
   const mod = getModule(puzzle.type);
   let doc = mod.render(puzzle, layout, { answerKey: Boolean(opts.answerKey) });
   // Decorative border, but never on blank/activity pages (bleed guards stay
@@ -103,7 +116,61 @@ function renderPuzzleHtml(puzzle, opts = {}) {
   if (opts.overlay) {
     doc = applyOverlay(doc, layout, opts.overlay);
   }
+  // Worksheet chrome: a student Name / Date (/ Class) header above the puzzle
+  // and an optional footer line — injected the same way as the border so it
+  // travels through combinePages.
+  if (ws) {
+    doc = applyWorksheetHeader(doc, layout, ws, Boolean(opts.answerKey));
+  }
   return doc;
+}
+
+// Height (inches) the worksheet header band needs: a Name/Date row, an optional
+// Class/Period row, and a little breathing room.
+function worksheetHeaderInches(ws) {
+  let inches = 0.5; // name/date row + rule
+  if (ws && ws.classField) inches += 0.28;
+  return inches;
+}
+
+// Inject a worksheet header (Name / Date / optional Class) at the top of a
+// rendered puzzle page, occupying the layout's reserved top band, plus an
+// optional footer. On an answer copy the header shows "ANSWER KEY" instead of
+// blank fill-in lines.
+function applyWorksheetHeader(doc, layout, ws, isAnswer) {
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const band = layout.reserveTop; // px
+  const fs = Math.max(11, Math.round(layout.fontSize * 0.82));
+  const line = (label) =>
+    `<span class="pf-ws-f"><span class="pf-ws-lbl">${esc(label)}</span><span class="pf-ws-rule"></span></span>`;
+  const fields = isAnswer
+    ? `<span class="pf-ws-akey">✔ ANSWER KEY</span>`
+    : `${line('Name')}${line('Date')}`;
+  const classRow = (!isAnswer && ws.classField)
+    ? `<div class="pf-ws-row2">${line('Class / Period')}</div>` : '';
+  const footer = ws.footer
+    ? `<div class="pf-ws-foot">${esc(ws.footer)}</div>` : '';
+
+  // Pin the body to the full usable page height so the footer lands at the true
+  // page foot (the reserved bottom band), not just under the last line of content.
+  const fullH = layout.usableHeight + (layout.reserveTop || 0) + (layout.reserveBottom || 0);
+  const css =
+    `\n  body { position: relative; padding-top: ${band}px; min-height: ${fullH}px; box-sizing: border-box; }` +
+    `\n  .pf-ws-head { position: absolute; top: 0; left: 0; width: 100%; height: ${band}px; box-sizing: border-box;` +
+    ` padding-bottom: 8px; border-bottom: 1.5px solid #222; font-family: ${layout.fontFamily};` +
+    ` display: flex; flex-direction: column; justify-content: flex-start; gap: 6px; }` +
+    `\n  .pf-ws-row1 { display: flex; gap: 26px; align-items: flex-end; }` +
+    `\n  .pf-ws-f { display: flex; align-items: flex-end; gap: 7px; flex: 1; font-size: ${fs}px; color: #222; }` +
+    `\n  .pf-ws-lbl { white-space: nowrap; font-weight: 600; }` +
+    `\n  .pf-ws-rule { flex: 1; border-bottom: 1px solid #222; height: ${Math.round(fs * 1.1)}px; }` +
+    `\n  .pf-ws-akey { font-size: ${fs + 1}px; font-weight: 700; letter-spacing: .06em; color: #1a7a3a; }` +
+    `\n  .pf-ws-foot { position: absolute; bottom: 0; left: 0; width: 100%; text-align: center;` +
+    ` font-family: ${layout.fontFamily}; font-size: ${Math.max(9, Math.round(fs * 0.78))}px; color: #666; }\n`;
+
+  const head = `<div class="pf-ws-head"><div class="pf-ws-row1">${fields}</div>${classRow}</div>`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1>${head}${footer}`);
+  return out;
 }
 
 // Inject the editor's decoration SVG as a top overlay covering the usable area.
@@ -114,6 +181,56 @@ function applyOverlay(doc, layout, svg) {
     `\n  .pf-overlay > svg { width: 100%; height: 100%; display: block; overflow: visible; }\n`;
   let out = doc.replace(/<\/style>/i, `${css}</style>`);
   out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-overlay">${svg}</div>`);
+  return out;
+}
+
+// A small difficulty label pinned to the top-right of a puzzle page (clear of
+// the centered title). Injected the same way as the border/overlay so it
+// travels through combinePages.
+function applyDifficultyBadge(doc, layout, text) {
+  if (!text) return doc;
+  const fs = Math.max(9, Math.round(layout.fontSize * 0.8));
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const css =
+    `\n  body { position: relative; }` +
+    `\n  .pf-difficulty { position: absolute; top: 0; right: 0; z-index: 6; font-family: ${layout.fontFamily};` +
+    ` font-size: ${fs}px; font-weight: 600; color: #444; background: #f4f4f4; border: 1px solid #ccc;` +
+    ` border-radius: 5px; padding: 2px 8px; white-space: nowrap; }\n`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-difficulty">${esc(text)}</div>`);
+  return out;
+}
+
+// Sizing for the QR badge, shared by the page-reserve calc and the renderer so
+// the reserved band exactly fits the QR + caption.
+function qrBadgeMetrics(layout) {
+  const px = Math.max(56, Math.round(layout.usableWidth * 0.12));
+  const cap = Math.max(6, Math.round(layout.fontSize * 0.52));
+  return { px, cap, bandPx: px + cap + 12 };
+}
+
+// A "scan for answers" QR pinned to the bottom-right of a puzzle page, linking
+// to that puzzle's static landing page (engine/digital.js). Inline SVG, injected
+// the same way as the difficulty badge so it travels through combinePages and
+// prints vector-sharp. When `reserved` is set the puzzle was rendered into a
+// shorter area (getLayout reserveBottomIn), so the badge drops into that clear
+// band below the content — no overlap with word lists etc.
+function applyQrBadge(doc, layout, url, caption) {
+  if (!url) return doc;
+  const { px, cap } = qrBadgeMetrics(layout);
+  const svg = qrSvg(url, { size: px, ecl: 'M' });
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // `layout` here is the book's full (unreduced) layout, so its usableHeight is
+  // the whole content area. When a reserve band was applied the module rendered
+  // into (usableHeight - band), so pinning the body to the full height drops the
+  // QR into the clear band at the true page foot.
+  const css =
+    `\n  body { position: relative; min-height: ${layout.usableHeight}px; box-sizing: border-box; }` +
+    `\n  .pf-qr { position: absolute; bottom: 0; right: 0; z-index: 6; text-align: center; font-family: ${layout.fontFamily}; }` +
+    `\n  .pf-qr svg { width: ${px}px; height: ${px}px; display: block; }` +
+    `\n  .pf-qr .pf-qr-cap { font-size: ${cap}px; color: #555; margin-top: 1px; line-height: 1.1; }\n`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-qr">${svg}<div class="pf-qr-cap">${esc(caption || 'Scan for the answer')}</div></div>`);
   return out;
 }
 
@@ -129,6 +246,31 @@ function applyBorder(doc, layout, style, color) {
     `\n  .pf-frame svg { width: 100%; height: 100%; display: block; }\n`;
   let out = doc.replace(/<\/style>/i, `${css}</style>`);
   out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-frame">${svg}</div>`);
+  return out;
+}
+
+// Build a CSS `background` value for a per-page background spec, validating
+// colors against a hex pattern (untrusted editor input) and clamping the angle.
+function backgroundCss(bg) {
+  if (!bg || typeof bg !== 'object' || bg.type === 'none' || !bg.type) return '';
+  const hex = (c, d) => (/^#[0-9a-fA-F]{3,8}$/.test(c || '') ? c : d);
+  if (bg.type === 'solid') return hex(bg.color, '#ffffff');
+  if (bg.type === 'gradient') {
+    const a = Number.isFinite(Number(bg.angle)) ? Math.round(Number(bg.angle)) % 360 : 180;
+    return `linear-gradient(${a}deg, ${hex(bg.color, '#ffffff')}, ${hex(bg.color2, '#dddddd')})`;
+  }
+  return '';
+}
+
+// Paint a full-page background behind all content (z-index below the border).
+function applyBackground(doc, layout, bg) {
+  const value = backgroundCss(bg);
+  if (!value) return doc;
+  const css =
+    `\n  body { position: relative; min-height: ${layout.usableHeight}px; }` +
+    `\n  .pf-bg { position: absolute; inset: 0; z-index: -2; pointer-events: none; background: ${value}; }\n`;
+  let out = doc.replace(/<\/style>/i, `${css}</style>`);
+  out = out.replace(/<body([^>]*)>/i, `<body$1><div class="pf-bg"></div>`);
   return out;
 }
 
@@ -253,6 +395,7 @@ function combinePages(htmlDocs, opts = {}) {
     ` font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 11px; color: #666; }`;
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
+  ${opts.fontFaces || ''}
   ${pageRule}
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -292,58 +435,146 @@ async function exportPuzzlePdf(puzzle, opts = {}) {
  * @param {object} book book object from engine/book.js
  * @returns {string} combined HTML
  */
-function renderBookHtml(book) {
+/**
+ * The full book as an ordered list of "leaves" (every physical page): title,
+ * front matter, content pages, answer key, back matter. The Page Editor uses
+ * this to show and rearrange ALL pages, and the exporter renders from it — so a
+ * custom leaf order (reordered / inserted blanks / deleted) round-trips exactly.
+ * @returns {Array<{role, matter?, matterKind?, puzzle?, state?, src?}>}
+ */
+function defaultLeaves(book) {
+  const leaves = book.titlePage === false ? [] : [{ role: 'title' }];
+  for (const fm of book.frontMatter || []) {
+    if (fm.kind === 'copyright' || fm.kind === 'belongsTo' || fm.kind === 'intro') {
+      leaves.push({ role: 'frontmatter', matter: fm, matterKind: fm.kind });
+    }
+  }
+  book.pages.forEach((pg, i) => leaves.push({ role: 'content', puzzle: pg.puzzle, state: pg.state, src: i }));
+  if (book.answerKey && book.meta.puzzleCount > 0) {
+    // The answer key can span several pages; give each its own leaf.
+    const layout = getLayout(book.trimSize, { audience: book.audience, textScale: book.fontScale, fontFamily: book.fontFamily });
+    const n = answerKeyPageCount(book, layout);
+    for (let k = 0; k < n; k++) leaves.push({ role: 'answerkey', akIndex: k });
+  }
+  for (const bm of book.backMatter || []) {
+    if (bm.kind === 'about' || bm.kind === 'morebooks') {
+      leaves.push({ role: 'backmatter', matter: bm, matterKind: bm.kind });
+    }
+  }
+  // KDP requires an even physical page count. Optionally append a blank leaf.
+  if (book.padToEven && leaves.length % 2 === 1) leaves.push({ role: 'blank' });
+  return leaves;
+}
+
+// Render a matter/title/answer-key leaf's base HTML document.
+function renderMatterDoc(book, layout, leaf) {
+  if (leaf.role === 'title') return renderTitlePage(book, layout);
+  if (leaf.role === 'answerkey') { const pages = answerKeyPages(book, layout); return pages[leaf.akIndex || 0] || pages[pages.length - 1]; }
+  const fm = leaf.matter || {};
+  switch (fm.kind) {
+    case 'copyright': return renderCopyrightPage(book, layout, fm);
+    case 'belongsTo': return renderBelongsToPage(book, layout);
+    case 'intro': return renderIntroPage(book, layout, fm);
+    case 'about': return renderAboutPage(book, layout, fm);
+    case 'morebooks': return renderMoreBooksPage(book, layout, fm);
+    default: return renderTitlePage(book, layout);
+  }
+}
+
+// Render one leaf (any page role) to a print-ready HTML document, honoring a
+// per-page state (Page Editor layout overrides + border).
+function renderLeafDoc(book, layout, styleOpts, leaf) {
+  const st = leaf.state || {};
+  const border = st.border !== undefined ? st.border : book.border;
+  const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
+  const withBorder = (doc) => (border && border !== 'none') ? applyBorder(doc, layout, border, borderColor) : doc;
+  const withBg = (doc) => applyBackground(doc, layout, st.bg);
+
+  // A padding leaf: an intentionally blank page (no border, no number).
+  if (leaf.role === 'blank') return withBg(pageShell(layout, '', ''));
+
+  if (leaf.role === 'content') {
+    const puzzle = leaf.puzzle;
+    const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
+    // Digital-layer QR: reserve a foot band so the puzzle is sized above it,
+    // then pin the QR into that clear band (real puzzles only; activity/filler
+    // pages get none). For editor-composed pages (st.layout) we can't reshape
+    // the layout, so the QR overlays without a reserve.
+    const qrEntry = book.digital && book.digital.byPuzzle && book.digital.byPuzzle.get(puzzle);
+    const qr = qrBadgeMetrics(layout);
+    const reserveBottomIn = qrEntry && !st.layout ? qr.bandPx / layout.pxPerIn : 0;
+    let doc = st.layout
+      ? withBorder(composePage(puzzle, layout, st.layout))
+      : renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay, reserveBottomIn });
+    // Optional per-page difficulty label (real puzzles only).
+    if (book.perPageDifficulty && !isActivityType(puzzle.type)) {
+      doc = applyDifficultyBadge(doc, layout, difficulty.badgeText(puzzle.difficulty, book.audience));
+    }
+    if (qrEntry) doc = applyQrBadge(doc, layout, qrEntry.url, book.digital.caption);
+    return withBg(doc);
+  }
+  // Title / front matter / answer key / back matter.
+  let doc = renderMatterDoc(book, layout, leaf);
+  if (st.layout) { const { style, components } = splitHtml(doc); doc = composeParts(style, components, layout, st.layout); }
+  return withBg(withBorder(doc));
+}
+
+// Whether a leaf carries a printed page number (content puzzles + answer key).
+function leafNumbered(leaf) {
+  return (leaf.role === 'content' && leaf.puzzle && leaf.puzzle.type !== 'bleedguard') || leaf.role === 'answerkey';
+}
+
+// --- Master pages ---------------------------------------------------------
+// A master is an overlay of free elements (page-number fields, running
+// headers/footers, decorative frames) applied to a range of physical pages.
+// It renders through the SAME element pipeline as page objects, so the editor
+// overlay and this export stay pixel-identical.
+function masterPageNo(master, i) {
+  const skip = Math.max(0, Number(master.skipFirst) || 0);
+  if (i < skip) return null;
+  return i - skip + (Number.isFinite(Number(master.startAt)) ? Number(master.startAt) : 1);
+}
+function masterAppliesTo(master, i) {
+  const n = masterPageNo(master, i);
+  if (n == null) return false;
+  if (master.applyTo === 'odd') return n % 2 === 1;
+  if (master.applyTo === 'even') return n % 2 === 0;
+  return true;
+}
+// Return a leaf with the master's elements merged into its layout (page-number
+// fields resolved to this page's number). Leaves the leaf untouched when the
+// master doesn't apply.
+function withMaster(leaf, i, master) {
+  if (!master || master.enabled === false || !Array.isArray(master.elements) || !master.elements.length) return leaf;
+  if (!masterAppliesTo(master, i)) return leaf;
+  const no = masterPageNo(master, i);
+  const extra = master.elements.map((e) => (e && e.field === 'pageNumber' ? { ...e, text: String(no) } : e));
+  const st = leaf.state ? { ...leaf.state } : {};
+  const layout = st.layout ? { ...st.layout } : { comp: {}, elements: [] };
+  layout.elements = [...(layout.elements || []), ...extra];
+  return { ...leaf, state: { ...st, layout } };
+}
+
+function renderBookHtml(book, leaves) {
   const styleOpts = { audience: book.audience, textScale: book.fontScale, fontFamily: book.fontFamily };
   const layout = getLayout(book.trimSize, styleOpts);
   const numbered = book.pageNumbers === true;
-  const docs = [renderTitlePage(book, layout)];
-  const footers = [null]; // title page is unnumbered
-
-  for (const fm of book.frontMatter || []) {
-    if (fm.kind === 'copyright') docs.push(renderCopyrightPage(book, layout, fm));
-    else if (fm.kind === 'belongsTo') docs.push(renderBelongsToPage(book, layout));
-    else if (fm.kind === 'intro') docs.push(renderIntroPage(book, layout, fm));
-    else continue;
-    footers.push(null); // front matter is unnumbered
-  }
-
-  // Body page numbers start at 1 on the first puzzle page (front matter excluded).
+  const list = Array.isArray(leaves) ? leaves : defaultLeaves(book);
   const prefix = book.footerText ? `${escFooter(book.footerText)} · ` : '';
+
+  const docs = [];
+  const footers = [];
   let n = 0;
-  for (const pg of book.pages) {
-    const puzzle = pg.puzzle;
-    // Per-page state (recipe v2) can override the book-level border.
-    const st = pg.state || {};
-    const border = st.border !== undefined ? st.border : book.border;
-    const borderColor = st.borderColor !== undefined ? st.borderColor : book.borderColor;
-    if (st.layout) {
-      // Page Editor custom layout: compose the puzzle's pieces + free elements.
-      let doc = composePage(puzzle, layout, st.layout);
-      if (border && border !== 'none') doc = applyBorder(doc, layout, border, borderColor);
-      docs.push(doc);
-    } else {
-      const overlay = st.canvasState && st.canvasState.svg ? st.canvasState.svg : null;
-      docs.push(renderPuzzleHtml(puzzle, { trimSize: book.trimSize, ...styleOpts, border, borderColor, overlay }));
-    }
-    // Number every page except the blank bleed-guards, which stay clean.
-    footers.push(numbered && puzzle.type !== 'bleedguard' ? `${prefix}${++n}` : null);
-  }
-  if (book.answerKey && book.meta.puzzleCount > 0) {
-    docs.push(renderAnswerKey(book, layout));
-    footers.push(numbered ? `${prefix}${++n}` : null);
-  }
+  list.forEach((leaf, i) => {
+    const withOverlay = book.master ? withMaster(leaf, i, book.master) : leaf;
+    docs.push(renderLeafDoc(book, layout, styleOpts, withOverlay));
+    footers.push(numbered && leafNumbered(leaf) ? `${prefix}${++n}` : null);
+  });
 
-  // Back matter (about / more books) after the answer key — unnumbered.
-  for (const bm of book.backMatter || []) {
-    if (bm.kind === 'about') docs.push(renderAboutPage(book, layout, bm));
-    else if (bm.kind === 'morebooks') docs.push(renderMoreBooksPage(book, layout, bm));
-    else continue;
-    footers.push(null);
-  }
-
+  const fontFaces = fontFaceCss(book.customFonts);
   return numbered
-    ? combinePages(docs, { footers, pageHeight: layout.usableHeight })
-    : combinePages(docs);
+    ? combinePages(docs, { footers, pageHeight: layout.usableHeight, fontFaces })
+    : combinePages(docs, { fontFaces });
 }
 
 function escFooter(s) {
@@ -356,16 +587,16 @@ function escFooter(s) {
 /**
  * Export a full book to a print-ready PDF.
  * @param {object} book book object from engine/book.js
- * @param {object} opts { outPath (required), executablePath? }
+ * @param {object} opts { outPath (required), executablePath?, leaves? }
+ *   `leaves` overrides the default page order (Page Editor page plan).
  * @returns {Promise<{ outPath, pages, trimSize }>}
  */
 async function exportBookPdf(book, opts = {}) {
   if (!opts.outPath) throw new Error('export: opts.outPath is required');
-  const html = renderBookHtml(book);
+  const leaves = Array.isArray(opts.leaves) ? opts.leaves : defaultLeaves(book);
+  const html = renderBookHtml(book, leaves);
   await htmlToPdf(html, opts.outPath, opts.executablePath);
-  // pages = title + puzzles + (answer key may span multiple, counted as >=1)
-  const pages = 1 + book.pages.length + (book.answerKey ? 1 : 0);
-  return { outPath: opts.outPath, pages, trimSize: book.trimSize };
+  return { outPath: opts.outPath, pages: leaves.length, trimSize: book.trimSize };
 }
 
 /**
@@ -381,6 +612,9 @@ function renderPuzzlesHtml(entries) {
       trimSize: e.trimSize || '8.5x11',
       audience: e.audience,
       answerKey: Boolean(e.answerKey),
+      worksheet: e.worksheet,
+      border: e.border,
+      borderColor: e.borderColor,
     })
   );
   return combinePages(docs);
@@ -436,6 +670,9 @@ module.exports = {
   renderBookHtml,
   renderCoverHtml,
   coverDimensions,
+  frontImageDpi,
   combinePages,
   findChromium,
+  defaultLeaves,
+  renderMatterDoc,
 };

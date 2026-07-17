@@ -12,7 +12,7 @@
  *   difficulty 1|2|3
  *   width, height  optional explicit dimensions (cells)
  */
-const { DIFFICULTY } = require('../../config/defaults');
+const { presetFor } = require('../../config/defaults');
 
 // Direction bits: N E S W. A set bit means the passage in that direction is OPEN.
 const N = 1;
@@ -34,7 +34,7 @@ function shuffle(arr, rand) {
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = DIFFICULTY.maze[difficulty] || DIFFICULTY.maze[1];
+  const preset = presetFor('maze', difficulty, config.audience);
   const width = config.width || preset.width;
   const height = config.height || preset.height;
 

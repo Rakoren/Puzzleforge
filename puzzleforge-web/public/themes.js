@@ -7,6 +7,8 @@
     unavailable: $('unavailable'),
     topic: $('topic'),
     perTier: $('perTier'),
+    audience: $('audience'),
+    catAudience: $('catAudience'),
     generate: $('generate'),
     status: $('status'),
     result: $('result'),
@@ -26,11 +28,18 @@
     catCount: $('catCount'),
     catGenerate: $('catGenerate'),
     catStatus: $('catStatus'),
+    genProgress: $('genProgress'),
+    catProgress: $('catProgress'),
     catResult: $('catResult'),
     catList: $('catList'),
     catSave: $('catSave'),
     catDiscard: $('catDiscard'),
     catSaveStatus: $('catSaveStatus'),
+    modeAi: $('modeAi'), modeManual: $('modeManual'), aiView: $('aiView'), manualView: $('manualView'),
+    mName: $('mName'), mCategory: $('mCategory'), mCatList: $('mCatList'), mTags: $('mTags'),
+    mTier1: $('mTier1'), mTier2: $('mTier2'), mTier3: $('mTier3'), mTier4: $('mTier4'), mCount: $('mCount'),
+    mAudience: $('mAudience'),
+    mFacts: $('mFacts'), mSave: $('mSave'), mClear: $('mClear'), mStatus: $('mStatus'),
   };
 
   let current = null; // the generated theme object awaiting save
@@ -40,7 +49,9 @@
     node.className = 'status' + (kind ? ' ' + kind : '');
   }
 
-  const TIER_NAMES = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+  const TIER_NAMES = { 1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Expert' };
+  const AUD_LABEL = { kids: 'Kids', adult: 'Adults' };
+  const audienceText = (a) => (Array.isArray(a) && a.length === 1 ? AUD_LABEL[a[0]] || 'Everyone' : 'Kids & Adults');
 
   function wordsOf(tier) {
     return (current.tiers[tier] || []).map((e) => (typeof e === 'string' ? e : e.word));
@@ -51,7 +62,7 @@
     const counts = data.report.counts;
     el.rLabel.textContent = current.label;
     const total = data.report.total;
-    let meta = `${current.category} · ${total} words (${counts['1']} easy, ${counts['2']} medium, ${counts['3']} hard)`;
+    let meta = `${current.category} · ${audienceText(current.audiences)} · ${total} words (${counts['1']} easy, ${counts['2']} medium, ${counts['3']} hard, ${counts['4'] || 0} expert)`;
     if (data.report.factCount) meta += ` · ${data.report.factCount} fun facts`;
     if (data.report.blocked) meta += ` · ${data.report.blocked} removed by filter`;
     el.rMeta.textContent = meta;
@@ -65,7 +76,7 @@
     }
 
     el.tierSamples.innerHTML = '';
-    for (const t of ['1', '2', '3']) {
+    for (const t of ['1', '2', '3', '4']) {
       const block = document.createElement('div');
       block.className = 'tier-block';
       const h = document.createElement('strong');
@@ -90,13 +101,14 @@
     }
     setStatus(el.status, 'Generating theme… this can take 20–40 seconds.', 'busy');
     el.generate.disabled = true;
+    if (el.genProgress) el.genProgress.hidden = false;
     el.result.classList.add('hidden');
     current = null;
     try {
       const res = await fetch('/api/theme/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, wordsPerTier: Number(el.perTier.value) || undefined }),
+        body: JSON.stringify({ topic, wordsPerTier: Number(el.perTier.value) || undefined, audience: el.audience ? el.audience.value : undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -106,6 +118,7 @@
       setStatus(el.status, err.message, 'err');
     } finally {
       el.generate.disabled = false;
+      if (el.genProgress) el.genProgress.hidden = true;
     }
   }
 
@@ -156,6 +169,7 @@
       el.manageList.textContent = 'Could not load themes.';
       return;
     }
+    fillCategoryList(themes);
     el.manageList.innerHTML = '';
     const byCat = {};
     for (const th of themes) (byCat[th.category] = byCat[th.category] || []).push(th);
@@ -164,8 +178,24 @@
       head.className = 'manage-cat';
       head.textContent = cat;
       el.manageList.appendChild(head);
-      for (const th of byCat[cat]) el.manageList.appendChild(themeRow(th));
+      // Within a category, group by audience (Kids, then Both, then Adult) so the
+    // list reads [Kids] … / [Adult] … together, then alphabetical by label.
+    byCat[cat].sort((a, b) => audienceRank(a.audiences) - audienceRank(b.audiences) || a.label.localeCompare(b.label));
+    for (const th of byCat[cat]) el.manageList.appendChild(themeRow(th));
     }
+  }
+
+  // Audience → short badge text + a sort rank (kids first, both, adult last).
+  function audienceInfo(audiences) {
+    const a = Array.isArray(audiences) ? audiences : [];
+    const kids = a.includes('kids'), adult = a.includes('adult');
+    if (kids && !adult) return { text: 'Kids', cls: 'aud-kids' };
+    if (adult && !kids) return { text: 'Adult', cls: 'aud-adult' };
+    return { text: 'Both', cls: 'aud-both' };
+  }
+  function audienceRank(audiences) {
+    const t = audienceInfo(audiences).text;
+    return t === 'Kids' ? 0 : t === 'Both' ? 1 : 2;
   }
 
   function themeRow(th) {
@@ -174,7 +204,12 @@
 
     const name = document.createElement('span');
     name.className = 'manage-name';
-    name.textContent = `${th.label} (${th.wordCount})`;
+    const aud = audienceInfo(th.audiences);
+    const badge = document.createElement('span');
+    badge.className = 'aud-badge ' + aud.cls;
+    badge.textContent = aud.text;
+    name.appendChild(badge);
+    name.appendChild(document.createTextNode(` ${th.label} (${th.wordCount})`));
 
     const edit = document.createElement('button');
     edit.className = 'iconbtn';
@@ -194,14 +229,83 @@
     del.textContent = 'Delete';
     del.addEventListener('click', () => deleteTheme(th, row));
 
+    const expand = document.createElement('button');
+    expand.className = 'iconbtn';
+    expand.type = 'button';
+    expand.textContent = '✨ Expand';
+    expand.title = 'Use AI to add more words to this theme (up to ~40 per level)';
+    expand.addEventListener('click', () => expandTheme(th, expand));
+
     const actions = document.createElement('span');
     actions.className = 'manage-actions';
     actions.appendChild(edit);
+    actions.appendChild(expand);
     actions.appendChild(clean);
+    // Only a "Both" theme can be split into Kids + Adult variants.
+    if (aud.text === 'Both') {
+      const split = document.createElement('button');
+      split.className = 'iconbtn';
+      split.type = 'button';
+      split.textContent = 'Split K/A';
+      split.title = 'Create Kids and Adult variants (keeps this one)';
+      split.addEventListener('click', () => splitTheme(th, split));
+      actions.appendChild(split);
+    }
     actions.appendChild(del);
     row.appendChild(name);
     row.appendChild(actions);
     return row;
+  }
+
+  async function splitTheme(th, btn) {
+    btn.disabled = true;
+    const prev = btn.textContent;
+    btn.textContent = '…';
+    try {
+      const res = await fetch('/api/theme/split', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: th.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Split failed');
+      const kn = data.kidsReport && data.kidsReport.total;
+      const an = data.adultReport && data.adultReport.total;
+      setStatus(el.saveStatus, `Split “${th.label}” into “${th.label} (Kids)” (${kn} words) and “${th.label} (Adult)” (${an} words). The original stays.`, 'ok');
+      loadThemeList();
+    } catch (err) {
+      setStatus(el.saveStatus, err.message, 'err');
+      btn.disabled = false;
+      btn.textContent = prev;
+    }
+  }
+
+  // AI top-up: ask the server to generate more words for this theme (deduped
+  // against what's already there) up to ~`target` per level, then refresh.
+  async function expandTheme(th, btn, target) {
+    btn.disabled = true;
+    const prev = btn.textContent;
+    btn.textContent = '✨ Adding…';
+    try {
+      const res = await fetch('/api/theme/expand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: th.id, wordsPerTier: target || 40 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Expand failed');
+      const msg = data.added
+        ? `Added ${data.added} new word${data.added === 1 ? '' : 's'} to “${th.label}” — now ${data.total} total (${data.counts[1]}/${data.counts[2]}/${data.counts[3]}/${data.counts[4]} by level).${data.exhausted ? ' The topic looks nearly tapped out — few new words left.' : ''}`
+        : `No new words to add for “${th.label}” — the topic looks tapped out.`;
+      setStatus(el.saveStatus, msg, data.added ? 'ok' : '');
+      loadThemeList();
+      if (editing === th.id) openEditor(th); // refresh the open editor
+    } catch (err) {
+      setStatus(el.saveStatus, err.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prev;
+    }
   }
 
   async function cleanTheme(th, btn) {
@@ -217,9 +321,10 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Clean failed');
       const r = data.report || {};
+      const upgraded = data.tier4Added ? `, added a ${data.tier4Added}-word Expert tier` : '';
       setStatus(
         el.saveStatus,
-        `Cleaned “${th.label}” — ${r.total} words${data.removed ? `, removed ${data.removed}` : ', nothing to remove'}.`,
+        `Cleaned “${th.label}” — ${r.total} words${data.removed ? `, removed ${data.removed}` : ''}${upgraded}${!data.removed && !data.tier4Added ? ', nothing to change' : ''}.`,
         'ok'
       );
       loadThemeList();
@@ -257,13 +362,14 @@
     if (!topic) { setStatus(el.catStatus, 'Enter a broad topic.', 'err'); return; }
     setStatus(el.catStatus, 'Generating a category… this can take a minute or two.', 'busy');
     el.catGenerate.disabled = true;
+    if (el.catProgress) el.catProgress.hidden = false;
     el.catResult.classList.add('hidden');
     categoryData = null;
     try {
       const res = await fetch('/api/category/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, count: Number(el.catCount.value) || 4 }),
+        body: JSON.stringify({ topic, count: Number(el.catCount.value) || 4, audience: el.catAudience ? el.catAudience.value : undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -274,6 +380,7 @@
       setStatus(el.catStatus, err.message, 'err');
     } finally {
       el.catGenerate.disabled = false;
+      if (el.catProgress) el.catProgress.hidden = true;
     }
   }
 
@@ -334,7 +441,7 @@
 
   let editing = null; // current theme id being edited
 
-  const TIER_LABEL = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+  const TIER_LABEL = { 1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Expert' };
 
   async function openEditor(th) {
     editing = th.id;
@@ -358,7 +465,28 @@
 
   function renderEditor(theme) {
     el.editorBody.innerHTML = '';
-    for (const t of ['1', '2', '3']) {
+    // Top bar: AI top-up. Fills each level toward the target, skipping words
+    // already present. Great for making a small theme large enough that "No
+    // repeated words" can build several puzzles without reusing words.
+    const bar = document.createElement('div');
+    bar.className = 'editor-expand';
+    const lbl = document.createElement('label');
+    lbl.className = 'editor-expand-target';
+    lbl.appendChild(document.createTextNode('Words per level:'));
+    const target = document.createElement('input');
+    target.type = 'number'; target.min = '8'; target.max = '40'; target.value = '40'; target.id = 'expandTarget';
+    lbl.appendChild(target);
+    const add = document.createElement('button');
+    add.className = 'primary'; add.type = 'button'; add.textContent = '✨ Add more words';
+    add.title = 'Use AI to generate more on-topic words, skipping any already here';
+    add.addEventListener('click', () => {
+      const n = Math.max(8, Math.min(40, Number(target.value) || 40));
+      expandTheme({ id: editing, label: theme.label }, add, n);
+    });
+    bar.appendChild(add);
+    bar.appendChild(lbl);
+    el.editorBody.appendChild(bar);
+    for (const t of ['1', '2', '3', '4']) {
       const entries = theme.tiers[t] || [];
       const block = document.createElement('div');
       block.className = 'editor-block';
@@ -429,6 +557,71 @@
     el.editorBody.innerHTML = '';
   }
 
+  // --- Manual (non-AI) theme builder ---------------------------------------
+  function setMode(mode) {
+    const manual = mode === 'manual';
+    el.aiView.classList.toggle('hidden', manual);
+    el.manualView.classList.toggle('hidden', !manual);
+    el.modeAi.classList.toggle('active', !manual);
+    el.modeManual.classList.toggle('active', manual);
+  }
+  // Parse a tier textarea: one entry per line, "WORD" or "WORD | clue".
+  function parseTier(text) {
+    return String(text || '').split('\n').map((line) => {
+      const raw = line.trim(); if (!raw) return null;
+      const bar = raw.indexOf('|');
+      const word = (bar >= 0 ? raw.slice(0, bar) : raw).trim();
+      const clue = bar >= 0 ? raw.slice(bar + 1).trim() : '';
+      if (!word) return null;
+      return clue ? { word, clue } : { word };
+    }).filter(Boolean);
+  }
+  function manualTiers() { return { 1: parseTier(el.mTier1.value), 2: parseTier(el.mTier2.value), 3: parseTier(el.mTier3.value), 4: parseTier(el.mTier4.value) }; }
+  function updateManualCount() {
+    const t = manualTiers();
+    const n = t[1].length + t[2].length + t[3].length + t[4].length;
+    el.mCount.textContent = `${n} word${n === 1 ? '' : 's'} (${t[1].length} easy · ${t[2].length} medium · ${t[3].length} hard · ${t[4].length} expert)`;
+  }
+  function clearManual() {
+    ['mName', 'mCategory', 'mTags', 'mTier1', 'mTier2', 'mTier3', 'mTier4', 'mFacts'].forEach((k) => { el[k].value = ''; });
+    if (el.mAudience) el.mAudience.value = 'both';
+    updateManualCount(); setStatus(el.mStatus, '');
+  }
+  const AUDIENCES_FOR = (v) => (v === 'kids' ? ['kids'] : v === 'adult' ? ['adult'] : ['kids', 'adult']);
+  async function saveManual() {
+    const label = el.mName.value.trim();
+    if (!label) { setStatus(el.mStatus, 'Give the theme a name.', 'err'); el.mName.focus(); return; }
+    const tiers = manualTiers();
+    if (!(tiers[1].length + tiers[2].length + tiers[3].length + tiers[4].length)) { setStatus(el.mStatus, 'Add at least one word.', 'err'); return; }
+    const theme = {
+      label,
+      category: el.mCategory.value.trim() || 'Other',
+      tags: el.mTags.value.split(',').map((s) => s.trim()).filter(Boolean),
+      audiences: AUDIENCES_FOR(el.mAudience ? el.mAudience.value : 'both'),
+      tiers,
+      facts: el.mFacts.value.split('\n').map((s) => s.trim()).filter(Boolean),
+    };
+    el.mSave.disabled = true; setStatus(el.mStatus, 'Saving…', 'busy');
+    try {
+      const res = await fetch('/api/theme/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save the theme.');
+      const r = data.report || {};
+      const kept = r.total != null ? r.total : '?';
+      const extra = r.dropped ? ` (${r.dropped} dropped — duplicates, too short/long, or filtered)` : '';
+      loadThemeList();
+      clearManual();   // clears the form (and the status) …
+      setStatus(el.mStatus, `Saved “${label}” with ${kept} word${kept === 1 ? '' : 's'}${extra}. It's now in the pickers.`, 'ok');   // … so set the message last
+    } catch (err) { setStatus(el.mStatus, err.message, 'err'); }
+    finally { el.mSave.disabled = false; }
+  }
+  // Offer existing categories as suggestions in the manual builder.
+  function fillCategoryList(themes) {
+    if (!el.mCatList) return;
+    const cats = [...new Set((themes || []).map((t) => t.category).filter(Boolean))].sort();
+    el.mCatList.innerHTML = cats.map((c) => `<option value="${c.replace(/"/g, '&quot;')}"></option>`).join('');
+  }
+
   async function init() {
     try {
       const res = await fetch('/api/theme/status');
@@ -455,6 +648,12 @@
     el.catGenerate.addEventListener('click', categoryGenerate);
     el.catSave.addEventListener('click', categorySaveAll);
     el.catDiscard.addEventListener('click', categoryDiscard);
+    // Manual builder (works with or without an API key)
+    el.modeAi.addEventListener('click', () => setMode('ai'));
+    el.modeManual.addEventListener('click', () => setMode('manual'));
+    el.mSave.addEventListener('click', saveManual);
+    el.mClear.addEventListener('click', clearManual);
+    [el.mTier1, el.mTier2, el.mTier3, el.mTier4].forEach((t) => t.addEventListener('input', updateManualCount));
     loadThemeList();
   }
 

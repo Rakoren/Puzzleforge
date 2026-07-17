@@ -1,0 +1,30 @@
+# Normalize line endings so Windows checkouts don't reintroduce CRLF and
+# create spurious "local changes" that block pulls/merges.
+#
+# `text=auto eol=lf` means: treat files as text, and store AND check them out
+# with LF everywhere (repo and working tree), regardless of the OS. Editors on
+# Windows handle LF fine; this keeps JSON/JS/etc. byte-identical across machines.
+* text=auto eol=lf
+
+# Be explicit for the source types in this repo.
+*.js    text eol=lf
+*.json  text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.md    text eol=lf
+*.gitignore text eol=lf
+
+# Binary assets (should never be line-ending converted). Listed ahead of time so
+# adding cover art / sample PDFs later just works.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.zip   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary

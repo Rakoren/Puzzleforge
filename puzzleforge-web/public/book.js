@@ -15,20 +15,17 @@
     borderColor: $('borderColor'),
     difficultyCurve: $('difficultyCurve'),
     runChecklist: $('runChecklist'),
+    contentReview: $('contentReview'),
     checklist: $('checklist'),
     openEditor: $('openEditor'),
     theme: $('theme'),
     themeFilter: $('themeFilter'),
-    answerKey: $('answerKey'),
+    answerKey: $('answerKey'), perPageDifficulty: $('perPageDifficulty'),
+    padToEven: $('padToEven'),
     uniqueWords: $('uniqueWords'),
     shuffle: $('shuffle'),
-    copyrightPage: $('copyrightPage'),
-    belongsToPage: $('belongsToPage'),
-    intro: $('intro'),
     pageNumbers: $('pageNumbers'),
     footerText: $('footerText'),
-    about: $('about'),
-    moreBooks: $('moreBooks'),
     betweenColoring: $('betweenColoring'),
     betweenDrawing: $('betweenDrawing'),
     betweenBlank: $('betweenBlank'),
@@ -57,9 +54,13 @@
     royaltyOut: $('royaltyOut'),
     kdpBundle: $('kdpBundle'),
     kdpStatus: $('kdpStatus'),
+    digitalBaseUrl: $('digitalBaseUrl'),
+    digitalPages: $('digitalPages'),
+    digitalStatus: $('digitalStatus'),
     rows: $('rows'),
     addRow: $('addRow'),
     summary: $('summary'),
+    poolWarn: $('poolWarn'),
     preview: $('preview'),
     buildPdf: $('buildPdf'),
     saveRecipe: $('saveRecipe'),
@@ -70,22 +71,39 @@
     pageInfo: $('pageInfo'),
     editPanel: $('editPanel'),
     editList: $('editList'),
+    openTemplates: $('openTemplates'),
+    tplModal: $('tplModal'),
+    tplClose: $('tplClose'),
+    tplGrid: $('tplGrid'),
   };
 
   const TYPE_NAMES = {
     wordsearch: 'Word Search', numbersearch: 'Number Search', sudoku: 'Sudoku',
     maze: 'Maze', cryptogram: 'Cryptogram', wordscramble: 'Word Scramble',
-    crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz',
+    crossword: 'Crossword', krisskross: 'Kriss-Kross', nonogram: 'Nonogram', trivia: 'Trivia Quiz', riddles: 'Riddles', brainteasers: 'Brain Teasers', logicgrid: 'Logic Grid', wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher',
     coloring: 'Coloring Page', drawing: 'Drawing Page', bleedguard: 'Blank (bleed guard)',
   };
-  const DIFFICULTIES = [
-    ['1', 'Easy'], ['2', 'Medium'], ['3', 'Hard'],
-    ['1-2', 'Easy–Med'], ['2-3', 'Med–Hard'], ['1-3', 'Mixed'],
-  ];
+  // Per-row difficulty options, labelled for the book's audience (Kids show the
+  // age band; Adult uses Easy…Expert). Internal values (1–4 and ranges) never
+  // change. Populated from /api/meta once loaded.
+  function diffOptions() {
+    const kids = String(el.audience.value).toLowerCase() === 'kids';
+    const singles = ((meta && meta.difficulty && (kids ? meta.difficulty.kids : meta.difficulty.adult)) || [])
+      .map((o) => [String(o.value), kids ? `${o.label} (${o.ages})` : o.label]);
+    const ranges = kids
+      ? [['1-2', 'Beginner–Early'], ['2-3', 'Early–Growing'], ['3-4', 'Growing–Independent'], ['1-3', 'Mixed']]
+      : [['1-2', 'Easy–Med'], ['2-3', 'Med–Hard'], ['3-4', 'Hard–Expert'], ['1-3', 'Mixed']];
+    return singles.length ? [...singles, ...ranges] : [['1', 'Easy'], ['2', 'Medium'], ['3', 'Hard']];
+  }
 
   let meta = null;
   let rows = []; // [{ type, count, difficulty }]
   let lastBookId = null;
+  // Matter (copyright / intro / about …) moved to the Page Editor. The Book
+  // Builder no longer edits it, but if an older recipe carries it we pass it
+  // through untouched so re-saving never silently strips it.
+  const MATTER_KEYS = ['copyright', 'belongsTo', 'intro', 'about', 'moreBooks'];
+  let carriedMatter = {};
   let currentSeed = null; // locked seed from a loaded recipe (reproduces structure)
   let lastSeed = null; // seed of the most recent preview (saved into the recipe)
   let pageState = []; // recipe v2 per-page overrides / canvasState (by page index)
@@ -110,6 +128,7 @@
 
       const type = document.createElement('select');
       for (const t of meta.types) {
+        if (t === 'bleedguard' || t === 'breather') continue; // internal fillers
         const o = document.createElement('option');
         o.value = t;
         o.textContent = TYPE_NAMES[t] || t;
@@ -127,7 +146,7 @@
       count.addEventListener('input', () => { row.count = Number(count.value) || 1; invalidate(); updateSummary(); });
 
       const diff = document.createElement('select');
-      for (const [v, label] of DIFFICULTIES) {
+      for (const [v, label] of diffOptions()) {
         const o = document.createElement('option');
         o.value = v;
         o.textContent = label;
@@ -135,6 +154,13 @@
         diff.appendChild(o);
       }
       diff.addEventListener('change', () => { row.difficulty = diff.value; invalidate(); });
+
+      // Per-puzzle theme — blank means "use the book's theme".
+      const theme = document.createElement('select');
+      theme.title = 'Theme for these puzzles (blank = book theme)';
+      fillThemeSelect(theme, (meta && meta.themes) || [], '— book theme —');
+      theme.value = row.theme || '';
+      theme.addEventListener('change', () => { row.theme = theme.value || undefined; invalidate(); });
 
       const move = document.createElement('div');
       move.className = 'move';
@@ -155,6 +181,7 @@
       div.appendChild(type);
       div.appendChild(count);
       div.appendChild(diff);
+      div.appendChild(theme);
       div.appendChild(controls);
       el.rows.appendChild(div);
     });
@@ -196,11 +223,30 @@
       0
     );
     const guards = el.bleedGuard.checked ? gaps * drawableFillers + drawableRows : 0;
-    const front = (el.copyrightPage.checked ? 1 : 0) + (el.belongsToPage.checked ? 1 : 0) + (el.intro.value.trim() ? 1 : 0);
-    const back = (el.about.value.trim() ? 1 : 0) + (el.moreBooks.value.trim() ? 1 : 0);
-    const pages = 1 + front + total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0) + back;
+    // No title page here — it's added in the editor. Cover/matter pages are too.
+    let pages = total + fillers + guards + breathers + (el.answerKey.checked ? 1 : 0);
+    if (el.padToEven.checked && pages % 2 === 1) pages += 1; // KDP even-page pad
     const fillerNote = fillers ? ` + ${fillers} insert pages` : '';
-    el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages (title + puzzles + answer key)`;
+    const diff = diffRangeLabel();
+    el.summary.textContent = `${total} puzzles${fillerNote} · ~${pages} pages${diff ? ` · Difficulty: ${diff}` : ''} (puzzles + answer key; add title & matter in the editor)`;
+  }
+
+  // The book's difficulty range, labelled for the audience (from /api/meta).
+  const ACTIVITY_ROW = new Set(['coloring', 'drawing', 'bleedguard', 'breather']);
+  function diffRangeLabel() {
+    const kids = String(el.audience.value).toLowerCase() === 'kids';
+    const opts = (meta && meta.difficulty && (kids ? meta.difficulty.kids : meta.difficulty.adult)) || [];
+    if (!opts.length) return '';
+    const labelFor = (lv) => { const o = opts.find((x) => x.value === lv); return o ? o.label : `L${lv}`; };
+    const levels = new Set();
+    for (const r of rows) {
+      if (ACTIVITY_ROW.has(r.type)) continue;
+      String(r.difficulty || '1').split('-').forEach((x) => { const n = parseInt(x, 10); if (n >= 1 && n <= 4) levels.add(n); });
+    }
+    if (!levels.size) return '';
+    const arr = [...levels].sort();
+    const min = arr[0], max = arr[arr.length - 1];
+    return min === max ? labelFor(min) : `${labelFor(min)} to ${labelFor(max)}`;
   }
 
   // Invalidate the cached/built book when settings change.
@@ -209,6 +255,46 @@
     el.buildPdf.disabled = true;
     el.editPanel.classList.add('hidden');
     el.editList.innerHTML = '';
+    checkWordPool();
+  }
+
+  // Ahead-of-generation warning: when "No repeated words" is on and the puzzles
+  // would need more unique theme words at some level than the theme has, tell the
+  // publisher *before* they build so they can Expand the theme, pick "All <cat>",
+  // or turn the toggle off. Debounced; the server does the pool math.
+  let poolSeq = 0;
+  function checkWordPool() {
+    if (!el.poolWarn) return;
+    if (!el.uniqueWords.checked) { el.poolWarn.hidden = true; return; }
+    const seq = ++poolSeq;
+    clearTimeout(checkWordPool._t);
+    checkWordPool._t = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/book/wordpool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: config() }),
+        });
+        const data = await res.json();
+        if (seq !== poolSeq) return; // a newer edit superseded this check
+        renderPoolWarn(res.ok ? data : null);
+      } catch (_) { /* leave the last state on a transient error */ }
+    }, 250);
+  }
+
+  function renderPoolWarn(data) {
+    const w = el.poolWarn;
+    if (!data || !data.unique || !data.shortfalls || !data.shortfalls.length) { w.hidden = true; w.innerHTML = ''; return; }
+    const per = data.wordsPerPuzzle || 14;
+    const lines = data.shortfalls.map((s) => {
+      const p = s.puzzles === 1 ? '1 puzzle' : `${s.puzzles} puzzles`;
+      return `<li><b>${escapeHtml(s.label)}</b> — ${p} need ~${s.demand} words but <b>${escapeHtml(s.theme)}</b> has ${s.supply} at that level, so ${s.short} will repeat.</li>`;
+    }).join('');
+    w.innerHTML =
+      `<div class="pool-warn-head">⚠ Not enough unique words for “No repeated words”</div>` +
+      `<ul class="pool-warn-list">${lines}</ul>` +
+      `<div class="pool-warn-fix">Fix it: <b>Expand</b> the theme on the <a href="themes.html">Themes</a> page, pick the <b>“★ All …” category</b> above (bigger pool), reduce the puzzle count, or turn off <b>No repeated words</b>. Each word puzzle uses ${per} words.</div>`;
+    w.hidden = false;
   }
 
   // List drawing/coloring pages with an editable subject (datalist of choices).
@@ -271,6 +357,7 @@
 
   function config() {
     return {
+      ...carriedMatter, // pass through matter from a loaded recipe (not edited here)
       title: el.title.value.trim() || 'My Activity Book',
       subtitle: el.subtitle.value.trim() || null,
       author: el.author.value.trim() || null,
@@ -282,16 +369,14 @@
       borderColor: el.borderColor.value,
       difficultyCurve: el.difficultyCurve.value || undefined,
       theme: el.theme.value,
+      titlePage: false, // title page is added in the Page Editor (Title Page template)
       answerKey: el.answerKey.checked,
+      perPageDifficulty: el.perPageDifficulty.checked,
+      padToEven: el.padToEven.checked,
       uniqueWords: el.uniqueWords.checked,
       shuffle: el.shuffle.checked,
-      copyright: el.copyrightPage.checked,
-      belongsTo: el.belongsToPage.checked,
-      intro: el.intro.value.trim() || null,
       pageNumbers: el.pageNumbers.checked,
       footerText: el.footerText.value.trim() || null,
-      about: el.about.value.trim() || null,
-      moreBooks: el.moreBooks.value.trim() || null,
       interleave: interleaveKinds(),
       interleaveAfterLast: el.afterLast.checked,
       coloringStyle: el.coloringStyle.value,
@@ -305,8 +390,9 @@
       // for a fresh book so each preview re-rolls.
       ...(currentSeed != null ? { seed: currentSeed } : {}),
       ...(pageState.length ? { pageState } : {}),
+      ...(digitalBase() ? { digital: { baseUrl: digitalBase() } } : {}),
       puzzleforgeBook: 1,
-      puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty })),
+      puzzles: rows.map((r) => ({ type: r.type, count: Number(r.count) || 1, difficulty: r.difficulty, ...(r.theme ? { theme: r.theme } : {}) })),
     };
   }
 
@@ -390,8 +476,65 @@
     el.kdpStatus.className = 'status' + (kind ? ' ' + kind : '');
   }
 
+  // Pre-flight gate: run the publish checklist and stop on hard blockers unless
+  // the user overrides. Warnings never block. Returns true to proceed.
+  async function preflightGate(statusFn) {
+    statusFn('Running pre-flight checks…', 'busy');
+    try {
+      const res = await fetch('/api/book/checklist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastBookId ? { bookId: lastBookId, config: config() } : { config: config() }),
+      });
+      const data = await res.json();
+      if (!res.ok) return true; // if the check can't run, don't block the export
+      renderChecklist(data);
+      el.checklist.classList.remove('hidden');
+      const blockers = (data.items || []).filter((i) => i.status !== 'pass' && i.severity === 'blocker');
+      if (!blockers.length) return true;
+      const list = blockers.map((b) => `• ${b.label}${b.message ? ` — ${b.message}` : ''}`).join('\n\n');
+      return window.confirm(
+        `Pre-flight found ${blockers.length} blocker${blockers.length === 1 ? '' : 's'} that KDP is likely to reject:\n\n${list}\n\nThese are shown in the checklist below. Download anyway?`
+      );
+    } catch (_) { return true; }
+  }
+
+  function digitalBase() {
+    return (el.digitalBaseUrl && el.digitalBaseUrl.value.trim()) || '';
+  }
+  function setDigitalStatus(text, kind) {
+    if (!el.digitalStatus) return;
+    el.digitalStatus.textContent = text || '';
+    el.digitalStatus.className = 'status' + (kind ? ' ' + kind : '');
+  }
+  async function downloadDigital() {
+    if (!rows.length) { setDigitalStatus('Add at least one puzzle first.', 'err'); return; }
+    const base = digitalBase();
+    if (!base) { setDigitalStatus('Enter the hosting base URL first.', 'err'); return; }
+    setDigitalStatus('Building answer pages…', 'busy');
+    el.digitalPages.disabled = true;
+    try {
+      const res = await fetch('/api/book/digital', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: config(), baseUrl: base }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Could not build answer pages');
+      }
+      const blob = await res.blob();
+      download(blob, fileBase() + '-digital.zip');
+      setDigitalStatus('Answer pages downloaded — upload the folder to your host, then the printed QR codes will resolve.', 'ok');
+    } catch (err) {
+      setDigitalStatus(err.message, 'err');
+    } finally {
+      el.digitalPages.disabled = false;
+    }
+  }
+
   async function buildBundle() {
     if (!rows.length) { setKdpStatus('Add at least one puzzle first.', 'err'); return; }
+    if (!(await preflightGate(setKdpStatus))) { setKdpStatus('Export cancelled — fix the blockers in the checklist.', 'err'); return; }
     setKdpStatus('Building interior + cover… (this can take a while)', 'busy');
     el.kdpBundle.disabled = true;
     try {
@@ -406,7 +549,9 @@
       }
       const blob = await res.blob();
       download(blob, fileBase() + '-kdp.zip');
-      setKdpStatus('KDP bundle downloaded — interior.pdf, cover.pdf, build-info.txt.', 'ok');
+      setKdpStatus(digitalBase()
+        ? 'KDP bundle downloaded — interior.pdf (with QR codes), cover.pdf, build-info.txt, and the answer pages under html/.'
+        : 'KDP bundle downloaded — interior.pdf, cover.pdf, build-info.txt.', 'ok');
     } catch (err) {
       setKdpStatus(err.message, 'err');
     } finally {
@@ -444,6 +589,7 @@
   }
 
   async function buildPdf() {
+    if (!(await preflightGate(setStatus))) { setStatus('Export cancelled — fix the blockers in the checklist.', 'err'); return; }
     setStatus('Rendering PDF…', 'busy');
     el.buildPdf.disabled = true;
     try {
@@ -502,6 +648,45 @@
       )
       .join('');
     el.checklist.innerHTML = head + rows;
+  }
+
+  // AI content review: proofread + quality findings appended below the checklist.
+  async function contentReview() {
+    el.checklist.classList.remove('hidden');
+    el.checklist.querySelectorAll('.chk-ai').forEach((n) => n.remove());
+    el.contentReview.disabled = true;
+    const busy = document.createElement('div');
+    busy.className = 'chk-busy chk-ai';
+    busy.textContent = 'AI reviewing the book’s text… (this can take a few seconds)';
+    el.checklist.appendChild(busy);
+    try {
+      const res = await fetch('/api/book/content-review', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastBookId ? { bookId: lastBookId, config: config() } : { config: config() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Content review failed');
+      renderContentReview(data);
+    } catch (err) {
+      busy.textContent = err.message;
+    } finally {
+      el.contentReview.disabled = false;
+    }
+  }
+
+  function renderContentReview(data) {
+    el.checklist.querySelectorAll('.chk-ai').forEach((n) => n.remove());
+    const wrap = document.createElement('div');
+    wrap.className = 'chk-ai';
+    const note = data.note ? ` — ${escapeHtml(data.note)}` : '';
+    const head = `<div class="chk-summary">Content quality (AI) · checked ${data.checked} snippet${data.checked === 1 ? '' : 's'} · <strong>${data.items.length}</strong> finding${data.items.length === 1 ? '' : 's'}${data.model ? ` · ${escapeHtml(data.model)}` : ''}${note}</div>`;
+    const rows = data.items.length
+      ? data.items.map((it) =>
+        `<div class="chk-row chk-fail"><span class="chk-ic">${it.severity === 'blocker' ? '🔴' : '🟡'}</span>` +
+        `<span class="chk-label">${escapeHtml(it.label)} — <span class="chk-msg">${escapeHtml(it.message)}</span></span></div>`).join('')
+      : '<div class="chk-row chk-pass"><span class="chk-ic">🟢</span><span class="chk-label">No content issues found.</span></div>';
+    wrap.innerHTML = head + rows;
+    el.checklist.appendChild(wrap);
   }
 
   function fileBase() {
@@ -588,6 +773,7 @@
     if (cfg.difficultyCurve) el.difficultyCurve.value = cfg.difficultyCurve;
     if (cfg.coverBg) el.coverBg.value = cfg.coverBg;
     if (cfg.coverText) el.coverText.value = cfg.coverText;
+    if (el.digitalBaseUrl) el.digitalBaseUrl.value = (cfg.digital && cfg.digital.baseUrl) || '';
     const md = cfg.metadata || {};
     el.mdSeriesName.value = md.seriesName || '';
     el.mdSeriesNumber.value = md.seriesNumber || '';
@@ -605,13 +791,14 @@
     el.answerKey.checked = cfg.answerKey !== false;
     el.uniqueWords.checked = cfg.uniqueWords === true;
     el.shuffle.checked = cfg.shuffle === true;
-    el.copyrightPage.checked = cfg.copyright !== false;
-    el.belongsToPage.checked = cfg.belongsTo === true;
-    el.intro.value = cfg.intro || '';
     el.pageNumbers.checked = cfg.pageNumbers === true;
+    el.perPageDifficulty.checked = cfg.perPageDifficulty === true;
+    el.padToEven.checked = cfg.padToEven !== false;
     el.footerText.value = cfg.footerText || '';
-    el.about.value = cfg.about || '';
-    el.moreBooks.value = cfg.moreBooks || '';
+    // Preserve any matter this recipe carried (edited in the Page Editor now).
+    carriedMatter = {};
+    MATTER_KEYS.forEach((k) => { if (cfg[k] !== undefined && cfg[k] !== null) carriedMatter[k] = cfg[k]; });
+    if (Object.keys(carriedMatter).length) setStatus('Loaded. Note: copyright / intro / about pages are edited in the Page Editor now — open the book there.', 'ok');
     const inter = Array.isArray(cfg.interleave) ? cfg.interleave : [];
     el.betweenColoring.checked = inter.includes('coloring');
     el.betweenDrawing.checked = inter.includes('drawing');
@@ -629,19 +816,22 @@
       type: p.type,
       count: p.count || 1,
       difficulty: String(p.difficulty || '1'),
+      theme: p.theme || undefined,
     }));
     renderRows();
     invalidate();
   }
 
   // Build the theme <select> grouped by category from a (possibly filtered) list.
-  function populateThemes(themes) {
-    el.theme.innerHTML = '';
+  function populateThemes(themes) { fillThemeSelect(el.theme, themes); }
+  // Fill a <select> with the grouped theme list. `defaultLabel` adds a leading
+  // blank option (used by the per-puzzle row picker to mean "use book theme").
+  function fillThemeSelect(select, themeList, defaultLabel) {
+    select.innerHTML = '';
+    if (defaultLabel) { const o = document.createElement('option'); o.value = ''; o.textContent = defaultLabel; select.appendChild(o); }
     const byCat = {};
-    for (const th of themes) (byCat[th.category] = byCat[th.category] || []).push(th);
+    for (const th of themeList) (byCat[th.category] = byCat[th.category] || []).push(th);
     const cats = Object.keys(byCat).sort();
-
-    // Whole-category bundles: pick a category to use every theme in it, merged.
     if (cats.length) {
       const bundles = document.createElement('optgroup');
       bundles.label = 'Whole categories';
@@ -653,19 +843,19 @@
         o.textContent = `★ All ${cat} (${list.length} themes, ${words} words)`;
         bundles.appendChild(o);
       }
-      el.theme.appendChild(bundles);
+      select.appendChild(bundles);
     }
-
     for (const cat of cats) {
       const group = document.createElement('optgroup');
       group.label = cat;
       for (const th of byCat[cat]) {
         const o = document.createElement('option');
         o.value = th.id;
-        o.textContent = `${th.label} (${th.wordCount})`;
+        const std = th.standard ? ' · ' + th.standard.replace('CCSS.', '').replace('ELA-LITERACY.', '').replace('MATH.CONTENT.', '') : '';
+        o.textContent = `${th.label} (${th.wordCount})${std}`;
         group.appendChild(o);
       }
-      el.theme.appendChild(group);
+      select.appendChild(group);
     }
   }
 
@@ -688,6 +878,11 @@
   }
 
   async function init() {
+    // Prefill the author from the signed-in profile's pen name (only if empty,
+    // so it never overwrites what the user typed or a loaded recipe).
+    if (window.PFIdentity) {
+      PFIdentity.onReady((me) => { if (me && !el.author.value.trim()) el.author.value = me.penName || me.name || ''; });
+    }
     try {
       meta = await (await fetch('/api/meta')).json();
     } catch (_) {
@@ -724,7 +919,9 @@
     el.buildPdf.addEventListener('click', buildPdf);
     el.openEditor.addEventListener('click', openEditor);
     el.runChecklist.addEventListener('click', runChecklist);
+    el.contentReview.addEventListener('click', contentReview);
     el.kdpBundle.addEventListener('click', buildBundle);
+    if (el.digitalPages) el.digitalPages.addEventListener('click', downloadDigital);
     el.estimateRoyalty.addEventListener('click', estimateRoyalty);
     el.saveRecipe.addEventListener('click', saveRecipe);
     el.loadRecipe.addEventListener('change', onLoad);
@@ -744,15 +941,55 @@
       n.addEventListener('change', () => { invalidate(); updateSummary(); })
     );
     el.breatherThemed.addEventListener('change', invalidate);
-    [el.copyrightPage, el.belongsToPage].forEach((n) => n.addEventListener('change', () => { invalidate(); updateSummary(); }));
-    el.intro.addEventListener('input', () => { invalidate(); updateSummary(); });
     el.pageNumbers.addEventListener('change', invalidate);
     el.footerText.addEventListener('input', invalidate);
-    el.about.addEventListener('input', () => { invalidate(); updateSummary(); });
-    el.moreBooks.addEventListener('input', () => { invalidate(); updateSummary(); });
     [el.title, el.subtitle, el.author, el.audience, el.trimSize, el.fontScale, el.fontFamily, el.theme].forEach((node) =>
       node.addEventListener('change', invalidate)
     );
+    el.perPageDifficulty.addEventListener('change', invalidate);
+    el.padToEven.addEventListener('change', () => { invalidate(); updateSummary(); });
+    // Switching audience relabels every row's difficulty (kids ages ↔ Easy…Expert)
+    // and the difficulty range in the summary.
+    el.audience.addEventListener('change', () => { renderRows(); updateSummary(); });
+    setupTemplates();
+  }
+
+  // --- starter-book templates ---
+  function setupTemplates() {
+    if (!el.openTemplates || !el.tplGrid) return;
+    const list = (typeof window !== 'undefined' && window.PFBookTemplates) || [];
+    el.tplGrid.innerHTML = '';
+    list.forEach((tpl) => {
+      const card = document.createElement('div');
+      card.className = 'pf-tpl-card';
+      const pick = document.createElement('button');
+      pick.type = 'button';
+      pick.className = 'pf-tpl-pick';
+      pick.innerHTML =
+        `<span class="pf-tpl-emoji">${tpl.emoji || '📘'}</span>` +
+        `<span class="pf-tpl-name">${escapeHtml(tpl.name)}</span>` +
+        `<span class="pf-tpl-desc">${escapeHtml(tpl.desc || '')}</span>` +
+        (tpl.badge ? `<span class="pf-tpl-badge">${escapeHtml(tpl.badge)}</span>` : '');
+      pick.addEventListener('click', () => useTemplate(tpl));
+      card.appendChild(pick);
+      el.tplGrid.appendChild(card);
+    });
+    el.openTemplates.addEventListener('click', () => { el.tplModal.hidden = false; });
+    const close = () => { el.tplModal.hidden = true; };
+    el.tplClose.addEventListener('click', close);
+    el.tplModal.addEventListener('click', (e) => { if (e.target.dataset && e.target.dataset.close) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !el.tplModal.hidden) close(); });
+  }
+
+  function useTemplate(tpl) {
+    applyConfig(JSON.parse(JSON.stringify(tpl.config)));
+    el.tplModal.hidden = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setStatus(`Loaded “${tpl.name}” — tweak anything, then Preview or Open in Editor.`, 'ok');
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   init();

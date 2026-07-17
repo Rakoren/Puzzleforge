@@ -10,7 +10,7 @@
  *   difficulty 1|2|3   selects grid size and fill density
  *   size       number  optional explicit square size
  */
-const { DIFFICULTY } = require('../../config/defaults');
+const { presetFor } = require('../../config/defaults');
 const { countSolutions, clueOf } = require('./solver');
 
 const INNER_TRIES = 40;
@@ -46,7 +46,7 @@ function colCluesOf(grid, size) {
 
 function generate(config = {}, rand = Math.random) {
   const difficulty = config.difficulty || 1;
-  const preset = DIFFICULTY.nonogram[difficulty] || DIFFICULTY.nonogram[1];
+  const preset = presetFor('nonogram', difficulty, config.audience);
   const size = config.size || preset.size;
   const fill = config.fill || preset.fill;
 
