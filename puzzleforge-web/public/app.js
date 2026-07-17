@@ -429,7 +429,8 @@
       for (const th of byCat[cat]) {
         const o = document.createElement('option');
         o.value = th.id;
-        o.textContent = `${th.label} (${th.wordCount})`;
+        const std = th.standard ? ' · ' + th.standard.replace('CCSS.', '').replace('ELA-LITERACY.', '').replace('MATH.CONTENT.', '') : '';
+        o.textContent = `${th.label} (${th.wordCount})${std}`;
         group.appendChild(o);
       }
       select.appendChild(group);

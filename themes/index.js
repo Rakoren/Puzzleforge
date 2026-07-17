@@ -106,6 +106,9 @@ function loadTheme(id) {
     category: raw.category || 'Other',
     tags: Array.isArray(raw.tags) ? raw.tags : [],
     audiences: normAudiences(raw.audiences),
+    // Optional curriculum standard this word bank supports (e.g. a CCSS code),
+    // surfaced in the pickers and prefilled into worksheet/packet covers.
+    standard: raw.standard ? String(raw.standard) : null,
     facts: Array.isArray(raw.facts) ? raw.facts : [],
     // Old (pre-4-tier) themes have an empty Expert tier — split tier 3 in memory
     // so adult Expert still gets its own vocabulary. Non-destructive: the file
@@ -125,7 +128,7 @@ function listThemesDetailed() {
       // list — skip it with a warning so the rest of the library still loads.
       try {
         const t = loadTheme(id);
-        return { id, label: t.label, category: t.category, tags: t.tags, audiences: t.audiences, wordCount: wordCount(t) };
+        return { id, label: t.label, category: t.category, tags: t.tags, audiences: t.audiences, standard: t.standard || null, wordCount: wordCount(t) };
       } catch (err) {
         console.warn(`Skipping theme "${id}": ${err.message}`);
         return null;

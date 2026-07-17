@@ -14,6 +14,8 @@
     '8.5x11': '8.5 × 11 in — US Letter', '8x10': '8 × 10 in', '8.5x8.5': '8.5 × 8.5 in — Square', '6x9': '6 × 9 in',
   };
   const trimLabel = (t) => TRIM_LABELS[t] || t;
+  // Short form of a curriculum standard code for compact display / cover prefill.
+  const shortStd = (s) => String(s || '').replace('CCSS.', '').replace('ELA-LITERACY.', '').replace('MATH.CONTENT.', '');
 
   function setStatus(node, msg, kind) {
     node.textContent = msg || '';
@@ -39,7 +41,8 @@
       }
       list.forEach((t) => {
         const o = document.createElement('option');
-        o.value = t.id; o.textContent = `${t.label} (${t.wordCount})`;
+        o.value = t.id;
+        o.textContent = `${t.label} (${t.wordCount})${t.standard ? ' · ' + shortStd(t.standard) : ''}`;
         g.appendChild(o);
       });
       sel.appendChild(g);
@@ -233,7 +236,18 @@
     if (!g) { pk.standardsHint.textContent = ''; return; }
     const mix = g.mix.map((t) => TYPE_LABELS[t] || t).join(', ');
     const std = g.standards.length ? g.standards.map((s) => s.code).join(', ') : 'no ELA standards (general audience)';
-    pk.standardsHint.innerHTML = `<b>${g.label}</b> → ${g.audience === 'kids' ? 'Kids' : 'Adult'} difficulty · mix: ${mix}.<br>Standards: ${std}`;
+    const ts = themeStandard();
+    const bankNote = ts ? `<br>This word bank also targets <b>${shortStd(ts)}</b>.` : '';
+    pk.standardsHint.innerHTML = `<b>${g.label}</b> → ${g.audience === 'kids' ? 'Kids' : 'Adult'} difficulty · mix: ${mix}.<br>Standards: ${std}${bankNote}`;
+  }
+  // The standard a per-standard word bank (e.g. Dolch sight words) declares.
+  function themeStandard() {
+    const t = ((meta && meta.themes) || []).find((x) => x.id === pk.theme.value);
+    return t && t.standard ? t.standard : '';
+  }
+  function prefillStandards() {
+    const std = themeStandard();
+    if (std && !pk.standards.value.trim()) pk.standards.value = std;
   }
   async function buildLessonPlan() {
     pk.buildPlan.disabled = true;
@@ -251,7 +265,9 @@
       pk.title.value = plan.cover.title || '';
       pk.kicker.value = plan.cover.kicker || '';
       pk.objective.value = plan.cover.objective || '';
-      pk.standards.value = plan.cover.standards || '';
+      // Combine the grade's standards with the word bank's own standard (if any).
+      const stds = [plan.cover.standards, themeStandard()].filter(Boolean).join(', ').split(/,\s*/);
+      pk.standards.value = [...new Set(stds.filter(Boolean))].join(', ');
       pk.audience.value = plan.audience || 'kids';
       // Replace the puzzle rows with the planned mix.
       packetRows = plan.pages.map((p) => ({ type: p.type, difficulty: p.difficulty }));
@@ -305,7 +321,7 @@
       pk.grade.value = '3';
       updateStandardsHint();
       pk.grade.addEventListener('change', updateStandardsHint);
-      pk.theme.addEventListener('change', updateStandardsHint);
+      pk.theme.addEventListener('change', () => { updateStandardsHint(); prefillStandards(); });
       pk.buildPlan.addEventListener('click', buildLessonPlan);
     } catch (_) { /* curriculum optional */ }
     pk.addRow.addEventListener('click', () => { packetRows.push({ type: (meta.types || ['wordsearch'])[0], difficulty: 1 }); renderPacketRows(); updatePacketSummary(); });
