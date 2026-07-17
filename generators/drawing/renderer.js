@@ -13,8 +13,12 @@ function esc(s) {
 function render(puzzle, layout) {
   const { prompt, caption } = puzzle.data;
   const titleSize = Math.round(layout.fontSize * 1.8);
-  // Reserve space for the heading and the caption; the frame takes the rest.
-  const frameH = Math.max(120, layout.usableHeight - Math.round(layout.fontSize * 6));
+  // Reserve room for the heading and caption, then the frame takes the rest.
+  // A fixed height (not flex) so the frame stays a proper box in the Page
+  // Editor's flow composition too. Reserve enough for a heading that wraps to
+  // two lines (long prompts + large print) plus the caption, so the frame never
+  // runs off the bottom of the page.
+  const frameH = Math.max(120, layout.usableHeight - Math.round(layout.fontSize * 8));
 
   return `<!doctype html>
 <html lang="en">

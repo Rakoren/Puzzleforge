@@ -687,7 +687,11 @@ app.post('/api/book/editor', (req, res) => {
       book = pf.assembleBook(body.config || {});
       bookId = cacheBook(book);
     }
-    const layout = pf.getLayout(book.trimSize, { audience: book.audience });
+    // Match the export layout (textScale + fontFamily), so what the editor
+    // splits and shows is what the PDF prints — otherwise large-print / a custom
+    // font can wrap text differently on export (e.g. a drawing-page title that
+    // fits on one line in the editor wraps to two on export and runs off).
+    const layout = pf.getLayout(book.trimSize, { audience: book.audience, textScale: book.fontScale, fontFamily: book.fontFamily });
     // The book's decorative page frame is applied at render/export time, not
     // baked into the split pieces — so seed it onto each eligible page's state
     // so the editor draws the same border the Book Builder preview and PDF show.
@@ -764,7 +768,7 @@ app.post('/api/book/insert-puzzle', (req, res) => {
     const spec = { type, count, difficulty, ...(theme ? { theme } : {}), ...(style ? { style } : {}) };
     const cfg = { ...base, titlePage: false, answerKey: false, puzzles: [spec], ...(audience ? { audience } : {}) };
     const gen = pf.assembleBook(cfg);
-    const layout = pf.getLayout(gen.trimSize, { audience: gen.audience });
+    const layout = pf.getLayout(gen.trimSize, { audience: gen.audience, textScale: gen.fontScale, fontFamily: gen.fontFamily });
     // Carry the book's page frame onto real puzzle pages (not activity pages),
     // so an inserted puzzle matches the rest of a bordered book.
     const bookBorder = gen.border && gen.border !== 'none' ? gen.border : null;
@@ -827,7 +831,7 @@ app.post('/api/book/reroll', (req, res) => {
     const pi = book.puzzles.indexOf(p);
     pg.puzzle = np;
     if (pi >= 0) book.puzzles[pi] = np;
-    const layout = pf.getLayout(book.trimSize, { audience: book.audience });
+    const layout = pf.getLayout(book.trimSize, { audience: book.audience, textScale: book.fontScale, fontFamily: book.fontFamily });
     const split = pf.splitPuzzle(np, layout);
     res.json({ index: body.index, type: np.type, title: np.title, style: split.style, components: split.components, seed });
   } catch (err) {
