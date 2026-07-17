@@ -60,12 +60,12 @@ See [`puzzleforge-web/README.md`](./puzzleforge-web/README.md) for details.
 
 ## Status
 
-**Phases 1–5 complete; content depth + Page Editor ongoing (180 tests passing).**
+**Phases 1–5 complete; content depth + Page Editor ongoing (185 tests passing).**
 Implemented so far:
 
 - Standard module interface (`generate / validate / solve / render`)
 - Layout system for all four KDP trim sizes (`8x10`, `8.5x11`, `8.5x8.5`, `6x9`)
-- **Twenty puzzle types**, each with Golden Standards validation and an
+- **Twenty-one puzzle types**, each with Golden Standards validation and an
   independent solver/verifier:
   - **Word Search** — direction mix and word separation by difficulty
     (easy: words fully isolated; medium: no crossings; hard: dense crossings)
@@ -87,6 +87,9 @@ Implemented so far:
   - **Mini Sudoku** — gentler 6×6 grid with 2×3 boxes and digits 1–6, unique solution
   - **Even-Odd Sudoku** — 9×9 with parity shading (shaded cells even, plain odd),
     the constraint enforced while clues are dug so the shading truly narrows the solve
+  - **Kakuro** — cross-sum grids solved by a bounded constraint solver; layouts
+    are built from aggregated 2×2 blocks and every board's clues are verified to
+    force a single solution
   - **Logic Grid** — deduction puzzle; a constraint solver proves each clue set
     has exactly one solution, with natural-language clues
   - **Word Ladder** — change one letter at a time (start → end); built on a
@@ -132,7 +135,7 @@ Implemented so far:
   Standards-tagged **curriculum word banks** (Dolch sight words/nouns, number
   words) are selectable everywhere themes are.
 
-Not yet built (later phases): more Tier 3–4 puzzle types (Kakuro, Spot-the-Difference)
+Not yet built (later phases): more Tier 3–4 puzzle types (Spot-the-Difference)
 and book-level digital-layer analytics (needs a backend).
 See [`PRD.md`](./PRD.md) for the full roadmap.
 

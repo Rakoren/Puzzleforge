@@ -26,7 +26,8 @@ test('number search and trivia are registered (ten puzzle types + activity pages
   assert.ok(types.includes('xsudoku'));
   assert.ok(types.includes('minisudoku'));
   assert.ok(types.includes('evenodd'));
-  assert.equal(types.length, 24);
+  assert.ok(types.includes('kakuro'));
+  assert.equal(types.length, 25);
 });
 
 // --- Number Search ---

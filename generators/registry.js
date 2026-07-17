@@ -133,6 +133,14 @@ const evenodd = {
   render: require('./evenodd/renderer').render,
 };
 
+const kakuro = {
+  type: 'kakuro',
+  generate: require('./kakuro').generate,
+  validate: require('./kakuro/validator').validate,
+  solve: require('./kakuro/solver').solve,
+  render: require('./kakuro/renderer').render,
+};
+
 const logicgrid = {
   type: 'logicgrid',
   generate: require('./logicgrid').generate,
@@ -215,6 +223,7 @@ const MODULES = {
   xsudoku,
   minisudoku,
   evenodd,
+  kakuro,
   logicgrid,
   wordladder,
   wordwheel,

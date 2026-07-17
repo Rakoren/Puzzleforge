@@ -476,6 +476,7 @@
       xsudoku: 'X-Sudoku',
       minisudoku: 'Mini Sudoku',
       evenodd: 'Even-Odd Sudoku',
+      kakuro: 'Kakuro',
       logicgrid: 'Logic Grid',
       wordladder: 'Word Ladder',
       wordwheel: 'Word Wheel',

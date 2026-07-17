@@ -7,7 +7,7 @@
     wordsearch: 'Word Search', numbersearch: 'Number Search', crossword: 'Crossword',
     krisskross: 'Kriss-Kross', wordscramble: 'Word Scramble', sudoku: 'Sudoku', maze: 'Maze',
     cryptogram: 'Cryptogram', nonogram: 'Nonogram', trivia: 'Trivia', logicgrid: 'Logic Grid',
-    wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', riddles: 'Riddles', brainteasers: 'Brain Teasers', mathpuzzles: 'Math Puzzles', xsudoku: 'X-Sudoku', minisudoku: 'Mini Sudoku', evenodd: 'Even-Odd Sudoku',
+    wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', riddles: 'Riddles', brainteasers: 'Brain Teasers', mathpuzzles: 'Math Puzzles', xsudoku: 'X-Sudoku', minisudoku: 'Mini Sudoku', evenodd: 'Even-Odd Sudoku', kakuro: 'Kakuro',
   };
   const typeLabel = (t) => TYPE_LABELS[t] || String(t).replace(/\b\w/g, (c) => c.toUpperCase());
   const TRIM_LABELS = {

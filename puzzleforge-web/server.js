@@ -297,7 +297,7 @@ const TYPE_LABELS = {
   cryptogram: 'Cryptogram', nonogram: 'Nonogram', trivia: 'Trivia', logicgrid: 'Logic Grid',
   wordladder: 'Word Ladder', wordwheel: 'Word Wheel', cipher: 'Cipher', riddles: 'Riddles',
   brainteasers: 'Brain Teasers', mathpuzzles: 'Math Puzzles', xsudoku: 'X-Sudoku',
-  minisudoku: 'Mini Sudoku', evenodd: 'Even-Odd Sudoku',
+  minisudoku: 'Mini Sudoku', evenodd: 'Even-Odd Sudoku', kakuro: 'Kakuro',
   coloring: 'Coloring', drawing: 'Drawing',
 };
 const typeLabel = (t) => TYPE_LABELS[t] || String(t || '').replace(/\b\w/g, (c) => c.toUpperCase());

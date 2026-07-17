@@ -38,6 +38,7 @@ const ACCEPT_THRESHOLDS = {
   xsudoku: 0.85,
   minisudoku: 0.85,
   evenodd: 0.85,
+  kakuro: 0.85,
 };
 
 // Per-type difficulty presets. Each generator interprets these.
@@ -143,6 +144,15 @@ const DIFFICULTY = {
     2: { givens: 30 },
     3: { givens: 26 },
     4: { givens: 22 },
+  },
+  // Kakuro (cross sums) — grid dimensions (incl. clue border) and the number of
+  // aggregated 2×2 white blocks grow with difficulty. Every board is verified
+  // unique-solution; these configs generate reliably in well under a second.
+  kakuro: {
+    1: { rows: 5, cols: 5, blocks: 2 },
+    2: { rows: 6, cols: 6, blocks: 3 },
+    3: { rows: 6, cols: 6, blocks: 4 },
+    4: { rows: 7, cols: 7, blocks: 4 },
   },
   // Logic Grid: `items` is the grid size (people & values per category), `cats`
   // the number of categories (incl. the primary), `ordinal` allows one numeric
@@ -276,6 +286,13 @@ const KIDS_DIFFICULTY = {
     2: { givens: 38 },
     3: { givens: 34 },
     4: { givens: 30 },
+  },
+  // Kids Kakuro stays small (fewer, shorter runs) for gentler grids.
+  kakuro: {
+    1: { rows: 5, cols: 5, blocks: 2 },
+    2: { rows: 5, cols: 5, blocks: 2 },
+    3: { rows: 6, cols: 6, blocks: 3 },
+    4: { rows: 6, cols: 6, blocks: 4 },
   },
   logicgrid: {
     1: { items: 4, cats: 3, ordinal: false, style: 'positive' },
