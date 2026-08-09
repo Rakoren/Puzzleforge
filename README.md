@@ -3,8 +3,14 @@
 The core puzzle generation engine and print-ready PDF export pipeline behind
 PuzzleForge. Pure Node.js library + CLI — no UI dependencies. The teacher-facing
 web app lives in [`puzzleforge-web/`](./puzzleforge-web) and imports this package
-as a local dependency (co-located for now; can be split into its own repository
-later).
+as a local dependency.
+
+This repo used to also host the publisher-only tooling (Book Builder, Page
+Editor, Cover Builder, Image Tools, AI Art, KDP export). That's now its own
+app: [`rakoren/publisher`](https://github.com/rakoren/publisher), which
+depends on this repo's engine as a git dependency. There's also a separate,
+from-scratch book-drafting app, [`rakoren/writer`](https://github.com/rakoren/writer),
+unrelated to puzzles.
 
 See [`PRD.md`](./PRD.md) for the full product spec.
 
@@ -19,7 +25,6 @@ browser at all.
 # 1. Get the code
 git clone <your-repo-url> puzzleforge
 cd puzzleforge
-git checkout claude/prd-review-next-steps-6lkbbb
 
 # 2. Install the engine
 npm install
@@ -100,22 +105,26 @@ Implemented so far:
 - Puppeteer-based PDF export for both single puzzles and full books
 - CLI for single-puzzle and full-book generation/export
 
-- **Web app** (`puzzleforge-web/`): Puzzle Maker (accountless), Book Builder with
-  **starter templates** + one-click KDP export bundle, Cover Builder, image tools
-  (coloring / color-by-number / dot-to-dot), AI + manual theme generators (incl.
-  **AI "Expand"** to top up a theme's word list), and a full **Page Editor**
-  (MS-Publisher-style ribbon, master pages, two-page spreads, tables, break-apart
-  puzzles, fit-to-margins, Ctrl/Cmd + rubber-band multi-select, scannable
-  **QR codes**, My Books library + autosave, and a self-hosted LAN team
-  workspace). Dressed in the **Nova Form Studios design system with light/dark
-  mode**.
+- **Web app** (`puzzleforge-web/`): Puzzle Maker (accountless) and the AI +
+  manual theme generators (incl. **AI "Expand"** to top up a theme's word
+  list) — the theme generator stays here since it's the tool that maintains
+  this repo's own `themes/` directory.
+- **Publisher app** ([`rakoren/publisher`](https://github.com/rakoren/publisher),
+  separate repo): Book Builder with starter templates + one-click KDP export
+  bundle, Cover Builder, image tools (coloring / color-by-number /
+  dot-to-dot), a full **Page Editor** (MS-Publisher-style ribbon, master
+  pages, two-page spreads, tables, break-apart puzzles, fit-to-margins,
+  Ctrl/Cmd + rubber-band multi-select, scannable **QR codes**, My Books
+  library + autosave, and a self-hosted LAN team workspace), account-gated
+  via Clerk. Dressed in the **Nova Form Studios design system with
+  light/dark mode**. Depends on this repo's engine as a git dependency.
 - **QR digital layer** (`engine/digital.js`): every real puzzle gets a
   self-contained mobile landing page and a "Scan for the answer" QR printed in
   the page corner. Word/number searches are **interactive** (tap a word for an
   escalating hint — 3×3 box → start cell → full reveal); other types show a
-  static answer reveal. There's an end-of-book **celebration** page, and the
-  whole thing is self-serve from the Book Builder (set a hosting base URL; the
-  KDP bundle then prints the QR codes and includes an `html/` folder of pages).
+  static answer reveal. There's an end-of-book **celebration** page — this is
+  a Publisher-app feature (self-serve from its Book Builder), built on this
+  engine's digital-layer functions.
 
 - **Worksheets & lesson packets** (`worksheets.html`, `engine/worksheet.js`):
   turn any puzzle into a printable classroom handout with a student Name/Date

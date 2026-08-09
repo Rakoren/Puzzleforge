@@ -2,8 +2,8 @@
 
 **Version:** 0.3 (Active Development)
 **Status:** Publishable pipeline complete (interior + cover + KDP bundle); Page Editor now a full desktop-publishing app (ribbons, master pages, spreads, tables, team workspace) with **Publisher-parity contextual ribbons** (Shape Format / Table Design / Table Layout / Picture Format / QR Code / Text Box) and their tools — interactive crop, linked text-box flow, advanced OpenType typography, picture compress/swap, **Fit-to-margins**, and **Ctrl/Cmd + rubber-band multi-select**; the **QR digital layer** is live (hosted interactive hint / answer landing pages + end-of-book celebration, self-serve from the Book Builder); the app wears the **Nova Form Studios design system with dark mode**; Tier 3 puzzle types (Logic Grid, Word Ladder, Word Wheel, Cipher); KDP-verified pre-flight export gate live
-**Last full docs sync:** 2026-07-16
-**Repo:** `rakoren/maze-books` · **Active branch:** `claude/prd-review-next-steps-6lkbbb`
+**Last full docs sync:** 2026-08-09 — publisher tool spun off into `rakoren/publisher`; a new book-drafting app for Sara launched at `rakoren/writer`. This repo is now the engine + the free teacher tool + the AI Theme Generator. See "Repository" below.
+**Repo:** `rakoren/puzzleforge` · **Active branch:** `claude/publisher-tool-spinoff-orlgcr`
 **Stack:** Node.js engine + Chromium PDF pipeline + vanilla JS web app (Express)
 **Author:** Rakoren
 
@@ -21,12 +21,19 @@ Two use cases:
 
 ## Repository
 
-Single repo for now: `rakoren/maze-books`
-Active branch: `claude/prd-review-next-steps-6lkbbb`
+Three repos now (2026-08-09 split):
 
-Planned split (future):
-- `puzzleforge-engine` — core library, private repo
-- `puzzleforge-web` — teacher UI, MIT license
+| Repo | Contents |
+|---|---|
+| `rakoren/puzzleforge` (this repo) | The puzzle-generation engine (`engine/`, `generators/`, `layouts/`, etc.), the free teacher tool (`puzzleforge-web/` — Puzzle Maker, Worksheets/Lesson Packets), and the AI Theme Generator (it owns this repo's `themes/` directory, so theme authoring stays here) |
+| [`rakoren/publisher`](https://github.com/rakoren/publisher) | Book Builder, Page Editor, Cover Builder, Image Tools, AI Art/ComfyUI, the self-hosted team workspace, and one-click KDP export — everything below in this doc under "Publisher Only" now lives there. Account-gated (Clerk), depends on this repo's engine as a git dependency. |
+| [`rakoren/writer`](https://github.com/rakoren/writer) | A separate, from-scratch app for drafting a book (chapters, word-count goals) and exporting it to a KDP-ready novel-trim PDF. Built for Sara. Not puzzle-related — no dependency on the engine here. |
+
+The rest of this document still describes the publisher-only features in
+detail (Page Editor, Book Builder, KDP export, etc.) as product history and
+spec — that code now lives in `rakoren/publisher`, not here. Treat mentions
+of file paths like `puzzleforge-web/public/editor.js` below as referring to
+that repo now, not this one.
 
 ---
 

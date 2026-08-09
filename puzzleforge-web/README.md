@@ -1,17 +1,18 @@
 # PuzzleForge Web
 
 The teacher-facing web app for PuzzleForge. A simple, accountless tool to
-generate a single puzzle, preview it live, and download a print-ready PDF or a
-reusable recipe file.
+generate a single puzzle, preview it live, and download a print-ready PDF or
+a reusable recipe file. Also home to the AI Theme Generator, since it's the
+tool that maintains this repo's own `themes/` directory.
+
+The publisher-only tooling that used to live here (Book Builder, Page
+Editor, Cover Builder, Image Tools, AI Art, KDP export, team workspace) has
+moved to its own app: [`rakoren/publisher`](https://github.com/rakoren/publisher).
 
 It imports the engine (`puzzleforge-engine`, the repository root) as a local
 package and runs it server-side — the engine is Node-only (themes read from
 disk, PDF export drives Chromium), so the browser handles only the form,
 preview, and downloads.
-
-> Co-located here as a subdirectory for now; it depends on the engine via
-> `file:..` and can be extracted into its own repository later without code
-> changes.
 
 ## Run
 
@@ -36,15 +37,14 @@ notice instead of failing.
 
 ## What it does
 
-- **Pick a puzzle** — any of the engine's 12 types (word search, number search,
-  sudoku, maze, cryptogram, word scramble, crossword, kriss-kross, nonogram,
-  trivia, logic grid, word ladder)
+- **Pick a puzzle** — any of the engine's puzzle types (word search, number
+  search, sudoku, maze, cryptogram, word scramble, crossword, kriss-kross,
+  nonogram, trivia, logic grid, word ladder, word wheel, cipher, riddles,
+  brain teasers)
 - **Words** — choose a built-in theme or paste your own word list
 - **Settings** — difficulty, page (trim) size, audience, optional grid size and title
 - **Text size & font** — Normal / Large print / Extra large, and Sans / Serif / Rounded (large-print "senior" mode)
 - **Page border** — a decorative vector frame (single / double / rounded / dashed / dots / scallop / stars) in any color, drawn around each puzzle page (skipped on blank and activity pages)
-- **Difficulty curve** — distribute difficulty across the book by position (Easy→Hard / Hard→Easy / Mixed / Flat), overriding each row's difficulty so the book ramps intentionally
-- **Publish checklist** — a pre-flight pass that renders the book and flags KDP issues (🔴 blockers / 🟡 warnings / 🟢 passes): page count even/≥24, puzzle count, complete answer key, blank pages, bleed guards, front/back matter
 - **Live preview** — puzzle and answer-key tabs
 - **Download PDF** — print-ready at the chosen trim size, with optional answer key
 - **Save / Upload recipe** — a `.json` of your settings. Re-upload later to
@@ -58,41 +58,13 @@ notice instead of failing.
 - **Differentiation set** — the same puzzle at Easy / Medium / Hard in one PDF
 - **Class set** — N re-rolled copies (each student gets a different grid, same
   words), with answers off, interleaved, or collected at the back
+- **Worksheets & lesson packets** (`worksheets.html`) — turn any puzzle into a
+  printable classroom handout with a student Name/Date header, or assemble a
+  full lesson packet (cover + worksheets + answer-key section) into one PDF.
+  An auto lesson-plan mode turns a grade + topic into a ready packet.
 
 No accounts, no database — recipes live on the teacher's own machine
 (Option A in the PRD).
-
-### Book Builder
-
-A second page (**Book Builder**, linked in the header) assembles a whole book
-visually — no JSON by hand:
-
-- **Start from a template** — a gallery of six ready-to-publish books (Large-Print
-  Senior Word Search, Kids Animal Activity Book, Travel Pocket Puzzles, Sudoku
-  Workout, Brain Training Variety, Coffee Break Crosswords). Each drops a full
-  book (puzzle mix + trim + cover colors + KDP metadata) into the form, editable
-  from there — a zero-to-book on-ramp.
-- Set the title, subtitle, author, audience, page (trim) size, default theme,
-  and answer-key toggle
-- Add puzzle rows (type · count · difficulty, including mixed ranges), reorder
-  or remove them
-- Preview the assembled book, then download the print-ready PDF
-- Save / load the book recipe (**v2** `.json`: book config + a `seed` that
-  reproduces the **entire book** — structure *and* exact puzzle grids — + a
-  per-page `pageState` layer for overrides and the future page editor; old v1
-  recipes migrate automatically on load)
-- **No repeated words** — keep every theme word to a single puzzle across the book
-- **Kids-book activity pages** (no answer key): **Coloring Page** (procedural
-  mandala / shape-pattern / bubble-letter art), **Drawing Page** (framed blank
-  with a prompt), and **Blank (bleed guard)** pages. Bleed-guarding is
-  leaf-aware: each coloring/drawing page is placed on a recto (odd) page with a
-  blank verso behind it, so marker ink can't bleed onto a puzzle on the back of
-  the same sheet
-- **Between puzzles, insert** — automatically drop a drawing and/or blank page
-  into every gap between puzzles (20 puzzles → 19 of each)
-- **Breather pages** (adult) — a calm page between puzzle *sets*: a fun fact
-  (theme-matched when available), a quote, a divider, or a blank. Curated,
-  non-repeating content from `content/breathers.js`
 
 ## API
 
@@ -103,13 +75,11 @@ visually — no JSON by hand:
 | POST | `/api/pdf` | export a print-ready PDF (reuses the previewed puzzle by `puzzleId`) |
 | POST | `/api/words` | resolve a recipe's words + clues (for the clue editor) |
 | POST | `/api/set` | teacher sets → one PDF: `mode: "differentiation" \| "classset"`, `count`, `answers: "none" \| "end" \| "each"` |
-| POST | `/api/book/preview` | assemble a book → `{ bookId, html, meta }` |
-| POST | `/api/book/pdf` | export the book PDF (reuses the assembled book by `bookId`) |
-| POST | `/api/book/checklist` | pre-flight publish checks → `{ items, summary, pageCount }` |
-| POST | `/api/book/royalty` | KDP royalty estimate (renders for page count) → `{ printCost, royalty, breakeven, suggested… }` |
-| POST | `/api/book/editor` | open a book in the page editor → `{ bookId, seed, dims, pages:[{index,type,html,…}] }` |
-| POST | `/api/book/page-html` | re-render one page's background with a per-page state (border override) |
-| POST | `/api/book/reroll` | reroll one puzzle page with a fresh seed → new page HTML |
+| POST | `/api/worksheet/preview` | single worksheet HTML preview (with student header) |
+| POST | `/api/worksheet/pdf` | worksheet PDF (+ optional answer copy) |
+| POST | `/api/packet/pdf` | lesson packet PDF (cover + worksheets + answer section) |
+| GET | `/api/curriculum` | grade presets |
+| POST | `/api/packet/plan` | grade + topic → an auto lesson-plan config |
 | GET | `/api/theme/status` | `{ available }` — whether an Anthropic API key is configured |
 | POST | `/api/theme/generate` | topic → `{ theme, report, sample }` (preview, not saved) |
 | POST | `/api/category/generate` | broad topic → `{ category, themes:[{theme,report,sample}] }` (preview) |
@@ -119,153 +89,6 @@ visually — no JSON by hand:
 | POST | `/api/theme/get` | full contents of a saved theme (for the editor) → `{ id, label, category, tags, facts, tiers }` |
 | POST | `/api/theme/remove` | remove specific words / facts from a saved theme → `{ id, counts, factCount, removedWords, removedFacts }` |
 | POST | `/api/theme/delete` | delete a saved theme → `{ id }` |
-| POST | `/api/cover/preview` | full-wrap cover → `{ html, dims }` |
-| POST | `/api/cover/pdf` | export the full-wrap cover PDF |
-| POST | `/api/image/coloring/preview` | photo → line-art coloring page (PNG data URL) |
-| POST | `/api/image/coloring/pdf` | export the coloring page as a print-ready PDF |
-| POST | `/api/image/cbn/preview` | photo → color-by-number (outline + numbers + palette + reference) |
-| POST | `/api/image/cbn/pdf` | export the color-by-number page as a print-ready PDF |
-| POST | `/api/image/dots/preview` | photo → dot-to-dot (ordered numbered dots + silhouette) |
-| POST | `/api/image/dots/pdf` | export the dot-to-dot page as a print-ready PDF |
-| GET | `/api/comfy/status` | `{ available, url }` — whether a local ComfyUI is reachable |
-| GET | `/api/comfy/checkpoints` | `{ checkpoints:[], styles:[] }` for the model/style pickers |
-| POST | `/api/comfy/generate` | text prompt → `{ image (PNG data URL), seed }` via ComfyUI |
-| GET | `/api/workspace/status` | `{ enabled, needsToken, members, books }` |
-| GET | `/api/workspace/events` | Server-Sent Events stream of member/book/comment changes |
-| GET/POST/DELETE | `/api/workspace/members[/:id]` | list / add / remove team members |
-| GET/PUT/DELETE | `/api/workspace/books[/:id]` | list / read / publish / remove shared books |
-| GET/POST | `/api/workspace/books/:id/comments` | list / add live comments on a shared book |
-
-### Image Tools (publisher)
-
-Three publisher tools on one tabbed page (Sharp + pure-JS pipelines; needs the
-`sharp` dependency, `npm install`):
-
-- **Coloring Page** — a photo traced into clean black-outline line art (JS Sobel
-  edge detector) with **Detail** and **line thickness** controls. Best on clear
-  subjects with defined edges.
-- **Color by Number** — a photo reduced to a few flat colors (k-means), each
-  region numbered to match a printed color key, with **Colors** and **Smoothing**
-  controls and an optional on-page color guide.
-- **Dot to Dot** — a photo's main subject auto-detected (Otsu threshold + largest
-  blob) and its outline sampled into an ordered ring of numbered dots, with a
-  **Dots** count and an optional faint guide silhouette.
-
-All three size to any trim and export a print-ready PDF.
-
-### AI Art (ComfyUI — publisher only)
-
-The *AI Art* page generates illustrations from a text prompt through a **local
-ComfyUI** instance (default `http://localhost:8188`). It is meant to run on the
-publisher's own machine and is **never deployed publicly**. Choose a checkpoint
-(auto-listed from ComfyUI), set size/steps/CFG/seed, pick a **workflow preset**,
-and generate.
-
-**Checkpoint auto-tuning:** the app reads the checkpoint name and picks the
-right sampler / steps / CFG / resolution for it — **Turbo / Lightning** models
-get ~8 steps at low CFG with DPM++ SDE Karras (high CFG burns them), **LCM**
-gets the LCM sampler, **SDXL** runs at 1024px, **SD 1.5** at 768px. The fields
-prefill with the recommendation when you pick a checkpoint; you can still
-override them. (Set `COMFYUI_CKPT` to your model, e.g.
-`DreamshaperXL_Turbo_v2.safetensors`.)
-
-**Workflow presets** each tune the prompt and negative prompt for one purpose,
-and some auto-clean the raw output in our own pipeline (ComfyUI line art is
-rarely print-ready on its own):
-
-| Preset | For | Post-processing |
-|---|---|---|
-| Coloring page (clean line art) | coloring-book pages | traced to crisp black outlines on white |
-| Color-by-number base (flat colors) | feeding into Color by Number | none (flat cartoon colors) |
-| Silhouette (solid black) | silhouette pages | thresholded to a solid black shape |
-| Detailed illustration (cover art) | covers / decorative art | none |
-| Clip art (single object, line art) | page decorations | traced to crisp black outlines |
-| Border / frame (line art) | decorative page frames | traced to crisp black outlines |
-
-**LoRA / ControlNet (advanced):** when ComfyUI reports installed LoRAs or
-ControlNet models, an *Advanced* section appears. Pick a **LoRA** (with strength)
-to bias the style — a coloring-book or flat-illustration LoRA is the single
-biggest quality jump for this pipeline. Pick a **ControlNet** model and upload a
-**reference image** (a sketch, silhouette, or line drawing) to steer the
-shape/pose. Both are optional and the graph stays valid without them.
-
-**Hand-off:** after generating, **Send to Color by Number** or **Send to
-Coloring Page** carries the image straight into the matching Image Tools tab —
-the cleanest path to a numbered page is *Color-by-number base* → *Send to Color
-by Number*. Output also downloads as PNG.
-
-```bash
-export COMFYUI_URL=http://localhost:8188              # optional, this is the default
-export COMFYUI_CKPT=v1-5-pruned-emaonly.safetensors   # optional default checkpoint
-```
-
-When ComfyUI isn't running the page shows a notice and disables generation; the
-rest of the app is unaffected.
-
-### Cover Builder
-
-A fourth page (**Cover Builder**) produces a print-ready **full-wrap** cover
-(back + spine + front as one PDF) at the exact size KDP expects, including
-0.125" bleed. The spine width is computed from the page count and paper type
-(white/cream); spine text appears once the book is long enough (≥ 79 pages).
-Set title/subtitle/author, front/back/spine colors, an optional full-bleed
-front image, and a back blurb. The dashed box on the back marks the KDP
-barcode keep-out area.
-
-### Page Editor (publisher) — a full MS-Publisher-style desktop-publishing app
-
-An opt-in layout editor reached from the Book Builder's **Open in Editor** button
-(the fast Generate → Export path is unchanged). It has grown from a piece-mover
-into a full desktop-publishing surface. Every object is drawn by a shared
-renderer (`element-html.js`) so it looks **identical on screen and in the exported
-PDF**, vector-sharp at 300 DPI.
-
-- **Ribbon UI** — Home / Insert / Page Design / Arrange / Mailings / Review /
-  View / Help tabs, plus **contextual tabs** that appear only when the matching
-  object is selected: **Picture Format**, **Table**, **Text Box**, **Drawing
-  Tools**
-- **Break apart a puzzle** — the title, instructions, and word list become
-  individually editable objects (the word list can convert to a table); the grid
-  stays protected. Objects can be sent **behind** the puzzle.
-- **Free elements** — text boxes, images/clip art, **shapes** (rect / ellipse /
-  triangle / star / line + **speech & thought chat bubbles**), **editable
-  multi-column tables**, and **QR codes** (link to any URL; encoded offline and
-  drawn as a crisp vector so it prints scannable at any size)
-- **Master pages** (page numbers / headers / repeating frames) and **two-page
-  facing spreads**
-- **Desktop-publishing toolset** — undo/redo (Ctrl+Z/Y), zoom + rulers, numeric
-  X / Y / size% / angle, rotation, smart snapping guides + snap-to-grid,
-  multi-select, align/distribute, **group/ungroup**, arrange (front/back), flip,
-  lock, duplicate/copy/paste, arrow-key nudge
-- **Page management** — add / duplicate / delete / reorder pages in the sidebar;
-  save a page as a reusable template
-- **Word-list consistency pre-flight** — flags mismatches between an edited word
-  list and the puzzle grid
-- **Reroll** a single puzzle (fresh layout, same type/difficulty/words) with your
-  layout preserved; **per-page border override**; **reset layout**
-- **My Books library + autosave** — projects save locally (IndexedDB) with
-  change-detecting autosave; reopen / duplicate / delete from the **My Books** page
-- **Phone-friendly responsive view** for review and light edits
-- **Save recipe** (v2, with the full page layout) and **Export PDF** — the engine
-  composes the placed pieces + elements into each page (`pageState[i].layout`)
-  through the normal book pipeline
-
-The split/compose lives in `engine/components.js` (`splitPuzzle` / `composePage`);
-the shared object renderer is `engine/element-html.js`.
-
-### Team workspace (publisher, self-hosted LAN)
-
-A lightweight self-hosted backend (`workspace.js`, mounted at `/api/workspace`)
-for a small local team — no hosted accounts, no third-party service. It keeps a
-JSON-file store (`data/workspace.json` + `data/books/`) and pushes live updates
-over Server-Sent Events:
-
-- **Shared roster** — add/remove team members
-- **Shared book library** — publish a book for the team; open, comment, and
-  "Save to my library" to fork a personal copy (with a team notification)
-- **Live comments** per book, broadcast to everyone connected
-- Optional `PUZZLEFORGE_WORKSPACE_TOKEN` gate; email is left as an optional SMTP
-  hook
 
 ### Manual theme builder
 
@@ -280,7 +103,9 @@ difficulty-tiered, clued word list in the same on-disk format as the built-in
 themes. Claude writes the words and clues; the engine's offensive-word filter,
 de-duplication, and length checks then sanitize the result before it is shown
 or saved. Saved themes are ordinary `themes/*.json` files, so they immediately
-appear in every theme picker and can be edited or deleted by hand.
+appear in every theme picker and can be edited or deleted by hand — including
+in `rakoren/publisher`, which reads this repo's themes read-only via the
+engine's API.
 
 ### Recipe format
 

@@ -11,10 +11,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
-    "archiver": "^7.0.1",
     "express": "^4.19.2",
-    "puzzleforge-engine": "file:..",
-    "qrcode-generator": "^2.0.4",
-    "sharp": "^0.35.2"
+    "puzzleforge-engine": "file:.."
   }
 }
