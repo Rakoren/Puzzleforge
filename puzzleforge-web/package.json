@@ -35,7 +35,10 @@
       "workspace.js",
       "public/**/*",
       "node_modules/**/*",
-      "!node_modules/electron-builder/**/*"
+      "!node_modules/electron-builder/**/*",
+      "!node_modules/puzzleforge-engine/puzzleforge-web/**",
+      "!node_modules/puzzleforge-engine/{tests,docs,cli,mcp,scripts,examples,.git}/**",
+      "!node_modules/puzzleforge-engine/{PRD.md,README.md}"
     ],
     "win": {
       "target": "nsis"
