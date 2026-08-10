@@ -1,0 +1,133 @@
+'use strict';
+/**
+ * Electron shell for PuzzleForge Publisher — the standalone page editor.
+ *
+ * Boots the trimmed Express app (server.js) in-process and opens it in a
+ * native window, straight to editor.html. There is nowhere else to
+ * navigate to — this app is the page editor only.
+ */
+const { app, BrowserWindow, Menu, shell } = require('electron');
+
+const PORT = Number(process.env.PORT) || 4100;
+const HOST = '127.0.0.1';
+const ORIGIN = `http://${HOST}:${PORT}`;
+
+let mainWindow = null;
+
+function startServer() {
+  return new Promise((resolve, reject) => {
+    const { app: expressApp } = require('../server');
+    const server = expressApp.listen(PORT, HOST, () => resolve());
+    server.on('error', (err) => {
+      // A dev server (`npm start`) may already be running on this port —
+      // reuse it instead of failing to launch.
+      if (err.code === 'EADDRINUSE') resolve();
+      else reject(err);
+    });
+  });
+}
+
+function isLocalUrl(url) {
+  return url.startsWith(`${ORIGIN}/`);
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1440,
+    height: 900,
+    minWidth: 960,
+    minHeight: 640,
+    title: 'PuzzleForge Publisher',
+    backgroundColor: '#1c1f24',
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  mainWindow.loadURL(`${ORIGIN}/editor.html`);
+
+  // Everything the editor links to externally (mailto:, "browse issues") opens
+  // in the OS's default browser instead of a second app window.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (isLocalUrl(url)) return { action: 'allow' };
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!isLocalUrl(url)) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+function buildMenu() {
+  const template = [
+    {
+      label: 'File',
+      submenu: [{ role: 'reload' }, { role: 'forceReload' }, { type: 'separator' }, { role: 'quit' }],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+        { type: 'separator' },
+        { role: 'toggleDevTools' },
+      ],
+    },
+    {
+      label: 'Window',
+      submenu: [{ role: 'minimize' }, { role: 'close' }],
+    },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  app.whenReady().then(async () => {
+    buildMenu();
+    await startServer();
+    createWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}

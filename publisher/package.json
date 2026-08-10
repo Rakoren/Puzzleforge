@@ -1,0 +1,43 @@
+{
+  "name": "puzzleforge-publisher",
+  "version": "0.1.0",
+  "description": "Standalone MS-Publisher-style page editor for PuzzleForge books — Electron desktop app.",
+  "private": true,
+  "license": "MIT",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "electron": "electron .",
+    "dist:win": "electron-builder --win"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0",
+    "archiver": "^7.0.1",
+    "express": "^4.19.2",
+    "puzzleforge-engine": "file:..",
+    "qrcode-generator": "^2.0.4"
+  },
+  "devDependencies": {
+    "electron": "^43.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.puzzleforge.publisher",
+    "productName": "PuzzleForge Publisher",
+    "files": [
+      "electron/**/*",
+      "server.js",
+      "public/**/*",
+      "node_modules/**/*",
+      "!node_modules/electron-builder/**/*",
+      "!node_modules/puzzleforge-engine/puzzleforge-web/**",
+      "!node_modules/puzzleforge-engine/publisher/**",
+      "!node_modules/puzzleforge-engine/{tests,docs,cli,mcp,scripts,examples,.git}/**",
+      "!node_modules/puzzleforge-engine/{PRD.md,README.md}"
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
