@@ -1,0 +1,19 @@
+{
+  "name": "puzzleforge-page-editor",
+  "version": "0.1.0",
+  "description": "Standalone fork of the PuzzleForge Page Editor — open a book, arrange and edit pages, and export the interior PDF.",
+  "private": true,
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0",
+    "archiver": "^7.0.1",
+    "express": "^4.19.2",
+    "puzzleforge-engine": "file:..",
+    "qrcode-generator": "^2.0.4"
+  }
+}
