@@ -1,0 +1,303 @@
+{
+  "id": "dolch-nouns",
+  "label": "Dolch Sight-Word Nouns",
+  "category": "Curriculum & Sight Words",
+  "tags": [
+    "sight words",
+    "dolch",
+    "nouns",
+    "vocabulary",
+    "reading",
+    "phonics"
+  ],
+  "audiences": [
+    "kids"
+  ],
+  "standard": "CCSS.ELA-LITERACY.RF.K.3",
+  "tiers": {
+    "1": [
+      {
+        "word": "BED"
+      },
+      {
+        "word": "BOX"
+      },
+      {
+        "word": "BOY"
+      },
+      {
+        "word": "CAR"
+      },
+      {
+        "word": "CAT"
+      },
+      {
+        "word": "COW"
+      },
+      {
+        "word": "DAY"
+      },
+      {
+        "word": "DOG"
+      },
+      {
+        "word": "EGG"
+      },
+      {
+        "word": "EYE"
+      },
+      {
+        "word": "LEG"
+      },
+      {
+        "word": "MAN"
+      },
+      {
+        "word": "MEN"
+      },
+      {
+        "word": "PIG"
+      },
+      {
+        "word": "SUN"
+      },
+      {
+        "word": "TOP"
+      },
+      {
+        "word": "TOY"
+      },
+      {
+        "word": "WAY"
+      }
+    ],
+    "2": [
+      {
+        "word": "BABY"
+      },
+      {
+        "word": "BACK"
+      },
+      {
+        "word": "BALL"
+      },
+      {
+        "word": "BEAR"
+      },
+      {
+        "word": "BELL"
+      },
+      {
+        "word": "BIRD"
+      },
+      {
+        "word": "BOAT"
+      },
+      {
+        "word": "CAKE"
+      },
+      {
+        "word": "COAT"
+      },
+      {
+        "word": "CORN"
+      },
+      {
+        "word": "DOLL"
+      },
+      {
+        "word": "DOOR"
+      },
+      {
+        "word": "DUCK"
+      },
+      {
+        "word": "FARM"
+      },
+      {
+        "word": "FEET"
+      },
+      {
+        "word": "FIRE"
+      },
+      {
+        "word": "FISH"
+      },
+      {
+        "word": "GAME"
+      },
+      {
+        "word": "GIRL"
+      },
+      {
+        "word": "HAND"
+      },
+      {
+        "word": "HEAD"
+      },
+      {
+        "word": "HILL"
+      },
+      {
+        "word": "HOME"
+      },
+      {
+        "word": "MILK"
+      },
+      {
+        "word": "NAME"
+      },
+      {
+        "word": "NEST"
+      },
+      {
+        "word": "RAIN"
+      },
+      {
+        "word": "RING"
+      },
+      {
+        "word": "SEED"
+      },
+      {
+        "word": "SHOE"
+      },
+      {
+        "word": "SNOW"
+      },
+      {
+        "word": "SONG"
+      },
+      {
+        "word": "TIME"
+      },
+      {
+        "word": "TREE"
+      },
+      {
+        "word": "WIND"
+      },
+      {
+        "word": "WOOD"
+      }
+    ],
+    "3": [
+      {
+        "word": "APPLE"
+      },
+      {
+        "word": "BREAD"
+      },
+      {
+        "word": "CHAIR"
+      },
+      {
+        "word": "FLOOR"
+      },
+      {
+        "word": "GRASS"
+      },
+      {
+        "word": "HORSE"
+      },
+      {
+        "word": "HOUSE"
+      },
+      {
+        "word": "KITTY"
+      },
+      {
+        "word": "MONEY"
+      },
+      {
+        "word": "NIGHT"
+      },
+      {
+        "word": "PAPER"
+      },
+      {
+        "word": "PARTY"
+      },
+      {
+        "word": "ROBIN"
+      },
+      {
+        "word": "SHEEP"
+      },
+      {
+        "word": "STICK"
+      },
+      {
+        "word": "TABLE"
+      },
+      {
+        "word": "THING"
+      },
+      {
+        "word": "WATCH"
+      },
+      {
+        "word": "WATER"
+      }
+    ],
+    "4": [
+      {
+        "word": "BIRTHDAY"
+      },
+      {
+        "word": "BROTHER"
+      },
+      {
+        "word": "CHICKEN"
+      },
+      {
+        "word": "CHILDREN"
+      },
+      {
+        "word": "FARMER"
+      },
+      {
+        "word": "FATHER"
+      },
+      {
+        "word": "FLOWER"
+      },
+      {
+        "word": "GARDEN"
+      },
+      {
+        "word": "GROUND"
+      },
+      {
+        "word": "LETTER"
+      },
+      {
+        "word": "MORNING"
+      },
+      {
+        "word": "MOTHER"
+      },
+      {
+        "word": "PICTURE"
+      },
+      {
+        "word": "RABBIT"
+      },
+      {
+        "word": "SCHOOL"
+      },
+      {
+        "word": "SISTER"
+      },
+      {
+        "word": "SQUIRREL"
+      },
+      {
+        "word": "STREET"
+      },
+      {
+        "word": "WINDOW"
+      }
+    ]
+  }
+}

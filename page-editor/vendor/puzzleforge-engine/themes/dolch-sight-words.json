@@ -1,0 +1,608 @@
+{
+  "id": "dolch-sight-words",
+  "label": "Dolch Sight Words",
+  "category": "Curriculum & Sight Words",
+  "tags": [
+    "sight words",
+    "dolch",
+    "high frequency",
+    "reading",
+    "spelling"
+  ],
+  "audiences": [
+    "kids"
+  ],
+  "standard": "CCSS.ELA-LITERACY.RF.1.3",
+  "tiers": {
+    "1": [
+      {
+        "word": "AND"
+      },
+      {
+        "word": "AWAY"
+      },
+      {
+        "word": "BIG"
+      },
+      {
+        "word": "BLUE"
+      },
+      {
+        "word": "CAN"
+      },
+      {
+        "word": "COME"
+      },
+      {
+        "word": "DOWN"
+      },
+      {
+        "word": "FIND"
+      },
+      {
+        "word": "FOR"
+      },
+      {
+        "word": "FUNNY"
+      },
+      {
+        "word": "HELP"
+      },
+      {
+        "word": "HERE"
+      },
+      {
+        "word": "JUMP"
+      },
+      {
+        "word": "LITTLE"
+      },
+      {
+        "word": "LOOK"
+      },
+      {
+        "word": "MAKE"
+      },
+      {
+        "word": "NOT"
+      },
+      {
+        "word": "ONE"
+      },
+      {
+        "word": "PLAY"
+      },
+      {
+        "word": "RED"
+      },
+      {
+        "word": "RUN"
+      },
+      {
+        "word": "SAID"
+      },
+      {
+        "word": "SEE"
+      },
+      {
+        "word": "THE"
+      },
+      {
+        "word": "THREE"
+      },
+      {
+        "word": "TWO"
+      },
+      {
+        "word": "WHERE"
+      },
+      {
+        "word": "YELLOW"
+      },
+      {
+        "word": "YOU"
+      },
+      {
+        "word": "ALL"
+      },
+      {
+        "word": "ARE"
+      },
+      {
+        "word": "ATE"
+      },
+      {
+        "word": "BLACK"
+      },
+      {
+        "word": "BROWN"
+      },
+      {
+        "word": "BUT"
+      },
+      {
+        "word": "CAME"
+      },
+      {
+        "word": "DID"
+      },
+      {
+        "word": "EAT"
+      },
+      {
+        "word": "FOUR"
+      },
+      {
+        "word": "GET"
+      },
+      {
+        "word": "GOOD"
+      },
+      {
+        "word": "HAVE"
+      },
+      {
+        "word": "INTO"
+      },
+      {
+        "word": "LIKE"
+      },
+      {
+        "word": "MUST"
+      },
+      {
+        "word": "NEW"
+      },
+      {
+        "word": "NOW"
+      },
+      {
+        "word": "OUR"
+      },
+      {
+        "word": "OUT"
+      },
+      {
+        "word": "PLEASE"
+      },
+      {
+        "word": "PRETTY"
+      },
+      {
+        "word": "RAN"
+      },
+      {
+        "word": "RIDE"
+      },
+      {
+        "word": "SAW"
+      },
+      {
+        "word": "SAY"
+      },
+      {
+        "word": "SHE"
+      },
+      {
+        "word": "SOON"
+      },
+      {
+        "word": "THAT"
+      },
+      {
+        "word": "THERE"
+      },
+      {
+        "word": "THEY"
+      },
+      {
+        "word": "THIS"
+      },
+      {
+        "word": "TOO"
+      },
+      {
+        "word": "UNDER"
+      },
+      {
+        "word": "WANT"
+      },
+      {
+        "word": "WAS"
+      },
+      {
+        "word": "WELL"
+      },
+      {
+        "word": "WENT"
+      },
+      {
+        "word": "WHAT"
+      },
+      {
+        "word": "WHITE"
+      },
+      {
+        "word": "WHO"
+      },
+      {
+        "word": "WILL"
+      },
+      {
+        "word": "WITH"
+      },
+      {
+        "word": "YES"
+      }
+    ],
+    "2": [
+      {
+        "word": "AFTER"
+      },
+      {
+        "word": "AGAIN"
+      },
+      {
+        "word": "ANY"
+      },
+      {
+        "word": "ASK"
+      },
+      {
+        "word": "COULD"
+      },
+      {
+        "word": "EVERY"
+      },
+      {
+        "word": "FLY"
+      },
+      {
+        "word": "FROM"
+      },
+      {
+        "word": "GIVE"
+      },
+      {
+        "word": "GOING"
+      },
+      {
+        "word": "HAD"
+      },
+      {
+        "word": "HAS"
+      },
+      {
+        "word": "HER"
+      },
+      {
+        "word": "HIM"
+      },
+      {
+        "word": "HIS"
+      },
+      {
+        "word": "HOW"
+      },
+      {
+        "word": "JUST"
+      },
+      {
+        "word": "KNOW"
+      },
+      {
+        "word": "LET"
+      },
+      {
+        "word": "LIVE"
+      },
+      {
+        "word": "MAY"
+      },
+      {
+        "word": "OLD"
+      },
+      {
+        "word": "ONCE"
+      },
+      {
+        "word": "OPEN"
+      },
+      {
+        "word": "OVER"
+      },
+      {
+        "word": "PUT"
+      },
+      {
+        "word": "ROUND"
+      },
+      {
+        "word": "SOME"
+      },
+      {
+        "word": "STOP"
+      },
+      {
+        "word": "TAKE"
+      },
+      {
+        "word": "THANK"
+      },
+      {
+        "word": "THEM"
+      },
+      {
+        "word": "THEN"
+      },
+      {
+        "word": "THINK"
+      },
+      {
+        "word": "WALK"
+      },
+      {
+        "word": "WERE"
+      },
+      {
+        "word": "WHEN"
+      }
+    ],
+    "3": [
+      {
+        "word": "ALWAYS"
+      },
+      {
+        "word": "AROUND"
+      },
+      {
+        "word": "BECAUSE"
+      },
+      {
+        "word": "BEEN"
+      },
+      {
+        "word": "BEFORE"
+      },
+      {
+        "word": "BEST"
+      },
+      {
+        "word": "BOTH"
+      },
+      {
+        "word": "BUY"
+      },
+      {
+        "word": "CALL"
+      },
+      {
+        "word": "COLD"
+      },
+      {
+        "word": "DOES"
+      },
+      {
+        "word": "DONT"
+      },
+      {
+        "word": "FAST"
+      },
+      {
+        "word": "FIRST"
+      },
+      {
+        "word": "FIVE"
+      },
+      {
+        "word": "FOUND"
+      },
+      {
+        "word": "GAVE"
+      },
+      {
+        "word": "GOES"
+      },
+      {
+        "word": "GREEN"
+      },
+      {
+        "word": "ITS"
+      },
+      {
+        "word": "MADE"
+      },
+      {
+        "word": "MANY"
+      },
+      {
+        "word": "OFF"
+      },
+      {
+        "word": "PULL"
+      },
+      {
+        "word": "READ"
+      },
+      {
+        "word": "RIGHT"
+      },
+      {
+        "word": "SING"
+      },
+      {
+        "word": "SIT"
+      },
+      {
+        "word": "SLEEP"
+      },
+      {
+        "word": "TELL"
+      },
+      {
+        "word": "THEIR"
+      },
+      {
+        "word": "THESE"
+      },
+      {
+        "word": "THOSE"
+      },
+      {
+        "word": "UPON"
+      },
+      {
+        "word": "USE"
+      },
+      {
+        "word": "VERY"
+      },
+      {
+        "word": "WASH"
+      },
+      {
+        "word": "WHICH"
+      },
+      {
+        "word": "WHY"
+      },
+      {
+        "word": "WISH"
+      },
+      {
+        "word": "WORK"
+      },
+      {
+        "word": "WOULD"
+      },
+      {
+        "word": "WRITE"
+      },
+      {
+        "word": "YOUR"
+      }
+    ],
+    "4": [
+      {
+        "word": "ABOUT"
+      },
+      {
+        "word": "BETTER"
+      },
+      {
+        "word": "BRING"
+      },
+      {
+        "word": "CARRY"
+      },
+      {
+        "word": "CLEAN"
+      },
+      {
+        "word": "CUT"
+      },
+      {
+        "word": "DONE"
+      },
+      {
+        "word": "DRAW"
+      },
+      {
+        "word": "DRINK"
+      },
+      {
+        "word": "EIGHT"
+      },
+      {
+        "word": "FALL"
+      },
+      {
+        "word": "FAR"
+      },
+      {
+        "word": "FULL"
+      },
+      {
+        "word": "GOT"
+      },
+      {
+        "word": "GROW"
+      },
+      {
+        "word": "HOLD"
+      },
+      {
+        "word": "HOT"
+      },
+      {
+        "word": "HURT"
+      },
+      {
+        "word": "KEEP"
+      },
+      {
+        "word": "KIND"
+      },
+      {
+        "word": "LAUGH"
+      },
+      {
+        "word": "LIGHT"
+      },
+      {
+        "word": "LONG"
+      },
+      {
+        "word": "MUCH"
+      },
+      {
+        "word": "MYSELF"
+      },
+      {
+        "word": "NEVER"
+      },
+      {
+        "word": "ONLY"
+      },
+      {
+        "word": "OWN"
+      },
+      {
+        "word": "PICK"
+      },
+      {
+        "word": "SEVEN"
+      },
+      {
+        "word": "SHALL"
+      },
+      {
+        "word": "SHOW"
+      },
+      {
+        "word": "SIX"
+      },
+      {
+        "word": "SMALL"
+      },
+      {
+        "word": "START"
+      },
+      {
+        "word": "TEN"
+      },
+      {
+        "word": "TODAY"
+      },
+      {
+        "word": "TOGETHER"
+      },
+      {
+        "word": "TRY"
+      },
+      {
+        "word": "WARM"
+      }
+    ]
+  }
+}

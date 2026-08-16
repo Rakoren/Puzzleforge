@@ -1,0 +1,832 @@
+{
+  "id": "food",
+  "label": "Food",
+  "category": "Everyday Life",
+  "tags": [
+    "food",
+    "cooking",
+    "kitchen"
+  ],
+  "audiences": [
+    "kids",
+    "adult"
+  ],
+  "tiers": {
+    "1": [
+      {
+        "word": "EGG",
+        "clue": "A breakfast food from a hen"
+      },
+      {
+        "word": "JAM",
+        "clue": "Sweet fruit spread for toast"
+      },
+      {
+        "word": "PIE",
+        "clue": "A baked dish with a crust"
+      },
+      {
+        "word": "BUN",
+        "clue": "A small round bread"
+      },
+      {
+        "word": "HAM",
+        "clue": "Meat from a pig"
+      },
+      {
+        "word": "NUT",
+        "clue": "A hard-shelled snack"
+      },
+      {
+        "word": "PEA",
+        "clue": "A small round green vegetable"
+      },
+      {
+        "word": "RICE",
+        "clue": "Small white grains you boil"
+      },
+      {
+        "word": "SOUP",
+        "clue": "A warm bowl you eat with a spoon"
+      },
+      {
+        "word": "CAKE",
+        "clue": "A sweet baked treat for birthdays"
+      },
+      {
+        "word": "MILK",
+        "clue": "A white drink from cows"
+      },
+      {
+        "word": "CORN",
+        "clue": "A yellow vegetable on a cob"
+      },
+      {
+        "word": "FISH",
+        "clue": "Food that swims in the sea"
+      },
+      {
+        "word": "MEAT",
+        "clue": "Food that comes from animals"
+      },
+      {
+        "word": "BEAN",
+        "clue": "A seed eaten as a vegetable"
+      },
+      {
+        "word": "TACO",
+        "clue": "A folded Mexican food"
+      },
+      {
+        "word": "BREAD",
+        "clue": "Baked food made from flour"
+      },
+      {
+        "word": "TOAST",
+        "clue": "Bread browned in a toaster"
+      },
+      {
+        "word": "APPLE",
+        "clue": "A round red or green fruit"
+      },
+      {
+        "word": "HONEY",
+        "clue": "A sweet syrup made by bees"
+      },
+      {
+        "word": "SALAD",
+        "clue": "A mix of fresh raw vegetables"
+      },
+      {
+        "word": "PIZZA",
+        "clue": "A round dish with cheese and toppings"
+      },
+      {
+        "word": "PASTA",
+        "clue": "Spaghetti is a kind of this"
+      },
+      {
+        "word": "JUICE",
+        "clue": "A drink squeezed from fruit"
+      },
+      {
+        "word": "PEAR",
+        "clue": "A sweet fruit shaped like a teardrop"
+      },
+      {
+        "word": "PLUM",
+        "clue": "A small purple fruit with a stone"
+      },
+      {
+        "word": "LIME",
+        "clue": "A small green sour citrus fruit"
+      },
+      {
+        "word": "KIWI",
+        "clue": "A fuzzy fruit that is green inside"
+      },
+      {
+        "word": "DATE",
+        "clue": "A sweet sticky fruit from a palm"
+      },
+      {
+        "word": "FIG",
+        "clue": "A soft sweet fruit full of seeds"
+      },
+      {
+        "word": "OAT",
+        "clue": "A grain used for porridge"
+      },
+      {
+        "word": "STEW",
+        "clue": "A slow-cooked dish of meat and vegetables"
+      },
+      {
+        "word": "YAM",
+        "clue": "A starchy root like a sweet potato"
+      },
+      {
+        "word": "BEEF",
+        "clue": "Meat from a cow"
+      },
+      {
+        "word": "PORK",
+        "clue": "Meat from a pig"
+      },
+      {
+        "word": "ROLL",
+        "clue": "A small round bread"
+      },
+      {
+        "word": "CHIP",
+        "clue": "A thin crispy snack"
+      },
+      {
+        "word": "DIP",
+        "clue": "A sauce you dunk food into"
+      },
+      {
+        "word": "SALT",
+        "clue": "A white seasoning"
+      },
+      {
+        "word": "MINT",
+        "clue": "A cool fresh-tasting herb"
+      },
+      {
+        "word": "TART",
+        "clue": "A small open pastry with filling"
+      },
+      {
+        "word": "WRAP",
+        "clue": "A filling rolled in a tortilla"
+      }
+    ],
+    "2": [
+      {
+        "word": "CHEESE",
+        "clue": "A dairy food made from milk"
+      },
+      {
+        "word": "BUTTER",
+        "clue": "You spread it on bread"
+      },
+      {
+        "word": "NOODLE",
+        "clue": "A long strip of pasta"
+      },
+      {
+        "word": "MUFFIN",
+        "clue": "A small cake baked in a cup"
+      },
+      {
+        "word": "YOGURT",
+        "clue": "A creamy food made from milk cultures"
+      },
+      {
+        "word": "CEREAL",
+        "clue": "A breakfast food eaten with milk"
+      },
+      {
+        "word": "COOKIE",
+        "clue": "A small sweet baked treat"
+      },
+      {
+        "word": "DONUT",
+        "clue": "A ring-shaped sweet snack"
+      },
+      {
+        "word": "WAFFLE",
+        "clue": "A breakfast food with square dents"
+      },
+      {
+        "word": "BAGEL",
+        "clue": "A chewy ring-shaped bread"
+      },
+      {
+        "word": "PRETZEL",
+        "clue": "A twisted salty snack"
+      },
+      {
+        "word": "POPCORN",
+        "clue": "A snack that pops when heated"
+      },
+      {
+        "word": "PUDDING",
+        "clue": "A soft sweet dessert"
+      },
+      {
+        "word": "CUSTARD",
+        "clue": "A creamy dessert made with eggs"
+      },
+      {
+        "word": "PANCAKE",
+        "clue": "A flat breakfast cake from a pan"
+      },
+      {
+        "word": "BISCUIT",
+        "clue": "A small crunchy baked treat"
+      },
+      {
+        "word": "PUMPKIN",
+        "clue": "A big orange squash"
+      },
+      {
+        "word": "CARROT",
+        "clue": "An orange root vegetable"
+      },
+      {
+        "word": "POTATO",
+        "clue": "A starchy vegetable for fries"
+      },
+      {
+        "word": "TOMATO",
+        "clue": "A red fruit used in sauces"
+      },
+      {
+        "word": "ONION",
+        "clue": "A vegetable that can make you cry"
+      },
+      {
+        "word": "PEPPER",
+        "clue": "A vegetable that can be hot or sweet"
+      },
+      {
+        "word": "CELERY",
+        "clue": "A crunchy green stalk"
+      },
+      {
+        "word": "SPINACH",
+        "clue": "A leafy green that makes you strong"
+      },
+      {
+        "word": "BANANA",
+        "clue": "A long curved yellow fruit"
+      },
+      {
+        "word": "ORANGE",
+        "clue": "A citrus fruit with the same name as a color"
+      },
+      {
+        "word": "CHERRY",
+        "clue": "A small round red fruit with a stone"
+      },
+      {
+        "word": "GRAPE",
+        "clue": "A small fruit that grows in bunches"
+      },
+      {
+        "word": "LEMON",
+        "clue": "A sour yellow citrus fruit"
+      },
+      {
+        "word": "MELON",
+        "clue": "A big juicy summer fruit"
+      },
+      {
+        "word": "PEACH",
+        "clue": "A fuzzy sweet fruit with a pit"
+      },
+      {
+        "word": "BURGER",
+        "clue": "A patty served in a bun"
+      },
+      {
+        "word": "OMELET",
+        "clue": "Eggs cooked flat and folded"
+      },
+      {
+        "word": "PORRIDGE",
+        "clue": "Warm oats for breakfast"
+      },
+      {
+        "word": "SAUCE",
+        "clue": "A liquid served over food"
+      },
+      {
+        "word": "GRAVY",
+        "clue": "A savory sauce for meat"
+      },
+      {
+        "word": "BROTH",
+        "clue": "A thin clear soup"
+      },
+      {
+        "word": "STOCK",
+        "clue": "A flavored liquid used as a soup base"
+      },
+      {
+        "word": "CURRY",
+        "clue": "A spiced saucy dish"
+      },
+      {
+        "word": "KEBAB",
+        "clue": "Meat grilled on a skewer"
+      },
+      {
+        "word": "NACHOS",
+        "clue": "Tortilla chips with cheese"
+      },
+      {
+        "word": "SALSA",
+        "clue": "A spicy tomato dip"
+      },
+      {
+        "word": "HUMMUS",
+        "clue": "A dip made from chickpeas"
+      },
+      {
+        "word": "PICKLE",
+        "clue": "A cucumber preserved in vinegar"
+      },
+      {
+        "word": "RADISH",
+        "clue": "A small peppery red root"
+      },
+      {
+        "word": "TURNIP",
+        "clue": "A round white-and-purple root"
+      },
+      {
+        "word": "CABBAGE",
+        "clue": "A leafy round vegetable"
+      },
+      {
+        "word": "LETTUCE",
+        "clue": "A leafy green for salads"
+      },
+      {
+        "word": "SQUASH",
+        "clue": "A vegetable like a pumpkin"
+      },
+      {
+        "word": "GARLIC",
+        "clue": "A strong-smelling bulb used in cooking"
+      },
+      {
+        "word": "GINGER",
+        "clue": "A spicy root used in baking"
+      },
+      {
+        "word": "OLIVE",
+        "clue": "A small fruit pressed for oil"
+      },
+      {
+        "word": "RAISIN",
+        "clue": "A dried grape"
+      },
+      {
+        "word": "APRICOT",
+        "clue": "A small orange stone fruit"
+      },
+      {
+        "word": "MANGO",
+        "clue": "A juicy tropical fruit"
+      },
+      {
+        "word": "PAPAYA",
+        "clue": "A tropical fruit with orange flesh"
+      },
+      {
+        "word": "COCONUT",
+        "clue": "A hard brown fruit with milk inside"
+      },
+      {
+        "word": "WALNUT",
+        "clue": "A wrinkled nut in a hard shell"
+      },
+      {
+        "word": "ALMOND",
+        "clue": "A smooth oval nut"
+      },
+      {
+        "word": "CASHEW",
+        "clue": "A curved creamy nut"
+      },
+      {
+        "word": "PEANUT",
+        "clue": "A nut that grows underground"
+      },
+      {
+        "word": "PECAN",
+        "clue": "A nut used in pies"
+      },
+      {
+        "word": "BROWNIE",
+        "clue": "A rich square chocolate cake"
+      },
+      {
+        "word": "COBBLER",
+        "clue": "A baked fruit dessert with a crust"
+      },
+      {
+        "word": "SUNDAE",
+        "clue": "Ice cream with toppings"
+      },
+      {
+        "word": "SHERBET",
+        "clue": "A frozen fruit dessert"
+      },
+      {
+        "word": "GELATO",
+        "clue": "Italian-style ice cream"
+      },
+      {
+        "word": "TOFFEE",
+        "clue": "A chewy buttery candy"
+      },
+      {
+        "word": "CARAMEL",
+        "clue": "A sweet made from melted sugar"
+      },
+      {
+        "word": "FUDGE",
+        "clue": "A soft rich chocolate sweet"
+      },
+      {
+        "word": "JELLY",
+        "clue": "A wobbly fruit dessert"
+      },
+      {
+        "word": "SYRUP",
+        "clue": "A thick sweet liquid for pancakes"
+      },
+      {
+        "word": "BATTER",
+        "clue": "A runny mix for pancakes or cake"
+      },
+      {
+        "word": "DOUGH",
+        "clue": "A soft mix of flour and water"
+      },
+      {
+        "word": "CRUST",
+        "clue": "The outer baked part of bread or pie"
+      },
+      {
+        "word": "KETCHUP",
+        "clue": "A red tomato sauce"
+      },
+      {
+        "word": "MUSTARD",
+        "clue": "A tangy yellow condiment"
+      },
+      {
+        "word": "BASIL",
+        "clue": "A fragrant herb used in pasta sauce"
+      },
+      {
+        "word": "PARSLEY",
+        "clue": "A green herb used as a garnish"
+      },
+      {
+        "word": "OATCAKE",
+        "clue": "A flat cracker made from oats"
+      }
+    ],
+    "3": [
+      {
+        "word": "SANDWICH",
+        "clue": "A filling between two slices of bread"
+      },
+      {
+        "word": "SPAGHETTI",
+        "clue": "Long thin strands of pasta"
+      },
+      {
+        "word": "LASAGNA",
+        "clue": "A layered baked pasta dish"
+      },
+      {
+        "word": "MACARONI",
+        "clue": "Short curved pasta, often with cheese"
+      },
+      {
+        "word": "BROCCOLI",
+        "clue": "A green vegetable that looks like little trees"
+      },
+      {
+        "word": "CUCUMBER",
+        "clue": "A long green vegetable in salads"
+      },
+      {
+        "word": "AVOCADO",
+        "clue": "A green fruit used to make guacamole"
+      },
+      {
+        "word": "PINEAPPLE",
+        "clue": "A spiky tropical fruit"
+      },
+      {
+        "word": "RASPBERRY",
+        "clue": "A soft red berry made of tiny bumps"
+      },
+      {
+        "word": "CINNAMON",
+        "clue": "A warm brown baking spice"
+      },
+      {
+        "word": "VANILLA",
+        "clue": "A flavor often used in ice cream"
+      },
+      {
+        "word": "OATMEAL",
+        "clue": "A hot cereal made from oats"
+      },
+      {
+        "word": "DUMPLING",
+        "clue": "A small ball of dough, often filled"
+      },
+      {
+        "word": "MEATBALL",
+        "clue": "A round ball of ground meat"
+      },
+      {
+        "word": "SAUSAGE",
+        "clue": "Ground meat in a casing"
+      },
+      {
+        "word": "VEGETABLE",
+        "clue": "A plant food like a carrot or pea"
+      },
+      {
+        "word": "SMOOTHIE",
+        "clue": "A blended fruit drink"
+      },
+      {
+        "word": "LEMONADE",
+        "clue": "A drink made from lemons and sugar"
+      },
+      {
+        "word": "GRANOLA",
+        "clue": "A crunchy mix of oats and nuts"
+      },
+      {
+        "word": "TANGERINE",
+        "clue": "A small easy-to-peel orange"
+      },
+      {
+        "word": "ZUCCHINI",
+        "clue": "A long green summer squash"
+      },
+      {
+        "word": "EGGPLANT",
+        "clue": "A glossy purple vegetable"
+      },
+      {
+        "word": "BEETROOT",
+        "clue": "A deep red root vegetable"
+      },
+      {
+        "word": "RHUBARB",
+        "clue": "A tart red stalk used in pies"
+      },
+      {
+        "word": "PARSNIP",
+        "clue": "A pale carrot-shaped root"
+      },
+      {
+        "word": "NECTARINE",
+        "clue": "A smooth-skinned peach"
+      },
+      {
+        "word": "PERSIMMON",
+        "clue": "An orange autumn fruit"
+      },
+      {
+        "word": "HONEYDEW",
+        "clue": "A melon with pale green flesh"
+      },
+      {
+        "word": "PARMESAN",
+        "clue": "A hard cheese you grate"
+      },
+      {
+        "word": "CHEDDAR",
+        "clue": "A firm orange or yellow cheese"
+      },
+      {
+        "word": "BAGUETTE",
+        "clue": "A long thin French bread"
+      },
+      {
+        "word": "FOCACCIA",
+        "clue": "A flat Italian bread with olive oil"
+      },
+      {
+        "word": "CIABATTA",
+        "clue": "An Italian bread with a chewy crust"
+      },
+      {
+        "word": "TIRAMISU",
+        "clue": "An Italian coffee-flavored dessert"
+      },
+      {
+        "word": "MERINGUE",
+        "clue": "A crisp dessert made from egg whites"
+      },
+      {
+        "word": "ECLAIR",
+        "clue": "A long pastry filled with cream"
+      },
+      {
+        "word": "MACARON",
+        "clue": "A small colorful French sandwich cookie"
+      },
+      {
+        "word": "BAKLAVA",
+        "clue": "A sweet layered pastry with nuts"
+      },
+      {
+        "word": "CANNOLI",
+        "clue": "A crisp tube filled with sweet cream"
+      },
+      {
+        "word": "RAVIOLI",
+        "clue": "Stuffed pasta squares"
+      },
+      {
+        "word": "GNOCCHI",
+        "clue": "Soft potato dumplings"
+      },
+      {
+        "word": "RISOTTO",
+        "clue": "A creamy Italian rice dish"
+      },
+      {
+        "word": "BURRITO",
+        "clue": "A large filled and folded tortilla"
+      },
+      {
+        "word": "EMPANADA",
+        "clue": "A filled and folded pastry"
+      },
+      {
+        "word": "OMELETTE",
+        "clue": "Beaten eggs cooked and folded"
+      },
+      {
+        "word": "NUTRITION",
+        "clue": "How food nourishes the body"
+      },
+      {
+        "word": "PROVOLONE",
+        "clue": "A firm Italian cheese"
+      },
+      {
+        "word": "COLESLAW",
+        "clue": "A salad of shredded cabbage"
+      }
+    ],
+    "4": [
+      {
+        "word": "CAULIFLOWER",
+        "clue": "A white relative of broccoli"
+      },
+      {
+        "word": "ASPARAGUS",
+        "clue": "A green spear-shaped vegetable"
+      },
+      {
+        "word": "STRAWBERRY",
+        "clue": "A red fruit with seeds on the outside"
+      },
+      {
+        "word": "BLUEBERRY",
+        "clue": "A small round blue fruit"
+      },
+      {
+        "word": "WATERMELON",
+        "clue": "A big green melon with red insides"
+      },
+      {
+        "word": "CHOCOLATE",
+        "clue": "A sweet treat made from cocoa"
+      },
+      {
+        "word": "CASSEROLE",
+        "clue": "A baked dish cooked in one pot"
+      },
+      {
+        "word": "BREAKFAST",
+        "clue": "The first meal of the day"
+      },
+      {
+        "word": "MILKSHAKE",
+        "clue": "A thick blended milk drink"
+      },
+      {
+        "word": "MARMALADE",
+        "clue": "A jam made from oranges"
+      },
+      {
+        "word": "CROISSANT",
+        "clue": "A flaky crescent-shaped pastry"
+      },
+      {
+        "word": "QUESADILLA",
+        "clue": "A folded tortilla filled with cheese"
+      },
+      {
+        "word": "GUACAMOLE",
+        "clue": "A dip made from mashed avocado"
+      },
+      {
+        "word": "ARTICHOKE",
+        "clue": "A green vegetable with tough leaves"
+      },
+      {
+        "word": "CRANBERRY",
+        "clue": "A tart red berry for sauce"
+      },
+      {
+        "word": "BLACKBERRY",
+        "clue": "A dark juicy berry"
+      },
+      {
+        "word": "GOOSEBERRY",
+        "clue": "A tart green berry"
+      },
+      {
+        "word": "POMEGRANATE",
+        "clue": "A fruit full of red seeds"
+      },
+      {
+        "word": "GRAPEFRUIT",
+        "clue": "A large sour citrus fruit"
+      },
+      {
+        "word": "CLEMENTINE",
+        "clue": "A small sweet seedless orange"
+      },
+      {
+        "word": "CANTALOUPE",
+        "clue": "A melon with orange flesh"
+      },
+      {
+        "word": "MOZZARELLA",
+        "clue": "A soft cheese on pizza"
+      },
+      {
+        "word": "CAMEMBERT",
+        "clue": "A soft creamy French cheese"
+      },
+      {
+        "word": "CHEESECAKE",
+        "clue": "A rich dessert on a biscuit base"
+      },
+      {
+        "word": "BRUSCHETTA",
+        "clue": "Toasted bread topped with tomato"
+      },
+      {
+        "word": "MINESTRONE",
+        "clue": "An Italian vegetable soup"
+      },
+      {
+        "word": "ENCHILADA",
+        "clue": "A rolled tortilla baked in sauce"
+      },
+      {
+        "word": "MAYONNAISE",
+        "clue": "A creamy egg-based spread"
+      },
+      {
+        "word": "MARGARINE",
+        "clue": "A butter substitute"
+      },
+      {
+        "word": "CONDIMENT",
+        "clue": "A sauce or seasoning added to food"
+      },
+      {
+        "word": "INGREDIENT",
+        "clue": "One item in a recipe"
+      },
+      {
+        "word": "APPETIZER",
+        "clue": "A small dish before the main course"
+      }
+    ]
+  }
+}

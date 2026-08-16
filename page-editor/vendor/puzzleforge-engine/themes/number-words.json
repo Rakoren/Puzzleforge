@@ -1,0 +1,151 @@
+{
+  "id": "number-words",
+  "label": "Number Words",
+  "category": "Curriculum & Sight Words",
+  "tags": [
+    "numbers",
+    "counting",
+    "spelling",
+    "math",
+    "vocabulary"
+  ],
+  "audiences": [
+    "kids",
+    "adult"
+  ],
+  "standard": "CCSS.MATH.CONTENT.K.CC.A.3",
+  "tiers": {
+    "1": [
+      {
+        "word": "ONE",
+        "clue": "The number 1"
+      },
+      {
+        "word": "TWO",
+        "clue": "The number 2"
+      },
+      {
+        "word": "SIX",
+        "clue": "The number 6"
+      },
+      {
+        "word": "TEN",
+        "clue": "The number 10"
+      },
+      {
+        "word": "FOUR",
+        "clue": "The number 4"
+      },
+      {
+        "word": "FIVE",
+        "clue": "The number 5"
+      },
+      {
+        "word": "NINE",
+        "clue": "The number 9"
+      },
+      {
+        "word": "ZERO",
+        "clue": "The number 0"
+      }
+    ],
+    "2": [
+      {
+        "word": "THREE",
+        "clue": "The number 3"
+      },
+      {
+        "word": "SEVEN",
+        "clue": "The number 7"
+      },
+      {
+        "word": "EIGHT",
+        "clue": "The number 8"
+      },
+      {
+        "word": "ELEVEN",
+        "clue": "The number 11"
+      },
+      {
+        "word": "TWELVE",
+        "clue": "The number 12"
+      },
+      {
+        "word": "TWENTY",
+        "clue": "The number 20"
+      },
+      {
+        "word": "THIRTY",
+        "clue": "The number 30"
+      },
+      {
+        "word": "FORTY",
+        "clue": "The number 40"
+      },
+      {
+        "word": "FIFTY",
+        "clue": "The number 50"
+      },
+      {
+        "word": "SIXTY",
+        "clue": "The number 60"
+      }
+    ],
+    "3": [
+      {
+        "word": "THIRTEEN",
+        "clue": "The number 13"
+      },
+      {
+        "word": "FOURTEEN",
+        "clue": "The number 14"
+      },
+      {
+        "word": "FIFTEEN",
+        "clue": "The number 15"
+      },
+      {
+        "word": "SIXTEEN",
+        "clue": "The number 16"
+      },
+      {
+        "word": "SEVENTY",
+        "clue": "The number 70"
+      },
+      {
+        "word": "EIGHTY",
+        "clue": "The number 80"
+      },
+      {
+        "word": "NINETY",
+        "clue": "The number 90"
+      },
+      {
+        "word": "HUNDRED",
+        "clue": "The number 100"
+      }
+    ],
+    "4": [
+      {
+        "word": "SEVENTEEN",
+        "clue": "The number 17"
+      },
+      {
+        "word": "EIGHTEEN",
+        "clue": "The number 18"
+      },
+      {
+        "word": "NINETEEN",
+        "clue": "The number 19"
+      },
+      {
+        "word": "THOUSAND",
+        "clue": "The number 1000"
+      },
+      {
+        "word": "MILLION",
+        "clue": "The number 1000000"
+      }
+    ]
+  }
+}

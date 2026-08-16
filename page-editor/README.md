@@ -6,21 +6,25 @@ objects, insert/reroll puzzles, run pre-flight checks, and export the interior
 PDF. It runs on its own, without the rest of PuzzleForge (Book Builder, Themes,
 Cover Builder, image tools, AI theme generator, LAN Team workspace).
 
-It still uses the shared **PuzzleForge engine** (`require('..')` — the repo
-root) for puzzle generation, layout, page splitting, and PDF export, so the
-pages you arrange are the pages that print.
+**Fully self-contained.** The PuzzleForge **engine** (puzzle generation,
+layout, page splitting, PDF export) is vendored into
+[`vendor/puzzleforge-engine/`](vendor/puzzleforge-engine) and wired in as a
+`file:` dependency, so this folder is everything you need — copy it anywhere
+and it runs. It does not read from a parent repo.
 
 ## Run
 
 ```bash
-cd page-editor
-npm install          # express, archiver, @anthropic-ai/sdk, qrcode-generator, + the engine (file:..)
-npm start            # http://localhost:4100  (override with PORT=…)
+cd page-editor          # (or wherever you copied this folder)
+npm install             # express, archiver, @anthropic-ai/sdk, qrcode-generator,
+                        #   + the vendored engine and its deps (puppeteer-core, …)
+npm start               # http://localhost:4100  (override with PORT=…)
 ```
 
-PDF export drives Chromium through the engine's `puppeteer-core`; that comes
-from the repo-root install (`npm install` at the repo root), same as the main
-app.
+PDF export drives Chromium through the vendored engine's `puppeteer-core`,
+installed by the single `npm install` above. On a machine without a bundled
+Chromium, point it at an installed browser with
+`PUPPETEER_EXECUTABLE_PATH=/path/to/chrome`.
 
 ## What it serves
 
@@ -62,6 +66,8 @@ returned from a previous call.
 
 ## Relationship to the main app
 
-This is a genuine fork: the client files (`public/*`) and the trimmed
-`server.js` are copies of the main app's editor surface. Changes here do not
-affect `puzzleforge-web`, and vice-versa.
+This is a genuine fork: the client files (`public/*`), the trimmed `server.js`,
+and the vendored engine (`vendor/puzzleforge-engine/`) are copies. Changes here
+do not affect the main `puzzleforge-engine` / `puzzleforge-web`, and vice-versa.
+To pull in later engine fixes, re-copy the engine source over
+`vendor/puzzleforge-engine/` (keeping its `package.json`).

@@ -19,13 +19,24 @@ const express = require('express');
 const archiver = require('archiver');
 const Anthropic = require('@anthropic-ai/sdk');
 
-// Import the engine as a package (file:.. dependency) with a relative fallback
-// so the app runs whether or not it has been `npm install`ed.
+// The PuzzleForge engine is vendored into ./vendor/puzzleforge-engine and wired
+// in as a `file:` dependency, so this app is fully self-contained. Prefer the
+// installed package; fall back to the vendored source directly so the server
+// still boots from a bare checkout before `npm install`.
 let pf;
 try {
   pf = require('puzzleforge-engine');
 } catch (_) {
-  pf = require('..');
+  pf = require('./vendor/puzzleforge-engine');
+}
+// Absolute path to the engine package root, for serving the engine-side client
+// scripts the editor shares (element-html.js, decor.js) regardless of where
+// this app is installed.
+let engineDir;
+try {
+  engineDir = path.dirname(require.resolve('puzzleforge-engine/package.json'));
+} catch (_) {
+  engineDir = path.join(__dirname, 'vendor', 'puzzleforge-engine');
 }
 
 const app = express();
@@ -39,12 +50,12 @@ app.get('/favicon.ico', (req, res) => {
 // The engine's element renderer is shared with the editor so on-screen objects
 // and exported PDF pixels match exactly.
 app.get('/element-html.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'engine', 'element-html.js'));
+  res.sendFile(path.join(engineDir, 'engine', 'element-html.js'));
 });
 // The engine's border renderer, shared with the editor so the live page border
 // matches the printed one exactly.
 app.get('/decor.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'engine', 'decor.js'));
+  res.sendFile(path.join(engineDir, 'engine', 'decor.js'));
 });
 
 // QR encoder (qrcode-generator, MIT) served so the editor can build a QR's
