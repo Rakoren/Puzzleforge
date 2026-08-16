@@ -66,8 +66,11 @@ app.get('/qrcode-generator.js', (req, res) => {
 });
 
 // Self-hosted LAN team workspace: shared roster, shared book library, live
-// comments. Zero external services — persists to ./data. Optional token auth
-// via PUZZLEFORGE_WORKSPACE_TOKEN.
+// comments. Zero external services — persists to ./data (override with
+// PUZZLEFORGE_DATA_DIR). Optional token auth via PUZZLEFORGE_WORKSPACE_TOKEN.
+// The editor's Team tab talks to these routes.
+app.use('/api/workspace', require('./workspace').router);
+
 const WORD_TYPES = new Set(['wordsearch', 'wordscramble', 'crossword', 'krisskross']);
 const RECIPE_VERSION = 1;
 

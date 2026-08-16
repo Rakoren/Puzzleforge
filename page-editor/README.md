@@ -41,6 +41,21 @@ Only the routes the editor calls:
 | `POST /api/book/pdf` | render the arranged interior to a PDF |
 | `POST /api/book/package` | zip a KDP interior bundle |
 | `POST /api/book/checklist`, `/api/book/proofread`, `/api/thesaurus` | pre-flight + writing helpers (need an Anthropic API key; degrade gracefully without one) |
+| `/api/workspace/*` | the self-hosted LAN Team workspace (shared roster, shared book library, live comments over SSE) |
+
+## Team (LAN workspace)
+
+The **Team** tab is backed by `workspace.js`, a self-contained Express router
+(standard library + express only — no engine, no external services). It
+persists to `./data` next to the app:
+
+- `PUZZLEFORGE_DATA_DIR` — where the roster, shared books, and comments are
+  stored (default `./data`).
+- `PUZZLEFORGE_WORKSPACE_TOKEN` — set it to require an `x-pf-workspace` token
+  header on every workspace call (leave unset for an open LAN).
+
+It's a single-process store — run one instance and point the team's browsers at
+it over the LAN.
 
 ## Opening a book
 
@@ -59,15 +74,14 @@ returned from a previous call.
 
 - **Book Builder, Themes, Cover Builder, image tools, AI theme/category
   generation** — separate features, not part of the editor.
-- **Team (LAN workspace)** — the collaboration tab is present in the UI but its
-  `/api/workspace/*` server is not included, so it stays inert (shows as
-  disabled). Copy `workspace.js` and re-add the mount from the main app's
-  `server.js` if you want it.
+
+(The **Team / LAN workspace** IS included — see the Team section above.)
 
 ## Relationship to the main app
 
 This is a genuine fork: the client files (`public/*`), the trimmed `server.js`,
-and the vendored engine (`vendor/puzzleforge-engine/`) are copies. Changes here
+`workspace.js`, and the vendored engine (`vendor/puzzleforge-engine/`) are
+copies. Changes here
 do not affect the main `puzzleforge-engine` / `puzzleforge-web`, and vice-versa.
 To pull in later engine fixes, re-copy the engine source over
 `vendor/puzzleforge-engine/` (keeping its `package.json`).
